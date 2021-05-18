@@ -36,7 +36,7 @@ samples. For a real time application of this library please
 refer to the examples that come with this library.
 
 ```rust
-use hexosynth::*;
+use hexodsp::*;
 
 let (mut node_conf, mut node_exec) = new_node_engine();
 
