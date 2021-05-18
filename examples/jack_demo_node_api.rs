@@ -126,7 +126,7 @@ fn main() {
             println!("set gain={:4.2}", new_gain);
             node_conf.set_param(amp_gain_param, new_gain.into());
 
-            std::thread::sleep(std::time::Duration::from_millis(500));
+            std::thread::sleep(std::time::Duration::from_millis(300));
         }
     });
 }

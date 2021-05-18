@@ -1,3 +1,4 @@
+
 # HexoDSP - Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth.
 
 This project contains the complete DSP backend of the modular
@@ -16,6 +17,7 @@ single nodes to get the current output value of all nodes.
 Here a short list of features:
 
 * Runtime changeable DSP graph
+* Serialization and loading of the DSP graph and the parameters
 * Full monitoring and feedback introspection into the running DSP graph
 * Provides a wide variety of modules
 * Extensible framework for quickly developing new nodes at compile time
@@ -25,8 +27,9 @@ Here a short list of features:
 
 ### Documentation
 
-The development documentation can be found separately hosted:
-[HexoDSP API Documentation](http://m8geil.de/hexodsp_doc/hexodsp/).
+The development documentation with all private fields and functions can be
+found separately hosted:
+[HexoDSP API Developer Documentation](http://m8geil.de/hexodsp_doc/hexodsp/).
 
 ### Raw `NodeConfigurator` API
 
@@ -230,3 +233,6 @@ We can discuss relicensing of my code or project if you are interested in using
 it in a closed source project. Bear in mind, that I can only relicense the
 parts of the project I wrote. If the project contains GPL code from other
 projects and authors, I can't relicense it.
+
+
+License: AGPL-3.0-or-later

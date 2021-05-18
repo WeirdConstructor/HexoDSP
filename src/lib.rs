@@ -22,12 +22,19 @@ single nodes to get the current output value of all nodes.
 Here a short list of features:
 
 * Runtime changeable DSP graph
+* Serialization and loading of the DSP graph and the parameters
 * Full monitoring and feedback introspection into the running DSP graph
 * Provides a wide variety of modules
 * Extensible framework for quickly developing new nodes at compile time
 * A comprehensive automated test suite
 
 ## API Examples
+
+### Documentation
+
+The development documentation with all private fields and functions can be
+found separately hosted:
+[HexoDSP API Developer Documentation](http://m8geil.de/hexodsp_doc/hexodsp/).
 
 ### Raw `NodeConfigurator` API
 
