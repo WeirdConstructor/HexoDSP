@@ -23,6 +23,11 @@ Here a short list of features:
 
 ## API Examples
 
+### Documentation
+
+The development documentation can be found separately hosted:
+[HexoDSP API Documentation](http://m8geil.de/hexodsp_doc/hexodsp/).
+
 ### Raw `NodeConfigurator` API
 
 This API is the most low level API provided by HexoDSP.
