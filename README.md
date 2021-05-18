@@ -1,42 +1,42 @@
-# HexoSynth - A hexagonal modular synthesizer
+# HexoDSP - Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth.
 
-This project aims to create a modular synthesizer. Like those encountered
-in projects like VCVRack or Bitwigs Polygrid.
+This project contains the complete DSP backend of the modular
+synthesizer [HexoSynth](https://github.com/WeirdConstructor/HexoSynth).
 
-The core idea is having a hexagonal tile map for laying out module
-instances and connect them at the edges to route audio signals and CV signals
-to inputs of other modules.
+It's aimed to provide a toolkit for everyone who wants to develop
+a synthesizer in Rust. You can use it to quickly define a DSP graph
+that you can change at runtime. It comes with a large collection
+of already developed DSP modules/nodes, such as oscillators, filters,
+amplifiers, envelopes and sequencers.
 
-A goal is to provide a simple wireless environment to build
-sound effects, synthesizers or whole generative music patches from
-predefined modules.
+The DSP graph API also provides multiple kinds of feedback to track what the
+signals in the DSP threads look like. From monitoring the inputs and outputs of
+single nodes to get the current output value of all nodes.
 
-Hosting plugins (VST, LV2, ...) is out of the scope of this project.
-The goal is rather to have a good set of predefined modules.
+Here a short list of features:
+
+* Runtime changeable DSP graph
+* Full monitoring and feedback introspection into the running DSP graph
+* Provides a wide variety of modules
+* Extensible framework for quickly developing new nodes at compile time
+* A comprehensive automated test suite
 
 ## State of Development
 
-This project is still (2021-03-17) under heavy development and is considered
-pre alpha stage. There is no noteworthy functionality yet implemented.
-Just a lot of prototype code and plumbing.
+As of 2021-05-18: The architecture and it's functionality have been mostly
+feature complete by now. The only part that is still lacking is the collection
+of modules/nodes, this is the area of current development. Adding lots of
+nodes.
 
 Make sure to follow [Weird Constructors Mastodon
 account](https://mastodon.online/@weirdconstructor) or the releases of this
-project to be notified once I release a beta or stable release.
+project to be notified of updates.
 
 ### Road Map / TODO List
 
-I have a pretty detailed TODO list in my private notebook, but
-this is the rough road map:
+I have a pretty detailed TODO list in my private notebook.
 
-- Make a UI that is more or less fluently usable and easily extendable
-with new modules.
-- Take a bit of care that there is online help.
-- Add lots of modules (Oscillators, Filters, Envelopes, LFOs, Quantizers, ...).
-- Factor out the DSP code into it's own crate.
-- Comment the code for easier maintenance.
-
-## Running the Standalone Example:
+## Running the Jack Example:
 
 You need nightly rust:
 
@@ -44,15 +44,15 @@ You need nightly rust:
 
 To run the example:
 
-    cargo +nightly run --release --example standalone
+    cargo +nightly run --release --example jack_demo
 
 You might need following dependencies (Ubuntu Linux):
 
-    sudo apt install libjack0 libjack-jackd2-dev qjackctl libx11-xcb-dev libxcb-icccm4-dev libxcb-dri3-dev
+    sudo apt install libjack0 libjack-jackd2-dev qjackctl
 
 These might work on Debian too:
 
-    sudo apt install libjack0 libjack-dev libx11-xcb-dev libxcb-icccm4-dev libxcb-dri2-dev
+    sudo apt install libjack0 libjack-dev
 
 ## Running the Automated Testsuite:
 
@@ -83,8 +83,8 @@ of this project (AGPLv3 or later).
 ## Contact the Author
 
 You can reach me via Discord or Mastodon. I'm joined most public Rust Discord
-servers, especially the "Rust Audio" Discord server. I am also on freenode.net,
-for instance in the `#lad` channel (nick `weirdctr`).
+servers, especially the "Rust Audio" Discord server. I am also sometimes on
+freenode.net, for instance in the `#lad` channel (nick `weirdctr`).
 
 ## Support Development
 
@@ -97,12 +97,13 @@ You can support me (and the development of this project) via Liberapay:
 This project is licensed under the GNU Affero General Public License Version 3 or
 later.
 
-The fonts DejaVuSerif.ttf and DejaVuSansMono.ttf under the license:
-
-    Fonts are (c) Bitstream (see below). DejaVu changes are in public domain.
-    Glyphs imported from Arev fonts are (c) Tavmjong Bah (see below)
-
 ### Why (A)GPL?
+
+The obivious reason is that this project copied and translated code from many
+other free software / open source synthesis projects. The sources
+will show the origin and license of the individual parts.
+
+#### My Reasons
 
 Picking a license for my code bothered me for a long time. I read many
 discussions about this topic. Read the license explanations. And discussed

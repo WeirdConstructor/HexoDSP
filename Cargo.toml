@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["Weird Constructor <weirdconstructor@m8geil.de>"]
 license = "AGPL-3.0-or-later"
 edition = "2018"
-description = "An audio synthesis DSP graph library"
+description = "Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth."
+keywords = ["audio", "music", "real-time", "synthesis", "synthesizer", "dsp", "sound"]
+categories = ["multimedia::audio", "multimedia", "algorithms", "mathematics"]
 
 [dependencies]
 serde      = { version = "1.0", features = ["derive"] }
