@@ -35,26 +35,28 @@ This only showcases the non-realtime generation of audio
 samples. For a real time application of this library please
 refer to the examples that come with this library.
 
-    use hexosynth::*;
+```rust
+use hexosynth::*;
 
-    let (mut node_conf, mut node_exec) = new_node_engine();
+let (mut node_conf, mut node_exec) = new_node_engine();
 
-    node_conf.create_node(NodeId::Sin(0));
-    node_conf.create_node(NodeId::Amp(0));
+node_conf.create_node(NodeId::Sin(0));
+node_conf.create_node(NodeId::Amp(0));
 
-    let mut prog = node_conf.rebuild_node_ports();
+let mut prog = node_conf.rebuild_node_ports();
 
-    node_conf.add_prog_node(&mut prog, &NodeId::Sin(0));
-    node_conf.add_prog_node(&mut prog, &NodeId::Amp(0));
+node_conf.add_prog_node(&mut prog, &NodeId::Sin(0));
+node_conf.add_prog_node(&mut prog, &NodeId::Amp(0));
 
-    node_conf.set_prog_node_exec_connection(
-        &mut prog,
-        (NodeId::Amp(0), NodeId::Amp(0).inp("inp").unwrap()),
-        (NodeId::Sin(0), NodeId::Sin(0).out("sig").unwrap()));
+node_conf.set_prog_node_exec_connection(
+    &mut prog,
+    (NodeId::Amp(0), NodeId::Amp(0).inp("inp").unwrap()),
+    (NodeId::Sin(0), NodeId::Sin(0).out("sig").unwrap()));
 
-    node_conf.upload_prog(prog, true);
+node_conf.upload_prog(prog, true);
 
-    let (out_l, out_r) = node_exec.test_run(0.1, false);
+let (out_l, out_r) = node_exec.test_run(0.1, false);
+```
 
 ### Hexagonal Matrix API
 
@@ -66,26 +68,28 @@ This only showcases the non-realtime generation of audio
 samples. For a real time application of this library please
 refer to the examples that come with this library.
 
-    use hexodsp::*;
+```rust
+use hexodsp::*;
 
-    let (node_conf, mut node_exec) = new_node_engine();
-    let mut matrix = Matrix::new(node_conf, 3, 3);
+let (node_conf, mut node_exec) = new_node_engine();
+let mut matrix = Matrix::new(node_conf, 3, 3);
 
 
-    let sin = NodeId::Sin(0);
-    let amp = NodeId::Amp(0);
-    matrix.place(0, 0, Cell::empty(sin)
-                       .out(None, None, sin.out("sig")));
-    matrix.place(0, 1, Cell::empty(amp)
-                       .input(amp.inp("inp"), None, None));
-    matrix.sync().unwrap();
+let sin = NodeId::Sin(0);
+let amp = NodeId::Amp(0);
+matrix.place(0, 0, Cell::empty(sin)
+                   .out(None, None, sin.out("sig")));
+matrix.place(0, 1, Cell::empty(amp)
+                   .input(amp.inp("inp"), None, None));
+matrix.sync().unwrap();
 
-    let gain_p = amp.inp_param("gain").unwrap();
-    matrix.set_param(gain_p, SAtom::param(0.25));
+let gain_p = amp.inp_param("gain").unwrap();
+matrix.set_param(gain_p, SAtom::param(0.25));
 
-    let (out_l, out_r) = node_exec.test_run(0.11, true);
-    // out_l and out_r contain two channels of audio
-    // samples now.
+let (out_l, out_r) = node_exec.test_run(0.11, true);
+// out_l and out_r contain two channels of audio
+// samples now.
+```
 
 ## State of Development
 
