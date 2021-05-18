@@ -17,11 +17,11 @@ serde_json    = "1.0"
 ringbuf       = "0.2.2"
 triple_buffer = "5.0.6"
 hexotk        = { optional = true, git = "https://github.com/WeirdConstructor/HexoTK.git" }
+hound         = "3.4.0"
 
 [dev-dependencies]
 microfft    = "0.3.1"
 num-complex = "0.2"
-hound       = "3.4.0"
 jack        = "0.6.6"
 
 [lib]
