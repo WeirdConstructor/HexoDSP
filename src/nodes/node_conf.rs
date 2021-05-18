@@ -287,8 +287,9 @@ impl NodeConfigurator {
 
     /// Assign [SAtom] values to input parameters and atoms.
     ///
-    /// Only updates the DSP backend of [NodeConfigurator::rebuild_node_ports] was called
-    /// before calling this.
+    /// Only updates the DSP backend if [NodeConfigurator::rebuild_node_ports] was called
+    /// before calling this. If no graph or the corresponding parameter is not active yet,
+    /// then the value will be remembered until [NodeConfigurator::rebuild_node_ports] is called.
     pub fn set_param(&mut self, param: ParamId, at: SAtom) {
         if param.is_atom() {
             self.atom_values.insert(param, at.clone());
