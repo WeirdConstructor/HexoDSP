@@ -227,6 +227,16 @@ impl PatternData {
 
 #[cfg(feature="hexotk")]
 pub use hexotk::widgets::UIPatternModel;
+
+#[cfg(not(feature="hexotk"))]
+impl dyn UIPatternModel {
+    fn change_value(&mut self, row: usize, col: usize, offs: i16) {
+        let val = self.get_cell_value(row, col) as i16;
+        let val = (val + offs).max(0).min(0xfff);
+        self.set_cell_value(row, col, val as u16);
+    }
+}
+
 #[cfg(not(feature="hexotk"))]
 pub trait UIPatternModel: std::fmt::Debug {
     fn get_cell(&mut self, row: usize, col: usize) -> Option<&str>;
