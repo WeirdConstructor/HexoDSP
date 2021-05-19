@@ -230,7 +230,7 @@ pub use hexotk::widgets::UIPatternModel;
 
 #[cfg(not(feature="hexotk"))]
 impl dyn UIPatternModel {
-    fn change_value(&mut self, row: usize, col: usize, offs: i16) {
+    pub fn change_value(&mut self, row: usize, col: usize, offs: i16) {
         let val = self.get_cell_value(row, col) as i16;
         let val = (val + offs).max(0).min(0xfff);
         self.set_cell_value(row, col, val as u16);
