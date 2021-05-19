@@ -12,6 +12,8 @@ mod node_out;
 mod node_test;
 #[allow(non_upper_case_globals)]
 mod node_tseq;
+#[allow(non_upper_case_globals)]
+mod node_sampl;
 
 pub mod tracker;
 mod satom;
@@ -31,6 +33,7 @@ use node_sin::Sin;
 use node_out::Out;
 use node_test::Test;
 use node_tseq::TSeq;
+use node_sampl::Sampl;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -270,6 +273,10 @@ macro_rules! node_list {
                [3 trk4]
                [4 trk5]
                [5 trk6],
+            sampl => Sampl UIType::Generic UICategory::Osc
+               (0 freq  n_pit      d_pit     -1.0, 1.0, 440.0)
+               {1 0 sample audio_unloaded("") 0 0}
+               [0 sig],
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit     -1.0, 1.0, 440.0)
                [0 sig],
@@ -309,6 +316,10 @@ pub mod labels {
 
     pub mod TSeq {
         pub const cmode : [&'static str; 3] = ["RowT", "PatT", "Phase"];
+    }
+
+    pub mod Sampl {
+        pub const sample : [&'static str; 0] = [];
     }
 }
 

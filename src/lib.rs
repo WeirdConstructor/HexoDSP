@@ -123,25 +123,35 @@ I have a pretty detailed TODO list in my private notebook.
 
 You need nightly rust:
 
+```text
     rustup toolchain install nightly
+```
 
 To run the example:
 
+```text
     cargo +nightly run --release --example jack_demo
+```
 
 You might need following dependencies (Ubuntu Linux):
 
+```text
     sudo apt install libjack0 libjack-jackd2-dev qjackctl
+```
 
 These might work on Debian too:
 
+```text
     sudo apt install libjack0 libjack-dev
+```
 
 ## Running the Automated Testsuite:
 
 There exists an automate test suite for the DSP and backend code:
 
+```text
     cargo test
+```
 
 ## Known Bugs
 

@@ -32,7 +32,7 @@ impl SampleLibrary {
         }
     }
 
-    /// Synchronous blocking loading of a sample from `path`.
+    /// Synchronous/blocking loading of a sample from `path`.
     /// Returns an SAtom reference that you can clone and send directly
     /// to the sampling node of your choice.
     ///
