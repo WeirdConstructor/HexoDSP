@@ -225,10 +225,6 @@ impl PatternData {
     }
 }
 
-#[cfg(feature="hexotk")]
-pub use hexotk::widgets::UIPatternModel;
-
-#[cfg(not(feature="hexotk"))]
 impl dyn UIPatternModel {
     pub fn change_value(&mut self, row: usize, col: usize, offs: i16) {
         let val = self.get_cell_value(row, col) as i16;
@@ -237,7 +233,6 @@ impl dyn UIPatternModel {
     }
 }
 
-#[cfg(not(feature="hexotk"))]
 pub trait UIPatternModel: std::fmt::Debug {
     fn get_cell(&mut self, row: usize, col: usize) -> Option<&str>;
     fn is_col_note(&self, col: usize) -> bool;
@@ -263,7 +258,6 @@ pub trait UIPatternModel: std::fmt::Debug {
     fn get_edit_step(&mut self) -> usize;
 }
 
-#[cfg(not(feature="hexotk"))]
 impl UIPatternModel for PatternData {
     fn get_cell(&mut self, row: usize, col: usize) -> Option<&str> {
         if row >= self.data.len()    { return None; }
