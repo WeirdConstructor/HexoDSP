@@ -80,20 +80,3 @@ impl CellDir {
         }
     }
 }
-
-#[cfg(feature="hexotk")]
-use hexotk::widgets::HexDir;
-
-#[cfg(feature="hexotk")]
-impl From<HexDir> for CellDir {
-    fn from(h: HexDir) -> Self {
-        CellDir::from(h.to_edge())
-    }
-}
-
-#[cfg(feature="hexotk")]
-impl From<CellDir> for HexDir {
-    fn from(c: CellDir) -> Self {
-        HexDir::from(c.to_edge())
-    }
-}

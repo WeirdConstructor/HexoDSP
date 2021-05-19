@@ -67,33 +67,3 @@ impl SAtom {
 impl From<f32> for SAtom {
     fn from(n: f32) -> Self { SAtom::Param(n) }
 }
-
-
-#[cfg(feature="hexotk")]
-use hexotk::Atom;
-
-#[cfg(feature="hexotk")]
-impl From<Atom> for SAtom {
-    fn from(n: Atom) -> Self {
-        match n {
-            Atom::Str(s)         => SAtom::Str(s),
-            Atom::MicroSample(s) => SAtom::MicroSample(s),
-            Atom::AudioSample(s) => SAtom::AudioSample(s),
-            Atom::Setting(s)     => SAtom::Setting(s),
-            Atom::Param(s)       => SAtom::Param(s),
-        }
-    }
-}
-
-#[cfg(feature="hexotk")]
-impl From<SAtom> for Atom {
-    fn from(n: SAtom) -> Atom {
-        match n {
-            SAtom::Str(s)         => Atom::Str(s),
-            SAtom::MicroSample(s) => Atom::MicroSample(s),
-            SAtom::AudioSample(s) => Atom::AudioSample(s),
-            SAtom::Setting(s)     => Atom::Setting(s),
-            SAtom::Param(s)       => Atom::Param(s),
-        }
-    }
-}
