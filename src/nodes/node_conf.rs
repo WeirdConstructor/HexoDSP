@@ -12,6 +12,7 @@ use super::{
 };
 use crate::nodes::drop_thread::DropThread;
 use crate::dsp::{NodeId, ParamId, NodeInfo, Node, SAtom, node_factory};
+use crate::{SampleLibrary};
 use crate::util::AtomicFloat;
 use crate::monitor::{
     Monitor, MON_SIG_CNT, new_monitor_processor, MinMaxMonitorSamples
@@ -142,6 +143,10 @@ pub struct NodeConfigurator {
 
     feedback_filter:               FeedbackFilter,
 
+    /// Loads and Caches audio samples that are set as parameters
+    /// for nodes.
+    sample_lib:                    SampleLibrary,
+
     /// Contains (automateable) parameters
     params:         std::collections::HashMap<ParamId, NodeInputParam>,
     /// Stores the most recently set parameter values
@@ -226,6 +231,7 @@ impl NodeConfigurator {
         (NodeConfigurator {
             nodes,
             shared,
+            sample_lib:         SampleLibrary::new(),
             feedback_filter:    FeedbackFilter::new(),
             output_fb_values:   vec![],
             output_fb_cons:     None,
@@ -292,6 +298,13 @@ impl NodeConfigurator {
     /// then the value will be remembered until [NodeConfigurator::rebuild_node_ports] is called.
     pub fn set_param(&mut self, param: ParamId, at: SAtom) {
         if param.is_atom() {
+            let at =
+                if let SAtom::AudioSample((path, None)) = at {
+                    self.sample_lib.load(&path).unwrap().clone()
+                } else {
+                    at
+                };
+
             self.atom_values.insert(param, at.clone());
 
             if let Some(nparam) = self.atoms.get_mut(&param) {

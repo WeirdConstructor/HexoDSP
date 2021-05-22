@@ -1105,3 +1105,37 @@ fn check_matrix_output_feedback() {
     assert_float_eq!(fo_amp.1, 0.11627);
 }
 
+
+#[test]
+fn check_node_sampl_1() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let smpl = NodeId::Sampl(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smpl)
+                       .out(None, None, smpl.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let sample_p = smpl.inp_param("sample").unwrap();
+    let freq_p   = smpl.inp_param("freq").unwrap();
+    matrix.set_param(sample_p, SAtom::audio_unloaded("tests/sample_sin.wav"));
+
+    let (rms, min, max) = run_and_get_l_rms_mimax(&mut node_exec, 50.0);
+    assert_float_eq!(rms, 0.505);
+    assert_float_eq!(min, -0.9998);
+    assert_float_eq!(max, 1.0);
+
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 0.0);
+    assert_eq!(fft[0], (441, 940));
+
+    matrix.set_param(freq_p, SAtom::param(0.1));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 0.0);
+    assert_eq!(fft[0], (894, 988));
+
+    matrix.set_param(freq_p, SAtom::param(-0.1));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 0.0);
+    assert_eq!(fft[0], (220, 988));
+}

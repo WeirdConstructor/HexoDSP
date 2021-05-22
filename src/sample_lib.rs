@@ -64,7 +64,9 @@ impl SampleLibrary {
             },
             hound::SampleFormat::Int => {
                 for s in rd.samples::<i16>().step_by(channels) {
-                    v.push(s? as f32 / (i16::MAX as f32));
+                    let s = s?;
+                    let s = s as f32 / (i16::MAX as f32);
+                    v.push(s);
                 }
             },
         };

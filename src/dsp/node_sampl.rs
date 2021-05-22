@@ -8,11 +8,13 @@ use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Sampl {
+    sample_idx:     usize,
 }
 
 impl Sampl {
     pub fn new() -> Self {
         Self {
+            sample_idx: 0,
         }
     }
     pub const freq : &'static str =
@@ -35,15 +37,26 @@ impl DspNode for Sampl {
         &mut self, ctx: &mut T, atoms: &[SAtom], _params: &[ProcBuf],
         inputs: &[ProcBuf], outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out}; //, inp, denorm, denorm_v, inp_dir, at};
+        use crate::dsp::{out, at, inp, denorm}; //, inp, denorm, denorm_v, inp_dir, at};
 
-//        let gain = inp::Amp::gain(inputs);
-//        let att  = inp::Amp::att(inputs);
-//        let inp  = inp::Amp::inp(inputs);
-        let out  = out::Sampl::sig(outputs);
+        let sample = at::Sampl::sample(atoms);
+        let freq   = inp::Sampl::freq(inputs);
+        let out    = out::Sampl::sig(outputs);
 
-        for frame in 0..ctx.nframes() {
-            out.write(frame, 0.0);
+        if let SAtom::AudioSample((_, Some(sample_data))) = sample {
+            let sd_len = sample_data.len() - 1;
+
+            for frame in 0..ctx.nframes() {
+                let speed = denorm::Sampl::freq(freq, frame) / 440.0;
+
+                let sd = sample_data[self.sample_idx % sd_len + 1];
+                out.write(frame, sd);
+                self.sample_idx += (1.0 * speed).ceil() as usize;
+            }
+        } else {
+            for frame in 0..ctx.nframes() {
+                out.write(frame, 0.0);
+            }
         }
 
         ctx_vals[0].set(1.0);
