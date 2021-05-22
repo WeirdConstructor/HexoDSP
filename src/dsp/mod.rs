@@ -1156,7 +1156,8 @@ impl Node {
             ) => {
                 match self {
                     Node::$v1 => {},
-                    $(Node::$variant { node } => node.process(ctx, atoms, params, inputs, outputs, led),)+
+                    $(Node::$variant { node } =>
+                        node.process(ctx, atoms, params, inputs, outputs, led),)+
                 }
             }
         }
