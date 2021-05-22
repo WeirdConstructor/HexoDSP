@@ -1143,6 +1143,14 @@ fn check_node_sampl_1() {
     let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
     assert_eq!(fft[0], (108, 953));
 
+    matrix.set_param(freq_p, SAtom::param(-0.4));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (22, 818));
+
+    matrix.set_param(freq_p, SAtom::param(-0.5));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (11, 964));
+
     matrix.set_param(freq_p, SAtom::param(0.2));
     let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
     assert_eq!(fft[0], (1776, 877));
