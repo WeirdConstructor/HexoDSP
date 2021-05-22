@@ -8,13 +8,15 @@ use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Sampl {
-    sample_idx:     usize,
+    phase: f64,
+    srate: f64,
 }
 
 impl Sampl {
     pub fn new() -> Self {
         Self {
-            sample_idx: 0,
+            phase: 0.0,
+            srate: 44100.0,
         }
     }
     pub const freq : &'static str =
@@ -29,7 +31,7 @@ impl Sampl {
 impl DspNode for Sampl {
     fn outputs() -> usize { 1 }
 
-    fn set_sample_rate(&mut self, _srate: f32) { }
+    fn set_sample_rate(&mut self, srate: f32) { self.srate = srate.into(); }
     fn reset(&mut self) { }
 
     #[inline]
@@ -44,14 +46,44 @@ impl DspNode for Sampl {
         let out    = out::Sampl::sig(outputs);
 
         if let SAtom::AudioSample((_, Some(sample_data))) = sample {
-            let sd_len = sample_data.len() - 1;
+            let sd_len   = sample_data.len() - 1;
+            let sd_len_f = sd_len as f64;
+
+            let sample_srate = sample_data[0] as f64;
+            let sample_data  = &sample_data[1..];
+
+            let sr_factor = sample_srate / self.srate;
 
             for frame in 0..ctx.nframes() {
-                let speed = denorm::Sampl::freq(freq, frame) / 440.0;
+                let playback_speed =
+                    denorm::Sampl::freq(freq, frame) / 440.0;
 
-                let sd = sample_data[self.sample_idx % sd_len + 1];
-                out.write(frame, sd);
-                self.sample_idx += (1.0 * speed).ceil() as usize;
+                let i = self.phase.floor() as usize + sd_len;
+
+                // Hermite interpolation, take from 
+                // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
+                //
+                // Thanks go to Eric Wood!
+                //
+                // For the interpolation code:
+                // MIT License, Copyright (c) 2021 Eric Wood
+                let xm1 = sample_data[(i - 1) % sd_len];
+                let x0  = sample_data[i       % sd_len];
+                let x1  = sample_data[(i + 1) % sd_len];
+                let x2  = sample_data[(i + 2) % sd_len];
+
+                let c     = (x1 - xm1) * 0.5;
+                let v     = x0 - x1;
+                let w     = c + v;
+                let a     = w + v + (x2 - x0) * 0.5;
+                let b_neg = w + a;
+
+                let f = self.phase.fract() as f32;
+
+                let out_sample = (((a * f) - b_neg) * f + c) * f + x0;
+                out.write(frame, out_sample);
+
+                self.phase += sr_factor * playback_speed as f64;
             }
         } else {
             for frame in 0..ctx.nframes() {
