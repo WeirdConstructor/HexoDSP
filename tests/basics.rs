@@ -1128,14 +1128,26 @@ fn check_node_sampl_1() {
     assert_float_eq!(min, -0.9998);
     assert_float_eq!(max, 1.0);
 
-    let fft = run_and_get_fft4096(&mut node_exec, 800, 0.0);
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
     assert_eq!(fft[0], (441, 940));
 
     matrix.set_param(freq_p, SAtom::param(0.1));
-    let fft = run_and_get_fft4096(&mut node_exec, 800, 0.0);
-    assert_eq!(fft[0], (894, 982));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (894, 988));
 
     matrix.set_param(freq_p, SAtom::param(-0.1));
-    let fft = run_and_get_fft4096(&mut node_exec, 800, 0.0);
-    assert_eq!(fft[0], (226, 965));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (226, 966));
+
+    matrix.set_param(freq_p, SAtom::param(-0.2));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (108, 953));
+
+    matrix.set_param(freq_p, SAtom::param(0.2));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (1776, 877));
+
+    matrix.set_param(freq_p, SAtom::param(0.4));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (7127, 1029));
 }
