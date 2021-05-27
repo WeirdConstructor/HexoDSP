@@ -356,11 +356,11 @@ impl NodeConfigurator {
         &mut self, params: &[(ParamId, f32)], atoms: &[(ParamId, SAtom)])
     {
         for (param_id, val) in params.iter() {
-            self.param_values.insert(*param_id, *val);
+            self.set_param(*param_id, (*val).into());
         }
 
         for (param_id, val) in atoms.iter() {
-            self.atom_values.insert(*param_id, val.clone());
+            self.set_param(*param_id, val.clone());
         }
     }
 
