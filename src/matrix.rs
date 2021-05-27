@@ -597,6 +597,10 @@ impl Matrix {
         }
     }
 
+    pub fn pop_error(&mut self) -> Option<String> {
+        self.config.pop_error()
+    }
+
     /// Assign [SAtom] values to input parameters and atoms.
     pub fn set_param(&mut self, param: ParamId, at: SAtom) {
         self.config.set_param(param, at);

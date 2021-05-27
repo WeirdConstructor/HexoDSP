@@ -147,6 +147,9 @@ pub struct NodeConfigurator {
     /// for nodes.
     sample_lib:                    SampleLibrary,
 
+    /// Error messages:
+    errors:         Vec<String>,
+
     /// Contains (automateable) parameters
     params:         std::collections::HashMap<ParamId, NodeInputParam>,
     /// Stores the most recently set parameter values
@@ -231,6 +234,7 @@ impl NodeConfigurator {
         (NodeConfigurator {
             nodes,
             shared,
+            errors:             vec![],
             sample_lib:         SampleLibrary::new(),
             feedback_filter:    FeedbackFilter::new(),
             output_fb_values:   vec![],
@@ -277,6 +281,10 @@ impl NodeConfigurator {
         }
     }
 
+    pub fn pop_error(&mut self) -> Option<String> {
+        self.errors.pop()
+    }
+
     pub fn unique_index_for(&self, ni: &NodeId) -> Option<usize> {
         self.node2idx.get(&ni).copied()
     }
@@ -299,8 +307,17 @@ impl NodeConfigurator {
     pub fn set_param(&mut self, param: ParamId, at: SAtom) {
         if param.is_atom() {
             let at =
-                if let SAtom::AudioSample((path, None)) = at {
-                    self.sample_lib.load(&path).unwrap().clone()
+                if let SAtom::AudioSample((path, None)) = at.clone() {
+                    match self.sample_lib.load(&path) {
+                        Ok(sample) => sample.clone(),
+                        Err(e) => {
+                            self.errors.push(
+                                format!(
+                                    "Couldn't load sample '{}': {:?}",
+                                    path, e));
+                            at
+                        },
+                    }
                 } else {
                     at
                 };
