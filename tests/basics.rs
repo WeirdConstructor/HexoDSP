@@ -90,6 +90,23 @@ fn run_and_undersample(
     out_samples
 }
 
+fn run_and_get_each_rms_mimax(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    len_ms: f32) -> Vec<(f32, f32, f32)>
+{
+    let (out_l, _out_r) = run_no_input(node_exec, (len_ms * 3.0) / 1000.0);
+    calc_rms_mimax_each_ms(&out_l[..], len_ms)
+}
+
+fn run_and_get_first_rms_mimax(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    len_ms: f32) -> (f32, f32, f32)
+{
+    let (out_l, _out_r) = run_no_input(node_exec, (len_ms * 3.0) / 1000.0);
+    let rms_mimax = calc_rms_mimax_each_ms(&out_l[..], len_ms);
+    rms_mimax[0]
+}
+
 fn run_and_get_l_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     len_ms: f32) -> (f32, f32, f32)
@@ -1163,7 +1180,7 @@ fn check_node_sampl_1() {
 #[test]
 fn check_node_sampl_reload() {
     {
-        let (node_conf, mut node_exec) = new_node_engine();
+        let (node_conf, _node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
         let smpl = NodeId::Sampl(0);
@@ -1175,7 +1192,6 @@ fn check_node_sampl_reload() {
         matrix.sync().unwrap();
 
         let sample_p = smpl.inp_param("sample").unwrap();
-        let freq_p   = smpl.inp_param("freq").unwrap();
         matrix.set_param(sample_p, SAtom::audio_unloaded("tests/sample_sin.wav"));
 
         hexodsp::save_patch_to_file(&mut matrix, "check_matrix_serialize.hxy")
@@ -1214,7 +1230,6 @@ fn check_node_sampl_load_err() {
     matrix.sync().unwrap();
 
     let sample_p = smpl.inp_param("sample").unwrap();
-    let freq_p   = smpl.inp_param("freq").unwrap();
     matrix.set_param(sample_p, SAtom::audio_unloaded("tests/sample_NOSIN.wav"));
 
     let (rms, min, max) = run_and_get_l_rms_mimax(&mut node_exec, 50.0);
@@ -1223,5 +1238,114 @@ fn check_node_sampl_load_err() {
     assert_float_eq!(max, 0.0);
 
     let err = matrix.pop_error();
-    assert_eq!(err.unwrap(), "Couldn't load sample 'tests/sample_NOSIN.wav': LoadError(IoError(Os { code: 2, kind: NotFound, message: \"No such file or directory\" }))");
+    assert_eq!(err.unwrap(), "Sample Loading Error\nCouldn't load sample 'tests/sample_NOSIN.wav':\nLoadError(IoError(Os { code: 2, kind: NotFound, message: \"No such file or directory\" }))");
 }
+
+#[test]
+fn check_node_sampl_trigger() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let smpl = NodeId::Sampl(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smpl)
+                       .out(None, None, smpl.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let sample_p = smpl.inp_param("sample").unwrap();
+    let pmode_p  = smpl.inp_param("pmode").unwrap();
+    let trig_p   = smpl.inp_param("trig").unwrap();
+    matrix.set_param(sample_p, SAtom::audio_unloaded("tests/sample_sin.wav"));
+    matrix.set_param(pmode_p, SAtom::setting(1));
+
+    let (rms, min, max) = run_and_get_l_rms_mimax(&mut node_exec, 10.0);
+    assert_float_eq!(rms, 0.0);
+    assert_float_eq!(min, 0.0);
+    assert_float_eq!(max, 0.0);
+
+    matrix.set_param(trig_p, (1.0).into());
+    let (rms, min, max) = run_and_get_first_rms_mimax(&mut node_exec, 10.0);
+    assert_float_eq!(rms, 0.1136);
+    assert_float_eq!(min, -0.9998);
+    assert_float_eq!(max, 1.0);
+
+    let (rms, min, max) = run_and_get_l_rms_mimax(&mut node_exec, 20.0);
+    assert_float_eq!(rms, 0.0);
+    assert_float_eq!(min, -0.0);
+    assert_float_eq!(max, 0.0);
+}
+
+#[test]
+fn check_node_sampl_trigger_reset_phase() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let smpl = NodeId::Sampl(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smpl)
+                       .out(None, None, smpl.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let sample_p = smpl.inp_param("sample").unwrap();
+    let pmode_p  = smpl.inp_param("pmode").unwrap();
+    let trig_p   = smpl.inp_param("trig").unwrap();
+
+    let mut test_sample_ramp = vec![0.0; 44101];
+    test_sample_ramp[0] = 44100.0;
+    for i in 0..(test_sample_ramp.len() - 1) {
+        test_sample_ramp[i + 1] =
+            (i as f32) / ((test_sample_ramp.len() - 2) as f32)
+    }
+
+    matrix.set_param(sample_p,
+        SAtom::audio(
+            "1second_ramp.wav",
+            std::sync::Arc::new(test_sample_ramp)));
+    matrix.set_param(pmode_p, SAtom::setting(1));
+
+    let (rms, min, max) = run_and_get_l_rms_mimax(&mut node_exec, 10.0);
+    assert_float_eq!(rms, 0.0);
+    assert_float_eq!(min, 0.0);
+    assert_float_eq!(max, 0.0);
+
+    matrix.set_param(trig_p, (1.0).into());
+    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 100.0);
+    let (_rms, min, max) = rmsvec[0];
+    assert_float_eq!(min, 0.0);
+    assert_float_eq!(max, 0.092496);
+    let (_rms, min, max) = rmsvec[2];
+    assert_float_eq!(min, 0.19252);
+    assert_float_eq!(max, 0.29250);
+
+    // lower trigger level, for retrigger later
+    matrix.set_param(trig_p, (0.0).into());
+    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 10.0);
+
+    let (_rms, min, max) = rmsvec[2];
+    assert_float_eq!(min, 0.31252);
+    assert_float_eq!(max, 0.32250);
+
+    // retrigger the phase sample
+    matrix.set_param(trig_p, (1.0).into());
+    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 100.0);
+
+    let (_rms, min, max) = rmsvec[0];
+    // this is the start of the phase
+    assert_float_eq!(min, 0.0);
+    // this is the last value of the previous triggering
+    assert_float_eq!(max, 0.32998);
+
+    let (_rms, min, max) = rmsvec[1];
+    assert_float_eq!(min, 0.09251);
+    assert_float_eq!(max, 0.19249);
+
+    let (_rms, min, max) = rmsvec[2];
+    assert_float_eq!(min, 0.19252);
+    assert_float_eq!(max, 0.29250);
+}
+
+

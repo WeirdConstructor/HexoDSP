@@ -4,19 +4,25 @@
 
 use crate::nodes::NodeAudioContext;
 use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::{out, at, inp, denorm}; //, inp, denorm, denorm_v, inp_dir, at};
+use super::helpers::Trigger;
 
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Sampl {
-    phase: f64,
-    srate: f64,
+    phase:      f64,
+    srate:      f64,
+    trig:       Trigger,
+    is_playing: bool,
 }
 
 impl Sampl {
     pub fn new() -> Self {
         Self {
-            phase: 0.0,
-            srate: 44100.0,
+            phase:      0.0,
+            srate:      44100.0,
+            trig:       Trigger::new(),
+            is_playing: false,
         }
     }
     pub const freq : &'static str =
@@ -49,62 +55,126 @@ impl Sampl {
         "Sampl sig\nSampler audio output\nRange: (-1..1)\n";
 }
 
+impl Sampl {
+    #[inline]
+    fn next_sample(&mut self, sr_factor: f64, speed: f64, sample_data: &[f32]) -> f32 {
+        let sd_len = sample_data.len();
+
+        let i = self.phase.floor() as usize + sd_len;
+
+        // Hermite interpolation, take from 
+        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
+        //
+        // Thanks go to Eric Wood!
+        //
+        // For the interpolation code:
+        // MIT License, Copyright (c) 2021 Eric Wood
+        let xm1 = sample_data[(i - 1) % sd_len];
+        let x0  = sample_data[i       % sd_len];
+        let x1  = sample_data[(i + 1) % sd_len];
+        let x2  = sample_data[(i + 2) % sd_len];
+
+        let c     = (x1 - xm1) * 0.5;
+        let v     = x0 - x1;
+        let w     = c + v;
+        let a     = w + v + (x2 - x0) * 0.5;
+        let b_neg = w + a;
+
+        let f = self.phase.fract();
+
+        self.phase = (i % sd_len) as f64 + f + sr_factor * speed;
+
+        let f = f as f32;
+
+        (((a * f) - b_neg) * f + c) * f + x0
+    }
+
+    #[inline]
+    fn play_loop(&mut self, inputs: &[ProcBuf], nframes: usize, sample_data: &[f32], out: &mut ProcBuf) {
+        let freq = inp::Sampl::freq(inputs);
+
+        let sample_srate = sample_data[0] as f64;
+        let sample_data  = &sample_data[1..];
+        let sr_factor    = sample_srate / self.srate;
+
+        for frame in 0..nframes {
+            let playback_speed =
+                denorm::Sampl::freq(freq, frame) / 440.0;
+
+            out.write(frame,
+                self.next_sample(
+                    sr_factor, playback_speed as f64, sample_data));
+        }
+    }
+
+    #[inline]
+    fn play_oneshot(&mut self, inputs: &[ProcBuf], nframes: usize,
+                    sample_data: &[f32], out: &mut ProcBuf)
+    {
+        let freq = inp::Sampl::freq(inputs);
+        let trig = inp::Sampl::trig(inputs);
+
+        let sample_srate = sample_data[0] as f64;
+        let sample_data  = &sample_data[1..];
+        let sr_factor    = sample_srate / self.srate;
+
+        let mut is_playing = self.is_playing;
+
+        for frame in 0..nframes {
+            let trig_val = denorm::Sampl::trig(trig, frame);
+            let triggered = self.trig.check_trigger(trig_val);
+
+            if triggered {
+                self.phase = 0.0;
+                is_playing = true;
+            }
+
+            if is_playing {
+                let playback_speed =
+                    denorm::Sampl::freq(freq, frame) / 440.0;
+
+                let prev_phase = self.phase;
+
+                    let s = self.next_sample(
+                        sr_factor, playback_speed as f64, sample_data);
+                out.write(frame, s);
+
+                // played past end => stop playing.
+                if prev_phase > self.phase {
+                    is_playing = false;
+                }
+            } else {
+                out.write(frame, 0.0);
+            }
+        }
+
+        self.is_playing = is_playing;
+    }
+
+}
+
 impl DspNode for Sampl {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) { self.srate = srate.into(); }
-    fn reset(&mut self) { }
+    fn reset(&mut self) {
+        self.trig.reset();
+    }
 
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, atoms: &[SAtom], _params: &[ProcBuf],
         inputs: &[ProcBuf], outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, at, inp, denorm}; //, inp, denorm, denorm_v, inp_dir, at};
-
         let sample = at::Sampl::sample(atoms);
-        let freq   = inp::Sampl::freq(inputs);
+        let pmode  = at::Sampl::pmode(atoms);
         let out    = out::Sampl::sig(outputs);
 
         if let SAtom::AudioSample((_, Some(sample_data))) = sample {
-            let sd_len   = sample_data.len() - 1;
-            let sd_len_f = sd_len as f64;
-
-            let sample_srate = sample_data[0] as f64;
-            let sample_data  = &sample_data[1..];
-
-            let sr_factor = sample_srate / self.srate;
-
-            for frame in 0..ctx.nframes() {
-                let playback_speed =
-                    denorm::Sampl::freq(freq, frame) / 440.0;
-
-                let i = self.phase.floor() as usize + sd_len;
-
-                // Hermite interpolation, take from 
-                // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
-                //
-                // Thanks go to Eric Wood!
-                //
-                // For the interpolation code:
-                // MIT License, Copyright (c) 2021 Eric Wood
-                let xm1 = sample_data[(i - 1) % sd_len];
-                let x0  = sample_data[i       % sd_len];
-                let x1  = sample_data[(i + 1) % sd_len];
-                let x2  = sample_data[(i + 2) % sd_len];
-
-                let c     = (x1 - xm1) * 0.5;
-                let v     = x0 - x1;
-                let w     = c + v;
-                let a     = w + v + (x2 - x0) * 0.5;
-                let b_neg = w + a;
-
-                let f = self.phase.fract() as f32;
-
-                let out_sample = (((a * f) - b_neg) * f + c) * f + x0;
-                out.write(frame, out_sample);
-
-                self.phase += sr_factor * playback_speed as f64;
+            if pmode.i() == 0 {
+                self.play_loop(inputs, ctx.nframes(), &sample_data[..], out);
+            } else {
+                self.play_oneshot(inputs, ctx.nframes(), &sample_data[..], out);
             }
         } else {
             for frame in 0..ctx.nframes() {
@@ -112,41 +182,7 @@ impl DspNode for Sampl {
             }
         }
 
-        ctx_vals[0].set(1.0);
-//        let neg  = at::Amp::neg_att(atoms);
-//
-//        let last_frame   = ctx.nframes() - 1;
-//
-//        let last_val =
-//            if neg.i() > 0 {
-//                for frame in 0..ctx.nframes() {
-//                    out.write(frame,
-//                        inp.read(frame)
-//                        * denorm_v::Amp::att(
-//                            inp_dir::Amp::att(att, frame)
-//                            .max(0.0))
-//                        * denorm::Amp::gain(gain, frame));
-//                }
-//
-//                inp.read(last_frame)
-//                * denorm_v::Amp::att(
-//                    inp_dir::Amp::att(att, last_frame)
-//                    .max(0.0))
-//                * denorm::Amp::gain(gain, last_frame)
-//
-//            } else {
-//                for frame in 0..ctx.nframes() {
-//                    out.write(frame,
-//                        inp.read(frame)
-//                        * denorm_v::Amp::att(
-//                            inp_dir::Amp::att(att, frame).abs())
-//                        * denorm::Amp::gain(gain, frame));
-//                }
-//
-//                inp.read(last_frame)
-//                * denorm_v::Amp::att(
-//                    inp_dir::Amp::att(att, last_frame).abs())
-//                * denorm::Amp::gain(gain, last_frame)
-//            };
+        let last_frame = ctx.nframes() - 1;
+        ctx_vals[0].set(out.read(last_frame));
     }
 }

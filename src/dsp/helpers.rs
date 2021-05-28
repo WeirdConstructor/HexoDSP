@@ -347,6 +347,41 @@ pub fn sqrt4_to_pow4(x: f32, v: f32) -> f32 {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub struct Trigger {
+    triggered:  bool,
+}
+
+impl Trigger {
+    pub fn new() -> Self {
+        Self {
+            triggered: false,
+        }
+    }
+
+    #[inline]
+    pub fn reset(&mut self) {
+        self.triggered = false;
+    }
+
+    #[inline]
+    pub fn check_trigger(&mut self, input: f32) -> bool {
+        if self.triggered {
+            if input <= 0.25 {
+                self.triggered = false;
+            }
+            false
+        } else {
+            if input > 0.75 {
+                self.triggered = true;
+                true
+            } else {
+                false
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct TriggerClock {
     clock_phase:    f64,
     clock_inc:      f64,
