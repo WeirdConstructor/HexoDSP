@@ -20,11 +20,11 @@ impl Sampl {
         }
     }
     pub const freq : &'static str =
-        "Sampl freq\nPitch input for the sampler, giving the playback speed of the\
+        "Sampl freq\nPitch input for the sampler, giving the playback speed of the \
         sample.\nRange: (-1..1)\n";
 
     pub const trig : &'static str =
-        "Sampl trig\nThe trigger input causes a resync of the playback phase\
+        "Sampl trig\nThe trigger input causes a resync of the playback phase \
          and triggers the playback if the 'pmode' is 'OneShot'";
     pub const spos : &'static str =
         "Sampl spos\nStart position offset.\nRange: (-1..1)\n";
@@ -36,13 +36,13 @@ impl Sampl {
 
     pub const pmode : &'static str =
         "Sampl pmode\nThe playback mode of the sampler.\n\
-        - 'Loop' constantly plays back the sample. You can reset/sync the phase\
+        - 'Loop' constantly plays back the sample. You can reset/sync the phase \
         using the 'trig' input in this case.\n\
         - 'OneShot' plays back the sample if a trigger is received on 'trig' input.\n";
     pub const dclick : &'static str =
-        "Sampl dclick\nIf this is enabled and the 'pmode' is 'OneShot'\
+        "Sampl dclick\nIf this is enabled and the 'pmode' is 'OneShot' \
          this will enable short fade in and out ramps.\n\
-         This if useful if you don't want to add an envelope just for\
+         This if useful if you don't want to add an envelope just for \
          getting rid of the clicks if spos and epos are modulated.";
 
     pub const sig : &'static str =

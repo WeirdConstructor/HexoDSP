@@ -308,15 +308,20 @@ impl NodeConfigurator {
         if param.is_atom() {
             let at =
                 if let SAtom::AudioSample((path, None)) = at.clone() {
-                    match self.sample_lib.load(&path) {
-                        Ok(sample) => sample.clone(),
-                        Err(e) => {
-                            self.errors.push(
-                                format!(
-                                    "Couldn't load sample '{}': {:?}",
-                                    path, e));
-                            at
-                        },
+                    if path.len() > 0 {
+                        match self.sample_lib.load(&path) {
+                            Ok(sample) => sample.clone(),
+                            Err(e) => {
+                                self.errors.push(
+                                    format!(
+                                        "Sample Loading Error\n\
+                                        Couldn't load sample '{}':\n{:?}",
+                                        path, e));
+                                at
+                            },
+                        }
+                    } else {
+                        at
                     }
                 } else {
                     at
