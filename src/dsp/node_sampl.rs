@@ -10,19 +10,19 @@ use super::helpers::Trigger;
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Sampl {
-    phase:      f64,
-    srate:      f64,
-    trig:       Trigger,
-    is_playing: bool,
+    phase:          f64,
+    srate:          f64,
+    trig:           Trigger,
+    is_playing:     bool,
 }
 
 impl Sampl {
     pub fn new() -> Self {
         Self {
-            phase:      0.0,
-            srate:      44100.0,
-            trig:       Trigger::new(),
-            is_playing: false,
+            phase:          0.0,
+            srate:          44100.0,
+            trig:           Trigger::new(),
+            is_playing:     false,
         }
     }
     pub const freq : &'static str =
@@ -132,76 +132,81 @@ impl Sampl {
                 is_playing = true;
             }
 
-            if is_playing {
-                let playback_speed =
-                    denorm::Sampl::freq(freq, frame) / 440.0;
+            let s =
+                if is_playing {
+                    let playback_speed =
+                        denorm::Sampl::freq(freq, frame) / 440.0;
 
-                let prev_phase = self.phase;
+                    let prev_phase = self.phase;
 
-                let sd_len = sample_data.len();
+                    let sd_len = sample_data.len();
 
-                let cur_offs =
-                    denorm::Sampl::offs(offs, frame).abs().min(0.999999)
-                     as f64;
-                let recalc_end =
-                    if prev_offs != cur_offs {
-                        start_idx =
-                            ((sd_len as f64 * cur_offs)
-                            .floor() as usize).min(sd_len);
-                        prev_offs = cur_offs;
-                        true
-                    } else {
-                        false
-                    };
-
-                let cur_len =
-                     denorm::Sampl::len(len, frame).abs().min(0.999999)
-                     as f64;
-                if recalc_end || prev_len != cur_len {
-                    let remain_s_len = sd_len - start_idx;
-                    end_idx_plus1 =
-                        ((remain_s_len as f64 * cur_len)
-                        .ceil() as usize).min(remain_s_len);
-                    prev_len = cur_len;
-                }
-
-                let sample_slice =
-                    &sample_data[start_idx..(start_idx + end_idx_plus1)];
-
-                // next_sample mutates self.phase, so we need the current phase
-                // that is used for looking up the sample from the audio data.
-                let sample_idx = self.phase.floor() as usize;
-
-                let mut s =
-                    self.next_sample(
-                        sr_factor,
-                        playback_speed as f64,
-                        sample_slice);
-
-                if declick {
-                    let samples_to_end = sample_slice.len() - sample_idx;
-
-                    let ramp_atten_factor =
-                        if sample_idx < ramp_sample_count {
-                            sample_idx as f64 * ramp_inc
-                        } else if samples_to_end < ramp_sample_count {
-                            samples_to_end as f64 * ramp_inc
+                    let cur_offs =
+                        denorm::Sampl::offs(offs, frame).abs().min(0.999999)
+                         as f64;
+                    let recalc_end =
+                        if prev_offs != cur_offs {
+                            start_idx =
+                                ((sd_len as f64 * cur_offs)
+                                .floor() as usize).min(sd_len);
+                            prev_offs = cur_offs;
+                            true
                         } else {
-                            1.0
+                            false
                         };
 
-                    s *= ramp_atten_factor as f32;
-                }
+                    let cur_len =
+                         denorm::Sampl::len(len, frame).abs().min(0.999999)
+                         as f64;
+                    if recalc_end || prev_len != cur_len {
+                        let remain_s_len = sd_len - start_idx;
+                        end_idx_plus1 =
+                            ((remain_s_len as f64 * cur_len)
+                            .ceil() as usize).min(remain_s_len);
+                        prev_len = cur_len;
+                    }
 
-                out.write(frame, s);
+                    let sample_slice =
+                        &sample_data[start_idx..(start_idx + end_idx_plus1)];
 
-                if !do_loop && prev_phase > self.phase {
-                    // played past end => stop playing.
-                    is_playing = false;
-                }
-            } else {
-                out.write(frame, 0.0);
-            }
+                    // next_sample mutates self.phase, so we need the current phase
+                    // that is used for looking up the sample from the audio data.
+                    let sample_idx = self.phase.floor() as usize;
+
+                    let mut s =
+                        self.next_sample(
+                            sr_factor,
+                            playback_speed as f64,
+                            sample_slice);
+
+                    if declick {
+                        let samples_to_end = sample_slice.len() - sample_idx;
+
+                        let ramp_atten_factor =
+                            if sample_idx < ramp_sample_count {
+                                sample_idx as f64 * ramp_inc
+                            } else if samples_to_end < ramp_sample_count {
+                                samples_to_end as f64 * ramp_inc
+                            } else {
+                                1.0
+                            };
+
+                        s *= ramp_atten_factor as f32;
+                    }
+
+                    out.write(frame, s);
+
+                    if !do_loop && prev_phase > self.phase {
+                        // played past end => stop playing.
+                        is_playing = false;
+                    }
+
+                    s
+                } else {
+                    0.0
+                };
+
+            out.write(frame, s);
         }
 
         self.is_playing = is_playing;
