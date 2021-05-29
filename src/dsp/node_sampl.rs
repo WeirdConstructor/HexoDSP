@@ -37,7 +37,7 @@ impl Sampl {
     pub const len  : &'static str =
         "Sampl len\nLength of the sample, after the offset has been applied.\nRange: (0..1)\n";
     pub const dcms   : &'static str =
-        "Sampl dcms\nDeclick fade time in milliseconds.\nUnsmoothed\nRange: (0..1)\n";
+        "Sampl dcms\nDeclick fade time in milliseconds.\nNot audio rate!\nRange: (0..1)\n";
 
     pub const sample : &'static str =
         "Sampl sample\nThe audio sample that is played back.\nRange: (-1..1)\n";
