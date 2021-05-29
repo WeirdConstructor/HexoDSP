@@ -280,7 +280,7 @@ macro_rules! node_list {
                (3 len   n_id       n_id       0.0, 1.0, 1.0)
                {4 0 sample audio_unloaded("") 0 0}
                {5 1 pmode  setting(0)         0 1}
-               {6 2 dclick setting(1)         0 1}
+               {6 2 dclick setting(0)         0 1}
                [0 sig],
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit     -1.0, 1.0, 440.0)

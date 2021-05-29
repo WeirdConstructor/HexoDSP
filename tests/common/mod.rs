@@ -7,6 +7,7 @@ use hound;
 use microfft;
 
 pub const SAMPLE_RATE : f32 = 44100.0;
+#[allow(dead_code)]
 pub const SAMPLE_RATE_US : usize = 44100;
 
 #[macro_export]
@@ -20,6 +21,59 @@ macro_rules! assert_float_eq {
     }
 }
 
+#[macro_export]
+macro_rules! assert_fpair_eq {
+    ($a:expr, $b:expr) => {
+        if ($a.0 - $b.0).abs() > 0.0001 {
+            panic!(r#"assertion failed: `(left.0 == right.0)`
+  left: `{:?}`,
+ right: `{:?}`"#, $a.0, $b.0)
+        }
+        if ($a.1 - $b.1).abs() > 0.0001 {
+            panic!(r#"assertion failed: `(left.1 == right.1)`
+  left: `{:?}`,
+ right: `{:?}`"#, $a.1, $b.1)
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! assert_f3tupl_eq {
+    ($a:expr, $b:expr) => {
+        if ($a.0 - $b.0).abs() > 0.0001 {
+            panic!(r#"assertion failed: `(left.0 == right.0)`
+  left: `{:?}`,
+ right: `{:?}`"#, $a.0, $b.0)
+        }
+        if ($a.1 - $b.1).abs() > 0.0001 {
+            panic!(r#"assertion failed: `(left.1 == right.1)`
+  left: `{:?}`,
+ right: `{:?}`"#, $a.1, $b.1)
+        }
+        if ($a.2 - $b.2).abs() > 0.0001 {
+            panic!(r#"assertion failed: `(left.2 == right.2)`
+  left: `{:?}`,
+ right: `{:?}`"#, $a.2, $b.2)
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! assert_rmsmima {
+    ($rms:expr, $b:expr) => {
+        assert_f3tupl_eq!($rms, $b);
+    }
+}
+
+#[macro_export]
+macro_rules! assert_minmax_of_rms {
+    ($rms:expr, $b:expr) => {
+        let (_, min, max) = $rms;
+        assert_fpair_eq!((min, max), $b);
+    }
+}
+
+#[allow(dead_code)]
 pub fn save_wav(name: &str, buf: &[f32]) {
     let spec = hound::WavSpec {
         channels: 1,
@@ -37,6 +91,11 @@ pub fn save_wav(name: &str, buf: &[f32]) {
 
 pub fn run_no_input(node_exec: &mut hexodsp::nodes::NodeExecutor, seconds: f32) -> (Vec<f32>, Vec<f32>) {
     run_realtime_no_input(node_exec, seconds, false)
+}
+
+#[allow(dead_code)]
+pub fn run_for_ms(node_exec: &mut hexodsp::nodes::NodeExecutor, ms: f32) -> (Vec<f32>, Vec<f32>) {
+    run_realtime_no_input(node_exec, ms / 1000.0, false)
 }
 
 pub fn run_realtime_no_input(node_exec: &mut hexodsp::nodes::NodeExecutor, seconds: f32, sleep_a_bit: bool) -> (Vec<f32>, Vec<f32>) {
@@ -75,6 +134,7 @@ pub fn calc_rms_mimax_each_ms(buf: &[f32], ms: f32) -> Vec<(f32, f32, f32)> {
     res
 }
 
+#[allow(dead_code)]
 pub fn run_and_undersample(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     run_len_ms: f32, samples: usize) -> Vec<f32>
@@ -92,6 +152,7 @@ pub fn run_and_undersample(
     out_samples
 }
 
+#[allow(dead_code)]
 pub fn run_and_get_each_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     len_ms: f32) -> Vec<(f32, f32, f32)>
@@ -100,6 +161,7 @@ pub fn run_and_get_each_rms_mimax(
     calc_rms_mimax_each_ms(&out_l[..], len_ms)
 }
 
+#[allow(dead_code)]
 pub fn run_and_get_first_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     len_ms: f32) -> (f32, f32, f32)

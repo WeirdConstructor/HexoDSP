@@ -7,6 +7,8 @@ use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
 use crate::dsp::{out, at, inp, denorm}; //, inp, denorm, denorm_v, inp_dir, at};
 use super::helpers::Trigger;
 
+const RAMP_TIME_MS : f64 = 3.14;
+
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Sampl {
@@ -90,41 +92,10 @@ impl Sampl {
         (((a * f) - b_neg) * f + c) * f + x0
     }
 
-//    #[inline]
-//    fn play_loop(&mut self, inputs: &[ProcBuf], nframes: usize, sample_data: &[f32], out: &mut ProcBuf) {
-//        let freq = inp::Sampl::freq(inputs);
-//        let offs = inp::Sampl::offs(inputs);
-//        let len  = inp::Sampl::len(inputs);
-//
-//        let sample_srate = sample_data[0] as f64;
-//        let sample_data  = &sample_data[1..];
-//        let sr_factor    = sample_srate / self.srate;
-//
-//        for frame in 0..nframes {
-//            let playback_speed =
-//                denorm::Sampl::freq(freq, frame) / 440.0;
-//
-//            let start_idx =
-//                (sample_data.len() as f32
-//                 * denorm::Sampl::offs(offs, frame).abs().min(0.999999))
-//                .floor() as usize;
-//
-//            let end_idx_plus1 =
-//                ((sample_data.len() - start_idx) as f32
-//                 * denorm::Sampl::len(offs, frame).abs().min(0.999999))
-//                .ceil() as usize;
-//
-//            out.write(frame,
-//                self.next_sample(
-//                    sr_factor,
-//                    playback_speed as f64,
-//                    sample_data[start_idx..end_idx_plus1]));
-//        }
-//    }
-//
     #[inline]
     fn play(&mut self, inputs: &[ProcBuf], nframes: usize,
-            sample_data: &[f32], out: &mut ProcBuf, do_loop: bool)
+            sample_data: &[f32], out: &mut ProcBuf, do_loop: bool,
+            declick: bool)
     {
         let freq = inp::Sampl::freq(inputs);
         let trig = inp::Sampl::trig(inputs);
@@ -134,6 +105,9 @@ impl Sampl {
         let sample_srate = sample_data[0] as f64;
         let sample_data  = &sample_data[1..];
         let sr_factor    = sample_srate / self.srate;
+
+        let ramp_sample_count = ((RAMP_TIME_MS * self.srate) / 1000.0).ceil() as usize;
+        let ramp_inc          = 1000.0 / (RAMP_TIME_MS * self.srate);
 
         let mut is_playing = self.is_playing;
 
@@ -163,8 +137,7 @@ impl Sampl {
                 let prev_phase = self.phase;
 
                 let cur_offs =
-                    denorm::Sampl::offs(offs, frame)
-                    .abs().min(0.999999);
+                    denorm::Sampl::offs(offs, frame).abs().min(0.999999);
                 if prev_offs != cur_offs {
                     start_idx =
                         (sample_data.len() as f32 * cur_offs)
@@ -173,20 +146,41 @@ impl Sampl {
                 }
 
                 let cur_len =
-                     denorm::Sampl::len(len, frame)
-                     .abs().min(0.999999);
+                     denorm::Sampl::len(len, frame).abs().min(0.999999);
                 if prev_len != cur_len {
                     end_idx_plus1 =
-                        ((sample_data.len() - start_idx) as f32
-                         * denorm::Sampl::len(len, frame).abs().min(0.999999))
+                        ((sample_data.len() - start_idx) as f32 * cur_len)
                         .ceil() as usize;
                     prev_len = cur_len;
                 }
 
-                let s = self.next_sample(
-                    sr_factor,
-                    playback_speed as f64,
-                    &sample_data[start_idx..(start_idx + end_idx_plus1)]);
+                let sample_slice =
+                    &sample_data[start_idx..(start_idx + end_idx_plus1)];
+
+                // next_sample mutates self.phase, so we need the current phase
+                // that is used for looking up the sample from the audio data.
+                let sample_idx = self.phase.floor() as usize;
+
+                let mut s =
+                    self.next_sample(
+                        sr_factor,
+                        playback_speed as f64,
+                        sample_slice);
+
+                if declick {
+                    let samples_to_end = sample_data.len() - sample_idx;
+
+                    let ramp_atten_factor =
+                        if sample_idx < ramp_sample_count {
+                            sample_idx as f64 * ramp_inc
+                        } else if samples_to_end < ramp_sample_count {
+                            1.0 - (samples_to_end as f64 * ramp_inc)
+                        } else {
+                            1.0
+                        };
+
+                    s *= ramp_atten_factor as f32;
+                }
 
                 out.write(frame, s);
 
@@ -219,6 +213,7 @@ impl DspNode for Sampl {
     {
         let sample = at::Sampl::sample(atoms);
         let pmode  = at::Sampl::pmode(atoms);
+        let dclick = at::Sampl::dclick(atoms);
         let out    = out::Sampl::sig(outputs);
 
         if let SAtom::AudioSample((_, Some(sample_data))) = sample {
@@ -235,7 +230,8 @@ impl DspNode for Sampl {
                 ctx.nframes(),
                 &sample_data[..],
                 out,
-                pmode.i() == 0);
+                pmode.i() == 0,
+                dclick.i() == 1);
         } else {
             for frame in 0..ctx.nframes() {
                 out.write(frame, 0.0);
