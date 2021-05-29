@@ -404,32 +404,19 @@ fn check_node_sampl_declick_offs_len() {
     matrix.set_param(dclick_p, SAtom::setting(1));
     matrix.set_param(trig_p, (1.0).into());
     matrix.set_param(offs_p, SAtom::param(0.9));
-    matrix.set_param(len_p,  SAtom::param(0.06));
+    matrix.set_param(len_p,  SAtom::param(0.08));
 
     // trigger:
     run_for_ms(&mut node_exec, 7.5);
 
     let res = run_for_ms(&mut node_exec, 12.0);
-    println!("RMS: {:#?}", res.0);
 
-    assert!(false);
-
-//    assert_minmax_of_rms!(rmsvec[0], (0.0, 2.0));
-//    assert_minmax_of_rms!(rmsvec[1], (0.0, 1.0));
-//    assert_minmax_of_rms!(rmsvec[2], (1.0, 1.0));
-//
-//    // reset trigger:
-//    matrix.set_param(trig_p, (0.0).into());
-//    run_for_ms(&mut node_exec, 1000.0);
-//
-//    matrix.set_param(dclick_p, SAtom::setting(1));
-//    matrix.set_param(trig_p, (1.0).into());
-//    // let the trigger appear in the sampler:
-//    run_for_ms(&mut node_exec, 7.5);
-//    // now the de-click should run:
-//    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 1.0);
-//
-//    assert_minmax_of_rms!(rmsvec[0], (0.0,    0.3105));
-//    assert_minmax_of_rms!(rmsvec[1], (0.3177, 0.6282));
-//    assert_minmax_of_rms!(rmsvec[2], (0.6354, 0.9460));
+    assert_decimated_feq!(res.0, 15, vec![
+        0.0, 0.10832358, 0.21664716, 0.32497075, 0.43329433, 0.54161793,
+        0.6499415, 0.7582651, 0.86658865, 0.9749123,
+        1.0, 1.0, 1.0, 1.0, 1.0,
+        0.9243612, 0.81603765, 0.7077141, 0.5993905, 0.4910669,
+        0.38274333, 0.27441975, 0.16609617, 0.057772577,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ]);
 }

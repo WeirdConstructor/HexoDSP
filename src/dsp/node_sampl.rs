@@ -168,13 +168,13 @@ impl Sampl {
                         sample_slice);
 
                 if declick {
-                    let samples_to_end = sample_data.len() - sample_idx;
+                    let samples_to_end = sample_slice.len() - sample_idx;
 
                     let ramp_atten_factor =
                         if sample_idx < ramp_sample_count {
                             sample_idx as f64 * ramp_inc
                         } else if samples_to_end < ramp_sample_count {
-                            1.0 - (samples_to_end as f64 * ramp_inc)
+                            samples_to_end as f64 * ramp_inc
                         } else {
                             1.0
                         };
