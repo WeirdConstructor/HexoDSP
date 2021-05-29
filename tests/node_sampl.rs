@@ -333,6 +333,33 @@ fn check_node_sampl_offs_len_zero_crash() {
 }
 
 #[test]
+fn check_node_sampl_offs_modulated_crash() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let sin  = NodeId::Sin(0);
+    let smpl = NodeId::Sampl(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(sin)
+                       .out(None, None, sin.out("sig")));
+    matrix.place(0, 1, Cell::empty(smpl)
+                       .input(smpl.inp("offs"), None, None)
+                       .out(None, None, smpl.out("sig")));
+    matrix.place(0, 2, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let sample_p = smpl.inp_param("sample").unwrap();
+    let pmode_p  = smpl.inp_param("pmode").unwrap();
+
+    matrix.set_param(sample_p, create_1sec_ramp());
+    matrix.set_param(pmode_p, SAtom::setting(0));
+
+    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 100.0);
+    assert_rmsmima!(rmsvec[0], (0.5008, 0.0, 1.0));
+}
+
+#[test]
 fn check_node_sampl_declick() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);

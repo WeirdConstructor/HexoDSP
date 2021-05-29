@@ -42,18 +42,18 @@ macro_rules! assert_f3tupl_eq {
     ($a:expr, $b:expr) => {
         if ($a.0 - $b.0).abs() > 0.0001 {
             panic!(r#"assertion failed: `(left.0 == right.0)`
-  left: `{:?}`,
- right: `{:?}`"#, $a.0, $b.0)
+  left.0: `{:?}`,
+ right.0: `{:?}`"#, $a.0, $b.0)
         }
         if ($a.1 - $b.1).abs() > 0.0001 {
             panic!(r#"assertion failed: `(left.1 == right.1)`
-  left: `{:?}`,
- right: `{:?}`"#, $a.1, $b.1)
+  left.1: `{:?}`,
+ right.1: `{:?}`"#, $a.1, $b.1)
         }
         if ($a.2 - $b.2).abs() > 0.0001 {
             panic!(r#"assertion failed: `(left.2 == right.2)`
-  left: `{:?}`,
- right: `{:?}`"#, $a.2, $b.2)
+  left.2: `{:?}`,
+ right.2: `{:?}`"#, $a.2, $b.2)
         }
     }
 }

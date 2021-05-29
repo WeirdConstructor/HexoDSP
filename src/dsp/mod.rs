@@ -237,6 +237,8 @@ macro_rules! d_pit { ($x: expr) => {
 define_exp!{n_gain d_gain 0.0, 2.0}
 define_exp!{n_att  d_att  0.0, 1.0}
 
+define_exp!{n_declick d_declick 0.0, 50.0}
+
 // A note about the input-indicies:
 //
 // Atoms and Input parameters share the same global ID space
@@ -278,9 +280,10 @@ macro_rules! node_list {
                (1 trig  n_id       n_id      -1.0, 1.0, 0.0)
                (2 offs  n_id       n_id       0.0, 1.0, 0.0)
                (3 len   n_id       n_id       0.0, 1.0, 1.0)
-               {4 0 sample audio_unloaded("") 0 0}
-               {5 1 pmode  setting(0)         0 1}
-               {6 2 dclick setting(0)         0 1}
+               (4 dcms  n_declick  d_declick  0.0, 1.0, 3.14)
+               {5 0 sample audio_unloaded("") 0 0}
+               {6 1 pmode  setting(0)         0 1}
+               {7 2 dclick setting(0)         0 1}
                [0 sig],
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit     -1.0, 1.0, 440.0)

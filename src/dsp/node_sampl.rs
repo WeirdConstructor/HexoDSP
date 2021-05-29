@@ -7,8 +7,6 @@ use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
 use crate::dsp::{out, at, inp, denorm}; //, inp, denorm, denorm_v, inp_dir, at};
 use super::helpers::Trigger;
 
-const RAMP_TIME_MS : f64 = 3.14;
-
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Sampl {
@@ -38,6 +36,8 @@ impl Sampl {
         "Sampl offs\nStart position offset.\nRange: (0..1)\n";
     pub const len  : &'static str =
         "Sampl len\nLength of the sample, after the offset has been applied.\nRange: (0..1)\n";
+    pub const dcms   : &'static str =
+        "Sampl dcms\nDeclick fade time in milliseconds.\nUnsmoothed\nRange: (0..1)\n";
 
     pub const sample : &'static str =
         "Sampl sample\nThe audio sample that is played back.\nRange: (-1..1)\n";
@@ -101,13 +101,15 @@ impl Sampl {
         let trig = inp::Sampl::trig(inputs);
         let offs = inp::Sampl::offs(inputs);
         let len  = inp::Sampl::len(inputs);
+        let dcms = inp::Sampl::dcms(inputs);
 
         let sample_srate = sample_data[0] as f64;
         let sample_data  = &sample_data[1..];
         let sr_factor    = sample_srate / self.srate;
 
-        let ramp_sample_count = ((RAMP_TIME_MS * self.srate) / 1000.0).ceil() as usize;
-        let ramp_inc          = 1000.0 / (RAMP_TIME_MS * self.srate);
+        let ramp_time         = denorm::Sampl::dcms(dcms, 0) as f64 * self.srate;
+        let ramp_sample_count = (ramp_time / 1000.0).ceil() as usize;
+        let ramp_inc          = 1000.0 / ramp_time;
 
         let mut is_playing = self.is_playing;
 
@@ -136,21 +138,30 @@ impl Sampl {
 
                 let prev_phase = self.phase;
 
+                let sd_len = sample_data.len();
+
                 let cur_offs =
-                    denorm::Sampl::offs(offs, frame).abs().min(0.999999);
-                if prev_offs != cur_offs {
-                    start_idx =
-                        (sample_data.len() as f32 * cur_offs)
-                        .floor() as usize;
-                    prev_offs = cur_offs;
-                }
+                    denorm::Sampl::offs(offs, frame).abs().min(0.999999)
+                     as f64;
+                let recalc_end =
+                    if prev_offs != cur_offs {
+                        start_idx =
+                            ((sd_len as f64 * cur_offs)
+                            .floor() as usize).min(sd_len);
+                        prev_offs = cur_offs;
+                        true
+                    } else {
+                        false
+                    };
 
                 let cur_len =
-                     denorm::Sampl::len(len, frame).abs().min(0.999999);
-                if prev_len != cur_len {
+                     denorm::Sampl::len(len, frame).abs().min(0.999999)
+                     as f64;
+                if recalc_end || prev_len != cur_len {
+                    let remain_s_len = sd_len - start_idx;
                     end_idx_plus1 =
-                        ((sample_data.len() - start_idx) as f32 * cur_len)
-                        .ceil() as usize;
+                        ((remain_s_len as f64 * cur_len)
+                        .ceil() as usize).min(remain_s_len);
                     prev_len = cur_len;
                 }
 
