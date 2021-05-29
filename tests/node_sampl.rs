@@ -403,7 +403,7 @@ fn check_node_sampl_declick_offs_len() {
     matrix.set_param(pmode_p,  SAtom::setting(1));
     matrix.set_param(dclick_p, SAtom::setting(1));
     matrix.set_param(trig_p, (1.0).into());
-    matrix.set_param(offs_p, SAtom::param(0.0));
+    matrix.set_param(offs_p, SAtom::param(0.9));
     matrix.set_param(len_p,  SAtom::param(0.08));
 
     // trigger:
