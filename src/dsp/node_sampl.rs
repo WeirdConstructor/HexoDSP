@@ -32,10 +32,10 @@ impl Sampl {
     pub const trig : &'static str =
         "Sampl trig\nThe trigger input causes a resync of the playback phase \
          and triggers the playback if the 'pmode' is 'OneShot'";
-    pub const spos : &'static str =
-        "Sampl spos\nStart position offset.\nRange: (-1..1)\n";
-    pub const epos : &'static str =
-        "Sampl epos\nEnd position offset.\nRange: (-1..1)\n";
+    pub const offs : &'static str =
+        "Sampl offs\nStart position offset.\nRange: (0..1)\n";
+    pub const len  : &'static str =
+        "Sampl len\nLength of the sample, after the offset has been applied.\nRange: (0..1)\n";
 
     pub const sample : &'static str =
         "Sampl sample\nThe audio sample that is played back.\nRange: (-1..1)\n";
@@ -59,6 +59,7 @@ impl Sampl {
     #[inline]
     fn next_sample(&mut self, sr_factor: f64, speed: f64, sample_data: &[f32]) -> f32 {
         let sd_len = sample_data.len();
+        if sd_len < 1 { return 0.0; }
 
         let i = self.phase.floor() as usize + sd_len;
 
@@ -89,36 +90,62 @@ impl Sampl {
         (((a * f) - b_neg) * f + c) * f + x0
     }
 
+//    #[inline]
+//    fn play_loop(&mut self, inputs: &[ProcBuf], nframes: usize, sample_data: &[f32], out: &mut ProcBuf) {
+//        let freq = inp::Sampl::freq(inputs);
+//        let offs = inp::Sampl::offs(inputs);
+//        let len  = inp::Sampl::len(inputs);
+//
+//        let sample_srate = sample_data[0] as f64;
+//        let sample_data  = &sample_data[1..];
+//        let sr_factor    = sample_srate / self.srate;
+//
+//        for frame in 0..nframes {
+//            let playback_speed =
+//                denorm::Sampl::freq(freq, frame) / 440.0;
+//
+//            let start_idx =
+//                (sample_data.len() as f32
+//                 * denorm::Sampl::offs(offs, frame).abs().min(0.999999))
+//                .floor() as usize;
+//
+//            let end_idx_plus1 =
+//                ((sample_data.len() - start_idx) as f32
+//                 * denorm::Sampl::len(offs, frame).abs().min(0.999999))
+//                .ceil() as usize;
+//
+//            out.write(frame,
+//                self.next_sample(
+//                    sr_factor,
+//                    playback_speed as f64,
+//                    sample_data[start_idx..end_idx_plus1]));
+//        }
+//    }
+//
     #[inline]
-    fn play_loop(&mut self, inputs: &[ProcBuf], nframes: usize, sample_data: &[f32], out: &mut ProcBuf) {
-        let freq = inp::Sampl::freq(inputs);
-
-        let sample_srate = sample_data[0] as f64;
-        let sample_data  = &sample_data[1..];
-        let sr_factor    = sample_srate / self.srate;
-
-        for frame in 0..nframes {
-            let playback_speed =
-                denorm::Sampl::freq(freq, frame) / 440.0;
-
-            out.write(frame,
-                self.next_sample(
-                    sr_factor, playback_speed as f64, sample_data));
-        }
-    }
-
-    #[inline]
-    fn play_oneshot(&mut self, inputs: &[ProcBuf], nframes: usize,
-                    sample_data: &[f32], out: &mut ProcBuf)
+    fn play(&mut self, inputs: &[ProcBuf], nframes: usize,
+            sample_data: &[f32], out: &mut ProcBuf, do_loop: bool)
     {
         let freq = inp::Sampl::freq(inputs);
         let trig = inp::Sampl::trig(inputs);
+        let offs = inp::Sampl::offs(inputs);
+        let len  = inp::Sampl::len(inputs);
 
         let sample_srate = sample_data[0] as f64;
         let sample_data  = &sample_data[1..];
         let sr_factor    = sample_srate / self.srate;
 
         let mut is_playing = self.is_playing;
+
+        if do_loop {
+            is_playing = true;
+        }
+
+        let mut prev_offs = -10.0;
+        let mut prev_len  = -10.0;
+
+        let mut start_idx     = 0;
+        let mut end_idx_plus1 = sample_data.len();
 
         for frame in 0..nframes {
             let trig_val = denorm::Sampl::trig(trig, frame);
@@ -135,12 +162,36 @@ impl Sampl {
 
                 let prev_phase = self.phase;
 
-                    let s = self.next_sample(
-                        sr_factor, playback_speed as f64, sample_data);
+                let cur_offs =
+                    denorm::Sampl::offs(offs, frame)
+                    .abs().min(0.999999);
+                if prev_offs != cur_offs {
+                    start_idx =
+                        (sample_data.len() as f32 * cur_offs)
+                        .floor() as usize;
+                    prev_offs = cur_offs;
+                }
+
+                let cur_len =
+                     denorm::Sampl::len(len, frame)
+                     .abs().min(0.999999);
+                if prev_len != cur_len {
+                    end_idx_plus1 =
+                        ((sample_data.len() - start_idx) as f32
+                         * denorm::Sampl::len(len, frame).abs().min(0.999999))
+                        .ceil() as usize;
+                    prev_len = cur_len;
+                }
+
+                let s = self.next_sample(
+                    sr_factor,
+                    playback_speed as f64,
+                    &sample_data[start_idx..(start_idx + end_idx_plus1)]);
+
                 out.write(frame, s);
 
-                // played past end => stop playing.
-                if prev_phase > self.phase {
+                if !do_loop && prev_phase > self.phase {
+                    // played past end => stop playing.
                     is_playing = false;
                 }
             } else {
@@ -171,11 +222,20 @@ impl DspNode for Sampl {
         let out    = out::Sampl::sig(outputs);
 
         if let SAtom::AudioSample((_, Some(sample_data))) = sample {
-            if pmode.i() == 0 {
-                self.play_loop(inputs, ctx.nframes(), &sample_data[..], out);
-            } else {
-                self.play_oneshot(inputs, ctx.nframes(), &sample_data[..], out);
+            // 3 is for sample-sample-rate and at least 2 audio samples.
+            if sample_data.len() < 3 {
+                for frame in 0..ctx.nframes() {
+                    out.write(frame, 0.0);
+                }
+                return;
             }
+
+            self.play(
+                inputs,
+                ctx.nframes(),
+                &sample_data[..],
+                out,
+                pmode.i() == 0);
         } else {
             for frame in 0..ctx.nframes() {
                 out.write(frame, 0.0);
