@@ -14,6 +14,8 @@ pub struct Sampl {
     srate:          f64,
     trig:           Trigger,
     is_playing:     bool,
+    last_sample:    f32,
+    decaying:       f32,
 }
 
 impl Sampl {
@@ -23,6 +25,8 @@ impl Sampl {
             srate:          44100.0,
             trig:           Trigger::new(),
             is_playing:     false,
+            last_sample:    0.0,
+            decaying:       0.0,
         }
     }
     pub const freq : &'static str =
@@ -129,6 +133,7 @@ impl Sampl {
 
             if triggered {
                 self.phase = 0.0;
+                self.decaying = self.last_sample;
                 is_playing = true;
             }
 
@@ -194,6 +199,7 @@ impl Sampl {
                         s *= ramp_atten_factor as f32;
                     }
 
+                    self.last_sample = s;
                     out.write(frame, s);
 
                     if !do_loop && prev_phase > self.phase {
@@ -206,6 +212,16 @@ impl Sampl {
                     0.0
                 };
 
+            let s =
+                if !declick || self.decaying.abs() < 0.00001 {
+                    self.decaying = 0.0;
+                    s
+                } else {
+                    self.decaying *= 0.98;
+                    (s + self.decaying).clamp(-1.0, 1.0)
+                };
+
+            self.last_sample = s;
             out.write(frame, s);
         }
 
@@ -238,6 +254,7 @@ impl DspNode for Sampl {
                 for frame in 0..ctx.nframes() {
                     out.write(frame, 0.0);
                 }
+                self.last_sample = 0.0;
                 return;
             }
 
@@ -252,6 +269,7 @@ impl DspNode for Sampl {
             for frame in 0..ctx.nframes() {
                 out.write(frame, 0.0);
             }
+            self.last_sample = 0.0;
         }
 
         let last_frame = ctx.nframes() - 1;
