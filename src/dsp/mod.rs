@@ -46,7 +46,6 @@ pub trait GraphAtomData {
     fn get_denorm(&self, node_id: usize, param_idx: u32) -> f32;
 }
 
-
 pub type GraphFun = Box<dyn FnMut(&dyn GraphAtomData, bool, f32) -> f32>;
 
 /// This trait represents a DspNode for the [crate::matrix::Matrix]

@@ -152,11 +152,11 @@ impl PatternData {
                             end_idx -= 1;
                             break_after_write = true;
                             Some(self.data[end_idx][col]
-                                .map(|v| (v as f32) / (0xFFF as f32))
+                                .map(|v| ((v & 0xFFF) as f32) / (0xFFF as f32))
                                 .unwrap_or(0.0))
                         } else {
                             self.data[end_idx][col].map(|v|
-                                (v as f32) / (0xFFF as f32))
+                                ((v & 0xFFF) as f32) / (0xFFF as f32))
                         };
 
                     if let Some(end_value) = cur_value {
@@ -197,7 +197,7 @@ impl PatternData {
                             ((new_value as i32 - 69) as f32 * 0.1) / 12.0;
                     }
 
-                    out_col[row] = cur_value;
+                    out_col[row] = cur_value.clamp(-1.0, 1.0);
                 }
             },
             PatternColType::Step => {
@@ -205,7 +205,7 @@ impl PatternData {
 
                 for row in 0..self.rows {
                     if let Some(new_value) = self.data[row][col] {
-                        cur_value = (new_value as f32) / (0xFFF as f32);
+                        cur_value = ((new_value & 0xFFF) as f32) / (0xFFF as f32);
                     }
 
                     out_col[row] = cur_value;
