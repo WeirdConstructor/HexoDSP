@@ -4,7 +4,8 @@
 
 use super::{
     GraphMessage, QuickMessage, DropMsg, NodeProg,
-    UNUSED_MONITOR_IDX, MAX_ALLOCATED_NODES, MAX_SMOOTHERS
+    UNUSED_MONITOR_IDX, MAX_ALLOCATED_NODES, MAX_SMOOTHERS,
+    MAX_FB_DELAY_SIZE, FB_DELAY_TIME_US,
 };
 use crate::dsp::{NodeId, Node};
 use crate::util::{Smoother, AtomicFloat};
@@ -48,6 +49,9 @@ pub struct NodeExecutor {
     /// The sample rate
     pub(crate) sample_rate: f32,
 
+    /// Context that can be accessed by all (executed) nodes at runtime.
+    pub(crate) exec_ctx: NodeExecContext,
+
     /// The connection with the [crate::nodes::NodeConfigurator].
     shared: SharedNodeExec,
 }
@@ -69,10 +73,88 @@ pub(crate) struct SharedNodeExec {
     pub(crate) monitor_backend:   MonitorBackend,
 }
 
+/// Contains audio driver context informations. Such as the number
+/// of frames of the current buffer period and allows
+/// writing output samples and reading input samples.
 pub trait NodeAudioContext {
     fn nframes(&self) -> usize;
     fn output(&mut self, channel: usize, frame: usize, v: f32);
     fn input(&mut self, channel: usize, frame: usize) -> f32;
+}
+
+/// Implements a trivial delay buffer for the feedback nodes
+/// FbWr and FbRd.
+pub struct FeedbackDelay {
+    buffer:         [f32; MAX_FB_DELAY_SIZE],
+    write_ptr:      usize,
+    read_ptr:       usize,
+}
+
+impl FeedbackDelay {
+    pub fn new() -> Self {
+        Self {
+            buffer:     [0.0; MAX_FB_DELAY_SIZE],
+            write_ptr:  0,
+            read_ptr:   (64 + MAX_FB_DELAY_SIZE) % MAX_FB_DELAY_SIZE,
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.buffer = [0.0; MAX_FB_DELAY_SIZE];
+    }
+
+    pub fn set_sample_rate(&mut self, sr: f32) {
+        self.buffer            = [0.0; MAX_FB_DELAY_SIZE];
+        self.write_ptr         = 0;
+        // The delay sample count maximum is defined by MAX_FB_DELAY_SRATE,
+        // after that the feedback delays become shorter than they should be
+        // and things won't sound the same at sample rate
+        // exceeding MAX_FB_DELAY_SRATE.
+        //
+        // This is a tradeoff of wasted memory and not having to reallocate
+        // these delays for sample rate changes and providing delay buffers
+        // for all 256 theoretical feedback delay nodes.
+        //
+        // For more elaborate and longer delays an extra delay node should
+        // be used before FbWr or after FbRd.
+        let delay_sample_count = (sr as usize * FB_DELAY_TIME_US) / 1000000;
+        self.read_ptr          = (delay_sample_count + FB_DELAY_TIME_US)
+                                 % FB_DELAY_TIME_US;
+    }
+
+    #[inline]
+    pub fn write(&mut self, s: f32) {
+        self.write_ptr = (self.write_ptr + 1) % MAX_FB_DELAY_SIZE;
+        self.buffer[self.write_ptr] = s;
+    }
+
+    #[inline]
+    pub fn read(&mut self) -> f32 {
+        self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
+        self.buffer[self.read_ptr]
+    }
+}
+
+/// Contains global state that all nodes can access.
+/// This is used for instance to implement the feedbackd delay nodes.
+pub struct NodeExecContext {
+    pub feedback_delay_buffers:     Vec<FeedbackDelay>,
+}
+
+impl NodeExecContext {
+    fn new() -> Self {
+        let mut fbdb = vec![];
+        fbdb.resize_with(MAX_ALLOCATED_NODES, || FeedbackDelay::new());
+        Self {
+            feedback_delay_buffers: fbdb,
+        }
+    }
+
+    fn clear(&mut self) {
+        for b in self.feedback_delay_buffers.iter_mut() {
+            b.clear();
+        }
+    }
 }
 
 impl NodeExecutor {
@@ -92,6 +174,7 @@ impl NodeExecutor {
             sample_rate:       44100.0,
             prog:              NodeProg::empty(),
             monitor_signal_cur_inp_indices: [UNUSED_MONITOR_IDX; MON_SIG_CNT],
+            exec_ctx:          NodeExecContext::new(),
             shared,
         }
     }
@@ -119,6 +202,8 @@ impl NodeExecutor {
                                     DropMsg::Node { node: prev_node });
                         }
                     }
+
+                    self.exec_ctx.clear();
 
                     self.monitor_signal_cur_inp_indices =
                         [UNUSED_MONITOR_IDX; MON_SIG_CNT];
@@ -312,6 +397,7 @@ impl NodeExecutor {
         let nodes    = &mut self.nodes;
         let ctx_vals = &mut self.shared.node_ctx_values;
         let prog     = &mut self.prog;
+        let exec_ctx = &mut self.exec_ctx;
 
         let prog_out_fb = prog.out_feedback.input_buffer();
 
@@ -325,6 +411,7 @@ impl NodeExecutor {
             nodes[op.idx as usize]
                 .process(
                     ctx,
+                    exec_ctx,
                     &prog.atoms[at.0..at.1],
                     &prog.inp[inp.0..inp.1],
                     &prog.cur_inp[inp.0..inp.1],

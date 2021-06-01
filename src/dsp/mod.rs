@@ -20,6 +20,7 @@ mod satom;
 pub mod helpers;
 
 use crate::nodes::NodeAudioContext;
+use crate::nodes::NodeExecContext;
 
 use crate::util::AtomicFloat;
 use std::sync::Arc;
@@ -1139,8 +1140,10 @@ impl Node {
     /// display some kind of position indicator.
     #[inline]
     pub fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, atoms: &[SAtom], params: &[ProcBuf],
-        inputs: &[ProcBuf], outputs: &mut [ProcBuf], led: LedPhaseVals)
+        &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
+        atoms: &[SAtom], params: &[ProcBuf],
+        inputs: &[ProcBuf], outputs: &mut [ProcBuf],
+        led: LedPhaseVals)
     {
         macro_rules! make_node_process {
             ($s1: ident => $v1: ident,
