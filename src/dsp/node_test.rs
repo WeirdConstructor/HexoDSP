@@ -2,7 +2,7 @@
 // This is a part of HexoDSP. Released under (A)GPLv3 or any later.
 // See README.md and COPYING for details.
 
-use crate::nodes::NodeAudioContext;
+use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{SAtom, ProcBuf, GraphFun, GraphAtomData, DspNode, LedPhaseVals};
 
 /// A simple amplifier
@@ -31,8 +31,9 @@ impl DspNode for Test {
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, _ctx: &mut T, _atoms: &[SAtom], _params: &[ProcBuf],
-        _inputs: &[ProcBuf], _outputs: &mut [ProcBuf], _led: LedPhaseVals)
+        &mut self, _ctx: &mut T, _ectx: &mut NodeExecContext,
+        _atoms: &[SAtom], _params: &[ProcBuf], _inputs: &[ProcBuf],
+        _outputs: &mut [ProcBuf], _led: LedPhaseVals)
     {
 //        use crate::dsp::out;
 //        use crate::dsp::inp;

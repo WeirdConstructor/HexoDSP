@@ -2,7 +2,7 @@
 // This is a part of HexoDSP. Released under (A)GPLv3 or any later.
 // See README.md and COPYING for details.
 
-use crate::nodes::NodeAudioContext;
+use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{SAtom, ProcBuf, inp, at, DspNode, LedPhaseVals};
 
 /// The (stereo) output port of the plugin
@@ -52,8 +52,9 @@ impl DspNode for Out {
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, atoms: &[SAtom], _params: &[ProcBuf],
-        inputs: &[ProcBuf], _outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
+        &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
+        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         let in1 = inp::Out::ch1(inputs);
 

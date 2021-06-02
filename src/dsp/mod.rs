@@ -62,6 +62,12 @@ pub trait DspNode {
 
     /// The code DSP function.
     ///
+    /// * `ctx` is the audio context, which informs the node about
+    /// the number of samples to process. It also provides input/output
+    /// ports for the in/out nodes.
+    /// * `ectx` is the execution context, which provides global stuff
+    /// for all nodes to potentially use. For instance it's used
+    /// by the `FbWr` and `FbRd` nodes to share an audio buffer.
     /// * `atoms` are un-smoothed parameters. they can hold integer settings,
     /// samples or even strings.
     /// * `params` are smoother paramters, those who usually have a knob
@@ -70,9 +76,9 @@ pub trait DspNode {
     /// these inputs might be overwritten by outputs of other nodes.
     /// * `outputs` are the output buffers of this node.
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, atoms: &[SAtom], params: &[ProcBuf],
-        inputs: &[ProcBuf], outputs: &mut [ProcBuf],
-        led: LedPhaseVals);
+        &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
+        atoms: &[SAtom], params: &[ProcBuf], inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf], led: LedPhaseVals);
 
     /// A function factory for generating a graph for the generic node UI.
     fn graph_fun() -> Option<GraphFun> { None }
@@ -1162,7 +1168,8 @@ impl Node {
                 match self {
                     Node::$v1 => {},
                     $(Node::$variant { node } =>
-                        node.process(ctx, atoms, params, inputs, outputs, led),)+
+                        node.process(ctx, ectx, atoms, params,
+                                     inputs, outputs, led),)+
                 }
             }
         }

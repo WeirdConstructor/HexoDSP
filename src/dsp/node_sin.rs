@@ -2,7 +2,7 @@
 // This is a part of HexoDSP. Released under (A)GPLv3 or any later.
 // See README.md and COPYING for details.
 
-use crate::nodes::NodeAudioContext;
+use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{SAtom, ProcBuf, denorm, out, inp, DspNode, LedPhaseVals};
 use crate::dsp::helpers::fast_sin;
 
@@ -44,8 +44,9 @@ impl DspNode for Sin {
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, _atoms: &[SAtom], _params: &[ProcBuf],
-        inputs: &[ProcBuf], outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
+        &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
+        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         let o    = out::Sin::sig(outputs);
         let freq = inp::Sin::freq(inputs);

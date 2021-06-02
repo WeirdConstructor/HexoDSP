@@ -2,7 +2,7 @@
 // This is a part of HexoDSP. Released under (A)GPLv3 or any later.
 // See README.md and COPYING for details.
 
-use crate::nodes::NodeAudioContext;
+use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::helpers::TriggerClock;
 use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
 use crate::dsp::tracker::TrackerBackend;
@@ -70,8 +70,9 @@ impl DspNode for TSeq {
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, atoms: &[SAtom], _params: &[ProcBuf],
-        inputs: &[ProcBuf], outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
+        &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
+        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{out, inp, at};
         let clock = inp::TSeq::clock(inputs);
