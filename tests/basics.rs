@@ -928,34 +928,52 @@ fn check_matrix_node_feedback() {
     let wr2  = NodeId::FbWr(1);
     let rd2  = NodeId::FbRd(1);
     let out  = NodeId::Out(0);
-    matrix.place(0, 0, Cell::empty(sin)
-                       .out(None, None, sin.out("sig")));
-    matrix.place(0, 1, Cell::empty(wr)
-                       .input(wr.inp("inp"), None, None));
-    matrix.place(1, 0, Cell::empty(rd)
-                       .out(None, None, rd.out("sig")));
-    matrix.place(1, 1, Cell::empty(out)
-                       .input(out.inp("ch1"), None, None));
 
-    matrix.place(0, 2, Cell::empty(sin2)
-                       .out(None, None, sin2.out("sig")));
-    matrix.place(0, 3, Cell::empty(wr2)
-                       .input(wr2.inp("inp"), None, None));
-    matrix.place(1, 2, Cell::empty(rd2)
-                       .out(None, None, rd2.out("sig")));
-    matrix.place(1, 3, Cell::empty(out)
-                       .input(out.inp("ch2"), None, None));
+    matrix.place(0, 0, Cell::empty(sin).out(None, None, sin.out("sig")));
+    matrix.place(0, 1, Cell::empty(wr) .input(wr.inp("inp"), None, None));
+    matrix.place(1, 0, Cell::empty(rd) .out(None, None, rd.out("sig")));
+    matrix.place(1, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
+
+    matrix.place(0, 2, Cell::empty(sin2).out(None, None, sin2.out("sig")));
+    matrix.place(0, 3, Cell::empty(wr2) .input(wr2.inp("inp"), None, None));
+    matrix.place(1, 2, Cell::empty(rd2) .out(None, None, rd2.out("sig")));
+    matrix.place(1, 3, Cell::empty(out) .input(out.inp("ch2"), None, None));
     matrix.sync().unwrap();
 
     let freq_param = sin2.inp_param("freq").unwrap();
-    matrix.set_param(
-        freq_param,
-        SAtom::param(freq_param.norm(880.0)));
+    matrix.set_param(freq_param, SAtom::param(freq_param.norm(880.0)));
 
-    let (out_l, out_r) = run_for_ms(&mut node_exec, 5.0);
+    let (out_l, out_r) = run_for_ms(&mut node_exec, 10.0);
+    assert_decimated_feq!(
+        out_l, 15, vec![
+            // The initial zeros are the feedback delays:
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.4248709, 0.9816776, 0.7325672, -0.11797579, -0.8716552,
+            -0.90973216, -0.20093217, 0.6728242, 0.99420625, 0.49937242,
+            -0.40543562, -0.9773846, -0.7469322, 0.096737176, 0.86098254,
+            0.9183933, 0.22181934, -0.6568572, -0.9962849, -0.5177674,
+            0.3858096]);
+    assert_decimated_feq!(
+        out_r, 15, vec![
+            // The initial zeros are the feedback delays:
+            // The frequency will be established a bit later because
+            // the parameter setting of 880 Hz will be smoothed:
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.42738196, 0.9861684, 0.68267936, -0.2549982, -0.96115613,
+            -0.7120098, 0.28678903, 0.9854398, 0.56962675, -0.52827656,
+            -0.9845062, -0.17494306, 0.8781463, 0.7117191, -0.49352795,
+            -0.95974547, 0.085026, 0.9966484, 0.21335565, -0.9510752,
+            -0.3690226]);
 
-    println!("L: {:?}", out_l);
-    println!("R: {:?}", out_r);
+    // Let the frequency settle...
+    run_for_ms(&mut node_exec, 50.0);
 
-    assert!(false);
+    let (mut out_l, mut out_r) = run_for_ms(&mut node_exec, 50.0);
+    let fft_res_l = fft_thres_at_ms(&mut out_l[..], FFT::F1024, 100, 0.0);
+    assert_eq!(fft_res_l[0], (431, 245));
+    assert_eq!(fft_res_l[1], (474, 170));
+
+    let fft_res_r = fft_thres_at_ms(&mut out_r[..], FFT::F1024, 100, 0.0);
+    assert_eq!(fft_res_r[0], (861, 224));
+    assert_eq!(fft_res_r[1], (904, 206));
 }

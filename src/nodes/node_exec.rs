@@ -7,7 +7,7 @@ use super::{
     UNUSED_MONITOR_IDX, MAX_ALLOCATED_NODES, MAX_SMOOTHERS,
     MAX_FB_DELAY_SIZE, FB_DELAY_TIME_US,
 };
-use crate::dsp::{NodeId, Node};
+use crate::dsp::{NodeId, Node, MAX_BLOCK_SIZE};
 use crate::util::{Smoother, AtomicFloat};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
 
@@ -86,7 +86,7 @@ pub trait NodeAudioContext {
 /// FbWr and FbRd.
 ///
 /// Note that the previous audio period or even the first one ever may
-/// produce less than 64 samples. This means we need to keep track
+/// produce less than 128 samples. This means we need to keep track
 /// how many samples were actually written to the feedback buffer!
 /// See also `sample_count` field.
 pub struct FeedbackBuffer {
@@ -108,7 +108,7 @@ impl FeedbackBuffer {
         Self {
             buffer:         [0.0; MAX_FB_DELAY_SIZE],
             write_ptr:      0,
-            read_ptr:       (64 + MAX_FB_DELAY_SIZE) % MAX_FB_DELAY_SIZE,
+            read_ptr:       0,
             sample_count:   0,
         }
     }
@@ -133,8 +133,7 @@ impl FeedbackBuffer {
         // For more elaborate and longer delays an extra delay node should
         // be used before FbWr or after FbRd.
         let delay_sample_count = (sr as usize * FB_DELAY_TIME_US) / 1000000;
-        self.read_ptr          = (delay_sample_count + FB_DELAY_TIME_US)
-                                 % FB_DELAY_TIME_US;
+        self.read_ptr          = 0;
     }
 
     #[inline]
@@ -171,6 +170,12 @@ impl NodeExecContext {
         fbdb.resize_with(MAX_ALLOCATED_NODES, || FeedbackBuffer::new());
         Self {
             feedback_delay_buffers: fbdb,
+        }
+    }
+
+    fn set_sample_rate(&mut self, srate: f32) {
+        for b in self.feedback_delay_buffers.iter_mut() {
+            b.set_sample_rate(srate);
         }
     }
 
@@ -303,6 +308,7 @@ impl NodeExecutor {
 
     pub fn set_sample_rate(&mut self, sample_rate: f32) {
         self.sample_rate = sample_rate;
+        self.exec_ctx.set_sample_rate(sample_rate);
         for n in self.nodes.iter_mut() {
             n.set_sample_rate(sample_rate);
         }
@@ -510,8 +516,8 @@ impl NodeExecutor {
         let mut offs = 0;
         while nframes > 0 {
             let cur_nframes =
-                if nframes >= crate::dsp::MAX_BLOCK_SIZE {
-                    crate::dsp::MAX_BLOCK_SIZE
+                if nframes >= MAX_BLOCK_SIZE {
+                    MAX_BLOCK_SIZE
                 } else {
                     nframes
                 };
@@ -528,7 +534,7 @@ impl NodeExecutor {
 
             if realtime {
                 let micros =
-                    ((crate::dsp::MAX_BLOCK_SIZE as u64) * 1000000)
+                    ((MAX_BLOCK_SIZE as u64) * 1000000)
                     / (SAMPLE_RATE as u64);
                 std::thread::sleep(
                     std::time::Duration::from_micros(micros));
