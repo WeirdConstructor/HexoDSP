@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 use crate::dsp::{out, at, inp, denorm}; //, inp, denorm, denorm_v, inp_dir, at};
 use super::helpers::Trigger;
 
@@ -19,7 +19,7 @@ pub struct Sampl {
 }
 
 impl Sampl {
-    pub fn new() -> Self {
+    pub fn new(_nid: &NodeId) -> Self {
         Self {
             phase:          0.0,
             srate:          44100.0,

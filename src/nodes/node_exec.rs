@@ -82,20 +82,34 @@ pub trait NodeAudioContext {
     fn input(&mut self, channel: usize, frame: usize) -> f32;
 }
 
-/// Implements a trivial delay buffer for the feedback nodes
+/// Implements a trivial buffer for the feedback nodes
 /// FbWr and FbRd.
-pub struct FeedbackDelay {
+///
+/// Note that the previous audio period or even the first one ever may
+/// produce less than 64 samples. This means we need to keep track
+/// how many samples were actually written to the feedback buffer!
+/// See also `sample_count` field.
+pub struct FeedbackBuffer {
+    /// The feedback buffer that holds the samples of the previous period.
     buffer:         [f32; MAX_FB_DELAY_SIZE],
+    /// The write pointer.
     write_ptr:      usize,
+    /// Read pointer, is always behind write_ptr by an initial amount
     read_ptr:       usize,
+    /// The number of samples written into the buffer (to prevent overreads)
+    /// We need to keep track of the number of samples actually written into
+    /// the delay because the first or previous periods may have produced
+    /// not enough samples.
+    sample_count:   usize,
 }
 
-impl FeedbackDelay {
+impl FeedbackBuffer {
     pub fn new() -> Self {
         Self {
-            buffer:     [0.0; MAX_FB_DELAY_SIZE],
-            write_ptr:  0,
-            read_ptr:   (64 + MAX_FB_DELAY_SIZE) % MAX_FB_DELAY_SIZE,
+            buffer:         [0.0; MAX_FB_DELAY_SIZE],
+            write_ptr:      0,
+            read_ptr:       (64 + MAX_FB_DELAY_SIZE) % MAX_FB_DELAY_SIZE,
+            sample_count:   0,
         }
     }
 
@@ -106,6 +120,7 @@ impl FeedbackDelay {
     pub fn set_sample_rate(&mut self, sr: f32) {
         self.buffer            = [0.0; MAX_FB_DELAY_SIZE];
         self.write_ptr         = 0;
+        self.sample_count      = 0;
         // The delay sample count maximum is defined by MAX_FB_DELAY_SRATE,
         // after that the feedback delays become shorter than they should be
         // and things won't sound the same at sample rate
@@ -125,26 +140,35 @@ impl FeedbackDelay {
     #[inline]
     pub fn write(&mut self, s: f32) {
         self.write_ptr = (self.write_ptr + 1) % MAX_FB_DELAY_SIZE;
+        self.sample_count += 1;
         self.buffer[self.write_ptr] = s;
+        println!("WRITE[{}]={}", self.write_ptr, s);
     }
 
     #[inline]
     pub fn read(&mut self) -> f32 {
-        self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
-        self.buffer[self.read_ptr]
+        if self.sample_count > 0 {
+            self.sample_count - 1;
+            self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
+            let s = self.buffer[self.read_ptr];
+            println!("READ[{}]={}", self.read_ptr, s);
+            s
+        } else {
+            0.0
+        }
     }
 }
 
 /// Contains global state that all nodes can access.
 /// This is used for instance to implement the feedbackd delay nodes.
 pub struct NodeExecContext {
-    pub feedback_delay_buffers:     Vec<FeedbackDelay>,
+    pub feedback_delay_buffers:     Vec<FeedbackBuffer>,
 }
 
 impl NodeExecContext {
     fn new() -> Self {
         let mut fbdb = vec![];
-        fbdb.resize_with(MAX_ALLOCATED_NODES, || FeedbackDelay::new());
+        fbdb.resize_with(MAX_ALLOCATED_NODES, || FeedbackBuffer::new());
         Self {
             feedback_delay_buffers: fbdb,
         }

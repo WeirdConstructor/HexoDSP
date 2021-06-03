@@ -916,3 +916,46 @@ fn check_matrix_output_feedback() {
     assert_float_eq!(fo_amp.1, 0.11627);
 }
 
+#[test]
+fn check_matrix_node_feedback() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 7, 7);
+
+    let sin  = NodeId::Sin(0);
+    let sin2 = NodeId::Sin(1);
+    let wr   = NodeId::FbWr(0);
+    let rd   = NodeId::FbRd(0);
+    let wr2  = NodeId::FbWr(1);
+    let rd2  = NodeId::FbRd(1);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(sin)
+                       .out(None, None, sin.out("sig")));
+    matrix.place(0, 1, Cell::empty(wr)
+                       .input(wr.inp("inp"), None, None));
+    matrix.place(1, 0, Cell::empty(rd)
+                       .out(None, None, rd.out("sig")));
+    matrix.place(1, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+
+    matrix.place(0, 2, Cell::empty(sin2)
+                       .out(None, None, sin2.out("sig")));
+    matrix.place(0, 3, Cell::empty(wr2)
+                       .input(wr2.inp("inp"), None, None));
+    matrix.place(1, 2, Cell::empty(rd2)
+                       .out(None, None, rd2.out("sig")));
+    matrix.place(1, 3, Cell::empty(out)
+                       .input(out.inp("ch2"), None, None));
+    matrix.sync().unwrap();
+
+    let freq_param = sin2.inp_param("freq").unwrap();
+    matrix.set_param(
+        freq_param,
+        SAtom::param(freq_param.norm(880.0)));
+
+    let (out_l, out_r) = run_for_ms(&mut node_exec, 5.0);
+
+    println!("L: {:?}", out_l);
+    println!("R: {:?}", out_r);
+
+    assert!(false);
+}

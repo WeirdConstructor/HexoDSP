@@ -14,6 +14,8 @@ mod node_test;
 mod node_tseq;
 #[allow(non_upper_case_globals)]
 mod node_sampl;
+#[allow(non_upper_case_globals)]
+mod node_fbwr_fbrd;
 
 pub mod tracker;
 mod satom;
@@ -35,6 +37,8 @@ use node_out::Out;
 use node_test::Test;
 use node_tseq::TSeq;
 use node_sampl::Sampl;
+use node_fbwr_fbrd::FbWr;
+use node_fbwr_fbrd::FbRd;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -303,6 +307,11 @@ macro_rules! node_list {
              // | | |    |       defa/lt_/value
              // | | |    |       |  |   /
                {2 0 mono setting(0) 0  1},
+            fbwr => FbWr UIType::Generic UICategory::IOUtil
+               (0  inp   n_id      d_id      -1.0, 1.0, 0.0),
+            fbrd => FbRd UIType::Generic UICategory::IOUtil
+               (0  atv   n_id      d_id      -1.0, 1.0, 1.0)
+               [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id       0.0, 1.0, 0.5)
                {1 0 s    setting(0) 0  10},
@@ -321,7 +330,7 @@ pub mod labels {
     }
 
     pub mod Out {
-        pub const mono : [&'static str; 2] = ["Mono", "Stereo"];
+        pub const mono : [&'static str; 2] = ["Stereo", "Mono"];
     }
 
     pub mod Amp {
@@ -1099,7 +1108,7 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
         ) => {
             match node_id {
                 $(NodeId::$variant(_) => Some((
-                    Node::$variant { node: $variant::new() },
+                    Node::$variant { node: $variant::new(&node_id) },
                     NodeInfo::from_node_id(node_id),
                 )),)+
                 _ => None,

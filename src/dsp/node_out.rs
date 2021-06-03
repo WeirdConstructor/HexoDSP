@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{SAtom, ProcBuf, inp, at, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, inp, at, DspNode, LedPhaseVals};
 
 /// The (stereo) output port of the plugin
 #[derive(Debug, Clone)]
@@ -14,7 +14,7 @@ pub struct Out {
 }
 
 impl Out {
-    pub fn new() -> Self {
+    pub fn new(_nid: &NodeId) -> Self {
         Self {
             input:  [0.0; 2],
         }

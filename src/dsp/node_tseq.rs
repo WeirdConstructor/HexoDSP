@@ -4,7 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::helpers::TriggerClock;
-use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 use crate::dsp::tracker::TrackerBackend;
 
 use crate::dsp::MAX_BLOCK_SIZE;
@@ -18,11 +18,11 @@ pub struct TSeq {
 }
 
 impl Clone for TSeq {
-    fn clone(&self) -> Self { Self::new() }
+    fn clone(&self) -> Self { Self::new(&NodeId::Nop) }
 }
 
 impl TSeq {
-    pub fn new() -> Self {
+    pub fn new(_nid: &NodeId) -> Self {
         Self {
             backend:       None,
             srate:         48000.0,

@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{SAtom, ProcBuf, denorm, out, inp, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, denorm, out, inp, DspNode, LedPhaseVals};
 use crate::dsp::helpers::fast_sin;
 
 
@@ -19,7 +19,7 @@ pub struct Sin {
 const TWOPI : f32 = 2.0 * std::f32::consts::PI;
 
 impl Sin {
-    pub fn new() -> Self {
+    pub fn new(_nid: &NodeId) -> Self {
         Self {
             srate: 44100.0,
             phase: 0.0,

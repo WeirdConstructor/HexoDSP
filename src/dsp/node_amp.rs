@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 
 /// A simple amplifier
 #[derive(Debug, Clone)]
@@ -11,7 +11,7 @@ pub struct Amp {
 }
 
 impl Amp {
-    pub fn new() -> Self {
+    pub fn new(_nid: &NodeId) -> Self {
         Self {
         }
     }
