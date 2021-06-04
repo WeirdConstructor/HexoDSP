@@ -9,6 +9,19 @@ use crate::dsp::tracker::TrackerBackend;
 
 use crate::dsp::MAX_BLOCK_SIZE;
 
+#[macro_export]
+macro_rules! fa_tseq_cmode { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "RowT",
+            1  => "PatT",
+            2  => "Phase",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
+} } }
+
+
 /// A tracker based sequencer
 #[derive(Debug)]
 pub struct TSeq {

@@ -5,6 +5,26 @@
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, GraphFun, GraphAtomData, DspNode, LedPhaseVals};
 
+#[macro_export]
+macro_rules! fa_test_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+        let s =
+            match ($v.round() as usize) {
+                0  => "Zero",
+                1  => "One",
+                2  => "Two",
+                3  => "Three",
+                4  => "Four",
+                5  => "Five",
+                6  => "Six",
+                7  => "Seven",
+                8  => "Eigth",
+                9  => "Nine",
+                10 => "Ten",
+                _  => "?",
+            };
+        write!($formatter, "{}", s)
+} } }
+
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Test {

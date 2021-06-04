@@ -7,6 +7,28 @@ use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 use crate::dsp::{out, at, inp, denorm}; //, inp, denorm, denorm_v, inp_dir, at};
 use super::helpers::Trigger;
 
+#[macro_export]
+macro_rules! fa_sampl_dclick { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "Off",
+            1  => "On",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
+} } }
+
+#[macro_export]
+macro_rules! fa_sampl_pmode { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "Loop",
+            1  => "OneShot",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
+} } }
+
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Sampl {

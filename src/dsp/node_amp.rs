@@ -5,6 +5,17 @@
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 
+#[macro_export]
+macro_rules! fa_amp_neg_att { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "Allow",
+            1  => "Clip",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
+} } }
+
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Amp {

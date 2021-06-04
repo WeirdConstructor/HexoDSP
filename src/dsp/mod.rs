@@ -32,6 +32,11 @@ pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 pub use satom::*;
 
 use crate::fa_out_mono;
+use crate::fa_test_s;
+use crate::fa_amp_neg_att;
+use crate::fa_tseq_cmode;
+use crate::fa_sampl_dclick;
+use crate::fa_sampl_pmode;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -262,27 +267,6 @@ macro_rules! f_freq { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     }
 } }
 
-
-// Formats Test s
-macro_rules! fa_test_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-        let s =
-            match ($v.round() as usize) {
-                0  => "Zero",
-                1  => "One",
-                2  => "Two",
-                3  => "Three",
-                4  => "Four",
-                5  => "Five",
-                6  => "Six",
-                7  => "Seven",
-                8  => "Eigth",
-                9  => "Nine",
-                10 => "Ten",
-                _  => "?",
-            };
-        write!($formatter, "{}", s)
-} } }
-
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
 define_exp!{n_gain d_gain 0.0, 2.0}
@@ -315,11 +299,11 @@ macro_rules! node_list {
                (0 inp   n_id       d_id   r_id  f_def  -1.0, 1.0, 0.0)
                (1 gain  n_gain     d_gain r_id  f_def   0.0, 1.0, 1.0)
                (2 att   n_att      d_att  r_id  f_def   0.0, 1.0, 1.0)
-               {3 0 neg_att setting(1) f_def 0  1}
+               {3 0 neg_att setting(1) fa_amp_neg_att 0  1}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
                (0 clock n_id       d_id   r_id  f_def   0.0, 1.0, 0.0)
-               {1 0 cmode setting(1) f_def 0  2}
+               {1 0 cmode setting(1) fa_tseq_cmode 0  2}
                [0 trk1]
                [1 trk2]
                [2 trk3]
@@ -333,8 +317,8 @@ macro_rules! node_list {
                (3 len   n_id       n_id   r_id  f_def     0.0, 1.0, 1.0)
                (4 dcms  n_declick  d_declick r_id f_def   0.0, 1.0, 3.14)
                {5 0 sample audio_unloaded("")   f_def 0 0}
-               {6 1 pmode  setting(0)           f_def 0 1}
-               {7 2 dclick setting(0)           f_def 0 1}
+               {6 1 pmode  setting(0)           fa_sampl_pmode  0 1}
+               {7 2 dclick setting(0)           fa_sampl_dclick 0 1}
                [0 sig],
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_id  f_freq -1.0, 1.0, 440.0)
@@ -357,35 +341,6 @@ macro_rules! node_list {
                (0 f     n_id      d_id   r_id   f_def 0.0, 1.0, 0.5)
                {1 0 s    setting(0) fa_test_s 0  10},
         }
-    }
-}
-
-#[allow(non_snake_case)]
-#[allow(non_upper_case_globals)]
-pub mod labels {
-    pub mod Test {
-        pub const s : [&'static str; 11] = [
-            "Zero", "One", "Two", "Three", "Four",
-            "Five", "Six", "Seven", "Eigth", "Nine", "Ten"
-        ];
-    }
-
-    pub mod Out {
-        pub const mono : [&'static str; 2] = ["Stereo", "Mono"];
-    }
-
-    pub mod Amp {
-        pub const neg_att : [&'static str; 2] = ["Allow", "Clip"];
-    }
-
-    pub mod TSeq {
-        pub const cmode : [&'static str; 3] = ["RowT", "PatT", "Phase"];
-    }
-
-    pub mod Sampl {
-        pub const sample : [&'static str; 0] = [];
-        pub const dclick : [&'static str; 2] = ["Off", "On"];
-        pub const pmode  : [&'static str; 2] = ["Loop", "OneShot"];
     }
 }
 
@@ -548,23 +503,6 @@ macro_rules! make_node_info_enum {
                             $($in_idx    => Some($f_fun!(f, v, $d_fun!(v))),)*
                             $($in_at_idx => Some($fa_fun!(f, v, v)),)*
                             _            => None,
-                        }
-                    }),+
-                }
-            }
-
-            pub fn setting_lbl(&self, lbl_idx: usize) -> Option<&'static str> {
-                match self.node {
-                    NodeId::$v1           => None,
-                    $(NodeId::$variant(_) => {
-                        match self.idx {
-                            $($in_at_idx =>
-                                if lbl_idx < crate::dsp::labels::$variant::$atom.len() {
-                                    Some(crate::dsp::labels::$variant::$atom[lbl_idx])
-                                } else {
-                                    None
-                                },)*
-                            _  => None,
                         }
                     }),+
                 }
