@@ -31,6 +31,8 @@ pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 
 pub use satom::*;
 
+use crate::fa_out_mono;
+
 use node_amp::Amp;
 use node_sin::Sin;
 use node_out::Out;
@@ -242,6 +244,45 @@ macro_rules! d_pit { ($x: expr) => {
     }
 } }
 
+// Rounding function that does nothing
+macro_rules! r_id { ($x: expr) => { $x } }
+
+// Default formatting function
+macro_rules! f_def { ($formatter: expr, $v: expr, $denorm_v: expr) => {
+    write!($formatter, "{:6.3}", $denorm_v)
+} }
+
+macro_rules! f_freq { ($formatter: expr, $v: expr, $denorm_v: expr) => {
+    if ($denorm_v >= 1000.0) {
+        write!($formatter, "{:6.0}Hz", $denorm_v)
+    } else if ($denorm_v >= 100.0) {
+        write!($formatter, "{:6.1}Hz", $denorm_v)
+    } else {
+        write!($formatter, "{:6.2}Hz", $denorm_v)
+    }
+} }
+
+
+// Formats Test s
+macro_rules! fa_test_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+        let s =
+            match ($v.round() as usize) {
+                0  => "Zero",
+                1  => "One",
+                2  => "Two",
+                3  => "Three",
+                4  => "Four",
+                5  => "Five",
+                6  => "Six",
+                7  => "Seven",
+                8  => "Eigth",
+                9  => "Nine",
+                10 => "Ten",
+                _  => "?",
+            };
+        write!($formatter, "{}", s)
+} } }
+
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
 define_exp!{n_gain d_gain 0.0, 2.0}
@@ -269,16 +310,16 @@ macro_rules! node_list {
             nop => Nop,
             amp => Amp UIType::Generic UICategory::Signal
              // node_param_idx
-             //   name             denorm_fun norm norm denorm
-             //         norm_fun              min  max  default
-               (0 inp   n_id       d_id      -1.0, 1.0, 0.0)
-               (1 gain  n_gain     d_gain     0.0, 1.0, 1.0)
-               (2 att   n_att      d_att      0.0, 1.0, 1.0)
-               {3 0 neg_att setting(1) 0  1}
+             //   name             denorm round format norm norm denorm
+             //         norm_fun   fun    fun   fun    min  max  default
+               (0 inp   n_id       d_id   r_id  f_def  -1.0, 1.0, 0.0)
+               (1 gain  n_gain     d_gain r_id  f_def   0.0, 1.0, 1.0)
+               (2 att   n_att      d_att  r_id  f_def   0.0, 1.0, 1.0)
+               {3 0 neg_att setting(1) f_def 0  1}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
-               (0 clock n_id       d_id       0.0, 1.0, 0.0)
-               {1 0 cmode setting(1) 0  2}
+               (0 clock n_id       d_id   r_id  f_def   0.0, 1.0, 0.0)
+               {1 0 cmode setting(1) f_def 0  2}
                [0 trk1]
                [1 trk2]
                [2 trk3]
@@ -286,35 +327,35 @@ macro_rules! node_list {
                [4 trk5]
                [5 trk6],
             sampl => Sampl UIType::Generic UICategory::Osc
-               (0 freq  n_pit      d_pit     -1.0, 1.0, 440.0)
-               (1 trig  n_id       n_id      -1.0, 1.0, 0.0)
-               (2 offs  n_id       n_id       0.0, 1.0, 0.0)
-               (3 len   n_id       n_id       0.0, 1.0, 1.0)
-               (4 dcms  n_declick  d_declick  0.0, 1.0, 3.14)
-               {5 0 sample audio_unloaded("") 0 0}
-               {6 1 pmode  setting(0)         0 1}
-               {7 2 dclick setting(0)         0 1}
+               (0 freq  n_pit      d_pit  r_id  f_def    -1.0, 1.0, 440.0)
+               (1 trig  n_id       n_id   r_id  f_def    -1.0, 1.0, 0.0)
+               (2 offs  n_id       n_id   r_id  f_def     0.0, 1.0, 0.0)
+               (3 len   n_id       n_id   r_id  f_def     0.0, 1.0, 1.0)
+               (4 dcms  n_declick  d_declick r_id f_def   0.0, 1.0, 3.14)
+               {5 0 sample audio_unloaded("")   f_def 0 0}
+               {6 1 pmode  setting(0)           f_def 0 1}
+               {7 2 dclick setting(0)           f_def 0 1}
                [0 sig],
             sin => Sin UIType::Generic UICategory::Osc
-               (0 freq  n_pit      d_pit     -1.0, 1.0, 440.0)
+               (0 freq  n_pit      d_pit r_id  f_freq -1.0, 1.0, 440.0)
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
-               (0  ch1   n_id      d_id      -1.0, 1.0, 0.0)
-               (1  ch2   n_id      d_id      -1.0, 1.0, 0.0)
+               (0  ch1   n_id      d_id  r_id   f_def -1.0, 1.0, 0.0)
+               (1  ch2   n_id      d_id  r_id   f_def -1.0, 1.0, 0.0)
              // node_param_idx
-             // | atom_idx
-             // | | name constructor min max
-             // | | |    |       defa/lt_/value
-             // | | |    |       |  |   /
-               {2 0 mono setting(0) 0  1},
+             // | atom_idx          format fun
+             // | | name constructor|           min max
+             // | | |    |       def|ult_value  |  /
+             // | | |    |       |  |           |  |
+               {2 0 mono setting(0) fa_out_mono 0  1},
             fbwr => FbWr UIType::Generic UICategory::IOUtil
-               (0  inp   n_id      d_id      -1.0, 1.0, 0.0),
+               (0  inp   n_id      d_id  r_id   f_def -1.0, 1.0, 0.0),
             fbrd => FbRd UIType::Generic UICategory::IOUtil
-               (0  atv   n_id      d_id      -1.0, 1.0, 1.0)
+               (0  atv   n_id      d_id  r_id   f_def -1.0, 1.0, 1.0)
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
-               (0 f     n_id      d_id       0.0, 1.0, 0.5)
-               {1 0 s    setting(0) 0  10},
+               (0 f     n_id      d_id   r_id   f_def 0.0, 1.0, 0.5)
+               {1 0 s    setting(0) fa_test_s 0  10},
         }
     }
 }
@@ -357,10 +398,10 @@ impl UICategory {
                     UIType:: $gui_type: ident
                     UICategory:: $ui_cat: ident
                     $(($in_idx: literal $para: ident
-                       $n_fun: ident $d_fun: ident
+                       $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                        $min: expr, $max: expr, $def: expr))*
                     $({$in_at_idx: literal $at_idx: literal $atom: ident
-                       $at_fun: ident ($at_init: tt)
+                       $at_fun: ident ($at_init: expr) $fa_fun: ident
                        $amin: literal $amax: literal})*
                     $([$out_idx: literal $out: ident])*
                     ,)+
@@ -385,10 +426,10 @@ macro_rules! make_node_info_enum {
             UIType:: $gui_type: ident
             UICategory:: $ui_cat: ident
             $(($in_idx: literal $para: ident
-               $n_fun: ident $d_fun: ident
+               $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                $min: expr, $max: expr, $def: expr))*
             $({$in_at_idx: literal $at_idx: literal $atom: ident
-               $at_fun: ident ($at_init: expr)
+               $at_fun: ident ($at_init: expr) $fa_fun: ident
                $amin: literal $amax: literal})*
             $([$out_idx: literal $out: ident])*
             ,)+
@@ -499,6 +540,19 @@ macro_rules! make_node_info_enum {
                 }
             }
 
+            pub fn format(&self, f: &mut std::io::Write, v: f32) -> Option<std::io::Result<()>> {
+                match self.node {
+                    NodeId::$v1           => None,
+                    $(NodeId::$variant(_) => {
+                        match self.idx {
+                            $($in_idx    => Some($f_fun!(f, v, $d_fun!(v))),)*
+                            $($in_at_idx => Some($fa_fun!(f, v, v)),)*
+                            _            => None,
+                        }
+                    }),+
+                }
+            }
+
             pub fn setting_lbl(&self, lbl_idx: usize) -> Option<&'static str> {
                 match self.node {
                     NodeId::$v1           => None,
@@ -547,6 +601,18 @@ macro_rules! make_node_info_enum {
                     $(NodeId::$variant(_) => {
                         match self.idx {
                             $($in_idx => crate::dsp::norm_def::$variant::$para(),)*
+                            _ => 0.0,
+                        }
+                    }),+
+                }
+            }
+
+            pub fn round(&self, v: f32) -> f32 {
+                match self.node {
+                    NodeId::$v1           => 0.0,
+                    $(NodeId::$variant(_) => {
+                        match self.idx {
+                            $($in_idx => crate::dsp::round::$variant::$para(v),)*
                             _ => 0.0,
                         }
                     }),+
@@ -788,6 +854,13 @@ macro_rules! make_node_info_enum {
         }
 
         #[allow(non_snake_case)]
+        pub mod round {
+            $(pub mod $variant {
+                $(#[inline] pub fn $para(x: f32) -> f32 { $r_fun!(x) })*
+            })+
+        }
+
+        #[allow(non_snake_case)]
         pub mod denorm_v {
             $(pub mod $variant {
                 $(#[inline] pub fn $para(x: f32) -> f32 { $d_fun!(x) })*
@@ -1011,10 +1084,10 @@ macro_rules! make_node_enum {
             UIType:: $gui_type: ident
             UICategory:: $ui_cat: ident
             $(($in_idx: literal $para: ident
-               $n_fun: ident $d_fun: ident
+               $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                $min: expr, $max: expr, $def: expr))*
             $({$in_at_idx: literal $at_idx: literal $atom: ident
-               $at_fun: ident ($at_init: expr)
+               $at_fun: ident ($at_init: expr) $fa_fun: ident
                $amin: literal $amax: literal})*
             $([$out_idx: literal $out: ident])*
             ,)+
@@ -1098,10 +1171,10 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
                 UIType:: $gui_type: ident
                 UICategory:: $ui_cat: ident
                 $(($in_idx: literal $para: ident
-                   $n_fun: ident $d_fun: ident
+                   $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                    $min: expr, $max: expr, $def: expr))*
                 $({$in_at_idx: literal $at_idx: literal $atom: ident
-                   $at_fun: ident ($at_init: expr)
+                   $at_fun: ident ($at_init: expr) $fa_fun: ident
                    $amin: literal $amax: literal})*
                 $([$out_idx: literal $out: ident])*
             ,)+
@@ -1166,10 +1239,10 @@ impl Node {
                     UIType:: $gui_type: ident
                     UICategory:: $ui_cat: ident
                     $(($in_idx: literal $para: ident
-                       $n_fun: ident $d_fun: ident
+                       $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                        $min: expr, $max: expr, $def: expr))*
                     $({$in_at_idx: literal $at_idx: literal $atom: ident
-                       $at_fun: ident ($at_init: expr)
+                       $at_fun: ident ($at_init: expr) $fa_fun: ident
                        $amin: literal $amax: literal})*
                     $([$out_idx: literal $out: ident])*
                 ,)+

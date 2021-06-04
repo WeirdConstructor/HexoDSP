@@ -5,6 +5,19 @@
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, inp, at, DspNode, LedPhaseVals};
 
+// Formats Out mono
+#[macro_export]
+macro_rules! fa_out_mono { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "Stereo",
+            1  => "Mono",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
+} } }
+
+
 /// The (stereo) output port of the plugin
 #[derive(Debug, Clone)]
 pub struct Out {

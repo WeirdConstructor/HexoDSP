@@ -141,7 +141,6 @@ impl FeedbackBuffer {
         self.write_ptr = (self.write_ptr + 1) % MAX_FB_DELAY_SIZE;
         self.sample_count += 1;
         self.buffer[self.write_ptr] = s;
-        println!("WRITE[{}]={}", self.write_ptr, s);
     }
 
     #[inline]
@@ -150,7 +149,6 @@ impl FeedbackBuffer {
             self.sample_count - 1;
             self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
             let s = self.buffer[self.read_ptr];
-            println!("READ[{}]={}", self.read_ptr, s);
             s
         } else {
             0.0
