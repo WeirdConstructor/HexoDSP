@@ -31,7 +31,7 @@ pub enum PatternUpdateMsg {
         col:         usize,
         col_type:    PatternColType,
         pattern_len: usize,
-        data:        [f32; MAX_PATTERN_LEN]
+        data:        [(f32, u8); MAX_PATTERN_LEN]
     },
 }
 
@@ -143,17 +143,21 @@ impl TrackerBackend {
 
     pub fn pattern_len(&self) -> usize { self.seq.rows() }
 
-    pub fn get_col_at_phase(&mut self, col: usize, phase: &[f32], out: &mut [f32]) {
+    pub fn get_col_at_phase(
+        &mut self, col: usize, phase: &[f32],
+        out: &mut [f32], out_gate: &mut [f32])
+    {
         if self.seq.rows() == 0 {
             return;
         }
 
         match self.col_types[col] {
-            PatternColType::Note | PatternColType::Step => {
-                self.seq.col_get_at_phase(col, phase, out)
-            },
-            PatternColType::Value => self.seq.col_interpolate_at_phase(col, phase, out),
-            PatternColType::Gate  => self.seq.col_gate_at_phase(col, phase, out),
+            PatternColType::Note | PatternColType::Step =>
+                self.seq.col_get_at_phase(        col, phase, out, out_gate),
+            PatternColType::Value =>
+                self.seq.col_interpolate_at_phase(col, phase, out, out_gate),
+            PatternColType::Gate =>
+                self.seq.col_gate_at_phase(       col, phase, out, out_gate),
         }
     }
 }
@@ -186,12 +190,18 @@ mod tests {
         while t.send_one_update() { }
         while backend.check_updates() { }
 
-        let mut out = [0.0; 16];
+        let mut out      = [0.0; 16];
+        let mut out_gate = [0.0; 16];
 
-        backend.get_col_at_phase(0, &[0.2, 0.5, 0.99], &mut out[..]);
+        backend.get_col_at_phase(
+            0, &[0.2, 0.5, 0.99], &mut out[..], &mut out_gate[..]);
+
         assert_float_eq!(out[0], 1.0);
         assert_float_eq!(out[1], 0.46666666);
         assert_float_eq!(out[2], 0.0);
+        assert_float_eq!(out_gate[0], 0.0);
+        assert_float_eq!(out_gate[1], 1.0);
+        assert_float_eq!(out_gate[2], 1.0);
     }
 
     #[test]
@@ -208,12 +218,17 @@ mod tests {
         while t.send_one_update() { }
         while backend.check_updates() { }
 
-        let mut out = [0.0; 16];
+        let mut out      = [0.0; 16];
+        let mut out_gate = [0.0; 16];
 
-        backend.get_col_at_phase(0, &[0.2, 0.5, 0.999999], &mut out[..]);
+        backend.get_col_at_phase(
+            0, &[0.2, 0.5, 0.999999], &mut out[..], &mut out_gate[..]);
         assert_float_eq!(out[0], 0.83238);
         assert_float_eq!(out[1], 0.46666666);
         assert_float_eq!(out[2], 0.0);
+        assert_float_eq!(out_gate[0], 0.0);
+        assert_float_eq!(out_gate[1], 0.0);
+        assert_float_eq!(out_gate[2], 1.0);
     }
 
     #[test]
@@ -231,7 +246,8 @@ mod tests {
         while t.send_one_update() { }
         while backend.check_updates() { }
 
-        let mut out = [0.0; 64];
+        let mut out      = [0.0; 64];
+        let mut out_gate = [0.0; 64];
 
         let mut phase = [0.0; 64];
         for (i, p) in phase.iter_mut().enumerate() {
@@ -239,16 +255,23 @@ mod tests {
         }
 
         //d// println!("----");
-        backend.get_col_at_phase(0, &phase[..], &mut out[..]);
+        backend.get_col_at_phase(
+            0, &phase[..], &mut out[..], &mut out_gate[..]);
         //d// println!("out: {:?}", &out[16..32]);
 
         assert_eq!(out[0..8],  [1.0; 8]);
         assert_eq!(out[8..16], [0.0; 8]);
         assert_eq!(out[16..32],[0.0; 16]);
+        assert_eq!(out_gate[0..8],  [1.0; 8]);
+        assert_eq!(out_gate[8..16], [1.0; 8]);
+        assert_eq!(out_gate[16..32],[0.0; 16]);
 
         assert_float_eq!(out[32], 1.0);
         assert_eq!(out[33..48],[0.0; 15]);
+        assert_float_eq!(out_gate[32], 1.0);
+        assert_eq!(out_gate[33..48],[1.0; 15]);
 
         assert_eq!(out[48..64],[1.0; 16]);
+        assert_eq!(out_gate[48..64],[1.0; 16]);
     }
 }

@@ -309,7 +309,13 @@ macro_rules! node_list {
                [2 trk3]
                [3 trk4]
                [4 trk5]
-               [5 trk6],
+               [5 trk6]
+               [6  gat1]
+               [7  gat2]
+               [8  gat3]
+               [9  gat4]
+               [10 gat5]
+               [11 gat6],
             sampl => Sampl UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit  r_id  f_def    -1.0, 1.0, 440.0)
                (1 trig  n_id       n_id   r_id  f_def    -1.0, 1.0, 0.0)
@@ -495,7 +501,7 @@ macro_rules! make_node_info_enum {
                 }
             }
 
-            pub fn format(&self, f: &mut std::io::Write, v: f32) -> Option<std::io::Result<()>> {
+            pub fn format(&self, f: &mut dyn std::io::Write, v: f32) -> Option<std::io::Result<()>> {
                 match self.node {
                     NodeId::$v1           => None,
                     $(NodeId::$variant(_) => {

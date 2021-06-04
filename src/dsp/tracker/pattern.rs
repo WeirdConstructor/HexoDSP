@@ -11,7 +11,7 @@ use crate::matrix_repr::PatternRepr;
 pub struct PatternData {
     col_types:  [PatternColType; MAX_COLS],
     data:       Vec<Vec<Option<u16>>>,
-    out_data:   Vec<[f32; MAX_PATTERN_LEN]>,
+    out_data:   Vec<[(f32, u8); MAX_PATTERN_LEN]>,
     strings:    Vec<Vec<Option<String>>>,
     cursor:     (usize, usize),
     rows:       usize,
@@ -24,7 +24,7 @@ impl PatternData {
         Self {
             col_types:  [PatternColType::Value; MAX_COLS],
             data:       vec![vec![None; MAX_COLS]; MAX_PATTERN_LEN],
-            out_data:   vec![[0.0; MAX_PATTERN_LEN]; MAX_COLS],
+            out_data:   vec![[(0.0, 0); MAX_PATTERN_LEN]; MAX_COLS],
             strings:    vec![vec![None; MAX_COLS]; MAX_PATTERN_LEN],
             cursor:     (2, 2),
             edit_step:  4,
@@ -106,7 +106,7 @@ impl PatternData {
         self.cursor    = repr.cursor;
     }
 
-    pub fn get_out_data(&self) -> &[[f32; MAX_PATTERN_LEN]] {
+    pub fn get_out_data(&self) -> &[[(f32, u8); MAX_PATTERN_LEN]] {
         &self.out_data
     }
 
@@ -160,8 +160,8 @@ impl PatternData {
                         };
 
                     if let Some(end_value) = cur_value {
-                        out_col[start_idx] = start_value;
-                        out_col[end_idx]   = end_value;
+                        out_col[start_idx] = (start_value, 0);
+                        out_col[end_idx]   = (end_value, 1);
 
                         let delta_rows = end_idx - start_idx;
 
@@ -171,7 +171,7 @@ impl PatternData {
                                       (idx - start_idx) as f32
                                     / (delta_rows as f32);
                                 out_col[idx] =
-                                    start_value * (1.0 - x) + end_value * x;
+                                    (start_value * (1.0 - x) + end_value * x, 0);
                             }
                         }
 
@@ -189,23 +189,33 @@ impl PatternData {
                 }
             },
             PatternColType::Note => {
-                let mut cur_value = 0.0;
+                let mut cur_value = (0.0, 0);
 
                 for row in 0..self.rows {
                     if let Some(new_value) = self.data[row][col] {
-                        cur_value =
-                            ((new_value as i32 - 69) as f32 * 0.1) / 12.0;
+                        cur_value = (
+                            ((new_value as i32 - 69) as f32 * 0.1) / 12.0,
+                            1
+                        );
+                    } else {
+                        cur_value.1 = 0;
                     }
 
-                    out_col[row] = cur_value.clamp(-1.0, 1.0);
+                    out_col[row] =
+                        (cur_value.0.clamp(-1.0, 1.0), cur_value.1);
                 }
             },
             PatternColType::Step => {
-                let mut cur_value = 0.0;
+                let mut cur_value = (0.0, 0);
 
                 for row in 0..self.rows {
                     if let Some(new_value) = self.data[row][col] {
-                        cur_value = ((new_value & 0xFFF) as f32) / (0xFFF as f32);
+                        cur_value = (
+                            ((new_value & 0xFFF) as f32) / (0xFFF as f32),
+                            1
+                        );
+                    } else {
+                        cur_value.1 = 0;
                     }
 
                     out_col[row] = cur_value;
@@ -215,9 +225,9 @@ impl PatternData {
                 for row in 0..self.rows {
                     out_col[row] =
                         if let Some(new_value) = self.data[row][col] {
-                            f32::from_bits(new_value as u32)
+                            (f32::from_bits(new_value as u32), 1)
                         } else {
-                            f32::from_bits(0xF000 as u32)
+                            (f32::from_bits(0xF000 as u32), 0)
                         };
                 }
             },
@@ -394,8 +404,8 @@ mod tests {
             let inc = 1.0 / 2.0;
             for i in 1..2 {
                 let delta =
-                    out_data[col][i]
-                    - out_data[col][i - 1];
+                    out_data[col][i].0
+                    - out_data[col][i - 1].0;
                 assert_float_eq!(delta, inc);
             }
         }
@@ -416,8 +426,8 @@ mod tests {
             let inc = 1.0 / 3.0;
             for i in 1..3 {
                 let delta =
-                    out_data[col][i]
-                    - out_data[col][i - 1];
+                    out_data[col][i].0
+                    - out_data[col][i - 1].0;
                 assert_float_eq!(delta, inc);
             }
         }
@@ -440,8 +450,8 @@ mod tests {
             //d// println!("out: {:?}", &out_data[col][0..16]);
             for i in 1..16 {
                 let delta =
-                    out_data[col][i]
-                    - out_data[col][i - 1];
+                    out_data[col][i].0
+                    - out_data[col][i - 1].0;
                 assert_float_eq!(delta, inc);
             }
         }
@@ -462,8 +472,8 @@ mod tests {
 
             for i in 1..16 {
                 let delta =
-                    out_data[col][i]
-                    - out_data[col][i - 1];
+                    out_data[col][i].0
+                    - out_data[col][i - 1].0;
                 assert_float_eq!(delta.abs(), inc);
             }
         }
@@ -484,8 +494,8 @@ mod tests {
             //d// println!("out: {:?}", &out_data[col][0..16]);
             for i in 0..8 {
                 assert_float_eq!(
-                    out_data[col][i],
-                    out_data[col][15 - i]);
+                    out_data[col][i].0,
+                    out_data[col][15 - i].0);
             }
         }
     }
@@ -505,8 +515,8 @@ mod tests {
             //d// println!("out: {:?}", &out_data[col][0..16]);
             for i in 0..8 {
                 assert_float_eq!(
-                    out_data[col][i],
-                    out_data[col][15 - i]);
+                    out_data[col][i].0,
+                    out_data[col][15 - i].0);
             }
         }
     }
@@ -528,8 +538,8 @@ mod tests {
             //d// println!("out: {:?}", &out_data[col][0..16]);
             for i in 0..8 {
                 assert_float_eq!(
-                    out_data[col][i],
-                    out_data[col][15 - i]);
+                    out_data[col][i].0,
+                    out_data[col][15 - i].0);
             }
         }
     }
@@ -550,13 +560,13 @@ mod tests {
 
             //d// println!("out: {:?}", &out_data[col][0..16]);
 
-            assert_float_eq!(0.5, out_data[col][6]);
-            assert_float_eq!(0.5, out_data[col][9]);
+            assert_float_eq!(0.5, out_data[col][6].0);
+            assert_float_eq!(0.5, out_data[col][9].0);
 
             for i in 0..8 {
                 assert_float_eq!(
-                    out_data[col][i],
-                    out_data[col][15 - i]);
+                    out_data[col][i].0,
+                    out_data[col][15 - i].0);
             }
         }
     }
@@ -575,14 +585,14 @@ mod tests {
             pats.sync_out_data(col);
 
             let out_data = pats.get_out_data();
-            assert_float_eq!(out_data[col][0], 0.0);
-            assert_float_eq!(out_data[col][4], 0.26959708);
-            assert_float_eq!(out_data[col][5], 0.0);
-            assert_float_eq!(out_data[col][7], 0.4998779);
-            assert_float_eq!(out_data[col][8], 0.4998779);
-            assert_float_eq!(out_data[col][9], 0.50012213);
-            assert_float_eq!(out_data[col][10], 1.0);
-            assert_float_eq!(out_data[col][15], 1.0);
+            assert_float_eq!(out_data[col][0].0,  0.0);
+            assert_float_eq!(out_data[col][4].0,  0.26959708);
+            assert_float_eq!(out_data[col][5].0,  0.0);
+            assert_float_eq!(out_data[col][7].0,  0.4998779);
+            assert_float_eq!(out_data[col][8].0,  0.4998779);
+            assert_float_eq!(out_data[col][9].0,  0.50012213);
+            assert_float_eq!(out_data[col][10].0, 1.0);
+            assert_float_eq!(out_data[col][15].0, 1.0);
         }
     }
 
@@ -599,13 +609,13 @@ mod tests {
             pats.sync_out_data(col);
 
             let out_data = pats.get_out_data();
-            assert_float_eq!(out_data[col][0], 0.0);
-            assert_float_eq!(out_data[col][4], 0.0);
-            assert_float_eq!(out_data[col][5], -0.575);
-            assert_float_eq!(out_data[col][7], -0.1);
-            assert_float_eq!(out_data[col][9], -0.1);
-            assert_float_eq!(out_data[col][10], 0.1);
-            assert_float_eq!(out_data[col][15], 0.1);
+            assert_float_eq!(out_data[col][0].0,  0.0);
+            assert_float_eq!(out_data[col][4].0,  0.0);
+            assert_float_eq!(out_data[col][5].0, -0.575);
+            assert_float_eq!(out_data[col][7].0, -0.1);
+            assert_float_eq!(out_data[col][9].0, -0.1);
+            assert_float_eq!(out_data[col][10].0, 0.1);
+            assert_float_eq!(out_data[col][15].0, 0.1);
         }
     }
 
