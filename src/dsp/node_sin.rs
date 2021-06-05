@@ -27,6 +27,12 @@ impl Sin {
     }
     pub const freq : &'static str =
         "Sin freq\nFrequency of the oscillator.\n\nRange: (-1..1)\n";
+    pub const det : &'static str =
+        "Sin det\nDetune the oscillator in semitones and cents. \
+         the input of this value is rounded to semitones on coarse input. \
+         Fine input lets you detune in cents (rounded). \
+         A signal sent to this port is not rounded.\
+         \n\nRange: (-1..1)\n";
     pub const sig : &'static str =
         "Sin sig\nOscillator signal output.\n\nRange: (-1..1)\n";
 }

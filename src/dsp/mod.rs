@@ -249,6 +249,14 @@ macro_rules! d_pit { ($x: expr) => {
     }
 } }
 
+// 5.0 for mapping -0.2-0.2 range to -1.0 to 1.0
+// 5.0 * 0.2         => 24.0
+// 5.0 * 0.1         => 12.0
+// 5.0 * 0.008333333 => 1.0
+// 5.0 * 0.000083333 => 0.001
+macro_rules! n_det { ($x: expr) => { ($x * 5.0 * 0.1) / 12.0 } }
+macro_rules! d_det { ($x: expr) => { $x * 0.2 * 120.0 } }
+
 // Rounding function that does nothing
 macro_rules! r_id { ($x: expr) => { $x } }
 
@@ -264,6 +272,20 @@ macro_rules! f_freq { ($formatter: expr, $v: expr, $denorm_v: expr) => {
         write!($formatter, "{:6.1}Hz", $denorm_v)
     } else {
         write!($formatter, "{:6.2}Hz", $denorm_v)
+    }
+} }
+
+macro_rules! f_det { ($formatter: expr, $v: expr, $denorm_v: expr) => {
+    {
+        let sign      = if $denorm_v < 0.0 { -1.0 } else { 1.0 };
+        let semitones = $denorm_v.floor().abs();
+        let cents     = ($denorm_v.fract() * 100.0).floor().abs();
+
+        if (cents > 1.0) {
+            write!($formatter, "{:2.0}s {:3.0}c", sign * semitones, cents)
+        } else {
+            write!($formatter, "{:2.0}s", sign * semitones)
+        }
     }
 } }
 
@@ -328,6 +350,7 @@ macro_rules! node_list {
                [0 sig],
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_id  f_freq -1.0, 1.0, 440.0)
+               (1 det   n_det      d_det r_id  f_det  -1.0, 1.0,   0.0)
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def -1.0, 1.0, 0.0)
