@@ -200,6 +200,7 @@ pub enum UICategory {
     IOUtil,
 }
 
+// The following macros define normalize/denormalize functions:
 macro_rules! n_id { ($x: expr) => { $x } }
 macro_rules! d_id { ($x: expr) => { $x } }
 
@@ -249,19 +250,37 @@ macro_rules! d_pit { ($x: expr) => {
     }
 } }
 
+// The following macros define detune parameter behaviour:
 // 0.2         => 24.0
 // 0.1         => 12.0
 // 0.008333333 => 1.0
 // 0.000083333 => 0.001
 macro_rules! n_det { ($x: expr) => { $x / 120.0 } }
 macro_rules! d_det { ($x: expr) => { $x * 120.0 } }
+/// The rounding function for detune UI knobs
 macro_rules! r_det { ($x: expr, $coarse: expr) => {
     if $coarse {
         n_det!((d_det!($x)).round())
     } else {
-        n_det!((d_det!($x) * 10.0).round() / 10.0)
+        n_det!((d_det!($x) * 100.0).round() / 100.0)
     }
 } }
+
+/// The rounding function for milliseconds knobs
+macro_rules! r_ms { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        n_declick!((d_declick!($x)).round())
+    } else {
+        n_declick!((d_declick!($x) * 10.0).round() / 10.0)
+    }
+} }
+
+/// The default steps function:
+macro_rules! stp_d { () => { (20.0, 100.0) } }
+/// The UI steps to control parameters with a finer fine control:
+macro_rules! stp_m { () => { (20.0, 200.0) } }
+/// The UI steps to control parameters with a very fine fine control:
+macro_rules! stp_f { () => { (20.0, 1000.0) } }
 
 // Rounding function that does nothing
 macro_rules! r_id { ($x: expr, $coarse: expr) => { $x } }
@@ -281,13 +300,17 @@ macro_rules! f_freq { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     }
 } }
 
+macro_rules! f_ms { ($formatter: expr, $v: expr, $denorm_v: expr) => {
+    write!($formatter, "{:5.2}ms", $denorm_v)
+} }
+
 macro_rules! f_det { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     {
         let sign      = if $denorm_v < 0.0 { -1.0 } else { 1.0 };
         let semitones = $denorm_v.trunc().abs();
         let cents     = ($denorm_v.fract() * 100.0).round().abs();
 
-        if (cents > 1.0) {
+        if (cents > 0.1) {
             write!($formatter, "{:2.0}s {:3.0}c", sign * semitones, cents)
         } else {
             write!($formatter, "{:2.0}s", sign * semitones)
@@ -322,15 +345,15 @@ macro_rules! node_list {
             nop => Nop,
             amp => Amp UIType::Generic UICategory::Signal
              // node_param_idx
-             //   name             denorm round format norm norm denorm
-             //         norm_fun   fun    fun   fun    min  max  default
-               (0 inp   n_id       d_id   r_id  f_def  -1.0, 1.0, 0.0)
-               (1 gain  n_gain     d_gain r_id  f_def   0.0, 1.0, 1.0)
-               (2 att   n_att      d_att  r_id  f_def   0.0, 1.0, 1.0)
+             //   name             denorm round format steps norm norm denorm
+             //         norm_fun   fun    fun   fun    def   min  max  default
+               (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (1 gain  n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
                {3 0 neg_att setting(1) fa_amp_neg_att 0  1}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
-               (0 clock n_id       d_id   r_id  f_def   0.0, 1.0, 0.0)
+               (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                {1 0 cmode setting(1) fa_tseq_cmode 0  2}
                [0 trk1]
                [1 trk2]
@@ -345,23 +368,26 @@ macro_rules! node_list {
                [10 gat5]
                [11 gat6],
             sampl => Sampl UIType::Generic UICategory::Osc
-               (0 freq  n_pit      d_pit  r_id  f_def    -1.0, 1.0, 440.0)
-               (1 trig  n_id       n_id   r_id  f_def    -1.0, 1.0, 0.0)
-               (2 offs  n_id       n_id   r_id  f_def     0.0, 1.0, 0.0)
-               (3 len   n_id       n_id   r_id  f_def     0.0, 1.0, 1.0)
-               (4 dcms  n_declick  d_declick r_id f_def   0.0, 1.0, 3.14)
-               (5 det   n_det      d_det  r_det f_det    -0.2, 0.2, 0.0)
+               (0 freq  n_pit      d_pit  r_id  f_def    stp_d -1.0, 1.0, 440.0)
+               (1 trig  n_id       n_id   r_id  f_def    stp_d -1.0, 1.0, 0.0)
+               (2 offs  n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 0.0)
+               (3 len   n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
+               (4 dcms  n_declick  d_declick r_ms f_ms   stp_m  0.0, 1.0, 3.0)
+               (5 det   n_det      d_det  r_det f_det    stp_f -0.2, 0.2, 0.0)
                {6 0 sample audio_unloaded("")   f_def 0 0}
                {7 1 pmode  setting(0)           fa_sampl_pmode  0 1}
                {8 2 dclick setting(0)           fa_sampl_dclick 0 1}
                [0 sig],
+             // node_param_idx
+             //   name             denorm round format steps norm norm denorm
+             //         norm_fun   fun    fun   fun    def   min  max  default
             sin => Sin UIType::Generic UICategory::Osc
-               (0 freq  n_pit      d_pit r_id  f_freq -1.0, 1.0, 440.0)
-               (1 det   n_det      d_det r_det f_det  -0.2, 0.2,   0.0)
+               (0 freq  n_pit      d_pit r_id  f_freq  stp_d -1.0, 1.0, 440.0)
+               (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
-               (0  ch1   n_id      d_id  r_id   f_def -1.0, 1.0, 0.0)
-               (1  ch2   n_id      d_id  r_id   f_def -1.0, 1.0, 0.0)
+               (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
+               (1  ch2   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
              // node_param_idx
              // | atom_idx          format fun
              // | | name constructor|           min max
@@ -369,12 +395,12 @@ macro_rules! node_list {
              // | | |    |       |  |           |  |
                {2 0 mono setting(0) fa_out_mono 0  1},
             fbwr => FbWr UIType::Generic UICategory::IOUtil
-               (0  inp   n_id      d_id  r_id   f_def -1.0, 1.0, 0.0),
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
             fbrd => FbRd UIType::Generic UICategory::IOUtil
-               (0  atv   n_id      d_id  r_id   f_def -1.0, 1.0, 1.0)
+               (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
-               (0 f     n_id      d_id   r_id   f_def 0.0, 1.0, 0.5)
+               (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
                {1 0 s    setting(0) fa_test_s 0  10},
         }
     }
@@ -390,7 +416,7 @@ impl UICategory {
                     UICategory:: $ui_cat: ident
                     $(($in_idx: literal $para: ident
                        $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
-                       $min: expr, $max: expr, $def: expr))*
+                       $steps: ident $min: expr, $max: expr, $def: expr))*
                     $({$in_at_idx: literal $at_idx: literal $atom: ident
                        $at_fun: ident ($at_init: expr) $fa_fun: ident
                        $amin: literal $amax: literal})*
@@ -418,7 +444,7 @@ macro_rules! make_node_info_enum {
             UICategory:: $ui_cat: ident
             $(($in_idx: literal $para: ident
                $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
-               $min: expr, $max: expr, $def: expr))*
+               $steps: ident $min: expr, $max: expr, $def: expr))*
             $({$in_at_idx: literal $at_idx: literal $atom: ident
                $at_fun: ident ($at_init: expr) $fa_fun: ident
                $amin: literal $amax: literal})*
@@ -471,8 +497,8 @@ macro_rules! make_node_info_enum {
         ///
         /// assert!(!freq_param.is_atom());
         ///
-        /// // Access the min/max values of this paramter:
-        /// assert_eq!(freq_param.param_min_max().unwrap(), (-1.0, 1.0));
+        /// // Access the UI min/max and fine/coarse step values of this paramter:
+        /// assert_eq!(freq_param.param_min_max().unwrap(), ((-1.0, 1.0), (20.0, 100.0)));
         ///
         /// // Access the default value:
         /// assert_eq!(freq_param.as_atom_def().f(), 0.0);
@@ -519,12 +545,24 @@ macro_rules! make_node_info_enum {
                 }
             }
 
-            pub fn param_min_max(&self) -> Option<(f32, f32)> {
+            pub fn param_steps(&self) -> Option<(f32, f32)> {
                 match self.node {
                     NodeId::$v1           => None,
                     $(NodeId::$variant(_) => {
                         match self.idx {
                             $($in_idx => Some(($min, $max)),)*
+                            _         => None,
+                        }
+                    }),+
+                }
+            }
+
+            pub fn param_min_max(&self) -> Option<((f32, f32), (f32, f32))> {
+                match self.node {
+                    NodeId::$v1           => None,
+                    $(NodeId::$variant(_) => {
+                        match self.idx {
+                            $($in_idx => Some((($min, $max), $steps!())),)*
                             _         => None,
                         }
                     }),+
@@ -1068,7 +1106,7 @@ macro_rules! make_node_enum {
             UICategory:: $ui_cat: ident
             $(($in_idx: literal $para: ident
                $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
-               $min: expr, $max: expr, $def: expr))*
+               $steps: ident $min: expr, $max: expr, $def: expr))*
             $({$in_at_idx: literal $at_idx: literal $atom: ident
                $at_fun: ident ($at_init: expr) $fa_fun: ident
                $amin: literal $amax: literal})*
@@ -1155,7 +1193,7 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
                 UICategory:: $ui_cat: ident
                 $(($in_idx: literal $para: ident
                    $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
-                   $min: expr, $max: expr, $def: expr))*
+                   $steps: ident $min: expr, $max: expr, $def: expr))*
                 $({$in_at_idx: literal $at_idx: literal $atom: ident
                    $at_fun: ident ($at_init: expr) $fa_fun: ident
                    $amin: literal $amax: literal})*
@@ -1223,7 +1261,7 @@ impl Node {
                     UICategory:: $ui_cat: ident
                     $(($in_idx: literal $para: ident
                        $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
-                       $min: expr, $max: expr, $def: expr))*
+                       $steps: ident $min: expr, $max: expr, $def: expr))*
                     $({$in_at_idx: literal $at_idx: literal $atom: ident
                        $at_fun: ident ($at_init: expr) $fa_fun: ident
                        $amin: literal $amax: literal})*
