@@ -216,17 +216,17 @@ pub fn run_and_get_counted_freq(
     let mut last_val   = 0.0;
 
     for s in out_l.iter() {
-        if last_val > 0.0 && *s < 0.0 {
+        if last_val >= 0.0 && *s < 0.0 {
             zero_trans += 1;
-        } else if last_val < 0.0 && *s > 0.0 {
+        } else if last_val <= 0.0 && *s > 0.0 {
             zero_trans += 1;
         }
 
         last_val = *s;
     }
 
-    //d// println!("SAMPLES: {}", out_l.len());
-    //d// println!("ZERO TRANS: {}", zero_trans);
+    println!("SAMPLES: {}", out_l.len());
+    println!("ZERO TRANS: {}", zero_trans);
 
     let trans_per_sample =
         //                   substract the extra samples applied earlier.

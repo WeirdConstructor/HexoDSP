@@ -165,17 +165,17 @@ fn check_sine_freq_detune() {
 
     run_no_input(&mut node_exec, 50.0);
 
-    let cfreq = run_and_get_counted_freq(&mut node_exec, 100.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
     assert_float_eq!(cfreq.floor(), 440.0);
 
     matrix.set_param(freq_param, SAtom::param(freq_param.norm(4400.0)));
     run_no_input(&mut node_exec, 50.0);
-    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 2000.0);
     assert_float_eq!(cfreq.floor(), 4400.0);
 
     matrix.set_param(freq_param, SAtom::param(freq_param.norm(50.0)));
     run_no_input(&mut node_exec, 50.0);
-    let cfreq = run_and_get_counted_freq(&mut node_exec, 100.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
     assert_float_eq!(cfreq.floor(), 50.0);
 
     matrix.set_param(freq_param, SAtom::param(freq_param.norm(440.0)));
@@ -186,17 +186,17 @@ fn check_sine_freq_detune() {
 
     matrix.set_param(det_param, SAtom::param(det_param.norm(1.0)));
     run_no_input(&mut node_exec, 50.0);
-    let cfreq = run_and_get_counted_freq(&mut node_exec, 250.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
     assert_float_eq!(cfreq.floor(), 466.0);
 
     matrix.set_param(det_param, SAtom::param(det_param.norm(-1.0)));
     run_no_input(&mut node_exec, 50.0);
-    let cfreq = run_and_get_counted_freq(&mut node_exec, 300.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 2000.0);
     assert_float_eq!(cfreq.floor(), 415.0);
 
     matrix.set_param(det_param, SAtom::param(det_param.norm(-14.0)));
     run_no_input(&mut node_exec, 50.0);
-    let cfreq = run_and_get_counted_freq(&mut node_exec, 400.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
     assert_float_eq!(cfreq.floor(), 196.0);
 }
 
