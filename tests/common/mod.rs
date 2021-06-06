@@ -201,6 +201,40 @@ pub fn run_and_get_l_rms_mimax(
     rms_mimax[1]
 }
 
+pub fn run_and_get_counted_freq(
+    node_exec: &mut hexodsp::nodes::NodeExecutor, ms: f32)
+    -> f64
+{
+    let (out_l, _out_r) =
+        // +0.1 here for some extra samples
+        // this is just for tuning the frequency counter, so that it detects
+        // the last swing correctly. It's probably wrong, but the results
+        // match up better this way.
+        run_no_input(node_exec, (ms + 0.1) / 1000.0);
+
+    let mut zero_trans = 0;
+    let mut last_val   = 0.0;
+
+    for s in out_l.iter() {
+        if last_val > 0.0 && *s < 0.0 {
+            zero_trans += 1;
+        } else if last_val < 0.0 && *s > 0.0 {
+            zero_trans += 1;
+        }
+
+        last_val = *s;
+    }
+
+    //d// println!("SAMPLES: {}", out_l.len());
+    //d// println!("ZERO TRANS: {}", zero_trans);
+
+    let trans_per_sample =
+        //                   substract the extra samples applied earlier.
+        (zero_trans as f64) / ((out_l.len() - 4) as f64);
+    trans_per_sample * 44100.0 * 0.5
+}
+
+
 pub fn run_and_get_fft4096(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     thres: u32,

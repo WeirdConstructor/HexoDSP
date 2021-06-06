@@ -254,8 +254,8 @@ macro_rules! d_pit { ($x: expr) => {
 // 5.0 * 0.1         => 12.0
 // 5.0 * 0.008333333 => 1.0
 // 5.0 * 0.000083333 => 0.001
-macro_rules! n_det { ($x: expr) => { ($x * 5.0 * 0.1) / 12.0 } }
-macro_rules! d_det { ($x: expr) => { $x * 0.2 * 120.0 } }
+macro_rules! n_det { ($x: expr) => { $x / 120.0 } }
+macro_rules! d_det { ($x: expr) => { $x * 120.0 } }
 
 // Rounding function that does nothing
 macro_rules! r_id { ($x: expr) => { $x } }
@@ -344,9 +344,10 @@ macro_rules! node_list {
                (2 offs  n_id       n_id   r_id  f_def     0.0, 1.0, 0.0)
                (3 len   n_id       n_id   r_id  f_def     0.0, 1.0, 1.0)
                (4 dcms  n_declick  d_declick r_id f_def   0.0, 1.0, 3.14)
-               {5 0 sample audio_unloaded("")   f_def 0 0}
-               {6 1 pmode  setting(0)           fa_sampl_pmode  0 1}
-               {7 2 dclick setting(0)           fa_sampl_dclick 0 1}
+               (5 det   n_det      d_det  r_id  f_det    -1.0, 1.0, 0.0)
+               {6 0 sample audio_unloaded("")   f_def 0 0}
+               {7 1 pmode  setting(0)           fa_sampl_pmode  0 1}
+               {8 2 dclick setting(0)           fa_sampl_dclick 0 1}
                [0 sig],
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_id  f_freq -1.0, 1.0, 440.0)
@@ -853,6 +854,15 @@ macro_rules! make_node_info_enum {
             $(pub mod $variant {
                 $(#[inline] pub fn $para(buf: &crate::dsp::ProcBuf, frame: usize) -> f32 {
                     $d_fun!(buf.read(frame))
+                })*
+            })+
+        }
+
+        #[allow(non_snake_case)]
+        pub mod denorm_offs {
+            $(pub mod $variant {
+                $(#[inline] pub fn $para(buf: &crate::dsp::ProcBuf, offs_val: f32, frame: usize) -> f32 {
+                    $d_fun!(buf.read(frame) + offs_val)
                 })*
             })+
         }

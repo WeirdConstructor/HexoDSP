@@ -138,6 +138,59 @@ fn check_sine_pitch_change() {
 }
 
 #[test]
+fn check_detune_parameter() {
+    let sin = NodeId::Sin(0);
+    let det_param  = sin.inp_param("det").unwrap();
+    assert_float_eq!(det_param.norm(12.0),   0.1);
+    assert_float_eq!(det_param.norm(-12.0), -0.1);
+    assert_float_eq!(det_param.norm(24.0),   0.2);
+    assert_float_eq!(det_param.norm(-24.0), -0.2);
+}
+
+#[test]
+fn check_sine_freq_detune() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let sin = NodeId::Sin(0);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(sin)
+                       .out(None, sin.out("sig"), None));
+    matrix.place(1, 0, Cell::empty(out)
+                       .input(None, out.inp("ch1"), None));
+    matrix.sync().unwrap();
+
+    let freq_param = sin.inp_param("freq").unwrap();
+    let det_param  = sin.inp_param("det").unwrap();
+
+    run_no_input(&mut node_exec, 50.0);
+
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 100.0);
+    assert_float_eq!(cfreq.floor(), 440.0);
+
+    matrix.set_param(freq_param, SAtom::param(freq_param.norm(4400.0)));
+    run_no_input(&mut node_exec, 50.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
+    assert_float_eq!(cfreq.floor(), 4400.0);
+
+    matrix.set_param(freq_param, SAtom::param(freq_param.norm(50.0)));
+    run_no_input(&mut node_exec, 50.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 100.0);
+    assert_float_eq!(cfreq.floor(), 50.0);
+
+    matrix.set_param(freq_param, SAtom::param(freq_param.norm(440.0)));
+    matrix.set_param(det_param, SAtom::param(det_param.norm(12.0)));
+    run_no_input(&mut node_exec, 50.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
+    assert_float_eq!(cfreq.floor(), 880.0);
+
+    matrix.set_param(det_param, SAtom::param(det_param.norm(1.0)));
+    run_no_input(&mut node_exec, 50.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
+    assert_float_eq!(cfreq.floor(), 493.0);
+}
+
+#[test]
 fn check_matrix_monitor() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);

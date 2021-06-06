@@ -4,7 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
-use crate::dsp::{out, at, inp, denorm}; //, inp, denorm, denorm_v, inp_dir, at};
+use crate::dsp::{out, at, inp, denorm, denorm_offs}; //, inp, denorm, denorm_v, inp_dir, at};
 use super::helpers::Trigger;
 
 #[macro_export]
@@ -64,6 +64,14 @@ impl Sampl {
         "Sampl len\nLength of the sample, after the offset has been applied.\nRange: (0..1)\n";
     pub const dcms   : &'static str =
         "Sampl dcms\nDeclick fade time in milliseconds.\nNot audio rate!\nRange: (0..1)\n";
+    pub const det : &'static str =
+        "Sin det\nDetune the oscillator in semitones and cents. \
+         the input of this value is rounded to semitones on coarse input. \
+         Fine input lets you detune in cents (rounded). \
+         A signal sent to this port is not rounded.\n\
+         Note: The signal input allows detuning over +- 10 octaves.\
+         \n\nKnob Range: (-0.2 .. 0.2)\n\
+             Signal Range: (-1.0 .. 1.0)\n";
 
     pub const sample : &'static str =
         "Sampl sample\nThe audio sample that is played back.\nRange: (-1..1)\n";
@@ -128,6 +136,7 @@ impl Sampl {
         let offs = inp::Sampl::offs(inputs);
         let len  = inp::Sampl::len(inputs);
         let dcms = inp::Sampl::dcms(inputs);
+        let det  = inp::Sampl::det(inputs);
 
         let sample_srate = sample_data[0] as f64;
         let sample_data  = &sample_data[1..];
@@ -161,8 +170,10 @@ impl Sampl {
 
             let s =
                 if is_playing {
-                    let playback_speed =
-                        denorm::Sampl::freq(freq, frame) / 440.0;
+                    let freq =
+                        denorm_offs::Sampl::freq(
+                            freq, det.read(frame), frame);
+                    let playback_speed = freq / 440.0;
 
                     let prev_phase = self.phase;
 

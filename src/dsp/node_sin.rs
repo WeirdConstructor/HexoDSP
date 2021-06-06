@@ -3,7 +3,10 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, denorm, out, inp, DspNode, LedPhaseVals};
+use crate::dsp::{
+    NodeId, SAtom, ProcBuf, denorm, denorm_offs,
+    out, inp, DspNode, LedPhaseVals
+};
 use crate::dsp::helpers::fast_sin;
 
 
@@ -31,8 +34,9 @@ impl Sin {
         "Sin det\nDetune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
-         A signal sent to this port is not rounded.\
-         \n\nRange: (-1..1)\n";
+         A signal sent to this port is not rounded.\n\
+         Note: The signal input allows detune +-10 octaves.\
+         \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
     pub const sig : &'static str =
         "Sin sig\nOscillator signal output.\n\nRange: (-1..1)\n";
 }
@@ -56,11 +60,12 @@ impl DspNode for Sin {
     {
         let o    = out::Sin::sig(outputs);
         let freq = inp::Sin::freq(inputs);
+        let det  = inp::Sin::det(inputs);
         let isr  = 1.0 / self.srate;
 
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {
-            let freq = denorm::Sin::freq(freq, frame);
+            let freq = denorm_offs::Sampl::freq(freq, det.read(frame), frame);
 
             last_val = fast_sin(self.phase * TWOPI);
             o.write(frame, last_val);

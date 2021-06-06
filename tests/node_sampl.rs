@@ -54,6 +54,28 @@ fn check_node_sampl_1() {
 }
 
 #[test]
+fn check_node_sampl_detune() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let smpl = NodeId::Sampl(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smpl)
+                       .out(None, None, smpl.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let sample_p = smpl.inp_param("sample").unwrap();
+    let freq_p   = smpl.inp_param("freq").unwrap();
+    let det_p    = smpl.inp_param("det").unwrap();
+    matrix.set_param(sample_p, SAtom::audio_unloaded("tests/sample_sin.wav"));
+
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
+    assert_float_eq!(cfreq, 1.0);
+}
+
+#[test]
 fn check_node_sampl_reload() {
     {
         let (node_conf, _node_exec) = new_node_engine();
