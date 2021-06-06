@@ -255,9 +255,16 @@ macro_rules! d_pit { ($x: expr) => {
 // 0.000083333 => 0.001
 macro_rules! n_det { ($x: expr) => { $x / 120.0 } }
 macro_rules! d_det { ($x: expr) => { $x * 120.0 } }
+macro_rules! r_det { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        n_det!((d_det!($x)).floor())
+    } else {
+        n_det!((d_det!($x) * 10.0).floor() / 10.0)
+    }
+} }
 
 // Rounding function that does nothing
-macro_rules! r_id { ($x: expr) => { $x } }
+macro_rules! r_id { ($x: expr, $coarse: expr) => { $x } }
 
 // Default formatting function
 macro_rules! f_def { ($formatter: expr, $v: expr, $denorm_v: expr) => {
@@ -343,14 +350,14 @@ macro_rules! node_list {
                (2 offs  n_id       n_id   r_id  f_def     0.0, 1.0, 0.0)
                (3 len   n_id       n_id   r_id  f_def     0.0, 1.0, 1.0)
                (4 dcms  n_declick  d_declick r_id f_def   0.0, 1.0, 3.14)
-               (5 det   n_det      d_det  r_id  f_det    -0.2, 0.2, 0.0)
+               (5 det   n_det      d_det  r_det f_det    -0.2, 0.2, 0.0)
                {6 0 sample audio_unloaded("")   f_def 0 0}
                {7 1 pmode  setting(0)           fa_sampl_pmode  0 1}
                {8 2 dclick setting(0)           fa_sampl_dclick 0 1}
                [0 sig],
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_id  f_freq -1.0, 1.0, 440.0)
-               (1 det   n_det      d_det r_id  f_det  -0.2, 0.2,   0.0)
+               (1 det   n_det      d_det r_det f_det  -0.2, 0.2,   0.0)
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def -1.0, 1.0, 0.0)
@@ -574,12 +581,12 @@ macro_rules! make_node_info_enum {
                 }
             }
 
-            pub fn round(&self, v: f32) -> f32 {
+            pub fn round(&self, v: f32, coarse: bool) -> f32 {
                 match self.node {
                     NodeId::$v1           => 0.0,
                     $(NodeId::$variant(_) => {
                         match self.idx {
-                            $($in_idx => crate::dsp::round::$variant::$para(v),)*
+                            $($in_idx => crate::dsp::round::$variant::$para(v, coarse),)*
                             _ => 0.0,
                         }
                     }),+
@@ -823,7 +830,7 @@ macro_rules! make_node_info_enum {
         #[allow(non_snake_case)]
         pub mod round {
             $(pub mod $variant {
-                $(#[inline] pub fn $para(x: f32) -> f32 { $r_fun!(x) })*
+                $(#[inline] pub fn $para(x: f32, coarse: bool) -> f32 { $r_fun!(x, coarse) })*
             })+
         }
 
