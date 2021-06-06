@@ -186,8 +186,18 @@ fn check_sine_freq_detune() {
 
     matrix.set_param(det_param, SAtom::param(det_param.norm(1.0)));
     run_no_input(&mut node_exec, 50.0);
-    let cfreq = run_and_get_counted_freq(&mut node_exec, 1000.0);
-    assert_float_eq!(cfreq.floor(), 493.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 250.0);
+    assert_float_eq!(cfreq.floor(), 466.0);
+
+    matrix.set_param(det_param, SAtom::param(det_param.norm(-1.0)));
+    run_no_input(&mut node_exec, 50.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 300.0);
+    assert_float_eq!(cfreq.floor(), 415.0);
+
+    matrix.set_param(det_param, SAtom::param(det_param.norm(-14.0)));
+    run_no_input(&mut node_exec, 50.0);
+    let cfreq = run_and_get_counted_freq(&mut node_exec, 400.0);
+    assert_float_eq!(cfreq.floor(), 196.0);
 }
 
 #[test]
