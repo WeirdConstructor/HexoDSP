@@ -257,9 +257,9 @@ macro_rules! n_det { ($x: expr) => { $x / 120.0 } }
 macro_rules! d_det { ($x: expr) => { $x * 120.0 } }
 macro_rules! r_det { ($x: expr, $coarse: expr) => {
     if $coarse {
-        n_det!((d_det!($x)).floor())
+        n_det!((d_det!($x)).round())
     } else {
-        n_det!((d_det!($x) * 10.0).floor() / 10.0)
+        n_det!((d_det!($x) * 10.0).round() / 10.0)
     }
 } }
 
@@ -285,7 +285,7 @@ macro_rules! f_det { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     {
         let sign      = if $denorm_v < 0.0 { -1.0 } else { 1.0 };
         let semitones = $denorm_v.floor().abs();
-        let cents     = ($denorm_v.fract() * 100.0).floor().abs();
+        let cents     = ($denorm_v.fract() * 100.0).round().abs();
 
         if (cents > 1.0) {
             write!($formatter, "{:2.0}s {:3.0}c", sign * semitones, cents)
