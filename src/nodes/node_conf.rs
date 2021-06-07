@@ -60,7 +60,7 @@ impl NodeInstance {
     pub fn mark_used(&mut self) { self.in_use = true; }
     pub fn is_used(&self) -> bool { self.in_use }
 
-    pub fn to_op(&self) -> NodeOp {
+    pub fn as_op(&self) -> NodeOp {
         NodeOp {
             idx:        self.prog_idx as u8,
             out_idxlen: (self.out_start, self.out_end),
@@ -308,7 +308,7 @@ impl NodeConfigurator {
         if param.is_atom() {
             let at =
                 if let SAtom::AudioSample((path, None)) = at.clone() {
-                    if path.len() > 0 {
+                    if !path.is_empty() {
                         match self.sample_lib.load(&path) {
                             Ok(sample) => sample.clone(),
                             Err(e) => {
@@ -354,6 +354,7 @@ impl NodeConfigurator {
 
     /// Dumps all set parameters (inputs and atoms).
     /// Most useful for serialization and saving patches.
+    #[allow(clippy::type_complexity)]
     pub fn dump_param_values(&self)
         -> (Vec<(ParamId, f32)>, Vec<(ParamId, SAtom)>)
     {
@@ -516,38 +517,35 @@ impl NodeConfigurator {
     {
         let mut bufs = [UNUSED_MONITOR_IDX; MON_SIG_CNT];
 
-        if let Some((_node_info, node_instance)) = self.node_by_id(node_id) {
-            if let Some(node_instance) = node_instance {
-
-                let mut i = 0;
-                for inp_idx in inputs.iter().take(MON_SIG_CNT / 2) {
-                    if let Some(inp_idx) = inp_idx {
-                        if let Some(global_idx)
-                            = node_instance.in_local2global(*inp_idx)
-                        {
-                            bufs[i] = global_idx;
-                        }
+        if let Some((_node_info, Some(node_instance))) = self.node_by_id(node_id) {
+            let mut i = 0;
+            for inp_idx in inputs.iter().take(MON_SIG_CNT / 2) {
+                if let Some(inp_idx) = inp_idx {
+                    if let Some(global_idx)
+                        = node_instance.in_local2global(*inp_idx)
+                    {
+                        bufs[i] = global_idx;
                     }
-
-                    i += 1;
                 }
 
-                for out_idx in outputs.iter().take(MON_SIG_CNT / 2) {
-                    if let Some(out_idx) = out_idx {
-                        if let Some(global_idx)
-                            = node_instance.out_local2global(*out_idx)
-                        {
-                            bufs[i] = global_idx;
-                        }
-                    }
-
-                    i += 1;
-                }
-
-                let _ =
-                    self.shared.quick_update_prod.push(
-                        QuickMessage::SetMonitor { bufs });
+                i += 1;
             }
+
+            for out_idx in outputs.iter().take(MON_SIG_CNT / 2) {
+                if let Some(out_idx) = out_idx {
+                    if let Some(global_idx)
+                        = node_instance.out_local2global(*out_idx)
+                    {
+                        bufs[i] = global_idx;
+                    }
+                }
+
+                i += 1;
+            }
+
+            let _ =
+                self.shared.quick_update_prod.push(
+                    QuickMessage::SetMonitor { bufs });
         }
     }
 
@@ -773,7 +771,7 @@ impl NodeConfigurator {
             = self.node_by_id_mut(node_id)
         {
             node_instance.mark_used();
-            let op = node_instance.to_op();
+            let op = node_instance.as_op();
             prog.append_op(op);
         }
     }
@@ -805,14 +803,13 @@ impl NodeConfigurator {
             = self.node_by_id_mut(&node_input.0)
         {
             node_instance.mark_used();
-            let op = node_instance.to_op();
+            let op = node_instance.as_op();
 
             let input_index = node_instance.in_local2global(node_input.1);
-            match (input_index, output_index) {
-                (Some(input_index), Some(output_index)) => {
-                    prog.append_edge(op, input_index, output_index);
-                },
-                _ => {},
+            if let (Some(input_index), Some(output_index)) =
+                (input_index, output_index)
+            {
+                prog.append_edge(op, input_index, output_index);
             }
         }
     }

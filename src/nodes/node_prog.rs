@@ -115,16 +115,16 @@ impl NodeProg {
 
     pub fn new(out_len: usize, inp_len: usize, at_len: usize) -> Self {
         let mut out = vec![];
-        out.resize_with(out_len, || ProcBuf::new());
+        out.resize_with(out_len, ProcBuf::new);
 
         let out_fb = vec![0.0; out_len];
         let tb = TripleBuffer::new(out_fb);
         let (input_fb, output_fb) = tb.split();
 
         let mut inp = vec![];
-        inp.resize_with(inp_len, || ProcBuf::new());
+        inp.resize_with(inp_len, ProcBuf::new);
         let mut cur_inp = vec![];
-        cur_inp.resize_with(inp_len, || ProcBuf::null());
+        cur_inp.resize_with(inp_len, ProcBuf::null);
 
         let mut params = vec![];
         params.resize(inp_len, 0.0);

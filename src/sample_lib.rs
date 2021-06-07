@@ -53,8 +53,7 @@ impl SampleLibrary {
 
         let channels = rd.spec().channels as usize;
 
-        let mut v = vec![];
-        v.push(rd.spec().sample_rate as f32);
+        let mut v = vec![rd.spec().sample_rate as f32];
 
         match rd.spec().sample_format {
             hound::SampleFormat::Float => {
@@ -76,6 +75,10 @@ impl SampleLibrary {
         self.loaded_samples.insert(path.to_string(), atom);
         Ok(self.loaded_samples.get(path).unwrap())
     }
+}
+
+impl Default for SampleLibrary {
+    fn default() -> Self { Self::new() }
 }
 
 #[cfg(test)]

@@ -149,12 +149,15 @@ impl FeedbackBuffer {
         if self.sample_count > 0 {
             self.sample_count -= 1;
             self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
-            let s = self.buffer[self.read_ptr];
-            s
+            self.buffer[self.read_ptr]
         } else {
             0.0
         }
     }
+}
+
+impl Default for FeedbackBuffer {
+    fn default() -> Self { Self::new() }
 }
 
 /// Contains global state that all nodes can access.
@@ -166,7 +169,7 @@ pub struct NodeExecContext {
 impl NodeExecContext {
     fn new() -> Self {
         let mut fbdb = vec![];
-        fbdb.resize_with(MAX_ALLOCATED_NODES, || FeedbackBuffer::new());
+        fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
         Self {
             feedback_delay_buffers: fbdb,
         }
@@ -346,12 +349,7 @@ impl NodeExecutor {
         }
 
         // Find unused smoother and set it:
-        if let Some(sm) =
-            self.smoothers
-                .iter_mut()
-                .filter(|s| s.1.is_done())
-                .next()
-        {
+        if let Some(sm) = self.smoothers.iter_mut().find(|s| s.1.is_done()) {
             sm.0 = input_idx;
             sm.1.set(prog.params[input_idx], value);
             //d// println!("SET SMOOTHER {} {:6.3} (old = {:6.3})",

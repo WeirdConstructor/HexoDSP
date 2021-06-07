@@ -183,6 +183,12 @@ impl MinMaxMonitorSamples {
     }
 
     pub fn len(&self) -> usize { MONITOR_MINMAX_SAMPLES }
+
+    pub fn is_empty(&self) -> bool { false }
+}
+
+impl Default for MinMaxMonitorSamples {
+    fn default() -> Self { Self::new() }
 }
 
 impl std::ops::Index<usize> for MinMaxMonitorSamples {

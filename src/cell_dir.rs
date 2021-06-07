@@ -43,7 +43,7 @@ impl CellDir {
         *self as u8
     }
 
-    pub fn to_menu_pos(&self) -> (i32, i32) {
+    pub fn as_menu_pos(&self) -> (i32, i32) {
         match self {
             // out 1 - TR
             CellDir::TR => (0, 1),
@@ -61,7 +61,7 @@ impl CellDir {
         }
     }
 
-    pub fn to_offs(&self, x: usize) -> (i32, i32) {
+    pub fn as_offs(&self, x: usize) -> (i32, i32) {
         let even = x % 2 == 0;
         match self {
             // out 1 - TR

@@ -184,6 +184,10 @@ impl NodeGraphOrdering {
     }
 }
 
+impl Default for NodeGraphOrdering {
+    fn default() -> Self { Self::new() }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

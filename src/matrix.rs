@@ -631,7 +631,7 @@ impl Matrix {
     }
 
     pub fn get_adjacent(&self, x: usize, y: usize, dir: CellDir) -> Option<&Cell> {
-        let offs : (i32, i32) = dir.to_offs(x);
+        let offs : (i32, i32) = dir.as_offs(x);
         let x = x as i32 + offs.0;
         let y = y as i32 + offs.1;
 

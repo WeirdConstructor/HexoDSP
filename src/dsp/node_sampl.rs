@@ -95,6 +95,7 @@ impl Sampl {
 }
 
 impl Sampl {
+    #[allow(clippy::many_single_char_names)]
     #[inline]
     fn next_sample(&mut self, sr_factor: f64, speed: f64, sample_data: &[f32]) -> f32 {
         let sd_len = sample_data.len();
@@ -129,6 +130,7 @@ impl Sampl {
         (((a * f) - b_neg) * f + c) * f + x0
     }
 
+    #[allow(clippy::float_cmp)]
     #[inline]
     fn play(&mut self, inputs: &[ProcBuf], nframes: usize,
             sample_data: &[f32], out: &mut ProcBuf, do_loop: bool,

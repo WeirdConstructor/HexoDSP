@@ -369,14 +369,15 @@ impl Trigger {
             if input <= 0.25 {
                 self.triggered = false;
             }
+
             false
+
+        } else if input > 0.75 {
+            self.triggered = true;
+            true
+
         } else {
-            if input > 0.75 {
-                self.triggered = true;
-                true
-            } else {
-                false
-            }
+            false
         }
     }
 }
