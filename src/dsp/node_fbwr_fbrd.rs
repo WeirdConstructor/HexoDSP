@@ -33,8 +33,8 @@ impl DspNode for FbWr {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
+        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{inp};
 
@@ -81,7 +81,7 @@ impl DspNode for FbRd {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{out, inp, denorm};

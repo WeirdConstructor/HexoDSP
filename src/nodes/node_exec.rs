@@ -5,7 +5,7 @@
 use super::{
     GraphMessage, QuickMessage, DropMsg, NodeProg,
     UNUSED_MONITOR_IDX, MAX_ALLOCATED_NODES, MAX_SMOOTHERS,
-    MAX_FB_DELAY_SIZE, FB_DELAY_TIME_US,
+    MAX_FB_DELAY_SIZE
 };
 use crate::dsp::{NodeId, Node, MAX_BLOCK_SIZE};
 use crate::util::{Smoother, AtomicFloat};
@@ -117,10 +117,8 @@ impl FeedbackBuffer {
         self.buffer = [0.0; MAX_FB_DELAY_SIZE];
     }
 
-    pub fn set_sample_rate(&mut self, sr: f32) {
+    pub fn set_sample_rate(&mut self, _sr: f32) {
         self.buffer            = [0.0; MAX_FB_DELAY_SIZE];
-        self.write_ptr         = 0;
-        self.sample_count      = 0;
         // The delay sample count maximum is defined by MAX_FB_DELAY_SRATE,
         // after that the feedback delays become shorter than they should be
         // and things won't sound the same at sample rate
@@ -132,7 +130,10 @@ impl FeedbackBuffer {
         //
         // For more elaborate and longer delays an extra delay node should
         // be used before FbWr or after FbRd.
-        let delay_sample_count = (sr as usize * FB_DELAY_TIME_US) / 1000000;
+
+        // let delay_sample_count = (sr as usize * FB_DELAY_TIME_US) / 1000000;
+        self.write_ptr         = 0;
+        self.sample_count      = 0;
         self.read_ptr          = 0;
     }
 
@@ -146,7 +147,7 @@ impl FeedbackBuffer {
     #[inline]
     pub fn read(&mut self) -> f32 {
         if self.sample_count > 0 {
-            self.sample_count - 1;
+            self.sample_count -= 1;
             self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
             let s = self.buffer[self.read_ptr];
             s

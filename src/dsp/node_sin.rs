@@ -4,7 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{
-    NodeId, SAtom, ProcBuf, denorm, denorm_offs,
+    NodeId, SAtom, ProcBuf, denorm_offs,
     out, inp, DspNode, LedPhaseVals
 };
 use crate::dsp::helpers::fast_sin;

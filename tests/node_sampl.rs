@@ -67,10 +67,9 @@ fn check_node_sampl_long_freq() {
     matrix.sync().unwrap();
 
     let sample_p = smpl.inp_param("sample").unwrap();
-    let freq_p   = smpl.inp_param("freq").unwrap();
     matrix.set_param(sample_p, SAtom::audio_unloaded("tests/sample_sin_long.wav"));
 
-    let (out_l, _) = run_no_input(&mut node_exec, 0.05);
+    run_no_input(&mut node_exec, 0.05);
 
     let fft = run_and_get_fft4096(&mut node_exec, 800, 100.0);
     assert_eq!(fft[0], (441, 1014));
@@ -94,7 +93,6 @@ fn check_node_sampl_detune() {
     matrix.sync().unwrap();
 
     let sample_p = smpl.inp_param("sample").unwrap();
-    let freq_p   = smpl.inp_param("freq").unwrap();
     let det_p    = smpl.inp_param("det").unwrap();
     matrix.set_param(sample_p, SAtom::audio_unloaded("tests/sample_sin.wav"));
 

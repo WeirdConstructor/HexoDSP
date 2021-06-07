@@ -865,7 +865,7 @@ macro_rules! make_node_info_enum {
             }
         }
 
-        #[allow(non_snake_case)]
+        #[allow(non_snake_case, unused_variables)]
         pub mod round {
             $(pub mod $variant {
                 $(#[inline] pub fn $para(x: f32, coarse: bool) -> f32 { $r_fun!(x, coarse) })*
@@ -1024,6 +1024,9 @@ macro_rules! make_node_info_enum {
                             _         => 0.0,
                         }
                     }
+
+                    pub fn desc(&self) -> &'static str { self.node_desc }
+                    pub fn help(&self) -> &'static str { self.node_help }
 
                     pub fn out_count(&self) -> usize { self.outputs.len() }
                     pub fn in_count(&self)  -> usize { self.inputs.len() }
