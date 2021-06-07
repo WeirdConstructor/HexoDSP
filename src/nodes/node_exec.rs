@@ -5,7 +5,7 @@
 use super::{
     GraphMessage, QuickMessage, DropMsg, NodeProg,
     UNUSED_MONITOR_IDX, MAX_ALLOCATED_NODES, MAX_SMOOTHERS,
-    MAX_FB_DELAY_SIZE
+    MAX_FB_DELAY_SIZE, FB_DELAY_TIME_US
 };
 use crate::dsp::{NodeId, Node, MAX_BLOCK_SIZE};
 use crate::util::{Smoother, AtomicFloat};
@@ -96,20 +96,15 @@ pub struct FeedbackBuffer {
     write_ptr:      usize,
     /// Read pointer, is always behind write_ptr by an initial amount
     read_ptr:       usize,
-    /// The number of samples written into the buffer (to prevent overreads)
-    /// We need to keep track of the number of samples actually written into
-    /// the delay because the first or previous periods may have produced
-    /// not enough samples.
-    sample_count:   usize,
 }
 
 impl FeedbackBuffer {
     pub fn new() -> Self {
+        let delay_sample_count = (44100.0 as usize * FB_DELAY_TIME_US) / 1000000;
         Self {
             buffer:         [0.0; MAX_FB_DELAY_SIZE],
-            write_ptr:      0,
+            write_ptr:      delay_sample_count % MAX_FB_DELAY_SIZE,
             read_ptr:       0,
-            sample_count:   0,
         }
     }
 
@@ -117,7 +112,7 @@ impl FeedbackBuffer {
         self.buffer = [0.0; MAX_FB_DELAY_SIZE];
     }
 
-    pub fn set_sample_rate(&mut self, _sr: f32) {
+    pub fn set_sample_rate(&mut self, sr: f32) {
         self.buffer            = [0.0; MAX_FB_DELAY_SIZE];
         // The delay sample count maximum is defined by MAX_FB_DELAY_SRATE,
         // after that the feedback delays become shorter than they should be
@@ -131,28 +126,25 @@ impl FeedbackBuffer {
         // For more elaborate and longer delays an extra delay node should
         // be used before FbWr or after FbRd.
 
-        // let delay_sample_count = (sr as usize * FB_DELAY_TIME_US) / 1000000;
-        self.write_ptr         = 0;
-        self.sample_count      = 0;
+        let delay_sample_count = (sr as usize * FB_DELAY_TIME_US) / 1000000;
+        self.write_ptr         = delay_sample_count % MAX_FB_DELAY_SIZE;
         self.read_ptr          = 0;
     }
 
     #[inline]
     pub fn write(&mut self, s: f32) {
         self.write_ptr = (self.write_ptr + 1) % MAX_FB_DELAY_SIZE;
-        self.sample_count += 1;
         self.buffer[self.write_ptr] = s;
+        //d// println!("WRITE[{}] = {:8.3}", self.write_ptr, s);
     }
 
     #[inline]
     pub fn read(&mut self) -> f32 {
-        if self.sample_count > 0 {
-            self.sample_count -= 1;
-            self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
-            self.buffer[self.read_ptr]
-        } else {
-            0.0
-        }
+        self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
+        self.buffer[self.read_ptr]
+        //d// let s = self.buffer[self.read_ptr];
+        //d// println!("READ[{}] = {:8.3}", self.read_ptr, s);
+        //d// s
     }
 }
 
