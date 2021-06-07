@@ -22,6 +22,9 @@ pub struct Amp {
 }
 
 impl Amp {
+    pub const DESC : &'static str = r#""#;
+    pub const HELP : &'static str = r#""#;
+
     pub fn new(_nid: &NodeId) -> Self {
         Self {
         }

@@ -19,6 +19,9 @@ impl FbWr {
     }
     pub const inp : &'static str =
         "FbWr inp\nSignal input\nRange: (-1..1)\n";
+
+    pub const DESC : &'static str = r#""#;
+    pub const HELP : &'static str = r#""#;
 }
 
 impl DspNode for FbWr {
@@ -64,6 +67,9 @@ impl FbRd {
          Use this to adjust the feedback amount.\nRange: (0..1)\n";
     pub const sig : &'static str =
         "FbRd sig\nFeedback signal output.\nRange: (-1..1)\n";
+
+    pub const DESC : &'static str = r#""#;
+    pub const HELP : &'static str = r#""#;
 }
 
 impl DspNode for FbRd {

@@ -9,7 +9,6 @@ use crate::dsp::{
 };
 use crate::dsp::helpers::fast_sin;
 
-
 /// A sine oscillator
 #[derive(Debug, Clone)]
 pub struct Sin {
@@ -39,6 +38,29 @@ impl Sin {
          \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
     pub const sig : &'static str =
         "Sin sig\nOscillator signal output.\n\nRange: (-1..1)\n";
+
+    pub const DESC : &'static str =
+    r#"Sin - A Sine Oscillator
+
+    This is a very simple oscillator that generates a
+    sine wave.
+    "#;
+
+    pub const HELP : &'static str =
+    r#"Sin - A Sine Oscillator
+
+    This is a very simple oscillator that generates a sine wave.
+    The 'freq' paramter specifies the frequency, and the 'det' parameter
+    allows you to detune the oscillator easily.
+
+    You can send any signal to these input ports. The 'det' parameter takes
+    the same signal range as 'freq', which means, that a value of 0.1 detunes
+    by one octave. And a value 1.0 detunes by 10 octaves. This means that
+    for 'det' to be usefully modulated you need to attenuate the modulation input.
+
+    You can do FM with this node, but for easy FM synthesis there are other
+    nodes available.
+    "#;
 }
 
 impl DspNode for Sin {

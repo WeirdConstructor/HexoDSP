@@ -89,6 +89,9 @@ impl Sampl {
 
     pub const sig : &'static str =
         "Sampl sig\nSampler audio output\nRange: (-1..1)\n";
+
+    pub const DESC : &'static str = r#""#;
+    pub const HELP : &'static str = r#""#;
 }
 
 impl Sampl {

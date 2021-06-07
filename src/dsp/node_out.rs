@@ -53,6 +53,9 @@ impl Out {
     pub const ch15: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
     pub const ch16: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
     pub const ch17: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
+
+    pub const DESC : &'static str = r#""#;
+    pub const HELP : &'static str = r#""#;
 }
 
 impl DspNode for Out {

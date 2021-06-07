@@ -80,6 +80,9 @@ impl TSeq {
         "TSeq gat5\nTrack 5 gate output\nRange: (-1..1)\n";
     pub const gat6 : &'static str =
         "TSeq gat6\nTrack 6 gate output\nRange: (-1..1)\n";
+
+    pub const DESC : &'static str = r#""#;
+    pub const HELP : &'static str = r#""#;
 }
 
 impl DspNode for TSeq {

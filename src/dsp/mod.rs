@@ -965,6 +965,8 @@ macro_rules! make_node_info_enum {
                     outputs:        Vec<&'static str>,
                     input_help:     Vec<&'static str>,
                     output_help:    Vec<&'static str>,
+                    node_help:      &'static str,
+                    node_desc:      &'static str,
                 }
 
                 impl $variant {
@@ -980,6 +982,8 @@ macro_rules! make_node_info_enum {
 
                             input_help,
                             output_help: vec![$(crate::dsp::$variant::$out,)*],
+                            node_help:   crate::dsp::$variant::HELP,
+                            node_desc:   crate::dsp::$variant::DESC,
                         }
                     }
 
