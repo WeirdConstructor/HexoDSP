@@ -460,13 +460,16 @@ fn check_node_sampl_declick() {
     let sample_p = smpl.inp_param("sample").unwrap();
     let pmode_p  = smpl.inp_param("pmode").unwrap();
     let dclick_p = smpl.inp_param("dclick").unwrap();
+    let dcms_p   = smpl.inp_param("dcms").unwrap();
     let trig_p   = smpl.inp_param("trig").unwrap();
 
     matrix.set_param(sample_p, create_1sec_const(1.0));
     // One Shot Mode
     matrix.set_param(pmode_p,  SAtom::setting(1));
     matrix.set_param(dclick_p, SAtom::setting(0));
+    matrix.set_param(dcms_p,   SAtom::param(dcms_p.norm(3.14)));
     matrix.set_param(trig_p, (1.0).into());
+
     let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 5.0);
 
     assert_minmax_of_rms!(rmsvec[0], (0.0, 0.0));
@@ -506,6 +509,7 @@ fn check_node_sampl_declick_offs_len() {
     let sample_p = smpl.inp_param("sample").unwrap();
     let pmode_p  = smpl.inp_param("pmode").unwrap();
     let dclick_p = smpl.inp_param("dclick").unwrap();
+    let dcms_p   = smpl.inp_param("dcms").unwrap();
     let trig_p   = smpl.inp_param("trig").unwrap();
     let offs_p   = smpl.inp_param("offs").unwrap();
     let len_p    = smpl.inp_param("len").unwrap();
@@ -514,6 +518,7 @@ fn check_node_sampl_declick_offs_len() {
     // One Shot Mode
     matrix.set_param(pmode_p,  SAtom::setting(1));
     matrix.set_param(dclick_p, SAtom::setting(1));
+    matrix.set_param(dcms_p,   SAtom::param(dcms_p.norm(3.14)));
     matrix.set_param(trig_p, (1.0).into());
     matrix.set_param(offs_p, SAtom::param(0.9));
     matrix.set_param(len_p,  SAtom::param(0.08));
@@ -524,11 +529,11 @@ fn check_node_sampl_declick_offs_len() {
     let res = run_for_ms(&mut node_exec, 12.0);
 
     assert_decimated_feq!(res.0, 15, vec![
-        0.0, 0.10832358, 0.21664716, 0.32497075, 0.43329433, 0.54161793,
-        0.6499415, 0.7582651, 0.86658865, 0.9749123,
+        0.0, 0.10955164, 0.21910328, 0.32865492, 0.43820655, 0.54775816, 0.65730983,
+        0.76686144, 0.8764131, 0.97491217,
         1.0, 1.0, 1.0, 1.0, 1.0,
-        0.9243612, 0.81603765, 0.7077141, 0.5993905, 0.4910669,
-        0.38274333, 0.27441975, 0.16609617, 0.057772577,
+        0.92436117, 0.8160376, 0.707714, 0.59939045, 0.49106687, 0.3827433,
+        0.27441972, 0.16609615, 0.057772573,
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     ]);
 }
