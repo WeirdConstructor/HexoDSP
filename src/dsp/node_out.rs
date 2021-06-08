@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, inp, at, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, inp, at, denorm, DspNode, LedPhaseVals};
 
 #[macro_export]
 macro_rules! fa_out_mono { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -54,8 +54,18 @@ impl Out {
     pub const ch16: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
     pub const ch17: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
 
-    pub const DESC : &'static str = r#""#;
-    pub const HELP : &'static str = r#""#;
+    pub const DESC : &'static str =
+        "Audio Output Port\n\n\
+        This output port node allows you to send audio signals \
+        to audio devices or tracks in your DAW.";
+    pub const HELP : &'static str =
+r#"Audio Output Port
+
+This output port node allows you to send audio signals to audio devices
+or tracks in your DAW. If you need a stereo output but only have a mono
+signal you can use the 'mono' setting to duplicate the signal on the 'ch1'
+input to the second channel 'ch2'.
+"#;
 }
 
 impl DspNode for Out {
@@ -70,19 +80,22 @@ impl DspNode for Out {
         atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
         _outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        let in1 = inp::Out::ch1(inputs);
+        let in1  = inp::Out::ch1(inputs);
+        let gain = inp::Out::gain(inputs);
 
         if at::Out::mono(atoms).i() > 0 {
             for frame in 0..ctx.nframes() {
-                ctx.output(0, frame, in1.read(frame));
-                ctx.output(1, frame, in1.read(frame));
+                let gain = denorm::Out::gain(gain, frame);
+                ctx.output(0, frame, gain * in1.read(frame));
+                ctx.output(1, frame, gain * in1.read(frame));
             }
         } else {
             let in2 = inp::Out::ch2(inputs);
 
             for frame in 0..ctx.nframes() {
-                ctx.output(0, frame, in1.read(frame));
-                ctx.output(1, frame, in2.read(frame));
+                let gain = denorm::Out::gain(gain, frame);
+                ctx.output(0, frame, gain * in1.read(frame));
+                ctx.output(1, frame, gain * in2.read(frame));
             }
         }
 

@@ -388,12 +388,13 @@ macro_rules! node_list {
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
                (1  ch2   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
+               (2  gain  n_gain    d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
              // node_param_idx
              // | atom_idx          format fun
              // | | name constructor|           min max
              // | | |    |       def|ult_value  |  /
              // | | |    |       |  |           |  |
-               {2 0 mono setting(0) fa_out_mono 0  1},
+               {3 0 mono setting(0) fa_out_mono 0  1},
             fbwr => FbWr UIType::Generic UICategory::IOUtil
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
             fbrd => FbRd UIType::Generic UICategory::IOUtil
