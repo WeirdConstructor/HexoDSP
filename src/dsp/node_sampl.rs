@@ -69,9 +69,8 @@ impl Sampl {
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
          A signal sent to this port is not rounded.\n\
-         Note: The signal input allows detuning over +- 10 octaves.\
-         \n\nKnob Range: (-0.2 .. 0.2)\n\
-             Signal Range: (-1.0 .. 1.0)\n";
+         Note: The signal input allows detune +-10 octaves.\
+         \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
 
     pub const sample : &'static str =
         "Sampl sample\nThe audio sample that is played back.\nRange: (-1..1)\n";
@@ -82,16 +81,49 @@ impl Sampl {
         using the 'trig' input in this case.\n\
         - 'OneShot' plays back the sample if a trigger is received on 'trig' input.\n";
     pub const dclick : &'static str =
-        "Sampl dclick\nIf this is enabled and the 'pmode' is 'OneShot' \
-         this will enable short fade in and out ramps.\n\
+        "Sampl dclick\nIf this is enabled it will enable short fade in and out ramps.\n\
          This if useful if you don't want to add an envelope just for \
          getting rid of the clicks if spos and epos are modulated.";
 
     pub const sig : &'static str =
         "Sampl sig\nSampler audio output\nRange: (-1..1)\n";
 
-    pub const DESC : &'static str = r#""#;
-    pub const HELP : &'static str = r#""#;
+    pub const DESC : &'static str =
+        "Sample Player\n\n\
+         Provides a simple sample player that you can load a single audio \
+         sample from a WAV file into.";
+    pub const HELP : &'static str =
+r#"Sample Player
+
+Provides a simple sample player for playing back one loaded audio sample.
+It can be used for purposes like:
+
+* Adding ambient samples to your patches.
+* Using drum samples (set 'pmode' to 'OneShot').
+* Having an oscillator with a custom waveform (set 'pmode' to 'Loop').
+* As custom CV source for very long or very custom envelopes.
+
+Only a single audio sample can be loaded into this player. In HexoSynth
+the sample selection can be done by the file browser in the right panel
+in the 'Samples' tab.
+
+You can adjust the playback speed of the sample either by the 'freq' parameter
+or the 'det' parameter. You can offset into the sample using the 'offs'
+parameter and modify the remaining length using the 'len' parameter.
+
+Even though you are advised to use an envelope for controlling the playback
+volume of the sample to prevent clicks a simple in and out ramp is provided
+using by the 'dclick' setting. The length of these ramps can be controlled
+using the 'dcms' parameter.
+
+When 'pmode' is set to 'Loop' the sample will restart playing immediately
+after it has finished. This is useful when you just want to load a waveform
+into the sample player to use it as oscillator.
+
+To start samples when 'pmode' is set to 'OneShot' a trigger input needs to
+be provided on the 'trig' input port. The 'trig' input also works in
+'Loop' mode to retrigger the sample.
+"#;
 }
 
 impl Sampl {
