@@ -81,8 +81,53 @@ impl TSeq {
     pub const gat6 : &'static str =
         "TSeq gat6\nTrack 6 gate output\nRange: (-1..1)\n";
 
-    pub const DESC : &'static str = r#""#;
-    pub const HELP : &'static str = r#""#;
+    pub const DESC : &'static str =
+        "Tracker (based) Sequencer\n\n\
+        This node implements a sequencer that can be programmed \
+        using the tracker interface in HexoSynth on the right.\n\
+        It provides 6 CV signal and 6 gate outputs.";
+    pub const HELP : &'static str =
+r#"Tracker (based) Sequencer
+
+This tracker provides 6 columns that each can have one of the following
+types:
+
+- Note column: for specifying pitches.
+- Step column: for specifying non interpolated CV signals.
+- Value column: for specifying linearily interpolated CV signals.
+- Gate column: for specifying gates, with probability and ratcheting.
+
+Step, value and gate cells can be set to 4096 (0xFFF) different values
+or contain nothing at all. For step and value columns these values
+are mapped to the 0.0-1.0 CV signal range, with 0xFFF being 1.0
+and 0x000 being 0.0.
+
+The gate cells are differently coded:
+
+- 0x00F: The least significant nibble controls the gate length.
+         With 0x00F being the full row, and 0x000 being 1/16th of a row.
+- 0x0F0: The second nibble controls ratcheting, with 0x0F0 being one
+         gate per row, and 0x000 being 16 gates per row.
+- 0xF00: The most significant nibble controls probability of the
+         whole gate cell. With 0xF00 meaing the gate will always be
+         triggered, and 0x000 means that the gate is only triggered with
+         6% probability. 50% is 0x070.
+
+The behaviour of the 6 gate outputs of TSeq depend on the corresponding
+column type:
+
+- Step gat1-gat6:  Like note columns, this will output a 1.0 for the whole
+                   row if a step value is set. With two step values directly
+                   following each other no 0.0 will be emitted inbetween
+                   the rows. This means if you want to drive an envelope
+                   with release phase with this signal, you need to make
+                   space for the release phase.
+- Note gat1-gat6:  Behaves just like step columns.
+- Gate gat1-gat6:  Behaves just like step columns.
+- Value gat1-gat6: Outputs a 1.0 value for the duration of the last row.
+                   You can use this to trigger other things once the
+                   sequence has been played.
+"#;
 }
 
 impl DspNode for TSeq {
