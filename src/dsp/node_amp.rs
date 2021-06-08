@@ -22,9 +22,6 @@ pub struct Amp {
 }
 
 impl Amp {
-    pub const DESC : &'static str = r#""#;
-    pub const HELP : &'static str = r#""#;
-
     pub fn new(_nid: &NodeId) -> Self {
         Self {
         }
@@ -40,6 +37,29 @@ impl Amp {
         "Amp neg\nIf this is set to 'Clip', only positive inputs to 'att' are used.\nRange: (0..1)\n";
     pub const sig : &'static str =
         "Amp sig\nAmplified signal output\nRange: (-1..1)\n";
+    pub const DESC : &'static str =
+r#"Signal Amplifier
+
+This is a simple amplifier to amplify or attenuate a signal.
+See also nodes like 'atv' for an Attenuverter or 'mix' for mixing signals.
+"#;
+    pub const HELP : &'static str =
+r#"Amp - Signal Amplifier
+
+It serves the simple purpose of taking an input signal and attenuate (either
+with the 'att' or the 'gain' parameter) or just amplifying it with
+the 'gain' parameter.
+
+You can even use it as simple fixed control signal source if you leave the
+'inp' port unconnected and just dial in the desired output value with the
+parameter.
+
+The main idea with the 'gain' and 'att' parameters is, that you can set
+the desired amplification with the 'gain' parameter and automate it using
+the 'att' parameter. The 'neg' setting then defines what happens with
+negative inputs on the 'att' port.
+"#;
+
 }
 
 impl DspNode for Amp {
