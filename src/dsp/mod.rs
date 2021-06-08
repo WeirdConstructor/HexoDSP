@@ -1102,6 +1102,20 @@ macro_rules! make_node_info_enum {
                     $(NodeInfo::$variant(n) => n.1.out_count()),+
                 }
             }
+
+            pub fn desc(&self) -> &'static str {
+                match self {
+                    NodeInfo::$v1           => "",
+                    $(NodeInfo::$variant(n) => n.1.desc()),+
+                }
+            }
+
+            pub fn help(&self) -> &'static str {
+                match self {
+                    NodeInfo::$v1           => "",
+                    $(NodeInfo::$variant(n) => n.1.help()),+
+                }
+            }
         }
     }
 }
