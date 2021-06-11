@@ -1071,7 +1071,7 @@ mod tests {
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog.len(), 2);
         assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1) in=(0-2) at=(0-0))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-1) in=(2-4) at=(0-1) cpy=(o0 => i2))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-1) in=(2-5) at=(0-1) cpy=(o0 => i2))");
     }
 
     #[test]
@@ -1102,7 +1102,7 @@ mod tests {
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog.len(), 2);
         assert_eq!(prog.prog[0].to_string(), "Op(i=2 out=(2-3) in=(4-6) at=(0-0))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-3) in=(6-8) at=(0-1) cpy=(o2 => i6))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-3) in=(6-9) at=(0-1) cpy=(o2 => i6))");
     }
 
     #[test]
