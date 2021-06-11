@@ -61,15 +61,8 @@ impl Sampl {
     pub const offs : &'static str =
         "Sampl offs\nStart position offset.\nRange: (0..1)\n";
     pub const len  : &'static str =
-        "Sampl len\nAdjusts the remaining length of the sample, after the \
-        offset has been applied. This means the absolute length in seconds \
-        depends on the offset and this ratio.\
-        \nRange: (0..1)\n";
-    pub const mxlen  : &'static str =
-        "Sampl mxlen\nLimits the remaining length of the sample relative to the \
-        original length of the sample. In constrast to 'len' this paramter \
-        modifies the length independently to the 'offs' parameter. \
-        \nRange: (0..1)\n";
+        "Sampl len\nAdjusts the playback length of the sample in relation \
+        to the original length of the sample.\nRange: (0..1)\n";
     pub const dcms   : &'static str =
         "Sampl dcms\nDeclick fade time in milliseconds.\nNot audio rate!\nRange: (0..1)\n";
     pub const det : &'static str =
@@ -117,13 +110,8 @@ in the 'Samples' tab.
 
 You can adjust the playback speed of the sample either by the 'freq' parameter
 or the 'det' parameter. You can offset into the sample using the 'offs'
-parameter and modify the remaining length using the 'len' parameter.
-
-The maximum length can be modified using the 'mxlen' parameter.
-It limits the maximum of the remaining length, but relative to the original
-length of the sample and not to the length after the offset has been applied.
-If you apply length modification using the 'len' parameter,
-then the playback length of the sample will change with the 'offs' parameter.
+parameter and modify the playback length relative to the original
+sample length using the 'len' parameter.
 
 Even though you are advised to use an envelope for controlling the playback
 volume of the sample to prevent clicks a simple in and out ramp is provided
@@ -186,7 +174,6 @@ impl Sampl {
         let trig  = inp::Sampl::trig(inputs);
         let offs  = inp::Sampl::offs(inputs);
         let len   = inp::Sampl::len(inputs);
-        let mxlen = inp::Sampl::mxlen(inputs);
         let dcms  = inp::Sampl::dcms(inputs);
         let det   = inp::Sampl::det(inputs);
 
@@ -206,7 +193,6 @@ impl Sampl {
 
         let mut prev_offs  = -10.0;
         let mut prev_len   = -10.0;
-        let mut prev_mxlen = -10.0;
 
         let mut start_idx     = 0;
         let mut end_idx_plus1 = sample_data.len();
@@ -246,31 +232,20 @@ impl Sampl {
                             false
                         };
 
-                    let cur_mxlen =
-                         denorm::Sampl::mxlen(mxlen, frame).abs().min(1.0)
-                         as f64;
                     let cur_len =
-                         denorm::Sampl::len(len, frame).abs().min(0.999999)
-                         as f64;
-                    if    recalc_end
-                       || prev_len   != cur_len
-                       || prev_mxlen != cur_mxlen
-                    {
+                         denorm::Sampl::len(len, frame).abs().min(1.0) as f64;
+                    if recalc_end || prev_len != cur_len {
                         let max_sd_len =
-                            ((sd_len as f64 * cur_mxlen as f64)
-                             as usize).max(1);
+                            (sd_len as f64 * cur_len as f64).round() as usize;
 
                         let remain_s_len =
                             if start_idx <= sd_len {
                                 (sd_len - start_idx).min(max_sd_len)
                             } else { 0 };
 
-                        end_idx_plus1 =
-                            ((remain_s_len as f64 * cur_len)
-                            .ceil() as usize).min(remain_s_len);
+                        end_idx_plus1 = remain_s_len;
 
-                        prev_mxlen = cur_mxlen;
-                        prev_len   = cur_len;
+                        prev_len = cur_len;
                     }
 
                     let sample_slice =

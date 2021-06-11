@@ -372,12 +372,11 @@ macro_rules! node_list {
                (1 trig  n_id       n_id   r_id  f_def    stp_d -1.0, 1.0, 0.0)
                (2 offs  n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 0.0)
                (3 len   n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
-               (4 mxlen n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
-               (5 dcms  n_declick  d_declick r_ms f_ms   stp_m  0.0, 1.0, 3.0)
-               (6 det   n_det      d_det  r_det f_det    stp_f -0.2, 0.2, 0.0)
-               {7 0 sample audio_unloaded("")   f_def 0 0}
-               {8 1 pmode  setting(0)           fa_sampl_pmode  0 1}
-               {9 2 dclick setting(0)           fa_sampl_dclick 0 1}
+               (4 dcms  n_declick  d_declick r_ms f_ms   stp_m  0.0, 1.0, 3.0)
+               (5 det   n_det      d_det  r_det f_det    stp_f -0.2, 0.2, 0.0)
+               {6 0 sample audio_unloaded("")   f_def 0 0}
+               {7 1 pmode  setting(0)           fa_sampl_pmode  0 1}
+               {8 2 dclick setting(0)           fa_sampl_dclick 0 1}
                [0 sig],
              // node_param_idx
              //   name             denorm round format steps norm norm denorm

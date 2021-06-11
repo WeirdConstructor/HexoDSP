@@ -355,7 +355,7 @@ fn check_node_sampl_offs_len() {
 
     // Select part 0.5 to 0.75 of the sample:
     matrix.set_param(offs_p, SAtom::param(0.5));
-    matrix.set_param(len_p,  SAtom::param(0.5));
+    matrix.set_param(len_p,  SAtom::param(0.25));
 
     let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 50.0);
     assert_minmax_of_rms!(rmsvec[0], (0.001113, 0.54999));
@@ -366,42 +366,6 @@ fn check_node_sampl_offs_len() {
     assert_minmax_of_rms!(rmsvec[1], (0.70, 0.75));
     assert_minmax_of_rms!(rmsvec[2], (0.5,  0.55));
 }
-
-#[test]
-fn check_node_sampl_offs_mxlen() {
-    let (node_conf, mut node_exec) = new_node_engine();
-    let mut matrix = Matrix::new(node_conf, 3, 3);
-
-    let smpl = NodeId::Sampl(0);
-    let out  = NodeId::Out(0);
-    matrix.place(0, 0, Cell::empty(smpl)
-                       .out(None, None, smpl.out("sig")));
-    matrix.place(0, 1, Cell::empty(out)
-                       .input(out.inp("ch1"), None, None));
-    matrix.sync().unwrap();
-
-    let sample_p = smpl.inp_param("sample").unwrap();
-    let pmode_p  = smpl.inp_param("pmode").unwrap();
-    let offs_p   = smpl.inp_param("offs").unwrap();
-    let mxlen_p  = smpl.inp_param("mxlen").unwrap();
-
-    matrix.set_param(sample_p, create_1sec_ramp());
-    matrix.set_param(pmode_p, SAtom::setting(0));
-
-    // Select part 0.5 to 0.75 of the sample:
-    matrix.set_param(offs_p, SAtom::param(0.5));
-    matrix.set_param(mxlen_p,  SAtom::param(0.25));
-
-    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 50.0);
-    assert_minmax_of_rms!(rmsvec[0], (0.001113, 0.54999));
-    assert_minmax_of_rms!(rmsvec[2], (0.6,      0.65));
-
-    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 50.0);
-    assert_minmax_of_rms!(rmsvec[0], (0.65, 0.6999));
-    assert_minmax_of_rms!(rmsvec[1], (0.70, 0.75));
-    assert_minmax_of_rms!(rmsvec[2], (0.5,  0.55));
-}
-
 
 #[test]
 fn check_node_sampl_offs_len_zero_crash() {
@@ -431,7 +395,7 @@ fn check_node_sampl_offs_len_zero_crash() {
 
     matrix.set_param(trig_p, (1.0).into());
     let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 50.0);
-    assert_minmax_of_rms!(rmsvec[0], (0.0, 1.0));
+    assert_minmax_of_rms!(rmsvec[0], (0.0, 0.9979));
 
     // Select part 0.5 to 0.75 of the sample:
     matrix.set_param(offs_p, SAtom::param(0.9));
@@ -554,7 +518,7 @@ fn check_node_sampl_declick_offs_len() {
     matrix.set_param(dcms_p,   SAtom::param(dcms_p.norm(3.14)));
     matrix.set_param(trig_p, (1.0).into());
     matrix.set_param(offs_p, SAtom::param(0.9));
-    matrix.set_param(len_p,  SAtom::param(0.08));
+    matrix.set_param(len_p,  SAtom::param(0.008));
 
     // trigger:
     run_for_ms(&mut node_exec, 7.5);
