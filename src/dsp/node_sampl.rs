@@ -8,6 +8,17 @@ use crate::dsp::{out, at, inp, denorm, denorm_offs}; //, inp, denorm, denorm_v, 
 use super::helpers::Trigger;
 
 #[macro_export]
+macro_rules! fa_sampl_dir { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "Forward",
+            1  => "Reverse",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
+} } }
+
+#[macro_export]
 macro_rules! fa_sampl_dclick { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
         match ($v.round() as usize) {
@@ -85,6 +96,9 @@ impl Sampl {
         "Sampl dclick\nIf this is enabled it will enable short fade in and out ramps.\n\
          This if useful if you don't want to add an envelope just for \
          getting rid of the clicks if spos and epos are modulated.";
+    pub const dir : &'static str =
+        "Sampl dir\nWith this you can reverse the direction of the playhead.\n\
+        Or put simple: Play your sample forward or backward.";
 
     pub const sig : &'static str =
         "Sampl sig\nSampler audio output\nRange: (-1..1)\n";
@@ -131,11 +145,47 @@ be provided on the 'trig' input port. The 'trig' input also works in
 impl Sampl {
     #[allow(clippy::many_single_char_names)]
     #[inline]
+    fn next_sample_rev(&mut self, sr_factor: f64, speed: f64, sample_data: &[f32]) -> f32 {
+        let sd_len = sample_data.len();
+        if sd_len < 1 { return 0.0; }
+
+        let j = self.phase.floor() as usize % sd_len;
+        let i = ((sd_len - 1) - j) + sd_len;
+
+        let f = self.phase.fract();
+        self.phase = j as f64 + f + sr_factor * speed;
+
+        // Hermite interpolation, take from 
+        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
+        //
+        // Thanks go to Eric Wood!
+        //
+        // For the interpolation code:
+        // MIT License, Copyright (c) 2021 Eric Wood
+        let xm1 = sample_data[(i + 1) % sd_len];
+        let x0  = sample_data[i       % sd_len];
+        let x1  = sample_data[(i - 1) % sd_len];
+        let x2  = sample_data[(i - 2) % sd_len];
+
+        let c     = (x1 - xm1) * 0.5;
+        let v     = x0 - x1;
+        let w     = c + v;
+        let a     = w + v + (x2 - x0) * 0.5;
+        let b_neg = w + a;
+
+        let f = (1.0 - f) as f32;
+        (((a * f) - b_neg) * f + c) * f + x0
+    }
+
+    #[allow(clippy::many_single_char_names)]
+    #[inline]
     fn next_sample(&mut self, sr_factor: f64, speed: f64, sample_data: &[f32]) -> f32 {
         let sd_len = sample_data.len();
         if sd_len < 1 { return 0.0; }
 
         let i = self.phase.floor() as usize + sd_len;
+        let f = self.phase.fract();
+        self.phase = (i % sd_len) as f64 + f + sr_factor * speed;
 
         // Hermite interpolation, take from 
         // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
@@ -155,12 +205,7 @@ impl Sampl {
         let a     = w + v + (x2 - x0) * 0.5;
         let b_neg = w + a;
 
-        let f = self.phase.fract();
-
-        self.phase = (i % sd_len) as f64 + f + sr_factor * speed;
-
         let f = f as f32;
-
         (((a * f) - b_neg) * f + c) * f + x0
     }
 
@@ -168,7 +213,7 @@ impl Sampl {
     #[inline]
     fn play(&mut self, inputs: &[ProcBuf], nframes: usize,
             sample_data: &[f32], out: &mut ProcBuf, do_loop: bool,
-            declick: bool)
+            declick: bool, reverse: bool)
     {
         let freq  = inp::Sampl::freq(inputs);
         let trig  = inp::Sampl::trig(inputs);
@@ -256,10 +301,17 @@ impl Sampl {
                     let sample_idx = self.phase.floor() as usize;
 
                     let mut s =
-                        self.next_sample(
-                            sr_factor,
-                            playback_speed as f64,
-                            sample_slice);
+                        if reverse {
+                            self.next_sample_rev(
+                                sr_factor,
+                                playback_speed as f64,
+                                sample_slice)
+                        } else {
+                            self.next_sample(
+                                sr_factor,
+                                playback_speed as f64,
+                                sample_slice)
+                        };
 
                     if declick {
                         let samples_to_end = sample_slice.len() - sample_idx;
@@ -324,6 +376,7 @@ impl DspNode for Sampl {
         let sample = at::Sampl::sample(atoms);
         let pmode  = at::Sampl::pmode(atoms);
         let dclick = at::Sampl::dclick(atoms);
+        let dir    = at::Sampl::dir(atoms);
         let out    = out::Sampl::sig(outputs);
 
         if let SAtom::AudioSample((_, Some(sample_data))) = sample {
@@ -342,7 +395,8 @@ impl DspNode for Sampl {
                 &sample_data[..],
                 out,
                 pmode.i() == 0,
-                dclick.i() == 1);
+                dclick.i() == 1,
+                dir.i() == 1);
         } else {
             for frame in 0..ctx.nframes() {
                 out.write(frame, 0.0);

@@ -37,6 +37,7 @@ use crate::fa_amp_neg_att;
 use crate::fa_tseq_cmode;
 use crate::fa_sampl_dclick;
 use crate::fa_sampl_pmode;
+use crate::fa_sampl_dir;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -374,9 +375,10 @@ macro_rules! node_list {
                (3 len   n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
                (4 dcms  n_declick  d_declick r_ms f_ms   stp_m  0.0, 1.0, 3.0)
                (5 det   n_det      d_det  r_det f_det    stp_f -0.2, 0.2, 0.0)
-               {6 0 sample audio_unloaded("")   f_def 0 0}
-               {7 1 pmode  setting(0)           fa_sampl_pmode  0 1}
-               {8 2 dclick setting(0)           fa_sampl_dclick 0 1}
+               {6 0 sample  audio_unloaded("")   f_def 0 0}
+               {7 1 pmode   setting(0)           fa_sampl_pmode   0 1}
+               {8 2 dclick  setting(0)           fa_sampl_dclick  0 1}
+               {9 3 dir     setting(0)           fa_sampl_dir     0 1}
                [0 sig],
              // node_param_idx
              //   name             denorm round format steps norm norm denorm

@@ -138,6 +138,60 @@ fn check_node_sampl_detune() {
 }
 
 #[test]
+fn check_node_sampl_reverse() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let smpl = NodeId::Sampl(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smpl)
+                       .out(None, None, smpl.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let sample_p = smpl.inp_param("sample").unwrap();
+    let freq_p   = smpl.inp_param("freq").unwrap();
+    let dir_p    = smpl.inp_param("dir").unwrap();
+    matrix.set_param(sample_p, SAtom::audio_unloaded("tests/sample_sin.wav"));
+    matrix.set_param(dir_p, SAtom::setting(1));
+
+    let (rms, min, max) = run_and_get_l_rms_mimax(&mut node_exec, 50.0);
+    assert_rmsmima!((rms, min, max), (0.50059, -0.9997, 0.9997));
+
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (441, 1023));
+
+    matrix.set_param(freq_p, SAtom::param(0.1));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (883, 1020));
+
+    matrix.set_param(freq_p, SAtom::param(-0.1));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (215, 880));
+
+    matrix.set_param(freq_p, SAtom::param(-0.2));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (108, 986));
+
+    matrix.set_param(freq_p, SAtom::param(-0.4));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (22, 831));
+
+    matrix.set_param(freq_p, SAtom::param(-0.5));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (11, 999));
+
+    matrix.set_param(freq_p, SAtom::param(0.2));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (1766, 1008));
+
+    matrix.set_param(freq_p, SAtom::param(0.4));
+    let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
+    assert_eq!(fft[0], (7052, 942));
+}
+
+#[test]
 fn check_node_sampl_reload() {
     {
         let (node_conf, _node_exec) = new_node_engine();
@@ -532,5 +586,44 @@ fn check_node_sampl_declick_offs_len() {
         0.92436117, 0.8160376, 0.707714, 0.59939045, 0.49106687, 0.3827433,
         0.27441972, 0.16609615, 0.057772573,
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ]);
+}
+
+#[test]
+fn check_node_sampl_rev_2() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let smpl = NodeId::Sampl(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smpl)
+                       .out(None, None, smpl.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let sample_p = smpl.inp_param("sample").unwrap();
+    let dir_p    = smpl.inp_param("dir").unwrap();
+    let pmode_p  = smpl.inp_param("pmode").unwrap();
+
+    matrix.set_param(sample_p, create_1sec_ramp());
+    // Reverse:
+    matrix.set_param(dir_p,    SAtom::setting(1));
+    // Loop mode:
+    matrix.set_param(pmode_p, SAtom::setting(0));
+
+    let res = run_for_ms(&mut node_exec, 1000.0);
+    assert_decimated_feq!(res.0, 5000, vec![
+        0.9999773, 0.886596, 0.77321476, 0.6598335, 0.5464522,
+        0.43307102, 0.31968975, 0.20630851, 0.09292727
+    ]);
+
+    // Forward:
+    matrix.set_param(dir_p, SAtom::setting(0));
+
+    let res = run_for_ms(&mut node_exec, 1000.0);
+    assert_decimated_feq!(res.0, 5000, vec![
+        0.0, 0.11338125, 0.2267625, 0.34014374, 0.453525, 0.5669062,
+        0.6802875, 0.79366875, 0.90705
     ]);
 }
