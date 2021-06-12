@@ -346,6 +346,49 @@ pub fn sqrt4_to_pow4(x: f32, v: f32) -> f32 {
     }
 }
 
+const TRIG_SIGNAL_LENGTH_MS : f32 = 0.25;
+
+#[derive(Debug, Clone, Copy)]
+pub struct TrigSignal {
+    length:     u32,
+    scount:     u32,
+}
+
+impl TrigSignal {
+    pub fn new() -> Self {
+        Self {
+            length: ((44100.0 * TRIG_SIGNAL_LENGTH_MS) / 1000.0).ceil() as u32,
+            scount: 0,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.scount = 0;
+    }
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.length = ((srate * TRIG_SIGNAL_LENGTH_MS) / 1000.0).ceil() as u32;
+        self.scount = 0;
+    }
+
+    #[inline]
+    pub fn trigger(&mut self) { self.scount = self.length; }
+
+    #[inline]
+    pub fn next(&mut self) -> f32 {
+        if self.scount > 0 {
+            self.scount -= 1;
+            1.0
+        } else {
+            0.0
+        }
+    }
+}
+
+impl Default for TrigSignal {
+    fn default() -> Self { Self::new() }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Trigger {
     triggered:  bool,
