@@ -97,8 +97,8 @@ impl Sampl {
          This if useful if you don't want to add an envelope just for \
          getting rid of the clicks if spos and epos are modulated.";
     pub const dir : &'static str =
-        "Sampl dir\nWith this you can reverse the direction of the playhead.\n\
-        Or put simple: Play your sample forward or backward.";
+        "Sampl dir\nSets the direction of the playhead, plays the sample \
+        forwards or backwards.";
 
     pub const sig : &'static str =
         "Sampl sig\nSampler audio output\nRange: (-1..1)\n";
