@@ -346,7 +346,8 @@ pub fn sqrt4_to_pow4(x: f32, v: f32) -> f32 {
     }
 }
 
-const TRIG_SIGNAL_LENGTH_MS : f32 = 0.25;
+/// A-100 Eurorack states, that a trigger is usually 2-10 milliseconds.
+const TRIG_SIGNAL_LENGTH_MS : f32 = 2.0;
 
 #[derive(Debug, Clone, Copy)]
 pub struct TrigSignal {
