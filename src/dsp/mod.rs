@@ -16,6 +16,8 @@ mod node_tseq;
 mod node_sampl;
 #[allow(non_upper_case_globals)]
 mod node_fbwr_fbrd;
+#[allow(non_upper_case_globals)]
+mod node_ad;
 
 pub mod tracker;
 mod satom;
@@ -38,6 +40,7 @@ use crate::fa_tseq_cmode;
 use crate::fa_sampl_dclick;
 use crate::fa_sampl_pmode;
 use crate::fa_sampl_dir;
+use crate::fa_ad_mult;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -47,6 +50,7 @@ use node_tseq::TSeq;
 use node_sampl::Sampl;
 use node_fbwr_fbrd::FbWr;
 use node_fbwr_fbrd::FbRd;
+use node_ad::Ad;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -276,6 +280,15 @@ macro_rules! r_ms { ($x: expr, $coarse: expr) => {
     }
 } }
 
+/// The rounding function for milliseconds knobs
+macro_rules! r_ems { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        n_env!((d_env!($x)).round())
+    } else {
+        n_env!((d_env!($x) * 10.0).round() / 10.0)
+    }
+} }
+
 /// The default steps function:
 macro_rules! stp_d { () => { (20.0, 100.0) } }
 /// The UI steps to control parameters with a finer fine control:
@@ -302,7 +315,13 @@ macro_rules! f_freq { ($formatter: expr, $v: expr, $denorm_v: expr) => {
 } }
 
 macro_rules! f_ms { ($formatter: expr, $v: expr, $denorm_v: expr) => {
-    write!($formatter, "{:5.2}ms", $denorm_v)
+    if $denorm_v >= 1000.0 {
+        write!($formatter, "{:6.0}ms", $denorm_v)
+    } else if $denorm_v >= 100.0 {
+        write!($formatter, "{:5.1}ms", $denorm_v)
+    } else {
+        write!($formatter, "{:5.2}ms", $denorm_v)
+    }
 } }
 
 macro_rules! f_det { ($formatter: expr, $v: expr, $denorm_v: expr) => {
@@ -325,6 +344,9 @@ define_exp!{n_gain d_gain 0.0, 2.0}
 define_exp!{n_att  d_att  0.0, 1.0}
 
 define_exp!{n_declick d_declick 0.0, 50.0}
+
+define_exp!{n_env d_env 0.0, 1000.0}
+
 
 // A note about the input-indicies:
 //
@@ -401,6 +423,14 @@ macro_rules! node_list {
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
             fbrd => FbRd UIType::Generic UICategory::IOUtil
                (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               [0 sig],
+            ad   => Ad   UIType::Generic UICategory::CV
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (1  atk   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 3.0)
+               (2  dcy   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 10.0)
+               (3  ashp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               (4  dshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               {5 0 mult setting(0) fa_ad_mult  0  2}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)

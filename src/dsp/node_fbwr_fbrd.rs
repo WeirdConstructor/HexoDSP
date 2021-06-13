@@ -46,7 +46,7 @@ is running at.
 }
 
 impl DspNode for FbWr {
-    fn outputs() -> usize { 1 }
+    fn outputs() -> usize { 0 }
 
     fn set_sample_rate(&mut self, _srate: f32) { }
     fn reset(&mut self) { }
