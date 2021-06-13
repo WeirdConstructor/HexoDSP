@@ -220,7 +220,7 @@ fn check_node_sampl_reload() {
             &mut matrix, "check_matrix_serialize.hxy").unwrap();
 
         let rmsmima = run_and_get_l_rms_mimax(&mut node_exec, 50.0);
-        assert_rmsmima!(rmsmima, (0.5004, -0.9998, 0.9997));
+        assert_rmsmima!(rmsmima, (0.5004, -0.9997, 0.9997));
 
         let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
         assert_eq!(fft[0], (441, 1023));
