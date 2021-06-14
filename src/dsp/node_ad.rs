@@ -17,14 +17,24 @@ macro_rules! fa_ad_mult { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     write!($formatter, "{}", s)
 } } }
 
+const AD_STAGES : i8 = 2;
+
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Ad {
+    srate:      f64,
+    phase:      f64,
+    last_value: f32,
+    stage:      i8,
 }
 
 impl Ad {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
+            srate:      44100.0,
+            phase:      0.0,
+            last_value: 0.0,
+            stage:      -1,
         }
     }
     pub const inp : &'static str =
@@ -158,46 +168,15 @@ impl DspNode for Ad {
     {
         use crate::dsp::{out, inp, denorm, denorm_v, inp_dir, at};
 
-        let gain = inp::Amp::gain(inputs);
-        let att  = inp::Amp::att(inputs);
-        let inp  = inp::Amp::inp(inputs);
-        let out  = out::Amp::sig(outputs);
-        let neg  = at::Amp::neg_att(atoms);
+        let out = out::Ad::sig(outputs);
 
-        let last_frame   = ctx.nframes() - 1;
+        let last_frame = ctx.nframes() - 1;
 
-        let last_val =
-            if neg.i() > 0 {
-                for frame in 0..ctx.nframes() {
-                    out.write(frame,
-                        inp.read(frame)
-                        * denorm_v::Amp::att(
-                            inp_dir::Amp::att(att, frame)
-                            .max(0.0))
-                        * denorm::Amp::gain(gain, frame));
-                }
+        for frame in 0..ctx.nframes() {
+            out.write(frame, 0.0);
+        }
 
-                inp.read(last_frame)
-                * denorm_v::Amp::att(
-                    inp_dir::Amp::att(att, last_frame)
-                    .max(0.0))
-                * denorm::Amp::gain(gain, last_frame)
-
-            } else {
-                for frame in 0..ctx.nframes() {
-                    out.write(frame,
-                        inp.read(frame)
-                        * denorm_v::Amp::att(
-                            inp_dir::Amp::att(att, frame).abs())
-                        * denorm::Amp::gain(gain, frame));
-                }
-
-                inp.read(last_frame)
-                * denorm_v::Amp::att(
-                    inp_dir::Amp::att(att, last_frame).abs())
-                * denorm::Amp::gain(gain, last_frame)
-            };
-
-        ctx_vals[0].set(last_val);
+        ctx_vals[0].set(0.0);
+//        ctx_vals[1].set(self.phase / self. + self.stage * );
     }
 }
