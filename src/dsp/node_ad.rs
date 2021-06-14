@@ -65,6 +65,85 @@ r#"Ad - Attack-Decay Envelope
 
 }
 
+/*
+    struct {
+        srate_per_ms: f64,
+        value     : f64 = 0.0;
+        inc       : f64 = 0.0;
+        stage     = 0;
+        last_time = 0.0;
+        target    : f64 = 1.0;
+        shape     = 0.5;
+    }
+    set_sample_rate(srate) { self.srate_per_ms = srate / 1000.0 }
+
+    // block start:
+    let mut shape_src =
+        match stage {
+            2 => dcy_shape,
+            _ => atk_shape,
+        };
+    let mut inc_time_src =
+        match stage {
+            2 => dcy,
+            _ => atk,
+        };
+    let mut mult : f64 =
+        if mult == 1 { 10.0 } else if mult == 2 {100.0 } else { 1.0};
+
+    // each frame:
+    if stage == 0 {
+        if trigger(trig_in) {
+            value = 0.0;
+
+            // transition to stage 1 (attack):
+            stage        = 1;
+            target       = 1.0;
+            shape_src    = atk_shape;
+            inc_time_src = atk;
+            last_time    = -1.0;
+        }
+    }
+
+    let cur_time = denorm(inc_time_src);
+    if last_time != cur_time {
+        inc =
+            (target - value)
+            / ((cur_time as f64) * mult * srate_per_ms);
+    }
+
+    value += inc;
+    shape  = read(frame, shape_src).clamp(0.0, 1.0);
+
+    match stage {
+         1 => {
+            if value >= target {
+                // transition to stage 2 (decay):
+                stage           = 2;
+                target          = 0.0;
+                shape_src       = dcy_shape;
+                inc_time_src    = dcy;
+                last_time       = -1.0;
+            }
+         },
+         2 => {
+            if value <= target {
+                stage = 0;
+                eov_trigger.trigger();
+            }
+         },
+         _ => {},
+    }
+
+    let in_val = inp.read(frame);
+    out.write(
+        frame,
+        in_val
+        * sqrt4_to_pow4(
+            value.clamp(0.0, 1.0) as f32, shape));
+    trig.write(frame, eov_trigger.next());
+*/
+
 impl DspNode for Ad {
     fn outputs() -> usize { 1 }
 
