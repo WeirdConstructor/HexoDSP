@@ -347,6 +347,9 @@ define_exp!{n_declick d_declick 0.0, 50.0}
 
 define_exp!{n_env d_env 0.0, 1000.0}
 
+// Special linear gain factor for the Out node, to be able
+// to reach more exact "1.0".
+define_lin!{n_ogin d_ogin 0.0, 2.0}
 
 // A note about the input-indicies:
 //
@@ -412,7 +415,7 @@ macro_rules! node_list {
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
                (1  ch2   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
-               (2  gain  n_gain    d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (2  gain  n_ogin    d_ogin r_id  f_def  stp_d  0.0, 1.0, 1.0)
              // node_param_idx
              // | atom_idx          format fun
              // | | name constructor|           min max
@@ -426,12 +429,14 @@ macro_rules! node_list {
                [0 sig],
             ad   => Ad   UIType::Generic UICategory::CV
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
-               (1  atk   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 3.0)
-               (2  dcy   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 10.0)
-               (3  ashp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
-               (4  dshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
-               {5 0 mult setting(0) fa_ad_mult  0  2}
-               [0 sig],
+               (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (2  atk   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 3.0)
+               (3  dcy   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 10.0)
+               (4  ashp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               (5  dshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               {6 0 mult setting(0) fa_ad_mult  0  2}
+               [0 sig]
+               [1 eoet],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
                {1 0 s    setting(0) fa_test_s 0  10},

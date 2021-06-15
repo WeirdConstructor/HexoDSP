@@ -34,7 +34,9 @@ impl Out {
     pub const mono : &'static str =
         "Out mono\nIf set to 'Mono', ch1 will be sent to both output channels.\n(UI only)";
     pub const gain : &'static str =
-        "Out gain\nThe main gain of the synthesizer output, applied to all channels.\nRange: (0..1)";
+        "Out gain\nThe main gain of the synthesizer output, applied to all channels. \
+        Please note that this is a linear control, to prevent inaccuracies for 1.0. \
+        \nRange: (0..1)";
     pub const ch1 : &'static str =
         "Out ch1\nAudio channel 1 (left)\nRange: (-1..1)";
     pub const ch2 : &'static str =
