@@ -133,11 +133,11 @@ impl DspNode for Ad {
         let mult      = at::Ad::mult(atoms);
 
         // block start:
-        let (mut shape_src, mut inc_time_src, mut target) =
+        let (mut shape_src, mut inc_time_src, mut target, mut delta) =
             match self.stage {
-                1 => (atk_shape, atk, 1.0),
-                2 => (dcy_shape, dcy, 0.0),
-                _ => (atk_shape, atk, 0.0),
+                1 => (atk_shape, atk, 1.0,  1.0),
+                2 => (dcy_shape, dcy, 0.0, -1.0),
+                _ => (atk_shape, atk, 0.0,  0.0),
             };
         let mult : f64 =
             match mult.i() {
@@ -153,18 +153,13 @@ impl DspNode for Ad {
                 self.stage     = 1;
                 self.last_time = -1.0;
                 target         = 1.0;
+                delta          = 1.0;
                 shape_src      = atk_shape;
                 inc_time_src   = atk;
             }
 
             let cur_time = denorm::Ad::atk(inc_time_src, frame);
             if self.last_time != cur_time {
-                let delta =
-                    match self.stage {
-                        1 =>  1.0,
-                        2 => -1.0,
-                        _ =>  0.0,
-                    };
                 self.inc =
                     if cur_time <= 0.0001 {
                         delta
@@ -198,6 +193,7 @@ impl DspNode for Ad {
                         self.last_time = -1.0;
                         self.value     = target;
                         target         = 0.0;
+                        delta          = -1.0;
                         shape_src      = dcy_shape;
                         inc_time_src   = dcy;
                     }
@@ -208,6 +204,7 @@ impl DspNode for Ad {
                         self.last_time = -1.0;
                         self.value     = target;
                         target         = 0.0;
+                        delta          = 0.0;
                         self.trig_sig.trigger();
                     }
                  },
