@@ -139,20 +139,17 @@ impl DspNode for Ad {
                 2 => (dcy_shape, dcy, 0.0),
                 _ => (atk_shape, atk, 0.0),
             };
-        let mut mult : f64 =
+        let mult : f64 =
             match mult.i() {
                 1 => 10.0,
                 2 => 100.0,
                 _ => 1.0,
             };
 
-        for frame in 0..ctx.nframes() {
-            // each frame:
-            let is_triggered =
-                self.trig.check_trigger(denorm::Ad::trig(trig, frame));
+//        let mut cnt : usize = 0;
 
-            if self.stage == 0 && is_triggered {
-                // transition to stage 1 (attack):
+        for frame in 0..ctx.nframes() {
+            if self.trig.check_trigger(denorm::Ad::trig(trig, frame)) {
                 self.stage     = 1;
                 self.last_time = -1.0;
                 target         = 1.0;
@@ -162,14 +159,25 @@ impl DspNode for Ad {
 
             let cur_time = denorm::Ad::atk(inc_time_src, frame);
             if self.last_time != cur_time {
+                let delta =
+                    match self.stage {
+                        1 =>  1.0,
+                        2 => -1.0,
+                        _ =>  0.0,
+                    };
                 self.inc =
                     if cur_time <= 0.0001 {
-                        target - self.value
+                        delta
                     } else {
-                        (target - self.value)
+                        delta
                         / ((cur_time as f64) * mult * self.samples_ms)
                     };
                 self.last_time = cur_time;
+
+//                if cnt % 32 == 0 {
+//                    println!("** v={:8.3}, inc={:8.3}, tar={:8.3}, time={:8.3}",
+//                             self.value, self.inc, target, self.last_time);
+//                }
             }
 
             self.value += self.inc;
@@ -177,9 +185,15 @@ impl DspNode for Ad {
                 denorm::Ad::ashp(shape_src, frame)
                 .clamp(0.0, 1.0);
 
+//            if cnt % 32 == 0 {
+//                println!("v={:8.3}, inc={:8.3}, tar={:8.3}, time={:8.3}",
+//                         self.value, self.inc, target, self.last_time);
+//            }
+//            cnt += 1;
+
             match self.stage {
                  1 => {
-                    if self.value >= target {
+                    if self.value >= (target - 0.0001) {
                         self.stage     = 2;
                         self.last_time = -1.0;
                         self.value     = target;
@@ -189,7 +203,7 @@ impl DspNode for Ad {
                     }
                  },
                  2 => {
-                    if self.value <= target {
+                    if self.value <= (target + 0.0001) {
                         self.stage     = 0;
                         self.last_time = -1.0;
                         self.value     = target;
