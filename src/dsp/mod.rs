@@ -439,7 +439,8 @@ macro_rules! node_list {
                [1 eoet],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
-               {1 0 s    setting(0) fa_test_s 0  10},
+               {1 0 p   param(0.0) fa_test_s 0  10}
+               [0 sig],
         }
     }
 }
@@ -1052,14 +1053,14 @@ macro_rules! make_node_info_enum {
                     pub fn norm(&self, in_idx: usize, x: f32) -> f32 {
                         match in_idx {
                             $($in_idx => crate::dsp::norm_v::$variant::$para(x),)+
-                            _         => 0.0,
+                            _         => x,
                         }
                     }
 
                     pub fn denorm(&self, in_idx: usize, x: f32) -> f32 {
                         match in_idx {
                             $($in_idx => crate::dsp::denorm_v::$variant::$para(x),)+
-                            _         => 0.0,
+                            _         => x,
                         }
                     }
 

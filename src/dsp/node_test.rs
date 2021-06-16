@@ -39,11 +39,8 @@ impl Test {
         }
     }
     pub const f : &'static str = "F Test";
-    pub const s : &'static str = "S Test";
-//  pub const gain : &'static str =
-//      "Amp gain\nGain input\nRange: (0..1)\n";
-//  pub const sig : &'static str =
-//      "Amp sig\nAmplified signal output\nRange: (-1..1)\n";
+    pub const p : &'static str = "Test p\nJust an unsmoothed parameter for tests.";
+    pub const sig : &'static str = "Test sig\nThe output of p as signal";
 }
 
 impl DspNode for Test {
@@ -54,20 +51,18 @@ impl DspNode for Test {
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, _ctx: &mut T, _ectx: &mut NodeExecContext,
-        _atoms: &[SAtom], _params: &[ProcBuf], _inputs: &[ProcBuf],
-        _outputs: &mut [ProcBuf], _led: LedPhaseVals)
+        &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
+        atoms: &[SAtom], _params: &[ProcBuf], _inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf], _led: LedPhaseVals)
     {
-//        use crate::dsp::out;
-//        use crate::dsp::inp;
-//        use crate::dsp::denorm;
-//
-//        let gain = inp::Test::gain(inputs);
-//        let inp  = inp::Test::inp(inputs);
-//        let out  = out::Test::sig(outputs);
-//        for frame in 0..ctx.nframes() {
-//            out.write(frame, inp.read(frame) * denorm::Test::gain(gain, frame));
-//        }
+        use crate::dsp::{out, at};
+
+        let p    = at::Test::p(atoms);
+        let out  = out::Test::sig(outputs);
+        for frame in 0..ctx.nframes() {
+            println!("R {}", p.f());
+            out.write(frame, p.f());
+        }
     }
 
     fn graph_fun() -> Option<GraphFun> {
