@@ -60,7 +60,6 @@ impl DspNode for Test {
         let p    = at::Test::p(atoms);
         let out  = out::Test::sig(outputs);
         for frame in 0..ctx.nframes() {
-            println!("R {}", p.f());
             out.write(frame, p.f());
         }
     }

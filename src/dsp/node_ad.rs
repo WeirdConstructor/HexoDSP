@@ -150,6 +150,7 @@ impl DspNode for Ad {
 
         for frame in 0..ctx.nframes() {
             if self.trig.check_trigger(denorm::Ad::trig(trig, frame)) {
+                //d// println!("RETRIGGER!");
                 self.stage     = 1;
                 self.last_time = -1.0;
                 target         = 1.0;

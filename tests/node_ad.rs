@@ -74,4 +74,59 @@ fn check_node_ad_retrig() {
         -0.0022675726,
         0.0, 0.0, 0.0, 0.0
     ]);
+
+
+    matrix.set_param(trig_p, SAtom::param(0.0));
+    let res = run_for_ms(&mut node_exec, 0.1);
+    matrix.set_param(trig_p, SAtom::param(1.0));
+    let res = run_for_ms(&mut node_exec, 1.5);
+    assert_decimated_feq!(res.0, 2, vec![
+        0.0075585, 0.022675736, 0.03779289, 0.05291005, 0.068027206, 0.08314436,
+        0.09826152, 0.113378674, 0.12849583, 0.143613, 0.15873015,
+        0.1738473, 0.18896446, 0.20408161, 0.21919878, 0.23431593,
+        0.24943309, 0.26455024, 0.2796674, 0.29478455, 0.3099017,
+        0.32501888, 0.34013602, 0.3552532, 0.37037033, 0.3854875,
+        0.40060467, 0.4157218, 0.43083897, 0.4459561, 0.46107328,
+        0.47619045, 0.4913076 
+    ]);
+
+    // Reset trigger
+    matrix.set_param(trig_p, SAtom::param(0.0));
+    let res = run_for_ms(&mut node_exec, 0.1);
+    assert_slope_feq!(res.0, vec![0.00755; 3]);
+
+    // Retrigger attack (should do nothing)
+    matrix.set_param(trig_p, SAtom::param(1.0));
+    let res = run_for_ms(&mut node_exec, 0.1);
+    assert_slope_feq!(res.0, vec![0.00755; 7]);
+
+    // Wait into decay phase
+    matrix.set_param(trig_p, SAtom::param(0.0));
+    let res = run_for_ms(&mut node_exec, 1.4);
+    let mut v = vec![0.00755; 57];
+    v.append(&mut vec![0.002267, -0.002267, -0.002267]);
+    assert_slope_feq!(res.0, v);
+
+    // Decay some more
+    let res = run_for_ms(&mut node_exec, 0.8);
+    assert_slope_feq!(res.0, vec![-0.002267; 100]);
+
+    // Retrigger right in the decay phase
+    matrix.set_param(trig_p, SAtom::param(1.0));
+    let res = run_for_ms(&mut node_exec, 1.0);
+    assert_slope_feq!(res.0, vec![
+        // Re-attack until we are at 1.0 again
+        0.007558584, 0.007558584, 0.007558584, 0.0075585246, 0.007558584,
+        0.007558584, 0.007558584, 0.007558584, 0.007558584, 0.007558584,
+        0.0007558465,
+        // Restart decay after 1.0 was reached:
+        -0.002267599, -0.0022675395, -0.002267599,
+        -0.0022675395, -0.002267599, -0.0022675395, -0.002267599,
+        -0.002267599, -0.0022675395, -0.002267599, -0.0022675395,
+        -0.002267599, -0.0022675395, -0.002267599, -0.002267599,
+        -0.0022675395, -0.002267599, -0.0022675395, -0.002267599,
+        -0.0022675395, -0.002267599, -0.002267599, -0.0022675395,
+        -0.002267599, -0.0022675395, -0.002267599, -0.0022675395,
+        -0.002267599, -0.002267599, -0.0022675395, -0.002267599, -0.0022675395
+    ]);
 }
