@@ -334,6 +334,16 @@ pub fn run_and_get_fft4096(
     fft_thres_at_ms(&mut out_l[..], FFT::F4096, thres, offs_ms)
 }
 
+pub fn run_and_get_fft4096_now(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    thres: u32) -> Vec<(u16, u32)>
+{
+    let min_samples_for_fft = 4096.0 * 1.5; // 1.5 for some extra margin
+    let run_len_s = min_samples_for_fft / SAMPLE_RATE;
+    let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+    fft_thres_at_ms(&mut out_l[..], FFT::F4096, thres, 0.0)
+}
+
 #[allow(unused)]
 pub enum FFT {
     F16,

@@ -130,3 +130,69 @@ fn check_node_ad_retrig() {
         -0.002267599, -0.002267599, -0.0022675395, -0.002267599, -0.0022675395
     ]);
 }
+
+#[test]
+fn check_node_ad_inp_sin() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let sin = NodeId::Sin(0);
+    let ad  = NodeId::Ad(0);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(sin)
+                       .out(None, None, sin.out("sig")));
+    matrix.place(0, 1, Cell::empty(ad)
+                       .input(ad.inp("inp"), None, None)
+                       .out(None, None, ad.out("sig")));
+    matrix.place(0, 2, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let trig_p = ad.inp_param("trig").unwrap();
+    let atk_p  = ad.inp_param("atk").unwrap();
+    let dcy_p  = ad.inp_param("dcy").unwrap();
+
+    // check if we have any frequencies resembling 440Hz
+    matrix.set_param(trig_p, SAtom::param(1.0));
+    let res = run_for_ms(&mut node_exec, 7.0);
+
+    let fft = run_and_get_fft4096_now(&mut node_exec, 6);
+    assert_eq!(fft[0], (420, 6));
+    assert_eq!(fft[1], (431, 6));
+    assert_eq!(fft[2], (441, 6));
+    assert_eq!(fft[3], (452, 6));
+    assert_eq!(fft[4], (463, 6));
+
+    // Next we test if lengthening the attack has
+    // effect on the captured frequencies.
+    matrix.set_param(trig_p, SAtom::param(0.0));
+    run_for_ms(&mut node_exec, 8.0);
+
+    matrix.set_param(atk_p, SAtom::param(atk_p.norm(40.0)));
+    matrix.set_param(trig_p, SAtom::param(1.0));
+    let res = run_for_ms(&mut node_exec, 7.0);
+
+    let fft = run_and_get_fft4096_now(&mut node_exec, 300);
+    assert_eq!(fft[0], (431, 322));
+    assert_eq!(fft[1], (441, 360));
+
+    matrix.set_param(trig_p, SAtom::param(0.0));
+    run_for_ms(&mut node_exec, 8.0);
+
+    // Next we test if lengthening the decay too has
+    // effect on the captured frequencies.
+    matrix.set_param(trig_p, SAtom::param(0.0));
+    run_for_ms(&mut node_exec, 8.0);
+
+    matrix.set_param(dcy_p, SAtom::param(dcy_p.norm(40.0)));
+    matrix.set_param(trig_p, SAtom::param(1.0));
+    let res = run_for_ms(&mut node_exec, 7.0);
+
+    let fft = run_and_get_fft4096_now(&mut node_exec, 300);
+    assert_eq!(fft[0], (431, 489));
+    assert_eq!(fft[1], (441, 647));
+    assert_eq!(fft[2], (452, 398));
+
+    matrix.set_param(trig_p, SAtom::param(0.0));
+    run_for_ms(&mut node_exec, 8.0);
+}
