@@ -177,6 +177,16 @@ macro_rules! assert_minmax_of_rms {
     }
 }
 
+pub fn pset_n(matrix: &mut Matrix, nid: NodeId, parm: &str, v_norm: f32) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param(p, SAtom::param(v_norm));
+}
+
+pub fn pset_d(matrix: &mut Matrix, nid: NodeId, parm: &str, v_denorm: f32) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
+}
+
 #[allow(dead_code)]
 pub fn save_wav(name: &str, buf: &[f32]) {
     let spec = hound::WavSpec {

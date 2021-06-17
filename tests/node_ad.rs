@@ -40,7 +40,6 @@ fn check_node_ad_1() {
     assert_float_eq!(peak, 1.0);
 }
 
-
 #[test]
 fn check_node_ad_retrig() {
     let (node_conf, mut node_exec) = new_node_engine();
@@ -195,4 +194,156 @@ fn check_node_ad_inp_sin() {
 
     matrix.set_param(trig_p, SAtom::param(0.0));
     run_for_ms(&mut node_exec, 8.0);
+}
+
+#[test]
+fn check_node_ad_shp_log() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let ad   = NodeId::Ad(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(ad)
+                       .out(None, None, ad.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    pset_n(&mut matrix, ad, "trig", 1.0);
+    pset_n(&mut matrix, ad, "ashp", 1.0);
+    pset_n(&mut matrix, ad, "dshp", 1.0);
+
+    let res = run_for_ms(&mut node_exec, 25.0);
+    assert_decimated_slope_feq!(res.0, 50, vec![
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        // 44.1 per ms, attack is default 3.0ms (roughly 3 * 50 samples):
+        0.009243369, 0.003936231, 0.0020142794,
+        // 44.1 per ms, decay is default 10.0ms (=> roughly 9 * 50 samples):
+        -0.0006071329, -0.00067061186, -0.000752151, -0.0008612871,
+        -0.0010163188, -0.0012571216, -0.0016934872, -0.0027971864,
+        -0.027684271,
+        0.0, 0.0, 0.0, 0.0
+    ]);
+}
+
+#[test]
+fn check_node_ad_shp_exp() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let ad   = NodeId::Ad(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(ad)
+                       .out(None, None, ad.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    pset_n(&mut matrix, ad, "trig", 1.0);
+    pset_n(&mut matrix, ad, "ashp", 0.0);
+    pset_n(&mut matrix, ad, "dshp", 0.0);
+
+    let res = run_for_ms(&mut node_exec, 25.0);
+    assert_decimated_slope_feq!(res.0, 50, vec![
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        // 44.1 per ms, attack is default 3.0ms (roughly 3 * 50 samples):
+        0.0009576017, 0.0044435486, 0.023418367,
+        // 44.1 per ms, decay is default 10.0ms (=> roughly 9 * 50 samples):
+        -0.0068960786, -0.004632175, -0.002927363, -0.0017025322,
+        -0.00087817386, -0.0003750762, -0.000113890506, -0.0000153047,
+        -0.0000000017186217,
+        0.0, 0.0, 0.0, 0.0
+    ]);
+}
+
+
+#[test]
+fn check_node_ad_trig_out() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let ad   = NodeId::Ad(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(ad)
+                       .out(None, None, ad.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.place(1, 0, Cell::empty(ad)
+                       .out(None, None, ad.out("eoet")));
+    matrix.place(1, 1, Cell::empty(out)
+                       .input(out.inp("ch2"), None, None));
+    matrix.sync().unwrap();
+
+    let trig_p = ad.inp_param("trig").unwrap();
+
+    pset_n(&mut matrix, ad, "trig", 1.0);
+
+    let res = run_for_ms(&mut node_exec, 25.0);
+    // just make sure we are running an env:
+    assert_decimated_slope_feq!(res.0, 50, vec![
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        // 44.1 per ms, attack is default 3.0ms (roughly 3 * 50 samples):
+        0.007558584, 0.007558584, 0.007558584,
+        // 44.1 per ms, decay is default 10.0ms (=> roughly 9 * 50 samples):
+        -0.002267599, -0.0022675395, -0.002267599, -0.0022675395,
+        -0.0022675693, -0.0022675693, -0.0022675842, -0.0022675693,
+        -0.0022675726,
+        0.0, // <- EOET expected here
+        0.0, 0.0, 0.0
+    ]);
+
+    // check if trigger appears:
+    assert_decimated_feq!(res.1, 50, vec![
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        // 44.1 per ms, attack is default 3.0ms (roughly 3 * 50 samples):
+        0.0, 0.0, 0.0,
+        // 44.1 per ms, decay is default 10.0ms (=> roughly 9 * 50 samples):
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0,
+        1.0, // <- End of envelope!
+        0.0, 0.0, 0.0
+    ]);
+}
+
+
+#[test]
+fn check_node_ad_atk() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let test = NodeId::Test(0);
+    let ad   = NodeId::Ad(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(test)
+                       .out(None, None, test.out("sig")));
+    matrix.place(0, 1, Cell::empty(ad)
+                       .input(ad.inp("trig"), None, None)
+                       .out(None, None, ad.out("sig")));
+    matrix.place(0, 2, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    pset_d(&mut matrix, ad, "atk", 20.0);
+    pset_n(&mut matrix, test, "p", 0.0);
+    let res = run_for_ms(&mut node_exec, 10.0);
+
+    pset_n(&mut matrix, test, "p", 1.0);
+    let res = run_for_ms(&mut node_exec, 10.0);
+    assert_decimated_slope_feq!(res.0, 10, vec![0.001133787; 50]);
+
+    pset_d(&mut matrix, ad, "atk", 50.0);
+    let res = run_for_ms(&mut node_exec, 20.0);
+    assert_decimated_slope_feq!(res.0, 40, vec![
+        // Slope is getting less and less steep, as expected:
+        0.0011277795, 0.0010179877, 0.00092345476, 0.00084143877,
+        0.0007699132, 0.0007072091, 0.0006517768, 0.00060266256,
+        0.00055885315, 0.0005196929, 0.00048446655, 0.00045353174,
+        // Slope does not change after the "atk" change has been smoothed
+        0.00045353174, 0.00045353174, 0.00045353174, 0.00045347214,
+        0.00045353174, 0.00045353174, 0.00045353174, 0.00045353174,
+        0.00045347214, 0.00045353174,
+        // attack phase ended, and now we decay:
+        -0.002267599
+    ]);
 }
