@@ -256,9 +256,8 @@ fn check_node_ad_shp_exp() {
     ]);
 }
 
-
 #[test]
-fn check_node_ad_trig_out() {
+fn check_node_ad_eoet() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
@@ -274,10 +273,7 @@ fn check_node_ad_trig_out() {
                        .input(out.inp("ch2"), None, None));
     matrix.sync().unwrap();
 
-    let trig_p = ad.inp_param("trig").unwrap();
-
     pset_n(&mut matrix, ad, "trig", 1.0);
-
     let res = run_for_ms(&mut node_exec, 25.0);
     // just make sure we are running an env:
     assert_decimated_slope_feq!(res.0, 50, vec![
@@ -308,7 +304,7 @@ fn check_node_ad_trig_out() {
 
 
 #[test]
-fn check_node_ad_atk() {
+fn check_node_ad_atk_dcy() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
@@ -346,4 +342,55 @@ fn check_node_ad_atk() {
         // attack phase ended, and now we decay:
         -0.002267599
     ]);
+
+    // check if decay stays stable:
+    let res = run_for_ms(&mut node_exec, 2.0);
+    assert_decimated_slope_feq!(res.0, 40, vec![-0.002267599; 3]);
+
+    pset_d(&mut matrix, ad, "dcy", 200.0);
+    let res = run_for_ms(&mut node_exec, 20.0);
+    assert_decimated_slope_feq!(res.0, 40, vec![
+        // Slope is getting less and less steep, as expected:
+        -0.002197802, -0.0012806058, -0.00083732605, -0.0005899668,
+        -0.00043797493, -0.00033789873, -0.00026863813, -0.00021868944,
+        -0.00018143654, -0.00015294552, -0.00013071299,
+        // Slope does not change after the "dcy" change has been smoothed
+        -0.000113368034, -0.000113368034, -0.00011339784, -0.00011339784,
+        -0.000113368034, -0.000113368034, -0.00011339784, -0.000113368034,
+        -0.000113368034, -0.00011339784, -0.000113368034, -0.000113368034 
+    ]);
 }
+
+#[test]
+fn check_node_ad_mult() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let ad   = NodeId::Ad(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(ad)
+                       .out(None, None, ad.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    pset_n(&mut matrix, ad, "trig", 1.0);
+    pset_n(&mut matrix, ad, "mult", 2.0);
+    let res = run_for_ms(&mut node_exec, 2000.0);
+    assert_decimated_slope_feq_fine!(res.0, 1800, vec![
+        0.0,
+        // looong attack:
+        0.00007558, 0.00007558, 0.00007558, 0.00007558,
+        0.00007558, 0.00007558, 0.00007558,
+        // looong decay:
+        -0.000022709, -0.000022709, -0.000022709, -0.000022709, -0.000022709,
+        -0.000022709, -0.000022709, -0.000022709, -0.000022709, -0.000022709,
+        -0.000022709, -0.000022709, -0.000022709, -0.000022709, -0.000022709,
+        -0.000022709, -0.000022709, -0.000022709, -0.000022709, -0.000022709,
+        -0.000022709, -0.000022709, -0.000022709, -0.000022709, -0.000022709,
+        0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+}
+

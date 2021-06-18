@@ -3,7 +3,10 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::{
+    NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals,
+    GraphAtomData, GraphFun,
+};
 use super::helpers::{Trigger, TrigSignal, sqrt4_to_pow4};
 
 #[macro_export]
@@ -229,5 +232,19 @@ impl DspNode for Ad {
 
         ctx_vals[0].set(self.value as f32);
 //        ctx_vals[1].set(self.phase / self. + self.stage * );
+    }
+
+    fn graph_fun() -> Option<GraphFun> {
+        Some(Box::new(|gd: &dyn GraphAtomData, _init: bool, x: f32| -> f32 {
+            let atk_idx  = NodeId::Ad(0).inp_param("atk").unwrap().inp();
+            let dcy_idx  = NodeId::Ad(0).inp_param("dcy").unwrap().inp();
+            let ashp_idx = NodeId::Ad(0).inp_param("ashp").unwrap().inp();
+            let dshp_idx = NodeId::Ad(0).inp_param("dshp").unwrap().inp();
+
+            let ashp = gd.get_denorm(ashp_idx as u32);
+
+            let v = sqrt4_to_pow4(x * gd.get_norm(atk_idx as u32), ashp);
+            v
+        }))
     }
 }

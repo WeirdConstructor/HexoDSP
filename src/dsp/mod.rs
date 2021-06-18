@@ -59,8 +59,9 @@ pub const MAX_BLOCK_SIZE : usize = 128;
 /// This trait is an interface between the graph functions
 /// and the AtomDataModel of the UI.
 pub trait GraphAtomData {
-    fn get(&self, node_id: usize, param_idx: u32) -> Option<SAtom>;
-    fn get_denorm(&self, node_id: usize, param_idx: u32) -> f32;
+    fn get(&self, param_idx: u32) -> Option<SAtom>;
+    fn get_denorm(&self, param_idx: u32) -> f32;
+    fn get_norm(&self, param_idx: u32) -> f32;
 }
 
 pub type GraphFun = Box<dyn FnMut(&dyn GraphAtomData, bool, f32) -> f32>;

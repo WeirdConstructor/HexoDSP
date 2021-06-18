@@ -162,6 +162,38 @@ assertion failed: `(left[{}] == right[{}])`
     }
 }
 
+
+#[macro_export]
+macro_rules! assert_decimated_slope_feq_fine {
+    ($vec:expr, $decimate:expr, $cmp_vec:expr) => {
+        let cmp_vec = $cmp_vec;
+        let mut res : Vec<f32> = vec![];
+        let mut prev = 0.0;
+        for (i, s) in $vec.iter().enumerate() {
+            let delta = *s - prev;
+            if i > 0 {
+                res.push(delta);
+            }
+            prev = *s;
+        }
+
+        let res : Vec<f32> = res.iter().step_by($decimate).copied().collect();
+
+        for (i, (s, scmp)) in res.iter().zip(cmp_vec.iter()).enumerate() {
+            if (s - scmp).abs() > 0.0000001 {
+                panic!(r#"
+table_left: {:?}
+
+table_right: {:?}
+
+assertion failed: `(left[{}] == right[{}])`
+      left: `{:?}`,
+     right: `{:?}`"#, &res[i..], &(cmp_vec[i..]), i, i, s, scmp)
+            }
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! assert_rmsmima {
     ($rms:expr, $b:expr) => {
