@@ -62,6 +62,8 @@ pub trait GraphAtomData {
     fn get(&self, param_idx: u32) -> Option<SAtom>;
     fn get_denorm(&self, param_idx: u32) -> f32;
     fn get_norm(&self, param_idx: u32) -> f32;
+    fn get_phase(&self) -> f32;
+    fn get_led(&self) -> f32;
 }
 
 pub type GraphFun = Box<dyn FnMut(&dyn GraphAtomData, bool, f32) -> f32>;

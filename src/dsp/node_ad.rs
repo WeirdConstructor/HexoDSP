@@ -241,10 +241,31 @@ impl DspNode for Ad {
             let ashp_idx = NodeId::Ad(0).inp_param("ashp").unwrap().inp();
             let dshp_idx = NodeId::Ad(0).inp_param("dshp").unwrap().inp();
 
+            let atk = gd.get_norm(atk_idx as u32);
+            let dcy = gd.get_norm(dcy_idx as u32);
             let ashp = gd.get_denorm(ashp_idx as u32);
+            let dshp = gd.get_denorm(dshp_idx as u32);
 
-            let v = sqrt4_to_pow4(x * gd.get_norm(atk_idx as u32), ashp);
-            v
+            let a = atk * 0.5;
+            let d = dcy * 0.5;
+            if x <= a {
+                if a < 0.0001 {
+                    0.0
+                } else {
+                    let delta = 1.0 - ((a - x) / a);
+                    sqrt4_to_pow4(delta, ashp)
+                }
+            } else if (x - a) <= d {
+                if d < 0.0001 {
+                    0.0
+                } else {
+                    let x = x - a;
+                    let delta = ((d - x) / d);
+                    sqrt4_to_pow4(delta, dshp)
+                }
+            } else {
+                0.0
+            }
         }))
     }
 }
