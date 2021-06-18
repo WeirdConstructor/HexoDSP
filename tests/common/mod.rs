@@ -209,11 +209,13 @@ macro_rules! assert_minmax_of_rms {
     }
 }
 
+#[allow(unused)]
 pub fn pset_n(matrix: &mut Matrix, nid: NodeId, parm: &str, v_norm: f32) {
     let p = nid.inp_param(parm).unwrap();
     matrix.set_param(p, SAtom::param(v_norm));
 }
 
+#[allow(unused)]
 pub fn pset_d(matrix: &mut Matrix, nid: NodeId, parm: &str, v_denorm: f32) {
     let p = nid.inp_param(parm).unwrap();
     matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
@@ -317,6 +319,7 @@ pub fn run_and_get_first_rms_mimax(
     rms_mimax[0]
 }
 
+#[allow(unused)]
 pub fn run_and_get_l_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     len_ms: f32) -> (f32, f32, f32)
@@ -326,6 +329,7 @@ pub fn run_and_get_l_rms_mimax(
     rms_mimax[1]
 }
 
+#[allow(unused)]
 pub fn run_and_get_counted_freq(
     node_exec: &mut hexodsp::nodes::NodeExecutor, ms: f32)
     -> f64
@@ -359,7 +363,7 @@ pub fn run_and_get_counted_freq(
     trans_per_sample * 44100.0 * 0.5
 }
 
-
+#[allow(unused)]
 pub fn run_and_get_fft4096(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     thres: u32,
@@ -376,6 +380,7 @@ pub fn run_and_get_fft4096(
     fft_thres_at_ms(&mut out_l[..], FFT::F4096, thres, offs_ms)
 }
 
+#[allow(unused)]
 pub fn run_and_get_fft4096_now(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     thres: u32) -> Vec<(u16, u32)>

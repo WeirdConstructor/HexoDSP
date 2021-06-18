@@ -76,7 +76,7 @@ fn check_node_ad_retrig() {
 
 
     matrix.set_param(trig_p, SAtom::param(0.0));
-    let res = run_for_ms(&mut node_exec, 0.1);
+    run_for_ms(&mut node_exec, 0.1);
     matrix.set_param(trig_p, SAtom::param(1.0));
     let res = run_for_ms(&mut node_exec, 1.5);
     assert_decimated_feq!(res.0, 2, vec![
@@ -153,7 +153,7 @@ fn check_node_ad_inp_sin() {
 
     // check if we have any frequencies resembling 440Hz
     matrix.set_param(trig_p, SAtom::param(1.0));
-    let res = run_for_ms(&mut node_exec, 7.0);
+    run_for_ms(&mut node_exec, 7.0);
 
     let fft = run_and_get_fft4096_now(&mut node_exec, 6);
     assert_eq!(fft[0], (420, 6));
@@ -169,7 +169,7 @@ fn check_node_ad_inp_sin() {
 
     matrix.set_param(atk_p, SAtom::param(atk_p.norm(40.0)));
     matrix.set_param(trig_p, SAtom::param(1.0));
-    let res = run_for_ms(&mut node_exec, 7.0);
+    run_for_ms(&mut node_exec, 7.0);
 
     let fft = run_and_get_fft4096_now(&mut node_exec, 300);
     assert_eq!(fft[0], (431, 322));
@@ -185,7 +185,7 @@ fn check_node_ad_inp_sin() {
 
     matrix.set_param(dcy_p, SAtom::param(dcy_p.norm(40.0)));
     matrix.set_param(trig_p, SAtom::param(1.0));
-    let res = run_for_ms(&mut node_exec, 7.0);
+    run_for_ms(&mut node_exec, 7.0);
 
     let fft = run_and_get_fft4096_now(&mut node_exec, 300);
     assert_eq!(fft[0], (431, 489));
@@ -322,7 +322,7 @@ fn check_node_ad_atk_dcy() {
 
     pset_d(&mut matrix, ad, "atk", 20.0);
     pset_n(&mut matrix, test, "p", 0.0);
-    let res = run_for_ms(&mut node_exec, 10.0);
+    run_for_ms(&mut node_exec, 10.0);
 
     pset_n(&mut matrix, test, "p", 1.0);
     let res = run_for_ms(&mut node_exec, 10.0);

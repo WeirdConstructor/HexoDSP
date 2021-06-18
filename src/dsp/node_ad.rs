@@ -21,8 +21,6 @@ macro_rules! fa_ad_mult { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     write!($formatter, "{}", s)
 } } }
 
-const AD_STAGES : i8 = 2;
-
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Ad {
@@ -125,7 +123,7 @@ impl DspNode for Ad {
         atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, inp, denorm, denorm_v, inp_dir, at};
+        use crate::dsp::{out, inp, denorm, at};
 
         let inp       = inp::Ad::inp(inputs);
         let trig      = inp::Ad::trig(inputs);
@@ -260,7 +258,7 @@ impl DspNode for Ad {
                     0.0
                 } else {
                     let x = x - a;
-                    let delta = ((d - x) / d);
+                    let delta = (d - x) / d;
                     sqrt4_to_pow4(delta, dshp)
                 }
             } else {
