@@ -31,16 +31,45 @@ pub struct Delay {
 }
 
 impl Delay {
-    pub const DESC : &'static str = r#""#;
-    pub const HELP : &'static str = r#""#;
-
     pub fn new(_nid: &NodeId) -> Self {
         Self {
         }
     }
-    pub const f : &'static str = "F Delay";
-    pub const p : &'static str = "Delay p\nJust an unsmoothed parameter for tests.";
-    pub const sig : &'static str = "Delay sig\nThe output of p as signal";
+
+    pub const inp  : &'static str =
+        "Delay inp\nThe signal input for the delay. You can mix in this \
+         input to the output with the 'mix' parameter.\nRange: (-1..1)";
+    pub const time : &'static str =
+        "Delay time\nThe delay time. It can be freely modulated to your \
+         likings.\nRange: (0..1)";
+    pub const fb   : &'static str =
+        "Delay fb\nThe feedback amount of the delay output to it's input. \
+        \nRange: (0..1)";
+    pub const mix  : &'static str =
+        "Delay mix\nThe dry/wet mix of the delay.\nRange: (0..1)";
+    pub const sig  : &'static str =
+        "Delay sig\nThe output of the dry/wet mix.\nRange: (-1..1)";
+
+    pub const DESC : &'static str =
+r#"Simple Delay Line
+
+This is a very simple single buffer delay node.
+It provides an internal feedback and dry/wet mix.
+"#;
+pub const HELP : &'static str =
+r#"Delay - A Simple Delay Line
+
+This node provides a very simple delay line with the bare minimum of
+parameters. Most importantly a freely modulateable 'time' parameter
+and a feedback 'fb' parameter.
+
+Via the 'mix' parameter you can mix in the input signal to the output.
+
+You can use this node to delay any kind of signal, from a simple control
+signal to an audio signal.
+
+For other kinds of delay/feedback please see also the 'FbWr'/'FbRd' nodes.
+"#;
 }
 
 impl DspNode for Delay {
@@ -57,10 +86,10 @@ impl DspNode for Delay {
     {
         use crate::dsp::{out, at};
 
-        let p    = at::Delay::p(atoms);
+//        let p    = at::Delay::p(atoms);
         let out  = out::Delay::sig(outputs);
         for frame in 0..ctx.nframes() {
-            out.write(frame, p.f());
+            out.write(frame, 0.0);
         }
     }
 
