@@ -126,7 +126,6 @@ impl RandGen {
 // worldwide. This software is distributed without any warranty.
 //
 // See <LICENSE or http://creativecommons.org/publicdomain/zero/1.0/>
-use std::num::Wrapping as w;
 
 /// The `SplitMix64` random number generator.
 #[derive(Copy, Clone)]
@@ -140,6 +139,8 @@ impl SplitMix64 {
 
     #[inline]
     pub fn next_u64(&mut self) -> u64 {
+        use std::num::Wrapping as w;
+
         let mut z = w(self.0) + w(0x9E37_79B9_7F4A_7C15_u64);
         self.0 = z.0;
         z = (z ^ (z >> 30)) * w(0xBF58_476D_1CE4_E5B9_u64);
@@ -475,6 +476,88 @@ impl TriggerClock {
         self.clock_phase += self.clock_inc;
 
         self.clock_phase
+    }
+}
+
+/// Default size of the delay buffer: 5 seconds at 8 times 48kHz
+const DEFAULT_DELAY_BUFFER_SAMPLES : usize = 8 * 48000 * 5;
+
+struct DelayBuffer {
+    data:   Vec<f32>,
+    wr:     usize,
+    srate:  f32,
+}
+
+impl DelayBuffer {
+    pub fn new() -> Self {
+        Self {
+            data:   vec![0.0; DEFAULT_DELAY_BUFFER_SAMPLES],
+            wr:     0,
+            srate:  44100.0,
+        }
+    }
+
+    pub fn new_with_size(size: usize) -> Self {
+        Self {
+            data:   vec![0.0; size],
+            wr:     0,
+            srate:  44100.0,
+        }
+    }
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.srate = srate;
+    }
+
+    pub fn reset(&mut self) {
+        self.data.fill(0.0);
+        self.wr = 0;
+    }
+
+    #[inline]
+    pub fn feed(&mut self, input: f32) {
+        self.wr = (self.wr + 1) % self.data.len();
+        self.data[self.wr] = input;
+    }
+
+    #[inline]
+    pub fn cubic_interpolate_at(&self, delay_time: f32) -> f32 {
+        let data   = &self.data[..];
+        let len    = data.len();
+        let s_offs = delay_time * self.srate;
+        let offs   = s_offs.floor() as usize % len;
+        let fract  = s_offs.fract();
+
+        let i = (self.wr + len) - offs;
+
+        // Hermite interpolation, take from 
+        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
+        //
+        // Thanks go to Eric Wood!
+        //
+        // For the interpolation code:
+        // MIT License, Copyright (c) 2021 Eric Wood
+        let xm1 = data[(i - 1) % len];
+        let x0  = data[i       % len];
+        let x1  = data[(i + 1) % len];
+        let x2  = data[(i + 2) % len];
+
+        let c     = (x1 - xm1) * 0.5;
+        let v     = x0 - x1;
+        let w     = c + v;
+        let a     = w + v + (x2 - x0) * 0.5;
+        let b_neg = w + a;
+
+        let fract = fract as f32;
+        (((a * fract) - b_neg) * fract + c) * fract + x0
+    }
+
+    #[inline]
+    pub fn nearest_at(&self, delay_time: f32) -> f32 {
+        let len  = self.data.len();
+        let offs = (delay_time * self.srate).floor() as usize % len;
+        let idx  = ((self.wr + len) - offs) % len;
+        self.data[idx]
     }
 }
 
