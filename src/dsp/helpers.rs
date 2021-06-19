@@ -527,7 +527,7 @@ impl DelayBuffer {
     pub fn cubic_interpolate_at(&self, delay_time: f32) -> f32 {
         let data   = &self.data[..];
         let len    = data.len();
-        let s_offs = delay_time * self.srate;
+        let s_offs = (delay_time * self.srate) / 1000.0;
         let offs   = s_offs.floor() as usize % len;
         let fract  = s_offs.fract();
 
