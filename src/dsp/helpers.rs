@@ -160,10 +160,12 @@ impl SplitMix64 {
     }
 }
 
-pub fn mix(v1: f32, v2: f32, mix: f32) -> f32 {
+#[inline]
+pub fn crossfade(v1: f32, v2: f32, mix: f32) -> f32 {
     v1 * (1.0 - mix) + v2 * mix
 }
 
+#[inline]
 pub fn clamp(f: f32, min: f32, max: f32) -> f32 {
          if f < min { min }
     else if f > max { max }
@@ -482,7 +484,8 @@ impl TriggerClock {
 /// Default size of the delay buffer: 5 seconds at 8 times 48kHz
 const DEFAULT_DELAY_BUFFER_SAMPLES : usize = 8 * 48000 * 5;
 
-struct DelayBuffer {
+#[derive(Debug, Clone)]
+pub struct DelayBuffer {
     data:   Vec<f32>,
     wr:     usize,
     srate:  f32,

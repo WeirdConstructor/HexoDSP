@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, GraphFun, GraphAtomData, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::helpers::{DelayBuffer, crossfade};
 
 #[macro_export]
 macro_rules! fa_dly_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -28,11 +29,15 @@ macro_rules! fa_dly_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Delay {
+    buffer:    Box<DelayBuffer>,
+    fb_sample: f32,
 }
 
 impl Delay {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
+            buffer:     Box::new(DelayBuffer::new()),
+            fb_sample:  0.0,
         }
     }
 
@@ -75,27 +80,48 @@ For other kinds of delay/feedback please see also the 'FbWr'/'FbRd' nodes.
 impl DspNode for Delay {
     fn outputs() -> usize { 1 }
 
-    fn set_sample_rate(&mut self, _srate: f32) { }
-    fn reset(&mut self) { }
+    fn set_sample_rate(&mut self, srate: f32) {
+        self.buffer.set_sample_rate(srate);
+    }
+
+    fn reset(&mut self) {
+        self.buffer.reset();
+    }
 
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], _inputs: &[ProcBuf],
+        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], _led: LedPhaseVals)
     {
-        use crate::dsp::{out, at};
+        use crate::dsp::{out, inp, denorm};
 
-//        let p    = at::Delay::p(atoms);
+        let buffer = &mut *self.buffer;
+
+        let inp  = inp::Delay::inp(inputs);
+        let time = inp::Delay::time(inputs);
+        let fb   = inp::Delay::fb(inputs);
+        let mix  = inp::Delay::mix(inputs);
         let out  = out::Delay::sig(outputs);
-        for frame in 0..ctx.nframes() {
-            out.write(frame, 0.0);
-        }
-    }
 
-    fn graph_fun() -> Option<GraphFun> {
-        Some(Box::new(|_gd: &dyn GraphAtomData, _init: bool, x: f32| -> f32 {
-            x
-        }))
+        let mut fb_s = self.fb_sample;
+
+        for frame in 0..ctx.nframes() {
+            let dry = inp.read(frame);
+            buffer.feed(
+                dry + fb_s * denorm::Delay::fb(fb, frame));
+
+            let out_sample =
+                buffer.cubic_interpolate_at(
+                    denorm::Delay::time(time, frame));
+
+            out.write(frame,
+                crossfade(dry, out_sample,
+                    denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
+
+            fb_s = out_sample;
+        }
+
+        self.fb_sample = fb_s;
     }
 }

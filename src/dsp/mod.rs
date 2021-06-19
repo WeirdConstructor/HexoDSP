@@ -363,10 +363,11 @@ define_exp!{n_declick d_declick 0.0, 50.0}
 
 define_exp!{n_env d_env 0.0, 1000.0}
 
+define_exp!{n_time d_time 0.0, 5000.0}
+
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
 define_lin!{n_ogin d_ogin 0.0, 2.0}
-define_lin!{n_time d_time 0.0, 5000.0}
 
 // A note about the input-indicies:
 //
