@@ -43,6 +43,7 @@ use crate::fa_sampl_dclick;
 use crate::fa_sampl_pmode;
 use crate::fa_sampl_dir;
 use crate::fa_ad_mult;
+use crate::fa_delay_mode;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -458,14 +459,16 @@ macro_rules! node_list {
                (3  dcy   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 10.0)
                (4  ashp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                (5  dshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
-               {6 0 mult setting(0) fa_ad_mult  0  2}
+               {6 0 mult setting(0) fa_ad_mult  0 2}
                [0 sig]
                [1 eoet],
             delay => Delay UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
-               (1  time  n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 0.5)
-               (2  fb    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
-               (3  mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (2  time  n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 0.5)
+               (3  fb    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
+               (4  mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               {5 0 mode setting(0) fa_delay_mode 0 1}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)

@@ -4,23 +4,14 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
-use crate::dsp::helpers::{DelayBuffer, crossfade};
+use crate::dsp::helpers::{DelayBuffer, crossfade, TriggerSampleClock};
 
 #[macro_export]
-macro_rules! fa_dly_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+macro_rules! fa_delay_mode { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
         let s =
             match ($v.round() as usize) {
-                0  => "Zero",
-                1  => "One",
-                2  => "Two",
-                3  => "Three",
-                4  => "Four",
-                5  => "Five",
-                6  => "Six",
-                7  => "Seven",
-                8  => "Eigth",
-                9  => "Nine",
-                10 => "Ten",
+                0  => "Time",
+                1  => "Sync",
                 _  => "?",
             };
         write!($formatter, "{}", s)
@@ -29,21 +20,26 @@ macro_rules! fa_dly_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Delay {
-    buffer:    Box<DelayBuffer>,
-    fb_sample: f32,
+    buffer:             Box<DelayBuffer>,
+    fb_sample:          f32,
+    clock:              TriggerSampleClock,
 }
 
 impl Delay {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
-            buffer:     Box::new(DelayBuffer::new()),
-            fb_sample:  0.0,
+            buffer:            Box::new(DelayBuffer::new()),
+            fb_sample:         0.0,
+            clock:             TriggerSampleClock::new(),
         }
     }
 
     pub const inp  : &'static str =
         "Delay inp\nThe signal input for the delay. You can mix in this \
          input to the output with the 'mix' parameter.\nRange: (-1..1)";
+    pub const trig : &'static str =
+        "Delay trig\nIf you set 'mode' to 'Sync', the delay time will be \
+         synchronized to the trigger signals received on this input.\nRange: (-1..1)";
     pub const time : &'static str =
         "Delay time\nThe delay time. It can be freely modulated to your \
          likings.\nRange: (0..1)";
@@ -52,6 +48,11 @@ impl Delay {
         \nRange: (0..1)";
     pub const mix  : &'static str =
         "Delay mix\nThe dry/wet mix of the delay.\nRange: (0..1)";
+    pub const mode : &'static str =
+        "Delay mode\nAllows different operating modes of the delay. \
+        'Time' is the default, and means that the 'time' input \
+        specifies the delay time. 'Sync' will synchronize the delay time \
+        with the trigger signals on the 'trig' input.";
     pub const sig  : &'static str =
         "Delay sig\nThe output of the dry/wet mix.\nRange: (-1..1)";
 
@@ -86,19 +87,22 @@ impl DspNode for Delay {
 
     fn reset(&mut self) {
         self.buffer.reset();
+        self.clock.reset();
     }
 
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf], _led: LedPhaseVals)
+        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, inp, denorm};
+        use crate::dsp::{at, out, inp, denorm};
 
         let buffer  = &mut *self.buffer;
 
+        let mode = at::Delay::mode(atoms);
         let inp  = inp::Delay::inp(inputs);
+        let trig = inp::Delay::trig(inputs);
         let time = inp::Delay::time(inputs);
         let fb   = inp::Delay::fb(inputs);
         let mix  = inp::Delay::mix(inputs);
@@ -106,22 +110,42 @@ impl DspNode for Delay {
 
         let mut fb_s = self.fb_sample;
 
-        for frame in 0..ctx.nframes() {
-            let dry = inp.read(frame);
-            buffer.feed(
-                dry + fb_s * denorm::Delay::fb(fb, frame));
+        if mode.i() == 0 {
+            for frame in 0..ctx.nframes() {
+                let dry = inp.read(frame);
+                buffer.feed(dry + fb_s * denorm::Delay::fb(fb, frame));
 
-            let out_sample =
-                buffer.cubic_interpolate_at(
-                    denorm::Delay::time(time, frame));
+                let out_sample =
+                    buffer.cubic_interpolate_at(
+                        denorm::Delay::time(time, frame));
 
-            out.write(frame,
-                crossfade(dry, out_sample,
-                    denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
+                out.write(frame,
+                    crossfade(dry, out_sample,
+                        denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
 
-            fb_s = out_sample;
+                fb_s = out_sample;
+            }
+        } else {
+            for frame in 0..ctx.nframes() {
+                let dry = inp.read(frame);
+                buffer.feed(dry + fb_s * denorm::Delay::fb(fb, frame));
+
+                let clock_samples =
+                    self.clock.next(denorm::Delay::trig(trig, frame));
+
+                let out_sample = buffer.at(clock_samples as usize);
+
+                out.write(frame,
+                    crossfade(dry, out_sample,
+                        denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
+
+                fb_s = out_sample;
+            }
         }
 
         self.fb_sample = fb_s;
+
+        let last_frame = ctx.nframes() - 1;
+        ctx_vals[0].set(out.read(last_frame));
     }
 }

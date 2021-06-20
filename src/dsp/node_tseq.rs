@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::helpers::TriggerClock;
+use crate::dsp::helpers::TriggerPhaseClock;
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 use crate::dsp::tracker::TrackerBackend;
 
@@ -26,7 +26,7 @@ macro_rules! fa_tseq_cmode { ($formatter: expr, $v: expr, $denorm_v: expr) => { 
 #[derive(Debug)]
 pub struct TSeq {
     backend:       Option<Box<TrackerBackend>>,
-    clock:         TriggerClock,
+    clock:         TriggerPhaseClock,
     srate:         f64,
 }
 
@@ -39,7 +39,7 @@ impl TSeq {
         Self {
             backend:       None,
             srate:         48000.0,
-            clock:         TriggerClock::new(),
+            clock:         TriggerPhaseClock::new(),
         }
     }
 

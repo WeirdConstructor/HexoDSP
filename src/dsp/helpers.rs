@@ -430,14 +430,14 @@ impl Trigger {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct TriggerClock {
+pub struct TriggerPhaseClock {
     clock_phase:    f64,
     clock_inc:      f64,
     prev_trigger:   bool,
     clock_samples:  u32,
 }
 
-impl TriggerClock {
+impl TriggerPhaseClock {
     pub fn new() -> Self {
         Self {
             clock_phase:    0.0,
@@ -478,6 +478,47 @@ impl TriggerClock {
         self.clock_phase += self.clock_inc;
 
         self.clock_phase
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TriggerSampleClock {
+    prev_trigger:   bool,
+    clock_samples:  u32,
+    counter:        u32,
+}
+
+impl TriggerSampleClock {
+    pub fn new() -> Self {
+        Self {
+            prev_trigger:   true,
+            clock_samples:  0,
+            counter:        0,
+        }
+    }
+
+    #[inline]
+    pub fn reset(&mut self) {
+        self.clock_samples = 0;
+        self.counter       = 0;
+    }
+
+    #[inline]
+    pub fn next(&mut self, trigger_in: f32) -> u32 {
+        if self.prev_trigger {
+            if trigger_in <= 0.25 {
+                self.prev_trigger = false;
+            }
+
+        } else if trigger_in > 0.75 {
+            self.prev_trigger  = true;
+            self.clock_samples = self.counter;
+            self.counter       = 0;
+        }
+
+        self.counter += 1;
+
+        self.clock_samples
     }
 }
 
@@ -560,6 +601,13 @@ impl DelayBuffer {
         let len  = self.data.len();
         let offs = (delay_time * self.srate).floor() as usize % len;
         let idx  = ((self.wr + len) - offs) % len;
+        self.data[idx]
+    }
+
+    #[inline]
+    pub fn at(&self, delay_sample_count: usize) -> f32 {
+        let len  = self.data.len();
+        let idx  = ((self.wr + len) - delay_sample_count) % len;
         self.data[idx]
     }
 }
