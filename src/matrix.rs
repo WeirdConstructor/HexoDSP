@@ -208,7 +208,14 @@ impl Cell {
             CellDir::BL => { self.in3  = None; },
             CellDir::TL => { self.in2  = None; },
             CellDir::T  => { self.in1  = None; },
-            CellDir::C  => {},
+            CellDir::C  => {
+                self.out1 = None;
+                self.out2 = None;
+                self.out3 = None;
+                self.in1  = None;
+                self.in2  = None;
+                self.in3  = None;
+            },
         }
     }
 
