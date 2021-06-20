@@ -4,7 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
-use crate::dsp::helpers::{DelayBuffer, crossfade};
+use crate::dsp::helpers::{DelayBuffer, crossfade, DCBlockFilter};
 
 #[macro_export]
 macro_rules! fa_dly_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -31,6 +31,7 @@ macro_rules! fa_dly_s { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
 pub struct Delay {
     buffer:    Box<DelayBuffer>,
     fb_sample: f32,
+    dcblock:   DCBlockFilter,
 }
 
 impl Delay {
@@ -38,6 +39,7 @@ impl Delay {
         Self {
             buffer:     Box::new(DelayBuffer::new()),
             fb_sample:  0.0,
+            dcblock:    DCBlockFilter::new(),
         }
     }
 
@@ -82,10 +84,12 @@ impl DspNode for Delay {
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.buffer.set_sample_rate(srate);
+        self.dcblock.set_sample_rate(srate);
     }
 
     fn reset(&mut self) {
         self.buffer.reset();
+        self.dcblock.reset();
     }
 
     #[inline]
@@ -96,7 +100,8 @@ impl DspNode for Delay {
     {
         use crate::dsp::{out, inp, denorm};
 
-        let buffer = &mut *self.buffer;
+        let buffer  = &mut *self.buffer;
+        let dcblock = &mut self.dcblock;
 
         let inp  = inp::Delay::inp(inputs);
         let time = inp::Delay::time(inputs);
@@ -116,8 +121,9 @@ impl DspNode for Delay {
                     denorm::Delay::time(time, frame));
 
             out.write(frame,
-                crossfade(dry, out_sample,
-                    denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
+                dcblock.next(
+                    crossfade(dry, out_sample,
+                        denorm::Delay::mix(mix, frame).clamp(0.0, 1.0))));
 
             fb_s = out_sample;
         }

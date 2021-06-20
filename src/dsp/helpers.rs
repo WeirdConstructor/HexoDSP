@@ -564,6 +564,47 @@ impl DelayBuffer {
     }
 }
 
+// translated from Odin 2 Synthesizer Plugin
+// Copyright (C) 2020 TheWaveWarden
+// under GPLv3 or any later
+#[derive(Debug, Clone)]
+pub struct DCBlockFilter {
+    xm1:    f64,
+    ym1:    f64,
+    R:      f64,
+}
+
+impl DCBlockFilter {
+    pub fn new() -> Self {
+        Self {
+            xm1: 0.0,
+            ym1: 0.0,
+            R:   0.995,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.xm1 = 0.0;
+        self.ym1 = 0.0;
+    }
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.R = 0.995;
+        if srate > 90000.0 {
+            self.R = 0.9965;
+        } else if srate > 120000.0 {
+            self.R = 0.997;
+        }
+    }
+
+    pub fn next(&mut self, input: f32) -> f32 {
+        let y = input as f64 - self.xm1 + self.R * self.ym1;
+        self.xm1 = input as f64;
+        self.ym1 = y;
+        y as f32
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -298,7 +298,13 @@ macro_rules! r_ems { ($x: expr, $coarse: expr) => {
 /// The rounding function for milliseconds knobs
 macro_rules! r_tms { ($x: expr, $coarse: expr) => {
     if $coarse {
-        n_time!((d_time!($x)).round())
+        if d_time!($x) > 1000.0 {
+            n_time!((d_time!($x) / 100.0).round() * 100.0)
+        } else if d_time!($x) > 100.0 {
+            n_time!((d_time!($x) / 10.0).round() * 10.0)
+        } else {
+            n_time!((d_time!($x)).round())
+        }
     } else {
         n_time!((d_time!($x) * 10.0).round() / 10.0)
     }
@@ -363,7 +369,7 @@ define_exp!{n_declick d_declick 0.0, 50.0}
 
 define_exp!{n_env d_env 0.0, 1000.0}
 
-define_exp!{n_time d_time 0.0, 5000.0}
+define_exp!{n_time d_time 0.5, 5000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
