@@ -571,7 +571,7 @@ impl DelayBuffer {
 pub struct DCBlockFilter {
     xm1:    f64,
     ym1:    f64,
-    R:      f64,
+    r:      f64,
 }
 
 impl DCBlockFilter {
@@ -579,7 +579,7 @@ impl DCBlockFilter {
         Self {
             xm1: 0.0,
             ym1: 0.0,
-            R:   0.995,
+            r:   0.995,
         }
     }
 
@@ -589,16 +589,16 @@ impl DCBlockFilter {
     }
 
     pub fn set_sample_rate(&mut self, srate: f32) {
-        self.R = 0.995;
+        self.r = 0.995;
         if srate > 90000.0 {
-            self.R = 0.9965;
+            self.r = 0.9965;
         } else if srate > 120000.0 {
-            self.R = 0.997;
+            self.r = 0.997;
         }
     }
 
     pub fn next(&mut self, input: f32) -> f32 {
-        let y = input as f64 - self.xm1 + self.R * self.ym1;
+        let y = input as f64 - self.xm1 + self.r * self.ym1;
         self.xm1 = input as f64;
         self.ym1 = y;
         y as f32
