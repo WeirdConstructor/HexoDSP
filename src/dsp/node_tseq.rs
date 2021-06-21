@@ -163,31 +163,14 @@ impl DspNode for TSeq {
             [0.0; MAX_BLOCK_SIZE];
 
         let cmode = cmode.i();
+        let plen  = backend.pattern_len() as f64;
 
         for frame in 0..ctx.nframes() {
-            let mut clock_phase =
-                if cmode < 2 {
-                    self.clock.next_phase(clock.read(frame))
-                } else {
-                    clock.read(frame).abs() as f64
-                };
-
             let phase =
                 match cmode {
-                    // RowT
-                    0 => {
-                        let plen = backend.pattern_len() as f64;
-                        while clock_phase >= plen {
-                            clock_phase -= plen;
-                        }
-
-                        clock_phase / plen
-                    },
-                    // 1 | 2 PatT, Phase
-                    _ => {
-                        clock_phase = clock_phase.fract();
-                        clock_phase
-                    },
+                    0 => self.clock.next_phase(plen, clock.read(frame)) / plen,
+                    1 => self.clock.next_phase(1.0, clock.read(frame)),
+                    2 | _ => (clock.read(frame).abs() as f64).fract(),
                 };
 
             phase_out[frame] = phase as f32;

@@ -23,7 +23,7 @@ hound         = "3.4.0"
 [dev-dependencies]
 microfft    = "0.3.1"
 num-complex = "0.2"
-jack        = "0.6.6"
+#jack        = "0.6.6"
 
 [lib]
 path       = "src/lib.rs"

@@ -785,11 +785,7 @@ fn check_matrix_tseq() {
     matrix.set_param(cmode_param, SAtom::setting(0));
     let samples = run_and_undersample(&mut node_exec, 2000.0, 5);
 
-    assert_float_eq!(samples[0], 0.4863);
-    assert_float_eq!(samples[1], 0.4731);
-    assert_float_eq!(samples[2], 0.4597);
-    assert_float_eq!(samples[3], 0.4463);
-    assert_float_eq!(samples[4], 0.4331);
+    assert_vec_feq!(samples, vec![0.70411, 0.90413, 0.99306, 0.97972, 0.966387]);
 
     // set to phase mode:
     matrix.set_param(cmode_param, SAtom::setting(2));
@@ -1037,4 +1033,80 @@ fn check_matrix_node_feedback() {
     let fft_res_r = fft_thres_at_ms(&mut out_r[..], FFT::F1024, 100, 0.0);
     assert_eq!(fft_res_r[0], (861, 224));
     assert_eq!(fft_res_r[1], (904, 206));
+}
+
+
+#[test]
+fn check_matrix_tseq_perf() {
+    use hexodsp::dsp::tracker::UIPatternModel;
+
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let sin = NodeId::Sin(0);
+    let tsq = NodeId::TSeq(0);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(sin)
+                       .out(None, None, sin.out("sig")));
+    matrix.place(0, 1, Cell::empty(tsq)
+                       .input(tsq.inp("clock"), None, None)
+                       .out(None, None, tsq.out("trk1")));
+    matrix.place(0, 2, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let freq_param = sin.inp_param("freq").unwrap();
+//    matrix.set_param(freq_param, SAtom::param(-0.978));
+    matrix.set_param(freq_param, SAtom::param(0.0));
+    let cmode_param = tsq.inp_param("cmode").unwrap();
+    matrix.set_param(cmode_param, SAtom::setting(0));
+//    matrix.set_param(cmode_param, SAtom::setting(2));
+
+    let pat = matrix.get_pattern_data(0).unwrap();
+    {
+        let mut pr = pat.borrow_mut();
+        pr.set_rows(16);
+        pr.set_col_note_type(0);
+        pr.set_col_gate_type(1);
+        pr.set_col_gate_type(2);
+
+        pr.set_cell_value(0,  0, 0x0F7);
+        pr.set_cell_value(4,  0, 0x100);
+        pr.set_cell_value(8,  0, 0x10F);
+        pr.set_cell_value(12, 0, 0x0F7);
+
+        pr.set_cell_value(0,  1, 0xFF1);
+        pr.set_cell_value(4,  1, 0xFF1);
+        pr.set_cell_value(8,  1, 0xFF1);
+        pr.set_cell_value(12, 1, 0xFF1);
+
+        pr.set_cell_value(0,  2, 0xFF1);
+        pr.set_cell_value(2,  2, 0xFF1);
+        pr.set_cell_value(4,  2, 0xFF1);
+        pr.set_cell_value(6,  2, 0xFF1);
+        pr.set_cell_value(8,  2, 0xFF1);
+        pr.set_cell_value(10, 2, 0xFF1);
+        pr.set_cell_value(12, 2, 0xFF1);
+        pr.set_cell_value(14, 2, 0xFF1);
+    }
+
+    for _ in 0..100 {
+        matrix.check_pattern_data(0);
+    }
+
+    let mut prev  : i64 = 0;
+    let mut first : i64 = 0;
+    for _ in 0..10 {
+        let ta = std::time::Instant::now();
+        run_for_ms(&mut node_exec, 10000.0);
+        let dur = std::time::Instant::now().duration_since(ta);
+        if prev > 0 {
+            let now = dur.as_millis() as i64;
+            if first <= 0 { first = now; }
+
+            //d// println!("{},{}", prev, now);
+            assert!((first - now).abs() < (first / 2));
+        }
+        prev = dur.as_millis() as i64;
+    }
 }

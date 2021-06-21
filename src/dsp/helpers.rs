@@ -456,7 +456,7 @@ impl TriggerPhaseClock {
     }
 
     #[inline]
-    pub fn next_phase(&mut self, trigger_in: f32) -> f64 {
+    pub fn next_phase(&mut self, clock_limit: f64, trigger_in: f32) -> f64 {
         if self.prev_trigger {
             if trigger_in <= 0.25 {
                 self.prev_trigger = false;
@@ -476,6 +476,7 @@ impl TriggerPhaseClock {
         self.clock_samples += 1;
 
         self.clock_phase += self.clock_inc;
+        self.clock_phase = self.clock_phase % clock_limit;
 
         self.clock_phase
     }
