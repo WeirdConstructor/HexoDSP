@@ -463,9 +463,9 @@ macro_rules! node_list {
                [0 sig]
                [1 eoet],
             delay => Delay UIType::Generic UICategory::Signal
-               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (2  time  n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 0.5)
+               (2  time  n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 250.0)
                (3  fb    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
                (4  mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                {5 0 mode setting(0) fa_delay_mode 0 1}
