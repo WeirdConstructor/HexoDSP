@@ -108,28 +108,28 @@ impl RandGen {
 }
 
 
+// Copyright 2018 Developers of the Rand project.
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
 //- splitmix64 (http://xoroshiro.di.unimi.it/splitmix64.c) 
-//"""
-//  Written in 2015 by Sebastiano Vigna (vigna@acm.org)
 //
-//  To the extent possible under law, the author has dedicated all copyright
-//  and related and neighboring rights to this software to the public domain
-//  worldwide. This software is distributed without any warranty.
-//
-//  See <http://creativecommons.org/publicdomain/zero/1.0/>. 
-//"""
-//
-// Written by Alexander Stocko <as@coder.gg>
-//
-// To the extent possible under law, the author has dedicated all copyright
-// and related and neighboring rights to this software to the public domain
-// worldwide. This software is distributed without any warranty.
-//
-// See <LICENSE or http://creativecommons.org/publicdomain/zero/1.0/>
-
-/// The `SplitMix64` random number generator.
+/// A splitmix64 random number generator.
+///
+/// The splitmix algorithm is not suitable for cryptographic purposes, but is
+/// very fast and has a 64 bit state.
+///
+/// The algorithm used here is translated from [the `splitmix64.c`
+/// reference source code](http://xoshiro.di.unimi.it/splitmix64.c) by
+/// Sebastiano Vigna. For `next_u32`, a more efficient mixing function taken
+/// from [`dsiutils`](http://dsiutils.di.unimi.it/) is used.
 #[derive(Copy, Clone)]
 pub struct SplitMix64(pub u64);
+
+const PHI: u64 = 0x9e3779b97f4a7c15;
 
 impl SplitMix64 {
     pub fn new(seed: u64) -> Self { Self(seed) }
@@ -139,13 +139,11 @@ impl SplitMix64 {
 
     #[inline]
     pub fn next_u64(&mut self) -> u64 {
-        use std::num::Wrapping as w;
-
-        let mut z = w(self.0) + w(0x9E37_79B9_7F4A_7C15_u64);
-        self.0 = z.0;
-        z = (z ^ (z >> 30)) * w(0xBF58_476D_1CE4_E5B9_u64);
-        z = (z ^ (z >> 27)) * w(0x94D0_49BB_1331_11EB_u64);
-        (z ^ (z >> 31)).0
+        self.0 = self.0.wrapping_add(PHI);
+        let mut z = self.0;
+        z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+        z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
+        z ^ (z >> 31)
     }
 
     #[inline]
