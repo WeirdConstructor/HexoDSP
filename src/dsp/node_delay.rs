@@ -43,7 +43,7 @@ impl Delay {
          likings.\nRange: (0..1)";
     pub const fb   : &'static str =
         "Delay fb\nThe feedback amount of the delay output to it's input. \
-        \nRange: (0..1)";
+        \nRange: (-1..1)";
     pub const mix  : &'static str =
         "Delay mix\nThe dry/wet mix of the delay.\nRange: (0..1)";
     pub const mode : &'static str =
