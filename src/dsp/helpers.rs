@@ -559,6 +559,9 @@ impl DelayBuffer {
         self.wr = 0;
     }
 
+    /// Feed one sample into the delay line and increment the write pointer.
+    /// Please note: For sample accurate feedback you need to retrieve the
+    /// output of the delay line before feeding in a new signal.
     #[inline]
     pub fn feed(&mut self, input: f32) {
         self.data[self.wr] = input;
