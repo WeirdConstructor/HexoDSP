@@ -466,14 +466,16 @@ macro_rules! node_list {
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (2  time  n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 250.0)
-               (3  fb    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
+               (3  fb    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (4  mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                {5 0 mode setting(0) fa_delay_mode 0 1}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
-               {1 0 p   param(0.0) fa_test_s 0  10}
-               [0 sig],
+               {1 0 p     param(0.0) fa_test_s 0  10}
+               {2 1 trig  param(0.0) fa_test_s 0  0}
+               [0 sig]
+               [1 tsig],
         }
     }
 }
@@ -1025,6 +1027,13 @@ macro_rules! make_node_info_enum {
                 $(#[inline] pub fn $out(outputs: &mut [crate::dsp::ProcBuf]) -> &mut crate::dsp::ProcBuf {
                     &mut outputs[$out_idx]
                 })*
+            })+
+        }
+
+        #[allow(non_snake_case)]
+        pub mod out_idx {
+            $(pub mod $variant {
+                $(#[inline] pub fn $out() -> usize { $out_idx })*
             })+
         }
 
