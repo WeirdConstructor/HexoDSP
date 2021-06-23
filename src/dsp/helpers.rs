@@ -561,8 +561,8 @@ impl DelayBuffer {
 
     #[inline]
     pub fn feed(&mut self, input: f32) {
-        self.wr = (self.wr + 1) % self.data.len();
         self.data[self.wr] = input;
+        self.wr = (self.wr + 1) % self.data.len();
     }
 
     #[inline]

@@ -225,7 +225,7 @@ fn check_node_delay_fb() {
     let idxs_big = collect_signal_changes(&res.0[..], 50);
 
     // We expect the signal to be delayed by 20ms:
-    assert_eq!(idxs_big, vec![(220, 106), (441, 53)]);
+    assert_eq!(idxs_big, vec![(220, 106), (440, 53)]);
 }
 
 #[test]
@@ -258,7 +258,7 @@ fn check_node_delay_fb_neg() {
 
     let idxs_big = collect_signal_changes(&res.0[..], 70);
 
-    assert_eq!(idxs_big, vec![(441, 100), (883, -100), (1325, 100)]);
+    assert_eq!(idxs_big, vec![(441, 100), (882, -100), (1323, 100)]);
 }
 
 
@@ -288,9 +288,19 @@ fn check_node_delay_fb_pos() {
     // Emit the trigger signal:
     pset_n(&mut matrix, test, "trig", 1.0);
 
-    let res = run_for_ms(&mut node_exec, 40.0);
+    let res = run_for_ms(&mut node_exec, 100.0);
 
     let idxs_big = collect_signal_changes(&res.0[..], 70);
 
-    assert_eq!(idxs_big, vec![(441, 100), (883, 100), (1325, 100)]);
+    assert_eq!(idxs_big, vec![
+        (441,           100),
+        (441 + 1 * 441, 100),
+        (441 + 2 * 441, 100),
+        (441 + 3 * 441, 100),
+        (441 + 4 * 441, 100),
+        (441 + 5 * 441, 100),
+        (441 + 6 * 441, 100),
+        (441 + 7 * 441, 100),
+        (441 + 8 * 441, 100),
+    ]);
 }
