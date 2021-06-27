@@ -231,6 +231,12 @@ macro_rules! assert_minmax_of_rms {
 }
 
 #[allow(unused)]
+pub fn pset_s(matrix: &mut Matrix, nid: NodeId, parm: &str, set: i64) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param(p, SAtom::setting(set));
+}
+
+#[allow(unused)]
 pub fn pset_n(matrix: &mut Matrix, nid: NodeId, parm: &str, v_norm: f32) {
     let p = nid.inp_param(parm).unwrap();
     matrix.set_param(p, SAtom::param(v_norm));

@@ -261,7 +261,6 @@ fn check_node_delay_fb_neg() {
     assert_eq!(idxs_big, vec![(441, 100), (882, -100), (1323, 100)]);
 }
 
-
 #[test]
 fn check_node_delay_fb_pos() {
     let (node_conf, mut node_exec) = new_node_engine();
