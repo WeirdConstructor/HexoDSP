@@ -405,7 +405,8 @@ macro_rules! node_list {
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
-               {1 0 cmode setting(1) fa_tseq_cmode 0  2}
+               (1 trig  n_id       n_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               {2 0 cmode setting(1) fa_tseq_cmode 0  2}
                [0 trk1]
                [1 trk2]
                [2 trk3]
