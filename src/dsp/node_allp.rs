@@ -82,10 +82,10 @@ impl DspNode for AllP {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{at, out, inp, denorm};
+        use crate::dsp::{out, inp, denorm};
 
         let inp  = inp::AllP::inp(inputs);
         let time = inp::AllP::time(inputs);
