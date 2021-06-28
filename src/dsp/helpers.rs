@@ -619,6 +619,73 @@ impl DelayBuffer {
     }
 }
 
+/// Default size of the delay buffer: 1 seconds at 8 times 48kHz
+const DEFAULT_ALLPASS_COMB_SAMPLES : usize = 8 * 48000;
+
+#[derive(Debug, Clone)]
+pub struct AllPass {
+    delay: DelayBuffer,
+}
+
+impl AllPass {
+    pub fn new() -> Self {
+        Self {
+            delay: DelayBuffer::new_with_size(DEFAULT_ALLPASS_COMB_SAMPLES),
+        }
+    }
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.delay.set_sample_rate(srate);
+    }
+
+    pub fn reset(&mut self) {
+        self.delay.reset();
+    }
+
+    #[inline]
+    pub fn next(&mut self, time: f32, g: f32, v: f32) -> f32 {
+        let s = self.delay.cubic_interpolate_at(time);
+        self.delay.feed(v + s * g);
+        s + -1.0 * g * v
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Comb {
+    delay: DelayBuffer,
+}
+
+impl Comb {
+    pub fn new() -> Self {
+        Self {
+            delay: DelayBuffer::new_with_size(DEFAULT_ALLPASS_COMB_SAMPLES),
+        }
+    }
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.delay.set_sample_rate(srate);
+    }
+
+    pub fn reset(&mut self) {
+        self.delay.reset();
+    }
+
+    #[inline]
+    pub fn next_feedback(&mut self, time: f32, g: f32, v: f32) -> f32 {
+        let s = self.delay.cubic_interpolate_at(time);
+        self.delay.feed(v + s * g);
+        v
+    }
+
+    #[inline]
+    pub fn next_feedforward(&mut self, time: f32, g: f32, v: f32) -> f32 {
+        let s = self.delay.cubic_interpolate_at(time);
+        self.delay.feed(v);
+        v + s * g
+    }
+}
+
+
 // translated from Odin 2 Synthesizer Plugin
 // Copyright (C) 2020 TheWaveWarden
 // under GPLv3 or any later

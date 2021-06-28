@@ -20,6 +20,8 @@ mod node_fbwr_fbrd;
 mod node_ad;
 #[allow(non_upper_case_globals)]
 mod node_delay;
+#[allow(non_upper_case_globals)]
+mod node_allp;
 
 pub mod tracker;
 mod satom;
@@ -55,6 +57,7 @@ use node_fbwr_fbrd::FbWr;
 use node_fbwr_fbrd::FbRd;
 use node_ad::Ad;
 use node_delay::Delay;
+use node_allp::AllP;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -311,6 +314,20 @@ macro_rules! r_tms { ($x: expr, $coarse: expr) => {
     }
 } }
 
+/// The rounding function for milliseconds knobs
+macro_rules! r_fms { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        if d_ftme!($x) > 1000.0 {
+            n_ftme!((d_ftme!($x) / 100.0).round() * 100.0)
+        } else if d_ftme!($x) > 100.0 {
+            n_ftme!((d_ftme!($x) / 10.0).round() * 10.0)
+        } else {
+            n_ftme!((d_ftme!($x)).round())
+        }
+    } else {
+        n_ftme!((d_ftme!($x) * 10.0).round() / 10.0)
+    }
+} }
 
 /// The default steps function:
 macro_rules! stp_d { () => { (20.0, 100.0) } }
@@ -370,7 +387,8 @@ define_exp!{n_declick d_declick 0.0, 50.0}
 
 define_exp!{n_env d_env 0.0, 1000.0}
 
-define_exp!{n_time d_time 0.5, 5000.0}
+define_exp!{n_time d_time 0.5,  5000.0}
+define_exp!{n_ftme d_ftme 0.25, 1000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
@@ -470,6 +488,11 @@ macro_rules! node_list {
                (3  fb    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (4  mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                {5 0 mode setting(0) fa_delay_mode 0 1}
+               [0 sig],
+            allp  => AllP UIType::Generic UICategory::Signal
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1  time  n_ftme   d_ftme r_fms  f_ms  stp_m  0.0, 1.0, 25.0)
+               (2  g     n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.7)
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
