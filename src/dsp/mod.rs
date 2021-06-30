@@ -22,6 +22,8 @@ mod node_ad;
 mod node_delay;
 #[allow(non_upper_case_globals)]
 mod node_allp;
+#[allow(non_upper_case_globals)]
+mod node_noise;
 
 pub mod tracker;
 mod satom;
@@ -46,6 +48,7 @@ use crate::fa_sampl_pmode;
 use crate::fa_sampl_dir;
 use crate::fa_ad_mult;
 use crate::fa_delay_mode;
+use crate::fa_noise_mode;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -58,6 +61,7 @@ use node_fbwr_fbrd::FbRd;
 use node_ad::Ad;
 use node_delay::Delay;
 use node_allp::AllP;
+use node_noise::Noise;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -493,6 +497,11 @@ macro_rules! node_list {
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  time  n_ftme   d_ftme r_fms  f_ms  stp_m  0.0, 1.0, 25.0)
                (2  g     n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.7)
+               [0 sig],
+            noise => Noise UIType::Generic UICategory::IOUtil
+               (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1  offs  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               {2 0 mode setting(0) fa_noise_mode 0 1}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
