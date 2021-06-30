@@ -21,7 +21,6 @@ macro_rules! fa_delay_mode { ($formatter: expr, $v: expr, $denorm_v: expr) => { 
 #[derive(Debug, Clone)]
 pub struct Delay {
     buffer:             Box<DelayBuffer>,
-    fb_sample:          f32,
     clock:              TriggerSampleClock,
 }
 
@@ -29,7 +28,6 @@ impl Delay {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
             buffer:            Box::new(DelayBuffer::new()),
-            fb_sample:         0.0,
             clock:             TriggerSampleClock::new(),
         }
     }
@@ -45,7 +43,7 @@ impl Delay {
          likings.\nRange: (0..1)";
     pub const fb   : &'static str =
         "Delay fb\nThe feedback amount of the delay output to it's input. \
-        \nRange: (0..1)";
+        \nRange: (-1..1)";
     pub const mix  : &'static str =
         "Delay mix\nThe dry/wet mix of the delay.\nRange: (0..1)";
     pub const mode : &'static str =
@@ -108,42 +106,35 @@ impl DspNode for Delay {
         let mix  = inp::Delay::mix(inputs);
         let out  = out::Delay::sig(outputs);
 
-        let mut fb_s = self.fb_sample;
-
         if mode.i() == 0 {
             for frame in 0..ctx.nframes() {
                 let dry = inp.read(frame);
-                buffer.feed(dry + fb_s * denorm::Delay::fb(fb, frame));
 
                 let out_sample =
                     buffer.cubic_interpolate_at(
                         denorm::Delay::time(time, frame));
 
+                buffer.feed(dry + out_sample * denorm::Delay::fb(fb, frame));
+
                 out.write(frame,
                     crossfade(dry, out_sample,
                         denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
-
-                fb_s = out_sample;
             }
         } else {
             for frame in 0..ctx.nframes() {
                 let dry = inp.read(frame);
-                buffer.feed(dry + fb_s * denorm::Delay::fb(fb, frame));
 
                 let clock_samples =
                     self.clock.next(denorm::Delay::trig(trig, frame));
-
                 let out_sample = buffer.at(clock_samples as usize);
+
+                buffer.feed(dry + out_sample * denorm::Delay::fb(fb, frame));
 
                 out.write(frame,
                     crossfade(dry, out_sample,
                         denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
-
-                fb_s = out_sample;
             }
         }
-
-        self.fb_sample = fb_s;
 
         let last_frame = ctx.nframes() - 1;
         ctx_vals[0].set(out.read(last_frame));

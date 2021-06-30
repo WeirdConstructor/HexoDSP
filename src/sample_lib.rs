@@ -36,9 +36,6 @@ impl SampleLibrary {
     /// Returns an SAtom reference that you can clone and send directly
     /// to the sampling node of your choice.
     ///
-    /// The maximum length of the sample is `44100 * 10` samples, which
-    /// is the equivalent of roughly 1.7 MB.
-    ///
     /// Keep in mind that blocking on I/O in the UI might not be desireable.
     pub fn load<'a>(&'a mut self, path: &str) -> Result<&'a SAtom, SampleLoadError> {
         if self.loaded_samples.get(path).is_some() {

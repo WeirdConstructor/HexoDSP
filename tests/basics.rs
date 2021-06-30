@@ -747,10 +747,8 @@ fn check_matrix_tseq() {
                        .input(out.inp("ch1"), None, None));
     matrix.sync().unwrap();
 
-    let freq_param = sin.inp_param("freq").unwrap();
-    matrix.set_param(freq_param, SAtom::param(-0.978));
-    let cmode_param = tsq.inp_param("cmode").unwrap();
-    matrix.set_param(cmode_param, SAtom::setting(1));
+    pset_n(&mut matrix, sin, "freq", -0.978);
+    pset_s(&mut matrix, tsq, "cmode", 1);
 
     let pat = matrix.get_pattern_data(0).unwrap();
     {
@@ -782,13 +780,13 @@ fn check_matrix_tseq() {
     assert_float_eq!(samples[9], 0.42228);
 
     // switch to row trigger:
-    matrix.set_param(cmode_param, SAtom::setting(0));
+    pset_s(&mut matrix, tsq, "cmode", 0);
     let samples = run_and_undersample(&mut node_exec, 2000.0, 5);
 
     assert_vec_feq!(samples, vec![0.70411, 0.90413, 0.99306, 0.97972, 0.966387]);
 
     // set to phase mode:
-    matrix.set_param(cmode_param, SAtom::setting(2));
+    pset_s(&mut matrix, tsq, "cmode", 2);
     let samples = run_and_undersample(&mut node_exec, 1000.0, 5);
 
     assert_float_eq!(samples[0], 0.2491);
@@ -796,6 +794,73 @@ fn check_matrix_tseq() {
     assert_float_eq!(samples[2], 0.1616);
     assert_float_eq!(samples[3], 0.6655);
     assert_float_eq!(samples[4], 0.8104);
+}
+
+#[test]
+fn check_matrix_tseq_trig() {
+    use hexodsp::dsp::tracker::UIPatternModel;
+
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let sin = NodeId::Sin(0);
+    let tsq = NodeId::TSeq(0);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(sin)
+                       .out(None, None, sin.out("sig")));
+    matrix.place(0, 1, Cell::empty(tsq)
+                       .input(tsq.inp("clock"), None, None)
+                       .out(None, None, tsq.out("trk1")));
+    matrix.place(0, 2, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    pset_n(&mut matrix, sin, "freq", -0.978);
+    pset_s(&mut matrix, tsq, "cmode", 1);
+
+    let pat = matrix.get_pattern_data(0).unwrap();
+    {
+        let mut pr = pat.borrow_mut();
+        pr.set_rows(16);
+        pr.set_cell_value(0,  0, 0xFFF);
+        pr.set_cell_value(15, 0, 0x000);
+    }
+
+    for _ in 0..10 {
+        matrix.check_pattern_data(0);
+    }
+
+    // We let the clock mode tune in:
+    run_and_undersample(&mut node_exec, 10000.0, 1);
+
+    // Take some real samples:
+    let samples = run_and_undersample(&mut node_exec, 2000.0, 10);
+
+    assert_float_eq!(samples[0], 0.3157);
+    assert_float_eq!(samples[1], 0.209);
+    assert_float_eq!(samples[2], 0.1024);
+    assert_float_eq!(samples[3], 0.0648);
+    assert_float_eq!(samples[4], 0.95566);
+    assert_float_eq!(samples[5], 0.84899);
+    assert_float_eq!(samples[6], 0.74231);
+    assert_float_eq!(samples[7], 0.6356);
+    assert_float_eq!(samples[8], 0.5289);
+    assert_float_eq!(samples[9], 0.42228);
+
+    pset_n(&mut matrix, tsq, "trig", 1.0);
+
+    // Take some real samples:
+    let samples = run_and_undersample(&mut node_exec, 2000.0, 10);
+
+    assert_float_eq!(samples[0], 0.3157);
+    // trigger hits:
+    assert_float_eq!(samples[1], 0.9639);
+    assert_float_eq!(samples[2], 0.8572);
+    assert_float_eq!(samples[3], 0.7506);
+    assert_float_eq!(samples[4], 0.6439);
+    assert_float_eq!(samples[5], 0.5372);
+    assert_float_eq!(samples[6], 0.4305);
+    assert_float_eq!(samples[7], 0.3239);
 }
 
 #[test]

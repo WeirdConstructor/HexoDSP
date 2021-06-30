@@ -20,6 +20,10 @@ mod node_fbwr_fbrd;
 mod node_ad;
 #[allow(non_upper_case_globals)]
 mod node_delay;
+#[allow(non_upper_case_globals)]
+mod node_allp;
+#[allow(non_upper_case_globals)]
+mod node_noise;
 
 pub mod tracker;
 mod satom;
@@ -44,6 +48,7 @@ use crate::fa_sampl_pmode;
 use crate::fa_sampl_dir;
 use crate::fa_ad_mult;
 use crate::fa_delay_mode;
+use crate::fa_noise_mode;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -55,6 +60,8 @@ use node_fbwr_fbrd::FbWr;
 use node_fbwr_fbrd::FbRd;
 use node_ad::Ad;
 use node_delay::Delay;
+use node_allp::AllP;
+use node_noise::Noise;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -311,6 +318,20 @@ macro_rules! r_tms { ($x: expr, $coarse: expr) => {
     }
 } }
 
+/// The rounding function for milliseconds knobs
+macro_rules! r_fms { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        if d_ftme!($x) > 1000.0 {
+            n_ftme!((d_ftme!($x) / 100.0).round() * 100.0)
+        } else if d_ftme!($x) > 100.0 {
+            n_ftme!((d_ftme!($x) / 10.0).round() * 10.0)
+        } else {
+            n_ftme!((d_ftme!($x)).round())
+        }
+    } else {
+        n_ftme!((d_ftme!($x) * 10.0).round() / 10.0)
+    }
+} }
 
 /// The default steps function:
 macro_rules! stp_d { () => { (20.0, 100.0) } }
@@ -370,7 +391,8 @@ define_exp!{n_declick d_declick 0.0, 50.0}
 
 define_exp!{n_env d_env 0.0, 1000.0}
 
-define_exp!{n_time d_time 0.5, 5000.0}
+define_exp!{n_time d_time 0.5,  5000.0}
+define_exp!{n_ftme d_ftme 0.25, 1000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
@@ -405,7 +427,8 @@ macro_rules! node_list {
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
-               {1 0 cmode setting(1) fa_tseq_cmode 0  2}
+               (1 trig  n_id       n_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               {2 0 cmode setting(1) fa_tseq_cmode 0  2}
                [0 trk1]
                [1 trk2]
                [2 trk3]
@@ -463,17 +486,29 @@ macro_rules! node_list {
                [0 sig]
                [1 eoet],
             delay => Delay UIType::Generic UICategory::Signal
-               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (2  time  n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 0.5)
-               (3  fb    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
+               (2  time  n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 250.0)
+               (3  fb    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (4  mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                {5 0 mode setting(0) fa_delay_mode 0 1}
                [0 sig],
+            allp  => AllP UIType::Generic UICategory::Signal
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1  time  n_ftme   d_ftme r_fms  f_ms  stp_m  0.0, 1.0, 25.0)
+               (2  g     n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.7)
+               [0 sig],
+            noise => Noise UIType::Generic UICategory::Osc
+               (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1  offs  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               {2 0 mode setting(0) fa_noise_mode 0 1}
+               [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
-               {1 0 p   param(0.0) fa_test_s 0  10}
-               [0 sig],
+               {1 0 p     param(0.0) fa_test_s 0  10}
+               {2 1 trig  param(0.0) fa_test_s 0  0}
+               [0 sig]
+               [1 tsig],
         }
     }
 }
@@ -1025,6 +1060,13 @@ macro_rules! make_node_info_enum {
                 $(#[inline] pub fn $out(outputs: &mut [crate::dsp::ProcBuf]) -> &mut crate::dsp::ProcBuf {
                     &mut outputs[$out_idx]
                 })*
+            })+
+        }
+
+        #[allow(non_snake_case)]
+        pub mod out_idx {
+            $(pub mod $variant {
+                $(#[inline] pub fn $out() -> usize { $out_idx })*
             })+
         }
 

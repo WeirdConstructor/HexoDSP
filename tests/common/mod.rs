@@ -194,6 +194,27 @@ assertion failed: `(left[{}] == right[{}])`
     }
 }
 
+#[allow(dead_code)]
+pub fn collect_signal_changes(inp: &[f32], thres: i64) -> Vec<(usize, i64)> {
+    let mut idxs = vec![];
+    let mut last_sig = 0.0;
+    for i in 0..inp.len() {
+        if (inp[i] - last_sig).abs() > 0.1 {
+            idxs.push((i, (inp[i] * 100.0).floor() as i64));
+            last_sig = inp[i];
+        }
+    }
+
+    let mut idxs_big = vec![];
+    for v in idxs.iter() {
+        if v.1.abs() > thres {
+            idxs_big.push(*v);
+        }
+    }
+
+    return idxs_big;
+}
+
 #[macro_export]
 macro_rules! assert_rmsmima {
     ($rms:expr, $b:expr) => {
@@ -207,6 +228,12 @@ macro_rules! assert_minmax_of_rms {
         let (_, min, max) = $rms;
         assert_fpair_eq!((min, max), $b);
     }
+}
+
+#[allow(unused)]
+pub fn pset_s(matrix: &mut Matrix, nid: NodeId, parm: &str, set: i64) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param(p, SAtom::setting(set));
 }
 
 #[allow(unused)]

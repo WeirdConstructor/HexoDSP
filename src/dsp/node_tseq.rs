@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::helpers::TriggerPhaseClock;
+use crate::dsp::helpers::{TriggerPhaseClock, Trigger};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 use crate::dsp::tracker::TrackerBackend;
 
@@ -22,12 +22,18 @@ macro_rules! fa_tseq_cmode { ($formatter: expr, $v: expr, $denorm_v: expr) => { 
 } } }
 
 
+#[derive(Debug)]
+pub struct TSeqTime {
+    clock:         TriggerPhaseClock,
+    trigger:       Trigger,
+}
+
 /// A tracker based sequencer
 #[derive(Debug)]
 pub struct TSeq {
     backend:       Option<Box<TrackerBackend>>,
-    clock:         TriggerPhaseClock,
     srate:         f64,
+    time:          Box<TSeqTime>,
 }
 
 impl Clone for TSeq {
@@ -39,7 +45,10 @@ impl TSeq {
         Self {
             backend:       None,
             srate:         48000.0,
-            clock:         TriggerPhaseClock::new(),
+            time: Box::new(TSeqTime {
+                clock:   TriggerPhaseClock::new(),
+                trigger: Trigger::new(),
+            }),
         }
     }
 
@@ -49,6 +58,8 @@ impl TSeq {
 
     pub const clock : &'static str =
         "TSeq clock\nClock input\nRange: (0..1)\n";
+    pub const trig  : &'static str =
+        "TSeq trig\nSynchronization trigger which restarts the sequence.\nRange: (-1..1)\n";
     pub const cmode : &'static str =
         "TSeq cmode\n'clock' input signal mode:\n\
              - RowT: Trigger = advance row\n\
@@ -89,18 +100,35 @@ impl TSeq {
     pub const HELP : &'static str =
 r#"Tracker (based) Sequencer
 
+This sequencer gets it's speed from the clock source. The 'clock'
+signal can be interpreted in different modes. But if you want to
+run multiple sequencers in parallel, you want to synchronize them.
+For this you can use the 'trig' input, it resets the played row to
+the beginning of the sequence every time a trigger is received.
+
+Alternatively you can run the sequencer clock using the phase mode.
+With that the phase (0..1) signal on the 'clock' input determines the
+exact play head position in the pattern. With this you just need to
+synchronize the phase generators for different sequencers.
+
+For an idea how to chain multiple tracker sequencers, see the next page.
+
 This tracker provides 6 columns that each can have one of the following
 types:
 
 - Note column: for specifying pitches.
 - Step column: for specifying non interpolated CV signals.
-- Value column: for specifying linearily interpolated CV signals.
+- Value column: for specifying linearly interpolated CV signals.
 - Gate column: for specifying gates, with probability and ratcheting.
 
 Step, value and gate cells can be set to 4096 (0xFFF) different values
 or contain nothing at all. For step and value columns these values
 are mapped to the 0.0-1.0 CV signal range, with 0xFFF being 1.0
 and 0x000 being 0.0.
+
+On the next page you can read about the gate cells and the gate outputs.
+---page---
+Gate Input and Output
 
 The gate cells are differently coded:
 
@@ -109,7 +137,7 @@ The gate cells are differently coded:
 - 0x0F0: The second nibble controls ratcheting, with 0x0F0 being one
          gate per row, and 0x000 being 16 gates per row.
 - 0xF00: The most significant nibble controls probability of the
-         whole gate cell. With 0xF00 meaing the gate will always be
+         whole gate cell. With 0xF00 meaning the gate will always be
          triggered, and 0x000 means that the gate is only triggered with
          6% probability. 50% is 0x070.
 
@@ -118,7 +146,7 @@ column type:
 
 - Step gat1-gat6:  Like note columns, this will output a 1.0 for the whole
                    row if a step value is set. With two step values directly
-                   following each other no 0.0 will be emitted inbetween
+                   following each other no 0.0 will be emitted in between
                    the rows. This means if you want to drive an envelope
                    with release phase with this signal, you need to make
                    space for the release phase.
@@ -127,6 +155,12 @@ column type:
 - Value gat1-gat6: Outputs a 1.0 value for the duration of the last row.
                    You can use this to trigger other things once the
                    sequence has been played.
+
+Tip:
+    If you want to use the end of a tracker sequence as trigger for
+    something else, eg. switching to a different 'tseq' and restart
+    it using it's 'trig' input, you will need to use the gate output
+    of a value column and invert it.
 "#;
 }
 
@@ -139,7 +173,8 @@ impl DspNode for TSeq {
 
     fn reset(&mut self) {
         self.backend = None;
-        self.clock.reset();
+        self.time.clock.reset();
+        self.time.trigger.reset();
     }
 
     #[inline]
@@ -148,8 +183,9 @@ impl DspNode for TSeq {
         atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, inp, at};
+        use crate::dsp::{out, inp, at, denorm};
         let clock = inp::TSeq::clock(inputs);
+        let trig  = inp::TSeq::trig(inputs);
         let cmode = at::TSeq::cmode(atoms);
 
         let backend =
@@ -163,13 +199,21 @@ impl DspNode for TSeq {
             [0.0; MAX_BLOCK_SIZE];
 
         let cmode = cmode.i();
-        let plen  = backend.pattern_len() as f64;
+        let plen  = backend.pattern_len().max(1) as f64;
+
+        let time = &mut self.time;
 
         for frame in 0..ctx.nframes() {
+            if time.trigger.check_trigger(
+                denorm::TSeq::trig(trig, frame))
+            {
+                time.clock.sync();
+            }
+
             let phase =
                 match cmode {
-                    0 => self.clock.next_phase(plen, clock.read(frame)) / plen,
-                    1 => self.clock.next_phase(1.0, clock.read(frame)),
+                    0 => time.clock.next_phase(plen, clock.read(frame)) / plen,
+                    1 => time.clock.next_phase(1.0, clock.read(frame)),
                     2 | _ => (clock.read(frame).abs() as f64).fract(),
                 };
 
