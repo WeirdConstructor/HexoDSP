@@ -15,6 +15,8 @@ pub use crate::monitor::MON_SIG_CNT;
 use crate::matrix_repr::*;
 use crate::dsp::tracker::PatternData;
 
+use std::collections::HashSet;
+
 /// This is a cell/tile of the hexagonal [Matrix].
 ///
 /// The [Matrix] stores it to keep track of the graphical representation
@@ -295,6 +297,12 @@ pub struct Matrix {
     /// by [Matrix::sync] and [Matrix::check].
     edges: Vec<Edge>,
 
+    /// Stores the [dsp::ParamId] of the inputs that have an output
+    /// assigned to them. It's updates when [Matrix::edges] is updated and used
+    /// by [Matrix::param_input_is_used] to return whether a parameter is
+    /// controlled by some output port.
+    assigned_inputs: HashSet<ParamId>,
+
     /// Holds the currently monitored cell.
     monitored_cell: Cell,
 
@@ -312,11 +320,12 @@ impl Matrix {
         matrix.resize(w * h, Cell::empty(NodeId::Nop));
 
         Self {
-            monitored_cell: Cell::empty(NodeId::Nop),
-            gen_counter:    0,
-            saved_matrix:   None,
-            graph_ordering: NodeGraphOrdering::new(),
-            edges:          Vec::with_capacity(MAX_ALLOCATED_NODES * 2),
+            monitored_cell:  Cell::empty(NodeId::Nop),
+            gen_counter:     0,
+            saved_matrix:    None,
+            graph_ordering:  NodeGraphOrdering::new(),
+            edges:           Vec::with_capacity(MAX_ALLOCATED_NODES * 2),
+            assigned_inputs: HashSet::new(),
             config,
             w,
             h,
@@ -453,6 +462,7 @@ impl Matrix {
 
         self.graph_ordering.clear();
         self.edges.clear();
+        self.assigned_inputs.clear();
         self.saved_matrix = None;
 
         self.config.delete_nodes();
@@ -748,6 +758,10 @@ impl Matrix {
         Some(&self.matrix[x * self.h + y])
     }
 
+    pub fn param_input_is_used(&self, p: ParamId) -> bool {
+        self.assigned_inputs.contains(&p)
+    }
+
     pub fn get_unused_instance_node_id(&self, id: NodeId) -> NodeId {
         self.config.unused_instance_node_id(id)
     }
@@ -791,6 +805,7 @@ impl Matrix {
     fn update_graph_ordering_and_edges(&mut self) {
         self.graph_ordering.clear();
         self.edges.clear();
+        self.assigned_inputs.clear();
 
         for x in 0..self.w {
             for y in 0..self.h {
@@ -846,6 +861,12 @@ impl Matrix {
                     },
                     _ => {},
                 }
+            }
+        }
+
+        for edge in self.edges.iter() {
+            if let Some(pid) = edge.to.param_by_idx(edge.to_input as usize) {
+                self.assigned_inputs.insert(pid);
             }
         }
     }
@@ -1025,6 +1046,43 @@ mod tests {
         assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1) in=(0-2) at=(0-0))");
         assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2) in=(2-4) at=(0-0) cpy=(o0 => i2))");
         assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3) in=(4-6) at=(0-0) cpy=(o1 => i4))");
+    }
+
+    #[test]
+    fn check_matrix_param_is_used() {
+        use crate::nodes::new_node_engine;
+
+        let (node_conf, _node_exec) = new_node_engine();
+        let mut matrix = Matrix::new(node_conf, 3, 3);
+
+        matrix.place(0, 0,
+            Cell::empty(NodeId::Sin(0))
+            .out(None, Some(0), None));
+        matrix.place(1, 0,
+            Cell::empty(NodeId::Sin(1))
+            .input(None, Some(0), None)
+            .out(None, None, Some(0)));
+        matrix.place(1, 1,
+            Cell::empty(NodeId::Sin(2))
+            .input(Some(0), None, None));
+        matrix.sync().unwrap();
+
+        assert!(
+            matrix.param_input_is_used(
+                NodeId::Sin(1).inp_param("freq").unwrap()));
+        assert!(
+            !matrix.param_input_is_used(
+                NodeId::Sin(0).inp_param("freq").unwrap()));
+
+        matrix.place(1, 0, Cell::empty(NodeId::Nop));
+        matrix.sync().unwrap();
+
+        assert!(
+            !matrix.param_input_is_used(
+                NodeId::Sin(1).inp_param("freq").unwrap()));
+        assert!(
+            !matrix.param_input_is_used(
+                NodeId::Sin(2).inp_param("freq").unwrap()));
     }
 
     #[test]
