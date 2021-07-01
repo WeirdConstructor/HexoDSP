@@ -4,7 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
-//use crate::dsp::helpers::};
+use crate::dsp::helpers::Rng;
 
 #[macro_export]
 macro_rules! fa_noise_mode { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -20,22 +20,35 @@ macro_rules! fa_noise_mode { ($formatter: expr, $v: expr, $denorm_v: expr) => { 
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Noise {
+    seed:   u64,
+    rng:    Rng,
 }
 
 impl Noise {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId) -> Self {
+        let mut rng = Rng::new();
+        rng.seed(
+            (0x193a67f4a8a6d769_u64).wrapping_add(
+                0x131415 * (nid.instance() as u64 + 1)));
+
         Self {
+            seed: nid.instance() as u64,
+            rng,
         }
     }
 
     pub const atv  : &'static str =
-        "Noise atv\n...\nRange: (-1..1)";
+        "Noise atv\n.Attenuverter input, to attenuate or inverter \
+        the noise.\nRange: (-1..1)";
     pub const offs : &'static str =
-        "Noise offs\n...\nRange: (-1..1)";
+        "Noise offs\n.Offset input, that is added to the output \
+        signal after attenuvertig it.\nRange: (-1..1)";
     pub const mode : &'static str =
-        "Noise mode\n...";
+        "Noise mode\nYou can switch between 'Bipolar' noise, which \
+         uses the full range from -1 to 1, or 'Unipolar' noise that \
+         only uses the range from 0 to 1.";
     pub const sig  : &'static str =
-        "Noise sig\nThe output of the dry/wet mix.\nRange: (-1..1)";
+        "Noise sig\nThe noise output.\nRange: (-1..1)";
 
     pub const DESC : &'static str =
 r#"A Simple Noise Oscillator
@@ -59,10 +72,13 @@ unipolar and bipolar output.
 impl DspNode for Noise {
     fn outputs() -> usize { 1 }
 
-    fn set_sample_rate(&mut self, srate: f32) {
+    fn set_sample_rate(&mut self, _srate: f32) {
     }
 
     fn reset(&mut self) {
+        self.rng.seed(
+            (0x193a67f4a8a6d769_u64).wrapping_add(
+                0x131415 * (self.seed + 1)));
     }
 
     #[inline]
@@ -73,47 +89,32 @@ impl DspNode for Noise {
     {
         use crate::dsp::{at, out, inp, denorm};
 
-//        let buffer  = &mut *self.buffer;
-//
-//        let mode = at::Delay::mode(atoms);
-//        let inp  = inp::Delay::inp(inputs);
-//        let trig = inp::Delay::trig(inputs);
-//        let time = inp::Delay::time(inputs);
-//        let fb   = inp::Delay::fb(inputs);
-//        let mix  = inp::Delay::mix(inputs);
-//        let out  = out::Delay::sig(outputs);
+        let mode = at::Noise::mode(atoms);
+        let atv  = inp::Noise::atv(inputs);
+        let offs = inp::Noise::offs(inputs);
+        let out  = out::Noise::sig(outputs);
 
-//        if mode.i() == 0 {
-//            for frame in 0..ctx.nframes() {
-//                let dry = inp.read(frame);
-//
-//                let out_sample =
-//                    buffer.cubic_interpolate_at(
-//                        denorm::Delay::time(time, frame));
-//
-//                buffer.feed(dry + out_sample * denorm::Delay::fb(fb, frame));
-//
-//                out.write(frame,
-//                    crossfade(dry, out_sample,
-//                        denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
-//            }
-//        } else {
-//            for frame in 0..ctx.nframes() {
-//                let dry = inp.read(frame);
-//
-//                let clock_samples =
-//                    self.clock.next(denorm::Delay::trig(trig, frame));
-//                let out_sample = buffer.at(clock_samples as usize);
-//
-//                buffer.feed(dry + out_sample * denorm::Delay::fb(fb, frame));
-//
-//                out.write(frame,
-//                    crossfade(dry, out_sample,
-//                        denorm::Delay::mix(mix, frame).clamp(0.0, 1.0)));
-//            }
-//        }
+        let rng = &mut self.rng;
 
-//        let last_frame = ctx.nframes() - 1;
-//        ctx_vals[0].set(out.read(last_frame));
+        if mode.i() == 0 {
+            for frame in 0..ctx.nframes() {
+                let s = (rng.next() * 2.0) - 1.0;
+                let s = s
+                    * denorm::Noise::atv(atv, frame)
+                    + denorm::Noise::offs(offs, frame);
+                out.write(frame, s);
+            }
+
+        } else {
+            for frame in 0..ctx.nframes() {
+                let s = rng.next()
+                    * denorm::Noise::atv(atv, frame)
+                    + denorm::Noise::offs(offs, frame);
+                out.write(frame, s);
+            }
+        }
+
+        let last_frame = ctx.nframes() - 1;
+        ctx_vals[0].set(out.read(last_frame));
     }
 }
