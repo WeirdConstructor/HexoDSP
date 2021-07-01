@@ -107,6 +107,26 @@ impl RandGen {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct Rng {
+    sm: SplitMix64,
+}
+
+impl Rng {
+    pub fn new() -> Self {
+        Self { sm: SplitMix64::new(0x193a67f4a8a6d769) }
+    }
+
+    pub fn seed(&mut self, seed: u64) {
+        println!("SEED {}", seed);
+        self.sm = SplitMix64::new(seed);
+    }
+
+    #[inline]
+    pub fn next(&mut self) -> f32 {
+        self.sm.next_open01() as f32
+    }
+}
 
 // Copyright 2018 Developers of the Rand project.
 //
@@ -126,7 +146,7 @@ impl RandGen {
 /// reference source code](http://xoshiro.di.unimi.it/splitmix64.c) by
 /// Sebastiano Vigna. For `next_u32`, a more efficient mixing function taken
 /// from [`dsiutils`](http://dsiutils.di.unimi.it/) is used.
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct SplitMix64(pub u64);
 
 const PHI: u64 = 0x9e3779b97f4a7c15;
