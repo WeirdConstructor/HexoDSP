@@ -287,6 +287,15 @@ macro_rules! r_det { ($x: expr, $coarse: expr) => {
     }
 } }
 
+/// The rounding function for -1 to 1 signal knobs
+macro_rules! r_s { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        ($x * 10.0).round() / 10.0
+    } else {
+        ($x * 100.0).round() / 100.0
+    }
+} }
+
 /// The rounding function for milliseconds knobs
 macro_rules! r_dc_ms { ($x: expr, $coarse: expr) => {
     if $coarse {
@@ -450,11 +459,11 @@ macro_rules! node_list {
             map => Map UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 atv   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
-               (2 offs  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (3 imin  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, -1.0)
-               (4 imax  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
-               (5 min   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, -1.0)
-               (6 max   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
+               (2 offs  n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
+               (3 imin  n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, -1.0)
+               (4 imax  n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
+               (5 min   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, -1.0)
+               (6 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
                {7 0 clip setting(0) fa_map_clip 0  1}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
@@ -532,7 +541,7 @@ macro_rules! node_list {
                [0 sig],
             noise => Noise UIType::Generic UICategory::Osc
                (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
-               (1  offs  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1  offs  n_id      d_id  r_s    f_def stp_d -1.0, 1.0, 0.0)
                {2 0 mode setting(0) fa_noise_mode 0 1}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
