@@ -328,9 +328,9 @@ impl MatrixRepr {
 
                 if let Some(param_id) = param_id {
                     m.atoms.push((param_id, deserialize_atom(&v[3])?))
-                } else {
-                    return Err(
-                        MatrixDeserError::UnknownParamId(v.to_string()));
+                //d// } else {
+                //d//     return Err(
+                //d//         MatrixDeserError::UnknownParamId(v.to_string()));
                 }
             }
         }

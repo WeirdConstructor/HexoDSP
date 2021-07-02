@@ -6,11 +6,11 @@ use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 
 #[macro_export]
-macro_rules! fa_map_mode { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+macro_rules! fa_map_clip { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
         match ($v.round() as usize) {
-            0  => "Bipolar",
-            1  => "Unipolar",
+            0  => "Off",
+            1  => "Clip",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -32,12 +32,16 @@ impl Map {
         "Map atv\n\nRange: (0..1)\n";
     pub const offs : &'static str =
         "Map offs\nSignal input offset\nRange: (-1..1)\n";
+    pub const imin : &'static str =
+        "Map imin\n\nRange: (0..1)\n";
+    pub const imax : &'static str =
+        "Map imax\n\nRange: (0..1)\n";
     pub const min : &'static str =
         "Map min\n\nRange: (0..1)\n";
     pub const max : &'static str =
         "Map max\n\nRange: (0..1)\n";
-    pub const mode : &'static str =
-        "Map mode\n";
+    pub const clip : &'static str =
+        "Map clip\n";
     pub const sig : &'static str =
         "Map sig\nMapped signal output\nRange: (-1..1)\n";
     pub const DESC : &'static str =
@@ -65,46 +69,68 @@ impl DspNode for Map {
     {
         use crate::dsp::{out, inp, denorm, denorm_v, inp_dir, at};
 
-//        let gain = inp::Amp::gain(inputs);
-//        let att  = inp::Amp::att(inputs);
-//        let inp  = inp::Amp::inp(inputs);
-//        let out  = out::Amp::sig(outputs);
-//        let neg  = at::Amp::neg_att(atoms);
-//
-//        let last_frame   = ctx.nframes() - 1;
-//
-//        let last_val =
-//            if neg.i() > 0 {
-//                for frame in 0..ctx.nframes() {
-//                    out.write(frame,
-//                        inp.read(frame)
-//                        * denorm_v::Amp::att(
-//                            inp_dir::Amp::att(att, frame)
-//                            .max(0.0))
-//                        * denorm::Amp::gain(gain, frame));
-//                }
-//
-//                inp.read(last_frame)
-//                * denorm_v::Amp::att(
-//                    inp_dir::Amp::att(att, last_frame)
-//                    .max(0.0))
-//                * denorm::Amp::gain(gain, last_frame)
-//
-//            } else {
-//                for frame in 0..ctx.nframes() {
-//                    out.write(frame,
-//                        inp.read(frame)
-//                        * denorm_v::Amp::att(
-//                            inp_dir::Amp::att(att, frame).abs())
-//                        * denorm::Amp::gain(gain, frame));
-//                }
-//
-//                inp.read(last_frame)
-//                * denorm_v::Amp::att(
-//                    inp_dir::Amp::att(att, last_frame).abs())
-//                * denorm::Amp::gain(gain, last_frame)
-//            };
-//
-//        ctx_vals[0].set(last_val);
+        let inp  = inp::Map::inp(inputs);
+        let atv  = inp::Map::atv(inputs);
+        let offs = inp::Map::offs(inputs);
+        let imin = inp::Map::imin(inputs);
+        let imax = inp::Map::imax(inputs);
+        let min  = inp::Map::min(inputs);
+        let max  = inp::Map::max(inputs);
+        let out  = out::Map::sig(outputs);
+
+        let clip = at::Map::clip(atoms);
+
+        let mut last_val = 0.0;
+
+        if clip.i() == 0 {
+            for frame in 0..ctx.nframes() {
+                let s =
+                    (inp.read(frame) * atv.read(frame))
+                    + offs.read(frame);
+
+                let imin = imin.read(frame);
+                let imax = imax.read(frame);
+                let min  = min.read(frame);
+                let max  = max.read(frame);
+
+                let x =
+                    if (imax - imin).abs() < std::f32::EPSILON {
+                        1.0
+                    } else {
+                        ((s - imin) / (imax - imin)).abs()
+                    };
+                last_val = x;
+                let s = min + (max - min) * x;
+
+                out.write(frame, s);
+            }
+        } else {
+            for frame in 0..ctx.nframes() {
+                let s =
+                    (inp.read(frame) * atv.read(frame))
+                    + offs.read(frame);
+
+                let imin = imin.read(frame);
+                let imax = imax.read(frame);
+                let min  = min.read(frame);
+                let max  = max.read(frame);
+
+                let x =
+                    if (imax - imin).abs() < std::f32::EPSILON {
+                        1.0
+                    } else {
+                        ((s - imin) / (imax - imin)).abs()
+                    };
+                last_val = x;
+                let s = min + (max - min) * x;
+
+                out.write(
+                    frame,
+                    if min < max { s.clamp(min, max) }
+                    else         { s.clamp(max, min) });
+            }
+        }
+
+        ctx_vals[0].set(last_val);
     }
 }

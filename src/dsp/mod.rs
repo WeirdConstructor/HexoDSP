@@ -51,7 +51,7 @@ use crate::fa_sampl_dir;
 use crate::fa_ad_mult;
 use crate::fa_delay_mode;
 use crate::fa_noise_mode;
-use crate::fa_map_mode;
+use crate::fa_map_clip;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -203,7 +203,6 @@ impl std::fmt::Display for ProcBuf {
 //    Setting { labels: &'static [&'static str], unit: &'static str },
 //}
 
-
 #[derive(Debug, Clone, Copy, PartialOrd, PartialEq)]
 pub enum UIType {
     Generic,
@@ -263,13 +262,12 @@ macro_rules! define_exp4 {
 
 macro_rules! n_pit { ($x: expr) => {
     ((($x as f32).max(0.01) / 440.0).log2() / 10.0)
-//    ((($x as f32).max(0.01) / 440.0).log2() / 5.0)
 } }
 
 macro_rules! d_pit { ($x: expr) => {
     {
         let note : f32 = ($x as f32) * 10.0;
-        440.0 * (2.0_f32).powf(note)
+        440.0 * (2.0_f32).powf(note.clamp(-10.0, 10.0))
     }
 } }
 
@@ -334,6 +332,26 @@ macro_rules! r_fms { ($x: expr, $coarse: expr) => {
         }
     } else {
         n_ftme!((d_ftme!($x) * 10.0).round() / 10.0)
+    }
+} }
+
+/// The rounding function for freq knobs (n_pit / d_pit)
+macro_rules! r_fq { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        ($x * 10.0).round() / 10.0
+    } else {
+        let p = d_pit!($x);
+        if p < 10.0 {
+            n_pit!((p * 10.0).round() / 10.0)
+        } else if p < 100.0 {
+            n_pit!(p.round())
+        } else if p < 1000.0 {
+            n_pit!((p / 10.0).round() * 10.0)
+        } else if p < 10000.0 {
+            n_pit!((p / 100.0).round() * 100.0)
+        } else {
+            n_pit!((p / 1000.0).round() * 1000.0)
+        }
     }
 } }
 
@@ -433,9 +451,11 @@ macro_rules! node_list {
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 atv   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
                (2 offs  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (3 min   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, -1.0)
-               (4 max   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
-               {5 0 mode setting(0) fa_map_mode 0  1}
+               (3 imin  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, -1.0)
+               (4 imax  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
+               (5 min   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, -1.0)
+               (6 max   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
+               {7 0 clip setting(0) fa_map_clip 0  1}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
@@ -454,7 +474,7 @@ macro_rules! node_list {
                [10 gat5]
                [11 gat6],
             sampl => Sampl UIType::Generic UICategory::Osc
-               (0 freq  n_pit      d_pit  r_id  f_def    stp_d -1.0, 1.0, 440.0)
+               (0 freq  n_pit      d_pit  r_fq  f_def    stp_d -1.0, 0.564713133, 440.0)
                (1 trig  n_id       n_id   r_id  f_def    stp_d -1.0, 1.0, 0.0)
                (2 offs  n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 0.0)
                (3 len   n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
@@ -469,7 +489,7 @@ macro_rules! node_list {
              //   name             denorm round format steps norm norm denorm
              //         norm_fun   fun    fun   fun    def   min  max  default
             sin => Sin UIType::Generic UICategory::Osc
-               (0 freq  n_pit      d_pit r_id  f_freq  stp_d -1.0, 1.0, 440.0)
+               (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.564713133, 440.0)
                (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
