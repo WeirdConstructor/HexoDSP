@@ -431,10 +431,10 @@ macro_rules! node_list {
                [0 sig],
             map => Map UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (1 atv   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (1 atv   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
                (2 offs  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (3 min   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (4 max   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (3 min   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, -1.0)
+               (4 max   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
                {5 0 mode setting(0) fa_map_mode 0  1}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
