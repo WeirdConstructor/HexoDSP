@@ -24,6 +24,8 @@ mod node_delay;
 mod node_allp;
 #[allow(non_upper_case_globals)]
 mod node_noise;
+#[allow(non_upper_case_globals)]
+mod node_map;
 
 pub mod tracker;
 mod satom;
@@ -49,6 +51,7 @@ use crate::fa_sampl_dir;
 use crate::fa_ad_mult;
 use crate::fa_delay_mode;
 use crate::fa_noise_mode;
+use crate::fa_map_k;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -62,6 +65,7 @@ use node_ad::Ad;
 use node_delay::Delay;
 use node_allp::AllP;
 use node_noise::Noise;
+use node_map::Map;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -424,6 +428,14 @@ macro_rules! node_list {
                (1 gain  n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
                (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
                {3 0 neg_att setting(1) fa_amp_neg_att 0  1}
+               [0 sig],
+            map => Map UIType::Generic UICategory::CV
+               (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (1 atv   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (2 imin  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (3 imax  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (4 omin  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (5 omax  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
