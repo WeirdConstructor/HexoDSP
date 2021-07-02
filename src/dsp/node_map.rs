@@ -6,8 +6,14 @@ use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
 
 #[macro_export]
-macro_rules! fa_map_k { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-    write!($formatter, "{}", $v)
+macro_rules! fa_map_mode { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "Bipolar",
+            1  => "Unipolar",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
 } } }
 
 /// A simple amplifier
@@ -24,14 +30,14 @@ impl Map {
         "Map inp\nSignal input\nRange: (-1..1)\n";
     pub const atv : &'static str =
         "Map atv\n\nRange: (0..1)\n";
-    pub const imin : &'static str =
-        "Map imin\n\nRange: (0..1)\n";
-    pub const imax : &'static str =
-        "Map imax\n\nRange: (0..1)\n";
-    pub const omin : &'static str =
-        "Map omin\n\nRange: (0..1)\n";
-    pub const omax : &'static str =
-        "Map omax\n\nRange: (0..1)\n";
+    pub const offs : &'static str =
+        "Map offs\nSignal input offset\nRange: (-1..1)\n";
+    pub const min : &'static str =
+        "Map min\n\nRange: (0..1)\n";
+    pub const max : &'static str =
+        "Map max\n\nRange: (0..1)\n";
+    pub const mode : &'static str =
+        "Map mode\n";
     pub const sig : &'static str =
         "Map sig\nMapped signal output\nRange: (-1..1)\n";
     pub const DESC : &'static str =

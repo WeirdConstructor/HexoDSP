@@ -51,7 +51,7 @@ use crate::fa_sampl_dir;
 use crate::fa_ad_mult;
 use crate::fa_delay_mode;
 use crate::fa_noise_mode;
-use crate::fa_map_k;
+use crate::fa_map_mode;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -432,10 +432,10 @@ macro_rules! node_list {
             map => Map UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 atv   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (2 imin  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (3 imax  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (4 omin  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (5 omax  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (2 offs  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (3 min   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (4 max   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               {5 0 mode setting(0) fa_map_mode 0  1}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::CV
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
