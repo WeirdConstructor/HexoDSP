@@ -49,6 +49,14 @@ impl SMap {
         "SMap clip\nThe 'clip' mode allows you to limit the output \
         exactly to the 'min'/'max' range. If this is off, the output \
         may be outside the output signal range.";
+    pub const mode : &'static str =
+        "SMap mode\nThis mode defines what kind of input signal is expected \
+        and how it will be mapped to the output 'min'/'max' range.\n\
+        These modes are available:\
+        \n    * Unipolar (0..1)\
+        \n    * Bipolar  (-1..1)\
+        \n    * UniInv   (1..0)\
+        \n    * BiInv    (1..-1)";
     pub const sig : &'static str =
         "SMap sig\nMapped signal output\nRange: (-1..1)\n";
     pub const DESC : &'static str =
