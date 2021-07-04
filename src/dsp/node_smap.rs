@@ -130,7 +130,7 @@ impl DspNode for SMap {
                     let s   = inp.read(frame);
                     let min = min.read(frame);
                     let max = max.read(frame);
-                    let s = ((s + 1.0) * 0.5).clamp(0.0, 1.0);
+                    let s = s.clamp(0.0, 1.0);
                     last_val = s;
                     out.write(frame, min + (max - min) * s);
                 }
