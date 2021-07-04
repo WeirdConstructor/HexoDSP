@@ -1,1 +1,6 @@
 /target
+/*.wav
+/*.hxy
+/*.lock
+*.history
+/_pub_doc.sh
