@@ -115,7 +115,7 @@ impl DspNode for SMap {
 
         let mut last_val = 0.0;
 
-        match (mode, clip) {
+        match (mode.i(), clip.i()) {
             (0, 0) => {
                 for frame in 0..ctx.nframes() {
                     let s   = inp.read(frame);
@@ -191,6 +191,7 @@ impl DspNode for SMap {
                     out.write(frame, min + (max - min) * s);
                 }
             },
+            _ => {},
         }
 
         ctx_vals[0].set(last_val);

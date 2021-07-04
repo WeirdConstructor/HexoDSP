@@ -26,6 +26,8 @@ mod node_allp;
 mod node_noise;
 #[allow(non_upper_case_globals)]
 mod node_map;
+#[allow(non_upper_case_globals)]
+mod node_smap;
 
 pub mod tracker;
 mod satom;
@@ -52,6 +54,8 @@ use crate::fa_ad_mult;
 use crate::fa_delay_mode;
 use crate::fa_noise_mode;
 use crate::fa_map_clip;
+use crate::fa_smap_clip;
+use crate::fa_smap_mode;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -66,6 +70,7 @@ use node_delay::Delay;
 use node_allp::AllP;
 use node_noise::Noise;
 use node_map::Map;
+use node_smap::SMap;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -456,6 +461,13 @@ macro_rules! node_list {
                (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
                {3 0 neg_att setting(1) fa_amp_neg_att 0  1}
                [0 sig],
+            smap => SMap UIType::Generic UICategory::CV
+               (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (1 min   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, -1.0)
+               (2 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
+               {3 1 mode setting(0) fa_smap_mode 0  3}
+               {4 0 clip setting(0) fa_smap_clip 0  1}
+               [0 sig],
             map => Map UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 atv   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
@@ -498,7 +510,7 @@ macro_rules! node_list {
              //   name             denorm round format steps norm norm denorm
              //         norm_fun   fun    fun   fun    def   min  max  default
             sin => Sin UIType::Generic UICategory::Osc
-               (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.564713133, 440.0)
+               (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
                (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
@@ -646,7 +658,7 @@ macro_rules! make_node_info_enum {
         /// assert!(!freq_param.is_atom());
         ///
         /// // Access the UI min/max and fine/coarse step values of this paramter:
-        /// assert_eq!(freq_param.param_min_max().unwrap(), ((-1.0, 1.0), (20.0, 100.0)));
+        /// assert_eq!(freq_param.param_min_max().unwrap(), ((-1.0, 0.5647131), (20.0, 100.0)));
         ///
         /// // Access the default value:
         /// assert_eq!(freq_param.as_atom_def().f(), 0.0);
