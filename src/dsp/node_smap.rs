@@ -51,12 +51,10 @@ impl SMap {
         may be outside the output signal range.";
     pub const mode : &'static str =
         "SMap mode\nThis mode defines what kind of input signal is expected \
-        and how it will be mapped to the output 'min'/'max' range.\n\
+        and how it will be mapped to the output 'min'/'max' range. \
         These modes are available:\
-        \n    * Unipolar (0..1)\
-        \n    * Bipolar  (-1..1)\
-        \n    * UniInv   (1..0)\
-        \n    * BiInv    (1..-1)";
+        \nUnipolar (0..1) / Bipolar  (-1..1)\
+        \nUniInv   (1..0) / BiInv    (1..-1)";
     pub const sig : &'static str =
         "SMap sig\nMapped signal output\nRange: (-1..1)\n";
     pub const DESC : &'static str =
@@ -103,7 +101,7 @@ impl DspNode for SMap {
         atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, inp, denorm, denorm_v, inp_dir, at};
+        use crate::dsp::{out, inp, at};
 
         let inp  = inp::SMap::inp(inputs);
         let min  = inp::SMap::min(inputs);

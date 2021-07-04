@@ -94,7 +94,7 @@ impl DspNode for Map {
         atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, inp, denorm, denorm_v, inp_dir, at};
+        use crate::dsp::{out, inp, at};
 
         let inp  = inp::Map::inp(inputs);
         let atv  = inp::Map::atv(inputs);
