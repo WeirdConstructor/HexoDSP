@@ -164,42 +164,30 @@ impl NodeProg {
         }
 
         self.prog.push(node_op);
+        // TODO: MOD AMOUNT:
+        //      self.mods.push(Option<Vec<(f32, sigtype,
+        //                      ProcBuf,
+        //                      ProcBuf,
+        //                      ProcBuf)>>)
     }
 
+    // TODO: MOD AMOUNT CHANGE:
     pub fn append_edge(
         &mut self,
         node_op: NodeOp,
         inp_index: usize,
-        out_index: usize)
+        out_index: usize) // mod_amt: Option<(f32, sigtype)>
     {
+        // If we have a modulation:
+        //    self.mod_bufs.push(ProcBuf::new())
+        //    modbuf_idx = self.mod_bufs.len();
         for n_op in self.prog.iter_mut() {
             if n_op.idx == node_op.idx {
-                n_op.inputs.push((out_index, inp_index));
+                n_op.inputs.push((out_index, inp_index
+                    /* Option<(f32, sigtype, modbuf_idx>*/));
                 return;
             }
         }
-    }
-
-    pub fn append_with_inputs(
-        &mut self,
-        mut node_op: NodeOp,
-        inp1: Option<(usize, usize)>,
-        inp2: Option<(usize, usize)>,
-        inp3: Option<(usize, usize)>)
-    {
-        for n_op in self.prog.iter_mut() {
-            if n_op.idx == node_op.idx {
-                if let Some(inp1) = inp1 { n_op.inputs.push(inp1); }
-                if let Some(inp2) = inp2 { n_op.inputs.push(inp2); }
-                if let Some(inp3) = inp3 { n_op.inputs.push(inp3); }
-                return;
-            }
-        }
-
-        if let Some(inp1) = inp1 { node_op.inputs.push(inp1); }
-        if let Some(inp2) = inp2 { node_op.inputs.push(inp2); }
-        if let Some(inp3) = inp3 { node_op.inputs.push(inp3); }
-        self.prog.push(node_op);
     }
 
     pub fn initialize_input_buffers(&mut self) {
@@ -262,8 +250,13 @@ impl NodeProg {
             input_bufs[inp.0..inp.1]
                 .copy_from_slice(&self.inp[inp.0..inp.1]);
 
+            // TODO: self.mods.clear() (ProcBufs are in modbufs)
+
             // Second step (assign outputs):
             for io in op.inputs.iter() {
+                // TODO: MOD AMOUNT: take from mod_bufs assign to input_bufs,
+                // add entry to self.mods???? we need indices...?!
+                // Create mods entries which contain all the info for node_exec.
                 input_bufs[io.1] = out_bufs[io.0];
             }
         }

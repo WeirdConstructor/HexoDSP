@@ -427,6 +427,34 @@ impl NodeExecutor {
 
             let ctx_idx = op.idx as usize * 2;
 
+            /* MOD AMOUNT APPLYING PSEUDO CODE:
+
+            for (amt, range, modbuf, outbuf, inpbuf) in
+                prog.mod[mod.0..mod.1].iter()
+            {
+                match range {
+                    ModRange::Bipol => {
+                        for frame in 0..ctx.nframes() {
+                            modbuf.write(frame,
+                                modbuf.read(frame)
+                                * ((outbuf.read(frame) + 1.0) * 0.5)
+                                  .clamp(0.0, 1.0)
+                                + inpbuf.read(frame));
+                        }
+                    },
+                    ModRange::Unipol => {
+                        for frame in 0..ctx.nframes() {
+                            modbuf.write(frame,
+                                modbuf.read(frame)
+                                * outbuf.read(frame).clamp(0.0, 1.0)
+                                + inpbuf.read(frame));
+                        }
+                    },
+                }
+            }
+
+            */
+
             nodes[op.idx as usize]
                 .process(
                     ctx,
