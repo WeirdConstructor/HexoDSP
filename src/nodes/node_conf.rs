@@ -7,6 +7,7 @@ use super::{
     NodeProg, NodeOp,
     FeedbackFilter,
     MAX_ALLOCATED_NODES,
+    MAX_INPUTS,
     MAX_AVAIL_TRACKERS,
     UNUSED_MONITOR_IDX
 };
@@ -40,20 +41,32 @@ pub struct NodeInstance {
     in_end:     usize,
     at_start:   usize,
     at_end:     usize,
+    mod_start:  usize,
+    mod_end:    usize,
+    /// A mapping array, to map from input index of the node
+    /// to the modulator index. Because not every input has an
+    /// associated modulator.
+    /// This is used later to send [QuickMessage::ModamtUpdate].
+    /// The input index into this array is the index returned from
+    /// routines like [NodeId::inp_param].
+    in2mod_map: [Option<usize>; MAX_INPUTS],
 }
 
 impl NodeInstance {
     pub fn new(id: NodeId) -> Self {
         Self {
             id,
-            in_use:    false,
-            prog_idx:  0,
-            out_start: 0,
-            out_end:   0,
-            in_start:  0,
-            in_end:    0,
-            at_start:  0,
-            at_end:    0,
+            in_use:     false,
+            prog_idx:   0,
+            out_start:  0,
+            out_end:    0,
+            in_start:   0,
+            in_end:     0,
+            at_start:   0,
+            at_end:     0,
+            mod_start:  0,
+            mod_end:    0,
+            in2mod_map: [None; MAX_INPUTS],
         }
     }
 
@@ -66,8 +79,16 @@ impl NodeInstance {
             out_idxlen: (self.out_start, self.out_end),
             in_idxlen:  (self.in_start, self.in_end),
             at_idxlen:  (self.at_start, self.at_end),
+            mod_idxlen: (self.mod_start, self.mod_end),
             inputs:     vec![],
         }
+    }
+
+    pub fn mod_in_local2global(&self, idx: u8) -> Option<usize> {
+        if idx > self.in2mod_map.len() {
+            return None;
+        }
+        self.in2mod_map[idx as usize]
     }
 
     pub fn in_local2global(&self, idx: u8) -> Option<usize> {
@@ -82,24 +103,35 @@ impl NodeInstance {
         else { None }
     }
 
-    pub fn set_index(mut self, idx: usize) -> Self {
+    pub fn set_index(&mut self, idx: usize) -> &mut Self {
         self.prog_idx = idx;
         self
     }
 
-    pub fn set_output(mut self, s: usize, e: usize) -> Self {
+    pub fn set_output(&mut self, s: usize, e: usize) -> &mut Self {
         self.out_start = s;
         self.out_end   = e;
         self
     }
 
-    pub fn set_input(mut self, s: usize, e: usize) -> Self {
+    pub fn set_input(&mut self, s: usize, e: usize) -> &mut Self {
         self.in_start = s;
         self.in_end   = e;
         self
     }
 
-    pub fn set_atom(mut self, s: usize, e: usize) -> Self {
+    pub fn set_mod(&mut self, s: usize, e: usize) -> &mut Self {
+        self.mod_start = s;
+        self.mod_end   = e;
+        self
+    }
+
+    pub fn set_mod_idx(&mut self, idx: u8, i: usize) -> &mut Self {
+        self.in2mod_map[idx as usize] = Some(i);
+        self
+    }
+
+    pub fn set_atom(&mut self, s: usize, e: usize) -> &mut Self {
         self.at_start = s;
         self.at_end   = e;
         self
@@ -111,6 +143,7 @@ struct NodeInputParam {
     param_id:   ParamId,
     input_idx:  usize,
     value:      f32,
+    modamt:     Option<f32>,
 }
 
 #[derive(Debug, Clone)]
@@ -128,27 +161,27 @@ struct NodeInputAtom {
 /// as facade for the executed node graph in the backend.
 pub struct NodeConfigurator {
     /// Holds all the nodes, their parameters and type.
-    pub(crate) nodes:              Vec<(NodeInfo, Option<NodeInstance>)>,
+    pub(crate) nodes: Vec<(NodeInfo, Option<NodeInstance>)>,
     /// An index of all nodes ever instanciated.
     /// Be aware, that currently there is no cleanup implemented.
     /// That means, any instanciated NodeId will persist throughout
     /// the whole runtime. A garbage collector might be implemented
     /// when saving presets.
-    pub(crate) node2idx:           HashMap<NodeId, usize>,
+    pub(crate) node2idx: HashMap<NodeId, usize>,
     /// Holding the tracker sequencers
-    pub(crate) trackers:           Vec<Tracker>,
+    pub(crate) trackers: Vec<Tracker>,
     /// The shared parts of the [NodeConfigurator]
     /// and the [crate::nodes::NodeExecutor].
-    pub(crate) shared:             SharedNodeConf,
+    pub(crate) shared: SharedNodeConf,
 
-    feedback_filter:               FeedbackFilter,
+    feedback_filter: FeedbackFilter,
 
     /// Loads and Caches audio samples that are set as parameters
     /// for nodes.
-    sample_lib:                    SampleLibrary,
+    sample_lib: SampleLibrary,
 
     /// Error messages:
-    errors:         Vec<String>,
+    errors: Vec<String>,
 
     /// Contains (automateable) parameters
     params:         std::collections::HashMap<ParamId, NodeInputParam>,
@@ -311,6 +344,13 @@ impl NodeConfigurator {
             return false;
         }
 
+        let mut input_idx = None;
+
+        if let Some(nparam) = self.params.get_mut(&param) {
+            input_idx     = Some(nparam.input_idx);
+            nparam.modamt = v;
+        }
+
         // Check if the modulation amount was already set, if not, we need
         // to reconstruct the graph and upload an updated NodeProg.
         if let Some(_old_modamt) =
@@ -322,11 +362,9 @@ impl NodeConfigurator {
 
             } else {
                 let modamt = v.unwrap();
-
                 self.param_modamt.insert(param, v);
 
-                if let Some(nparam) = self.params.get_mut(&param) {
-                    let input_idx = nparam.input_idx;
+                if let Some(input_idx) = input_idx {
                     let _ =
                         self.shared.quick_update_prod.push(
                             QuickMessage::ModamtUpdate {
@@ -744,6 +782,7 @@ impl NodeConfigurator {
         let mut out_len = 0;
         let mut in_len  = 0;
         let mut at_len  = 0;
+        let mut mod_len = 0;
 
         for (i, (node_info, node_instance))
             in self.nodes.iter_mut().enumerate()
@@ -823,7 +862,7 @@ impl NodeConfigurator {
             }
         }
 
-        NodeProg::new(out_len, in_len, at_len)
+        NodeProg::new(out_len, in_len, at_len, mod_len)
     }
 
     /// Creates a new [NodeOp] and add it to the [NodeProg].

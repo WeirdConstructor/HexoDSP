@@ -5,6 +5,76 @@
 use crate::dsp::{ProcBuf, SAtom};
 use triple_buffer::{Input, Output, TripleBuffer};
 
+#[derive(Debug, Clone, Copy)]
+pub enum ModOpSigRange {
+    Unipolar,
+    Bipolar,
+}
+
+#[derive(Debug, Clone)]
+pub struct ModOp {
+    amount:     f32,
+    range:      ModOpSigRange,
+    modbuf:     ProcBuf,
+    outbuf:     ProcBuf,
+    inbuf:      ProcBuf,
+}
+
+impl Drop for ModOp {
+    fn drop(&mut self) {
+        self.modbuf.free();
+    }
+}
+
+impl ModOp {
+    pub fn new() -> Self {
+        Self {
+            range:  ModOpSigRange::Unipolar,
+            amount: 0.0,
+            modbuf: ProcBuf::new(),
+            outbuf: ProcBuf::null(),
+            inbuf:  ProcBuf::null(),
+        }
+    }
+
+    pub fn lock(&mut self, inbuf: ProcBuf, outbuf: ProcBuf) {
+        self.inbuf  = inbuf;
+        self.outbuf = outbuf;
+    }
+
+    pub fn unlock(&mut self) {
+        self.outbuf = ProcBuf::null();
+        self.inbuf  = ProcBuf::null();
+    }
+
+    #[inline]
+    pub fn process(&mut self, nframes: usize) {
+        let modbuf = &mut self.inbuf;
+        let inbuf  = &mut self.inbuf;
+        let outbuf = &mut self.outbuf;
+
+        match self.range {
+            ModOpSigRange::Bipolar => {
+                for frame in 0..nframes {
+                    modbuf.write(frame,
+                        modbuf.read(frame)
+                        * ((outbuf.read(frame) + 1.0) * 0.5)
+                          .clamp(0.0, 1.0)
+                        + inbuf.read(frame));
+                }
+            },
+            ModOpSigRange::Unipolar => {
+                for frame in 0..nframes {
+                    modbuf.write(frame,
+                        modbuf.read(frame)
+                        * outbuf.read(frame).clamp(0.0, 1.0)
+                        + inbuf.read(frame));
+                }
+            },
+        }
+    }
+}
+
 /// Step in a `NodeProg` that stores the to be
 /// executed node and output operations.
 #[derive(Debug, Clone)]
@@ -17,6 +87,8 @@ pub struct NodeOp {
     pub in_idxlen: (usize, usize),
     /// Atom data index and length of the node:
     pub at_idxlen: (usize, usize),
+    /// ModOp index and length of the node:
+    pub mod_idxlen: (usize, usize),
     /// Input indices, (<out vec index>, <own node input index>)
     pub inputs: Vec<(usize, usize)>,
 }
@@ -68,6 +140,9 @@ pub struct NodeProg {
     /// vector.
     pub prog:   Vec<NodeOp>,
 
+    /// The modulators for the input parameters.
+    pub modops: Vec<ModOp>,
+
     /// A marker, that checks if we can still swap buffers with
     /// with other NodeProg instances. This is usally set if the ProcBuf pointers
     /// have been copied into `cur_inp`. You can call `unlock_buffers` to
@@ -107,13 +182,14 @@ impl NodeProg {
             params:  vec![],
             atoms:   vec![],
             prog:    vec![],
+            modops:  vec![],
             out_feedback:   input_fb,
             out_fb_cons:    Some(output_fb),
             locked_buffers: false,
         }
     }
 
-    pub fn new(out_len: usize, inp_len: usize, at_len: usize) -> Self {
+    pub fn new(out_len: usize, inp_len: usize, at_len: usize, mod_len: usize) -> Self {
         let mut out = vec![];
         out.resize_with(out_len, ProcBuf::new);
 
@@ -130,6 +206,8 @@ impl NodeProg {
         params.resize(inp_len, 0.0);
         let mut atoms = vec![];
         atoms.resize(at_len, SAtom::setting(0));
+        let mut modops = vec![];
+        modops.resize_with(mod_len, ModOp::new);
 
         Self {
             out,
@@ -137,6 +215,7 @@ impl NodeProg {
             cur_inp,
             params,
             atoms,
+            modops,
             prog:           vec![],
             out_feedback:   input_fb,
             out_fb_cons:    Some(output_fb),
@@ -156,6 +235,10 @@ impl NodeProg {
         &mut self.atoms
     }
 
+    pub fn modops_mut(&mut self) -> &mut [ModOp] {
+        &mut self.modops
+    }
+
     pub fn append_op(&mut self, node_op: NodeOp) {
         for n_op in self.prog.iter_mut() {
             if n_op.idx == node_op.idx {
@@ -164,11 +247,6 @@ impl NodeProg {
         }
 
         self.prog.push(node_op);
-        // TODO: MOD AMOUNT:
-        //      self.mods.push(Option<Vec<(f32, sigtype,
-        //                      ProcBuf,
-        //                      ProcBuf,
-        //                      ProcBuf)>>)
     }
 
     // TODO: MOD AMOUNT CHANGE:
@@ -219,6 +297,9 @@ impl NodeProg {
     pub fn unlock_buffers(&mut self) {
         for buf in self.cur_inp.iter_mut() {
             *buf = ProcBuf::null();
+        }
+        for modop in self.modops.iter_mut() {
+            modop.unlock();
         }
         self.locked_buffers = false;
     }

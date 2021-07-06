@@ -3,6 +3,7 @@
 // See README.md and COPYING for details.
 
 pub const MAX_ALLOCATED_NODES  : usize = 256;
+pub const MAX_INPUTS           : usize = 32;
 pub const MAX_SMOOTHERS        : usize = 36 + 4; // 6 * 6 modulator inputs + 4 UI Knobs
 pub const MAX_AVAIL_TRACKERS   : usize = 128;
 pub const MAX_FB_DELAYS        : usize = 256;   // 256 feedback delays, thats roughly 1.2MB RAM
