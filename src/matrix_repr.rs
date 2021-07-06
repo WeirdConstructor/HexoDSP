@@ -142,7 +142,7 @@ impl PatternRepr {
 #[derive(Debug, Clone)]
 pub struct MatrixRepr {
     pub cells:      Vec<CellRepr>,
-    pub params:     Vec<(ParamId, f32)>,
+    pub params:     Vec<(ParamId, f32, Option<f32>)>,
     pub atoms:      Vec<(ParamId, SAtom)>,
     pub patterns:   Vec<Option<PatternRepr>>,
 }
@@ -312,7 +312,9 @@ impl MatrixRepr {
 
                 if let Some(param_id) = param_id {
                     m.params.push(
-                        (param_id, v[3].as_f64().unwrap_or(0.0) as f32));
+                        (param_id,
+                         v[3].as_f64().unwrap_or(0.0) as f32,
+                         v[4].as_f64().map(|v| v as f32)));
                 } else {
                     return Err(
                         MatrixDeserError::UnknownParamId(v.to_string()));
@@ -358,14 +360,21 @@ impl MatrixRepr {
 
         let mut params = json!([]);
         if let Value::Array(params) = &mut params {
-            for (p, v) in self.params.iter() {
-                params.push(
-                    json!([
-                        p.node_id().name(),
-                        p.node_id().instance(),
-                        p.name(),
-                        v
-                    ]));
+            for (p, v, ma) in self.params.iter() {
+                let mut param_v = json!([
+                    p.node_id().name(),
+                    p.node_id().instance(),
+                    p.name(),
+                    v,
+                ]);
+
+                if let Value::Array(param_v) = &mut param_v {
+                    if let Some(ma) = ma {
+                        param_v.push(json!(ma));
+                    }
+                }
+
+                params.push(param_v);
             }
         }
 

@@ -398,6 +398,11 @@ impl NodeExecutor {
                 QuickMessage::ParamUpdate { input_idx, value } => {
                     self.set_param(input_idx, value);
                 },
+                // TODO: MODAMT
+                // QuickMessage::ModamtUpdate { input_idx, modamt } => {
+                QuickMessage::ModamtUpdate { .. } => {
+                    // assign to NodeProg
+                },
                 QuickMessage::SetMonitor { bufs } => {
                     self.monitor_signal_cur_inp_indices = bufs;
                 },

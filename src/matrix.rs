@@ -470,7 +470,7 @@ impl Matrix {
         let _ = self.sync();
     }
 
-    pub fn for_each_atom<F: FnMut(usize, ParamId, &SAtom)>(&self, f: F) {
+    pub fn for_each_atom<F: FnMut(usize, ParamId, &SAtom, Option<f32>)>(&self, f: F) {
         self.config.for_each_param(f);
     }
 
@@ -621,6 +621,17 @@ impl Matrix {
     /// Assign [SAtom] values to input parameters and atoms.
     pub fn set_param(&mut self, param: ParamId, at: SAtom) {
         self.config.set_param(param, at);
+    }
+
+    /// Assign or remove modulation of an input parameter.
+    pub fn set_param_modamt(&mut self, param: ParamId, modamt: Option<f32>)
+        -> Result<(), MatrixError>
+    {
+        if self.config.set_param_modamt(param, modamt) {
+            self.sync()
+        } else {
+            Ok(())
+        }
     }
 
     pub fn get_adjacent_output(&self, x: usize, y: usize, dir: CellDir)

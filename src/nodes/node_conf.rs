@@ -154,6 +154,8 @@ pub struct NodeConfigurator {
     params:         std::collections::HashMap<ParamId, NodeInputParam>,
     /// Stores the most recently set parameter values
     param_values:   std::collections::HashMap<ParamId, f32>,
+    /// Stores the modulation amount of a parameter
+    param_modamt:   std::collections::HashMap<ParamId, Option<f32>>,
     /// Contains non automateable atom data for the nodes
     atoms:          std::collections::HashMap<ParamId, NodeInputAtom>,
     /// Stores the most recently set atoms
@@ -241,6 +243,7 @@ impl NodeConfigurator {
             output_fb_cons:     None,
             params:             std::collections::HashMap::new(),
             param_values:       std::collections::HashMap::new(),
+            param_modamt:       std::collections::HashMap::new(),
             atoms:              std::collections::HashMap::new(),
             atom_values:        std::collections::HashMap::new(),
             node2idx:           HashMap::new(),
@@ -297,6 +300,47 @@ impl NodeConfigurator {
     pub fn node_by_id_mut(&mut self, ni: &NodeId) -> Option<&mut (NodeInfo, Option<NodeInstance>)> {
         let idx = self.unique_index_for(ni)?;
         self.nodes.get_mut(idx)
+    }
+
+    /// Set the modulation amount of a parameter.
+    /// Returns true if a new [NodeProg] needs to be created, which can be
+    /// necessary if there was no modulation amount assigned to this parameter
+    /// yet.
+    pub fn set_param_modamt(&mut self, param: ParamId, v: Option<f32>) -> bool {
+        if param.is_atom() {
+            return false;
+        }
+
+        // Check if the modulation amount was already set, if not, we need
+        // to reconstruct the graph and upload an updated NodeProg.
+        if let Some(_old_modamt) =
+            self.param_modamt.get(&param).copied().flatten()
+        {
+            if v.is_none() {
+                self.param_modamt.insert(param, v);
+                true
+
+            } else {
+                let modamt = v.unwrap();
+
+                self.param_modamt.insert(param, v);
+
+                if let Some(nparam) = self.params.get_mut(&param) {
+                    let input_idx = nparam.input_idx;
+                    let _ =
+                        self.shared.quick_update_prod.push(
+                            QuickMessage::ModamtUpdate {
+                                input_idx, modamt
+                            });
+                }
+
+                false
+            }
+
+        } else {
+            self.param_modamt.insert(param, v);
+            true
+        }
     }
 
     /// Assign [SAtom] values to input parameters and atoms.
@@ -356,12 +400,18 @@ impl NodeConfigurator {
     /// Most useful for serialization and saving patches.
     #[allow(clippy::type_complexity)]
     pub fn dump_param_values(&self)
-        -> (Vec<(ParamId, f32)>, Vec<(ParamId, SAtom)>)
+        -> (Vec<(ParamId, f32, Option<f32>)>, Vec<(ParamId, SAtom)>)
     {
-        let params : Vec<(ParamId, f32)> =
+        let params : Vec<(ParamId, f32, Option<f32>)> =
             self.param_values
                 .iter()
-                .map(|(param_id, value)| (*param_id, *value))
+                .map(|(param_id, value)|
+                    (*param_id,
+                     *value,
+                     self.param_modamt
+                        .get(param_id)
+                        .copied()
+                        .flatten()))
                 .collect();
 
         let atoms : Vec<(ParamId, SAtom)> =
@@ -376,10 +426,13 @@ impl NodeConfigurator {
     /// Loads parameter values from a dump. You will still need to upload
     /// a new [NodeProg] which contains these values.
     pub fn load_dumped_param_values(
-        &mut self, params: &[(ParamId, f32)], atoms: &[(ParamId, SAtom)])
+        &mut self,
+        params: &[(ParamId, f32, Option<f32>)],
+        atoms: &[(ParamId, SAtom)])
     {
-        for (param_id, val) in params.iter() {
+        for (param_id, val, modamt) in params.iter() {
             self.set_param(*param_id, (*val).into());
+            self.set_param_modamt(*param_id, *modamt);
         }
 
         for (param_id, val) in atoms.iter() {
@@ -389,12 +442,12 @@ impl NodeConfigurator {
 
     /// Iterates over every parameter and calls the given function with
     /// it's current value.
-    pub fn for_each_param<F: FnMut(usize, ParamId, &SAtom)>(&self, mut f: F) {
+    pub fn for_each_param<F: FnMut(usize, ParamId, &SAtom, Option<f32>)>(&self, mut f: F) {
         for (_, node_input) in self.atoms.iter() {
             if let Some(unique_idx) =
                 self.unique_index_for(&node_input.param_id.node_id())
             {
-                f(unique_idx, node_input.param_id, &node_input.value);
+                f(unique_idx, node_input.param_id, &node_input.value, None);
             }
         }
 
@@ -402,8 +455,15 @@ impl NodeConfigurator {
             if let Some(unique_idx) =
                 self.unique_index_for(&node_input.param_id.node_id())
             {
+                let modamt =
+                    self.param_modamt
+                        .get(&node_input.param_id)
+                        .copied()
+                        .flatten();
+
                 f(unique_idx, node_input.param_id,
-                  &SAtom::param(node_input.value));
+                  &SAtom::param(node_input.value),
+                  modamt);
             }
         }
     }
@@ -513,11 +573,15 @@ impl NodeConfigurator {
     /// The monitor data can be retrieved using
     /// [NodeConfigurator::get_minmax_monitor_samples].
     pub fn monitor(&mut self,
-        node_id: &NodeId, inputs: &[Option<u8>], outputs: &[Option<u8>])
+        node_id: &NodeId,
+        inputs:  &[Option<u8>],
+        outputs: &[Option<u8>])
     {
         let mut bufs = [UNUSED_MONITOR_IDX; MON_SIG_CNT];
 
-        if let Some((_node_info, Some(node_instance))) = self.node_by_id(node_id) {
+        if let Some((_node_info, Some(node_instance))) =
+            self.node_by_id(node_id)
+        {
             let mut i = 0;
             for inp_idx in inputs.iter().take(MON_SIG_CNT / 2) {
                 if let Some(inp_idx) = inp_idx {
@@ -572,6 +636,7 @@ impl NodeConfigurator {
         self.nodes.fill_with(|| (NodeInfo::Nop, None));
         self.params      .clear();
         self.param_values.clear();
+        self.param_modamt.clear();
         self.atoms       .clear();
         self.atom_values .clear();
 
