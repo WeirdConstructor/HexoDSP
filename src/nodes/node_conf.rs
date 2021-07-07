@@ -4,7 +4,7 @@
 
 use super::{
     GraphMessage, QuickMessage,
-    NodeProg, NodeOp,
+    NodeProg, ModOpSigRange, NodeOp,
     FeedbackFilter,
     MAX_ALLOCATED_NODES,
     MAX_INPUTS,
@@ -85,7 +85,7 @@ impl NodeInstance {
     }
 
     pub fn mod_in_local2global(&self, idx: u8) -> Option<usize> {
-        if idx > self.in2mod_map.len() {
+        if (idx as usize) > self.in2mod_map.len() {
             return None;
         }
         self.in2mod_map[idx as usize]
@@ -126,8 +126,12 @@ impl NodeInstance {
         self
     }
 
-    pub fn set_mod_idx(&mut self, idx: u8, i: usize) -> &mut Self {
-        self.in2mod_map[idx as usize] = Some(i);
+    /// Sets the modulator index mapping: `idx` is the 
+    /// index of the parameter like in [NodeId::inp_param_by_idx],
+    /// and `i` is the absolute index of the modulator that belongs
+    /// to this parameter.
+    pub fn set_mod_idx(&mut self, idx: usize, i: usize) -> &mut Self {
+        self.in2mod_map[idx] = Some(i);
         self
     }
 
@@ -143,7 +147,7 @@ struct NodeInputParam {
     param_id:   ParamId,
     input_idx:  usize,
     value:      f32,
-    modamt:     Option<f32>,
+    modamt:     Option<(usize, f32)>,
 }
 
 #[derive(Debug, Clone)]
@@ -345,10 +349,15 @@ impl NodeConfigurator {
         }
 
         let mut input_idx = None;
+        let mut mod_idx   = None;
 
         if let Some(nparam) = self.params.get_mut(&param) {
-            input_idx     = Some(nparam.input_idx);
-            nparam.modamt = v;
+            input_idx = Some(nparam.input_idx);
+
+            if let Some(modamt) = &mut nparam.modamt {
+                mod_idx  = Some(modamt.0);
+                modamt.1 = v.unwrap_or(0.0);
+            }
         }
 
         // Check if the modulation amount was already set, if not, we need
@@ -364,12 +373,17 @@ impl NodeConfigurator {
                 let modamt = v.unwrap();
                 self.param_modamt.insert(param, v);
 
+                // TODO: Check if the ModamtUpdate message really needs
+                //       the input_idx once the NodeExecutor backend
+                //       code for that message has been implemented!
                 if let Some(input_idx) = input_idx {
-                    let _ =
-                        self.shared.quick_update_prod.push(
-                            QuickMessage::ModamtUpdate {
-                                input_idx, modamt
-                            });
+                    if let Some(mod_idx) = mod_idx {
+                        let _ =
+                            self.shared.quick_update_prod.push(
+                                QuickMessage::ModamtUpdate {
+                                    input_idx, mod_idx, modamt
+                                });
+                    }
                 }
 
                 false
@@ -801,18 +815,22 @@ impl NodeConfigurator {
             let at_idx = at_len;
             at_len += node_info.at_count();
 
+            // - hold the mod start index of this node.
+            let mod_idx = mod_len;
+
             if id == NodeId::Nop {
                 break;
             }
 
+            let mut ni = NodeInstance::new(id);
+            ni.set_index(i)
+              .set_output(out_idx, out_len)
+              .set_input(in_idx, in_len)
+              .set_atom(at_idx, at_len);
+
             // - save offset and length of each node's
             //   allocation in the output vector.
-            *node_instance = Some(
-                NodeInstance::new(id)
-                .set_index(i)
-                .set_output(out_idx, out_len)
-                .set_input(in_idx, in_len)
-                .set_atom(at_idx, at_len));
+            *node_instance = Some(ni);
 
             println!("INSERT[{}]: {:?} outidx: {},{} inidx: {},{} atidx: {},{}",
                      i, id, out_idx, out_len, in_idx, in_len, at_idx, at_len);
@@ -820,7 +838,9 @@ impl NodeConfigurator {
             // Create new parameters and initialize them if they did not
             // already exist previously
             for param_idx in in_idx..in_len {
-                if let Some(param_id) = id.inp_param_by_idx(param_idx - in_idx) {
+                let input_idx = param_idx - in_idx;
+
+                if let Some(param_id) = id.inp_param_by_idx(input_idx) {
                     let value =
                         if let Some(value) = self.param_values.get(&param_id) {
                             *value
@@ -828,14 +848,38 @@ impl NodeConfigurator {
                             param_id.norm_def()
                         };
 
+                    // If we have a modulation, store the absolute
+                    // index of it in the [NodeProg::modops] vector later:
+                    let ma = self.param_modamt.get(&param_id).copied().flatten();
+                    let modamt =
+                        if ma.is_some() {
+                            let mod_idx = mod_len;
+                            node_instance
+                                .as_mut()
+                                .unwrap()
+                                .set_mod_idx(input_idx, mod_idx);
+                            mod_len += 1;
+                            Some((mod_idx, ma.unwrap()))
+                        } else {
+                            None
+                        };
+
                     self.param_values.insert(param_id, value);
                     self.params.insert(param_id, NodeInputParam {
                         param_id,
                         value,
                         input_idx: param_idx,
+                        modamt,
                     });
                 }
             }
+
+            // After iterating through the parameters we can
+            // store the range of the indices of this node.
+            node_instance
+                .as_mut()
+                .unwrap()
+                .set_mod(mod_idx, mod_len);
 
             // Create new atom data and initialize it if it did not
             // already exist from a previous matrix instance.
@@ -910,10 +954,17 @@ impl NodeConfigurator {
             let op = node_instance.as_op();
 
             let input_index = node_instance.in_local2global(node_input.1);
+            let mod_index   = node_instance.mod_in_local2global(node_input.1);
             if let (Some(input_index), Some(output_index)) =
                 (input_index, output_index)
             {
-                prog.append_edge(op, input_index, output_index);
+                // TODO: Fetch output signal range from adjacent_output!
+
+                prog.append_edge(
+                    op,
+                    input_index,
+                    output_index,
+                    mod_index.map(|amt| (amt, ModOpSigRange::Unipolar)));
             }
         }
     }
@@ -960,6 +1011,10 @@ impl NodeConfigurator {
         // reset the inp[] input value vector.
         for (_param_id, param) in self.params.iter() {
             prog.params_mut()[param.input_idx] = param.value;
+
+            if let Some((mod_idx, amt)) = param.modamt {
+                prog.modops_mut()[mod_idx].set_amt(amt);
+            }
         }
 
         // The atoms are referred to directly on process() call.

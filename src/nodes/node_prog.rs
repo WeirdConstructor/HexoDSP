@@ -11,6 +11,15 @@ pub enum ModOpSigRange {
     Bipolar,
 }
 
+impl std::fmt::Display for ModOpSigRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ModOpSigRange::Unipolar => write!(f, "SigRange::Unipolar"),
+            ModOpSigRange::Bipolar  => write!(f, "SigRange::Bipolar"),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ModOp {
     amount:     f32,
@@ -37,6 +46,14 @@ impl ModOp {
         }
     }
 
+    pub fn set_amt(&mut self, amt: f32) {
+        self.amount = amt;
+    }
+
+    pub fn set_range(&mut self, range: ModOpSigRange) {
+        self.range = range;
+    }
+
     pub fn lock(&mut self, inbuf: ProcBuf, outbuf: ProcBuf) {
         self.inbuf  = inbuf;
         self.outbuf = outbuf;
@@ -49,7 +66,7 @@ impl ModOp {
 
     #[inline]
     pub fn process(&mut self, nframes: usize) {
-        let modbuf = &mut self.inbuf;
+        let modbuf = &mut self.modbuf;
         let inbuf  = &mut self.inbuf;
         let outbuf = &mut self.outbuf;
 
@@ -89,23 +106,31 @@ pub struct NodeOp {
     pub at_idxlen: (usize, usize),
     /// ModOp index and length of the node:
     pub mod_idxlen: (usize, usize),
-    /// Input indices, (<out vec index>, <own node input index>)
-    pub inputs: Vec<(usize, usize)>,
+    /// Input indices,
+    /// (<out vec index>, <own node input index>,
+    ///  (<mod index into NodeProg::modops>, <mod amt>, <mod sig type>))
+    pub inputs: Vec<(usize, usize, Option<(usize, f32, ModOpSigRange)>)>,
 }
 
 impl std::fmt::Display for NodeOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Op(i={} out=({}-{}) in=({}-{}) at=({}-{})",
+        write!(f, "Op(i={} out=({}-{}) in=({}-{}) at=({}-{}) mod=({}-{})",
                self.idx,
                self.out_idxlen.0,
                self.out_idxlen.1,
                self.in_idxlen.0,
                self.in_idxlen.1,
                self.at_idxlen.0,
-               self.at_idxlen.1)?;
+               self.at_idxlen.1,
+               self.mod_idxlen.0,
+               self.mod_idxlen.1)?;
 
         for i in self.inputs.iter() {
             write!(f, " cpy=(o{} => i{})", i.0, i.1)?;
+
+            if let Some((idx, amt, rng)) = i.2 {
+                write!(f, " mod=({:6.4}/{} @{})", amt, rng, idx)?;
+            }
         }
 
         write!(f, ")")
@@ -249,25 +274,31 @@ impl NodeProg {
         self.prog.push(node_op);
     }
 
-    // TODO: MOD AMOUNT CHANGE:
     pub fn append_edge(
         &mut self,
         node_op: NodeOp,
         inp_index: usize,
-        out_index: usize) // mod_amt: Option<(f32, sigtype)>
+        out_index: usize,
+        mod_amt: Option<(usize, ModOpSigRange)>)
     {
-        // If we have a modulation:
-        //    self.mod_bufs.push(ProcBuf::new())
-        //    modbuf_idx = self.mod_bufs.len();
         for n_op in self.prog.iter_mut() {
             if n_op.idx == node_op.idx {
-                n_op.inputs.push((out_index, inp_index
-                    /* Option<(f32, sigtype, modbuf_idx>*/));
+                if let Some((idx, range)) = mod_amt {
+                    self.modops[idx].set_range(range);
+                }
+
+                n_op.inputs.push(
+                    (out_index,
+                     inp_index,
+                     mod_amt.map(|(idx, sigrng)| (idx, 0.0, sigrng))));
                 return;
             }
         }
     }
 
+    /// This is called right after the [crate::nodes::NodeExecutor]
+    /// received this NodeProg from the [crate::nodes::NodeConfigurator].
+    /// It initializes internal buffers with parameter data.
     pub fn initialize_input_buffers(&mut self) {
         for param_idx in 0..self.params.len() {
             let param_val = self.params[param_idx];
@@ -331,14 +362,15 @@ impl NodeProg {
             input_bufs[inp.0..inp.1]
                 .copy_from_slice(&self.inp[inp.0..inp.1]);
 
-            // TODO: self.mods.clear() (ProcBufs are in modbufs)
-
             // Second step (assign outputs):
             for io in op.inputs.iter() {
-                // TODO: MOD AMOUNT: take from mod_bufs assign to input_bufs,
-                // add entry to self.mods???? we need indices...?!
-                // Create mods entries which contain all the info for node_exec.
                 input_bufs[io.1] = out_bufs[io.0];
+
+                if let Some((idx, _, _)) = io.2 {
+                    self.modops[idx].lock(
+                        self.inp[io.1],
+                        out_bufs[io.0]);
+                }
             }
         }
 
