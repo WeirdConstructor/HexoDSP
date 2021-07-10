@@ -319,6 +319,13 @@ impl NodeExecutor {
     pub fn get_prog(&self) -> &NodeProg { &self.prog }
 
     #[inline]
+    fn set_modamt(&mut self, mod_idx: usize, modamt: f32) {
+        if mod_idx < self.prog.modops.len() {
+            self.prog.modops[mod_idx].set_amt(modamt);
+        }
+    }
+
+    #[inline]
     fn set_param(&mut self, input_idx: usize, value: f32) {
         let prog = &mut self.prog;
 
@@ -398,10 +405,8 @@ impl NodeExecutor {
                 QuickMessage::ParamUpdate { input_idx, value } => {
                     self.set_param(input_idx, value);
                 },
-                // TODO: MODAMT
-                // QuickMessage::ModamtUpdate { input_idx, modamt } => {
-                QuickMessage::ModamtUpdate { .. } => {
-                    // assign to NodeProg
+                QuickMessage::ModamtUpdate { mod_idx, modamt } => {
+                    self.set_modamt(mod_idx, modamt);
                 },
                 QuickMessage::SetMonitor { bufs } => {
                     self.monitor_signal_cur_inp_indices = bufs;
@@ -425,40 +430,18 @@ impl NodeExecutor {
 
         let prog_out_fb = prog.out_feedback.input_buffer();
 
-        for op in prog.prog.iter() {
-            let out = op.out_idxlen;
-            let inp = op.in_idxlen;
-            let at  = op.at_idxlen;
+        let nframes = ctx.nframes();
 
+        for op in prog.prog.iter() {
+            let out     = op.out_idxlen;
+            let inp     = op.in_idxlen;
+            let at      = op.at_idxlen;
+            let md      = op.mod_idxlen;
             let ctx_idx = op.idx as usize * 2;
 
-            /* MOD AMOUNT APPLYING PSEUDO CODE:
-
-            for (amt, range, modbuf, outbuf, inpbuf) in
-                prog.mod[mod.0..mod.1].iter()
-            {
-                match range {
-                    ModRange::Bipol => {
-                        for frame in 0..ctx.nframes() {
-                            modbuf.write(frame,
-                                modbuf.read(frame)
-                                * ((outbuf.read(frame) + 1.0) * 0.5)
-                                  .clamp(0.0, 1.0)
-                                + inpbuf.read(frame));
-                        }
-                    },
-                    ModRange::Unipol => {
-                        for frame in 0..ctx.nframes() {
-                            modbuf.write(frame,
-                                modbuf.read(frame)
-                                * outbuf.read(frame).clamp(0.0, 1.0)
-                                + inpbuf.read(frame));
-                        }
-                    },
-                }
+            for modop in prog.modops[md.0..md.1].iter_mut() {
+                modop.process(nframes);
             }
-
-            */
 
             nodes[op.idx as usize]
                 .process(
@@ -470,7 +453,7 @@ impl NodeExecutor {
                     &mut prog.out[out.0..out.1],
                     &ctx_vals[ctx_idx..ctx_idx + 2]);
 
-            let last_frame_idx = ctx.nframes() - 1;
+            let last_frame_idx = nframes - 1;
             for (pb, out_buf_idx) in
                 prog.out[out.0..out.1].iter()
                     .zip(out.0..out.1)

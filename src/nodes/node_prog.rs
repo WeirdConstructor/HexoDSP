@@ -33,9 +33,11 @@ impl ModOp {
         self.amount = amt;
     }
 
-    pub fn lock(&mut self, inbuf: ProcBuf, outbuf: ProcBuf) {
+    pub fn lock(&mut self, inbuf: ProcBuf, outbuf: ProcBuf) -> ProcBuf {
+        println!("LOCK MA {}", self.amount);
         self.inbuf  = inbuf;
         self.outbuf = outbuf;
+        self.modbuf
     }
 
     pub fn unlock(&mut self) {
@@ -49,11 +51,12 @@ impl ModOp {
         let inbuf  = &mut self.inbuf;
         let outbuf = &mut self.outbuf;
 
+        println!("PROCMA {}", self.amount);
+
         for frame in 0..nframes {
             modbuf.write(frame,
-                modbuf.read(frame)
-                * outbuf.read(frame)
-                + inbuf.read(frame));
+                inbuf.read(frame)
+                + (self.amount * outbuf.read(frame)));
         }
     }
 }
@@ -299,6 +302,7 @@ impl NodeProg {
     pub fn assign_outputs(&mut self) {
         for op in self.prog.iter() {
 
+            println!("ASSIGN OUTPUTS: {}", op);
             // First step is copying the ProcBufs to the `cur_inp` current
             // input buffer vector. It holds the data for smoothed paramter
             // inputs or just constant values since the last smoothing.
@@ -328,7 +332,8 @@ impl NodeProg {
                 input_bufs[io.1] = out_bufs[io.0];
 
                 if let Some(idx) = io.2 {
-                    self.modops[idx].lock(self.inp[io.1], out_bufs[io.0]);
+                    input_bufs[io.1] =
+                        self.modops[idx].lock(self.inp[io.1], out_bufs[io.0]);
                 }
             }
         }

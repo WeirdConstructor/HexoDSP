@@ -354,15 +354,18 @@ impl NodeConfigurator {
             if let Some(modamt) = &mut nparam.modamt {
                 mod_idx  = Some(modamt.0);
                 modamt.1 = v.unwrap_or(0.0);
+                println!("SET NPARAM MOD AMT {:?} {:?} {}", param, mod_idx, modamt.1);
             }
         }
 
-        // Check if the modulation amount was already set, if not, we need
-        // to reconstruct the graph and upload an updated NodeProg.
+
+        // Check if the modulation amount was already set, if not, the caller
+        // needs to reconstruct the graph and upload an updated NodeProg.
         if let Some(_old_modamt) =
             self.param_modamt.get(&param).copied().flatten()
         {
             if v.is_none() {
+                println!("SET NEW NONE MOD AMT {:?}", param);
                 self.param_modamt.insert(param, v);
                 true
 
@@ -371,6 +374,7 @@ impl NodeConfigurator {
                 self.param_modamt.insert(param, v);
 
                 if let Some(mod_idx) = mod_idx {
+                println!("SET UPD MOD AMT {:?} {:?} {:?}", param, mod_idx, modamt);
                     let _ =
                         self.shared.quick_update_prod.push(
                             QuickMessage::ModamtUpdate { mod_idx, modamt });
