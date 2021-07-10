@@ -54,9 +54,9 @@ pub enum GraphMessage {
 /// and the NodeConfigurator.
 #[derive(Debug)]
 pub enum QuickMessage {
-    AtomUpdate   { at_idx: usize, value: SAtom },
+    AtomUpdate   { at_idx:    usize, value: SAtom },
     ParamUpdate  { input_idx: usize, value: f32 },
-    ModamtUpdate { input_idx: usize, mod_idx: usize, modamt: f32 },
+    ModamtUpdate { mod_idx:   usize, modamt: f32 },
     /// Sets the buffer indices to monitor with the FeedbackProcessor.
     SetMonitor   { bufs: [usize; MON_SIG_CNT], },
 }

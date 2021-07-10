@@ -1236,4 +1236,87 @@ mod tests {
             output2: (NodeId::Sin(2), 0),
         }));
     }
+
+    #[test]
+    fn check_matrix_mod_amt_pre_sync() {
+        use crate::nodes::new_node_engine;
+
+        let (node_conf, mut node_exec) = new_node_engine();
+        let mut matrix = Matrix::new(node_conf, 3, 3);
+
+        matrix.place(0, 0,
+            Cell::empty(NodeId::Sin(0))
+            .out(None, Some(0), None));
+        matrix.place(1, 0,
+            Cell::empty(NodeId::Sin(1))
+            .input(None, Some(0), None)
+            .out(None, None, Some(0)));
+        matrix.place(0, 1,
+            Cell::empty(NodeId::Sin(3))
+            .input(None, None, None)
+            .out(None, Some(0), None));
+        matrix.place(1, 1,
+            Cell::empty(NodeId::Sin(2))
+            .input(Some(0), Some(1), None));
+        matrix.set_param_modamt(
+            NodeId::Sin(1).param_by_idx(0).unwrap(),
+            Some(0.5)).unwrap();
+        matrix.set_param_modamt(
+            NodeId::Sin(1).param_by_idx(1).unwrap(),
+            Some(0.33)).unwrap();
+        matrix.set_param_modamt(
+            NodeId::Sin(0).param_by_idx(0).unwrap(),
+            Some(0.25)).unwrap();
+        matrix.set_param_modamt(
+            NodeId::Sin(2).param_by_idx(0).unwrap(),
+            Some(0.75)).unwrap();
+        matrix.set_param_modamt(
+            NodeId::Sin(2).param_by_idx(1).unwrap(),
+            Some(-0.75)).unwrap();
+        matrix.sync().unwrap();
+
+        node_exec.process_graph_updates();
+
+        let prog = node_exec.get_prog();
+        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1) in=(0-2) at=(0-0) mod=(0-1))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-4) in=(6-8) at=(0-0) mod=(5-5))");
+        assert_eq!(prog.prog[2].to_string(), "Op(i=1 out=(1-2) in=(2-4) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
+        assert_eq!(prog.prog[3].to_string(), "Op(i=2 out=(2-3) in=(4-6) at=(0-0) mod=(3-5) cpy=(o1 => i4) cpy=(o3 => i5) mod=3 mod=4)");
+    }
+
+    #[test]
+    fn check_matrix_mod_amt_post_sync() {
+        use crate::nodes::new_node_engine;
+
+        let (node_conf, mut node_exec) = new_node_engine();
+        let mut matrix = Matrix::new(node_conf, 3, 3);
+
+        matrix.place(0, 0,
+            Cell::empty(NodeId::Sin(0))
+            .out(None, Some(0), None));
+        matrix.place(1, 0,
+            Cell::empty(NodeId::Sin(1))
+            .input(None, Some(0), None)
+            .out(None, None, Some(0)));
+        matrix.place(1, 1,
+            Cell::empty(NodeId::Sin(2))
+            .input(Some(0), None, None));
+        matrix.sync().unwrap();
+        matrix.set_param_modamt(
+            NodeId::Sin(1).param_by_idx(0).unwrap(),
+            Some(0.5)).unwrap();
+        matrix.set_param_modamt(
+            NodeId::Sin(1).param_by_idx(1).unwrap(),
+            Some(0.33)).unwrap();
+        matrix.set_param_modamt(
+            NodeId::Sin(0).param_by_idx(0).unwrap(),
+            Some(0.25)).unwrap();
+
+        node_exec.process_graph_updates();
+
+        let prog = node_exec.get_prog();
+        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1) in=(0-2) at=(0-0) mod=(0-1))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2) in=(2-4) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
+        assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3) in=(4-6) at=(0-0) mod=(3-3) cpy=(o1 => i4))");
+    }
 }

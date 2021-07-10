@@ -4,7 +4,7 @@
 
 use super::{
     GraphMessage, QuickMessage,
-    NodeProg, ModOpSigRange, NodeOp,
+    NodeProg, NodeOp,
     FeedbackFilter,
     MAX_ALLOCATED_NODES,
     MAX_INPUTS,
@@ -348,12 +348,9 @@ impl NodeConfigurator {
             return false;
         }
 
-        let mut input_idx = None;
-        let mut mod_idx   = None;
+        let mut mod_idx = None;
 
         if let Some(nparam) = self.params.get_mut(&param) {
-            input_idx = Some(nparam.input_idx);
-
             if let Some(modamt) = &mut nparam.modamt {
                 mod_idx  = Some(modamt.0);
                 modamt.1 = v.unwrap_or(0.0);
@@ -373,17 +370,10 @@ impl NodeConfigurator {
                 let modamt = v.unwrap();
                 self.param_modamt.insert(param, v);
 
-                // TODO: Check if the ModamtUpdate message really needs
-                //       the input_idx once the NodeExecutor backend
-                //       code for that message has been implemented!
-                if let Some(input_idx) = input_idx {
-                    if let Some(mod_idx) = mod_idx {
-                        let _ =
-                            self.shared.quick_update_prod.push(
-                                QuickMessage::ModamtUpdate {
-                                    input_idx, mod_idx, modamt
-                                });
-                    }
+                if let Some(mod_idx) = mod_idx {
+                    let _ =
+                        self.shared.quick_update_prod.push(
+                            QuickMessage::ModamtUpdate { mod_idx, modamt });
                 }
 
                 false
@@ -876,10 +866,7 @@ impl NodeConfigurator {
 
             // After iterating through the parameters we can
             // store the range of the indices of this node.
-            node_instance
-                .as_mut()
-                .unwrap()
-                .set_mod(mod_idx, mod_len);
+            node_instance.as_mut().unwrap().set_mod(mod_idx, mod_len);
 
             // Create new atom data and initialize it if it did not
             // already exist from a previous matrix instance.
@@ -958,13 +945,11 @@ impl NodeConfigurator {
             if let (Some(input_index), Some(output_index)) =
                 (input_index, output_index)
             {
-                // TODO: Fetch output signal range from adjacent_output!
-
                 prog.append_edge(
                     op,
                     input_index,
                     output_index,
-                    mod_index.map(|amt| (amt, ModOpSigRange::Unipolar)));
+                    mod_index);
             }
         }
     }

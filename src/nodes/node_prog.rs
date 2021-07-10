@@ -5,25 +5,9 @@
 use crate::dsp::{ProcBuf, SAtom};
 use triple_buffer::{Input, Output, TripleBuffer};
 
-#[derive(Debug, Clone, Copy)]
-pub enum ModOpSigRange {
-    Unipolar,
-    Bipolar,
-}
-
-impl std::fmt::Display for ModOpSigRange {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ModOpSigRange::Unipolar => write!(f, "SigRange::Unipolar"),
-            ModOpSigRange::Bipolar  => write!(f, "SigRange::Bipolar"),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct ModOp {
     amount:     f32,
-    range:      ModOpSigRange,
     modbuf:     ProcBuf,
     outbuf:     ProcBuf,
     inbuf:      ProcBuf,
@@ -38,7 +22,6 @@ impl Drop for ModOp {
 impl ModOp {
     pub fn new() -> Self {
         Self {
-            range:  ModOpSigRange::Unipolar,
             amount: 0.0,
             modbuf: ProcBuf::new(),
             outbuf: ProcBuf::null(),
@@ -48,10 +31,6 @@ impl ModOp {
 
     pub fn set_amt(&mut self, amt: f32) {
         self.amount = amt;
-    }
-
-    pub fn set_range(&mut self, range: ModOpSigRange) {
-        self.range = range;
     }
 
     pub fn lock(&mut self, inbuf: ProcBuf, outbuf: ProcBuf) {
@@ -70,24 +49,11 @@ impl ModOp {
         let inbuf  = &mut self.inbuf;
         let outbuf = &mut self.outbuf;
 
-        match self.range {
-            ModOpSigRange::Bipolar => {
-                for frame in 0..nframes {
-                    modbuf.write(frame,
-                        modbuf.read(frame)
-                        * ((outbuf.read(frame) + 1.0) * 0.5)
-                          .clamp(0.0, 1.0)
-                        + inbuf.read(frame));
-                }
-            },
-            ModOpSigRange::Unipolar => {
-                for frame in 0..nframes {
-                    modbuf.write(frame,
-                        modbuf.read(frame)
-                        * outbuf.read(frame).clamp(0.0, 1.0)
-                        + inbuf.read(frame));
-                }
-            },
+        for frame in 0..nframes {
+            modbuf.write(frame,
+                modbuf.read(frame)
+                * outbuf.read(frame)
+                + inbuf.read(frame));
         }
     }
 }
@@ -108,8 +74,8 @@ pub struct NodeOp {
     pub mod_idxlen: (usize, usize),
     /// Input indices,
     /// (<out vec index>, <own node input index>,
-    ///  (<mod index into NodeProg::modops>, <mod amt>, <mod sig type>))
-    pub inputs: Vec<(usize, usize, Option<(usize, f32, ModOpSigRange)>)>,
+    ///  (<mod index into NodeProg::modops>, <mod amt>))
+    pub inputs: Vec<(usize, usize, Option<usize>)>,
 }
 
 impl std::fmt::Display for NodeOp {
@@ -127,9 +93,11 @@ impl std::fmt::Display for NodeOp {
 
         for i in self.inputs.iter() {
             write!(f, " cpy=(o{} => i{})", i.0, i.1)?;
+        }
 
-            if let Some((idx, amt, rng)) = i.2 {
-                write!(f, " mod=({:6.4}/{} @{})", amt, rng, idx)?;
+        for i in self.inputs.iter() {
+            if let Some(idx) = i.2 {
+                write!(f, " mod={}", idx)?;
             }
         }
 
@@ -279,18 +247,11 @@ impl NodeProg {
         node_op: NodeOp,
         inp_index: usize,
         out_index: usize,
-        mod_amt: Option<(usize, ModOpSigRange)>)
+        mod_index: Option<usize>)
     {
         for n_op in self.prog.iter_mut() {
             if n_op.idx == node_op.idx {
-                if let Some((idx, range)) = mod_amt {
-                    self.modops[idx].set_range(range);
-                }
-
-                n_op.inputs.push(
-                    (out_index,
-                     inp_index,
-                     mod_amt.map(|(idx, sigrng)| (idx, 0.0, sigrng))));
+                n_op.inputs.push((out_index, inp_index, mod_index));
                 return;
             }
         }
@@ -366,10 +327,8 @@ impl NodeProg {
             for io in op.inputs.iter() {
                 input_bufs[io.1] = out_bufs[io.0];
 
-                if let Some((idx, _, _)) = io.2 {
-                    self.modops[idx].lock(
-                        self.inp[io.1],
-                        out_bufs[io.0]);
+                if let Some(idx) = io.2 {
+                    self.modops[idx].lock(self.inp[io.1], out_bufs[io.0]);
                 }
             }
         }
