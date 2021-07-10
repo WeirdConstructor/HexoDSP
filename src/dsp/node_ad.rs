@@ -5,7 +5,7 @@
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{
     NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals,
-    GraphAtomData, GraphFun,
+    GraphAtomData, GraphFun, NodeContext,
 };
 use super::helpers::{Trigger, TrigSignal, sqrt4_to_pow4};
 
@@ -120,7 +120,8 @@ impl DspNode for Ad {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _nctx: &NodeContext,
+        atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{out, inp, denorm, at};

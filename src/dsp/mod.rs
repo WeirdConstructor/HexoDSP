@@ -76,6 +76,18 @@ pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
 pub const MAX_BLOCK_SIZE : usize = 128;
 
+
+/// A context structure that holds temporary information about the
+/// currently executed node.
+/// This structure is created by the [crate::nodes::NodeExecutor] on the fly.
+pub struct NodeContext<'a> {
+    /// The bitmask that indicates which output ports are used/connected
+    /// to some input.
+    pub out_connected:  u64,
+    /// The node parameters, which are usually not accessed directly.
+    pub params:         &'a [ProcBuf],
+}
+
 /// This trait is an interface between the graph functions
 /// and the AtomDataModel of the UI.
 pub trait GraphAtomData {
@@ -116,8 +128,9 @@ pub trait DspNode {
     /// * `outputs` are the output buffers of this node.
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
-        atoms: &[SAtom], params: &[ProcBuf], inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf], led: LedPhaseVals);
+        nctx: &NodeContext,
+        atoms: &[SAtom], inputs: &[ProcBuf], outputs: &mut [ProcBuf],
+        led: LedPhaseVals);
 
     /// A function factory for generating a graph for the generic node UI.
     fn graph_fun() -> Option<GraphFun> { None }
@@ -564,7 +577,11 @@ macro_rules! node_list {
                {1 0 p     param(0.0) fa_test_s 0  10}
                {2 1 trig  param(0.0) fa_test_s 0  0}
                [0 sig]
-               [1 tsig],
+               [1 tsig]
+               [2 out2]
+               [3 out3]
+               [4 out4]
+               [5 outc],
         }
     }
 }
@@ -1120,9 +1137,27 @@ macro_rules! make_node_info_enum {
         }
 
         #[allow(non_snake_case)]
+        pub mod out_buf {
+            $(pub mod $variant {
+                $(#[inline] pub fn $out(outputs: &mut [crate::dsp::ProcBuf]) -> crate::dsp::ProcBuf {
+                    outputs[$out_idx]
+                })*
+            })+
+        }
+
+        #[allow(non_snake_case)]
         pub mod out_idx {
             $(pub mod $variant {
                 $(#[inline] pub fn $out() -> usize { $out_idx })*
+            })+
+        }
+
+        #[allow(non_snake_case)]
+        pub mod is_out_con {
+            $(pub mod $variant {
+                $(#[inline] pub fn $out(nctx: &crate::dsp::NodeContext) -> bool {
+                    nctx.out_connected & (1 << $out_idx) != 0x0
+                })*
             })+
         }
 
@@ -1441,8 +1476,8 @@ impl Node {
     #[inline]
     pub fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
-        atoms: &[SAtom], params: &[ProcBuf],
-        inputs: &[ProcBuf], outputs: &mut [ProcBuf],
+        nctx: &NodeContext,
+        atoms: &[SAtom], inputs: &[ProcBuf], outputs: &mut [ProcBuf],
         led: LedPhaseVals)
     {
         macro_rules! make_node_process {
@@ -1462,7 +1497,7 @@ impl Node {
                 match self {
                     Node::$v1 => {},
                     $(Node::$variant { node } =>
-                        node.process(ctx, ectx, atoms, params,
+                        node.process(ctx, ectx, nctx, atoms,
                                      inputs, outputs, led),)+
                 }
             }

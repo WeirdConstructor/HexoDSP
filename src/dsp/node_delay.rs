@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
 use crate::dsp::helpers::{DelayBuffer, crossfade, TriggerSampleClock};
 
 #[macro_export]
@@ -91,7 +91,8 @@ impl DspNode for Delay {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _nctx: &NodeContext,
+        atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{at, out, inp, denorm};

@@ -7,7 +7,7 @@ use super::{
     UNUSED_MONITOR_IDX, MAX_ALLOCATED_NODES, MAX_SMOOTHERS,
     MAX_FB_DELAY_SIZE, FB_DELAY_TIME_US
 };
-use crate::dsp::{NodeId, Node, MAX_BLOCK_SIZE};
+use crate::dsp::{NodeId, Node, NodeContext, MAX_BLOCK_SIZE};
 use crate::util::{Smoother, AtomicFloat};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
 
@@ -447,8 +447,11 @@ impl NodeExecutor {
                 .process(
                     ctx,
                     exec_ctx,
+                    &NodeContext {
+                        out_connected: op.out_connected,
+                        params:        &prog.inp[inp.0..inp.1],
+                    },
                     &prog.atoms[at.0..at.1],
-                    &prog.inp[inp.0..inp.1],
                     &prog.cur_inp[inp.0..inp.1],
                     &mut prog.out[out.0..out.1],
                     &ctx_vals[ctx_idx..ctx_idx + 2]);

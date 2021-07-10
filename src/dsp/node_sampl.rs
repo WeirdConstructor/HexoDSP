@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
 use crate::dsp::{out, at, inp, denorm, denorm_offs}; //, inp, denorm, denorm_v, inp_dir, at};
 use super::helpers::Trigger;
 
@@ -370,7 +370,8 @@ impl DspNode for Sampl {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _nctx: &NodeContext,
+        atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         let sample = at::Sampl::sample(atoms);

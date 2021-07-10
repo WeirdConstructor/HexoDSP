@@ -3,7 +3,10 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, GraphFun, GraphAtomData, DspNode, LedPhaseVals};
+use crate::dsp::{
+    NodeId, SAtom, ProcBuf, GraphFun, GraphAtomData, DspNode, LedPhaseVals,
+    NodeContext
+};
 use crate::dsp::helpers::{TrigSignal};
 
 #[macro_export]
@@ -46,6 +49,10 @@ impl Test {
     pub const trig: &'static str = "Test trig\nA trigger input, that will create a short pulse on the 'tsig' output.\nRange: (-1..1)";
     pub const sig : &'static str = "Test sig\nThe output of p as signal";
     pub const tsig : &'static str = "Test tsig\nA short trigger pulse will be generated when the 'trig' input is triggered.";
+    pub const out2 : &'static str = "Test out2\nA test output that will emit 1.0 if output 'sig' is connected.";
+    pub const out3 : &'static str = "Test out3\n";
+    pub const out4 : &'static str = "Test out4\n";
+    pub const outc : &'static str = "Test outc\nEmits a number that defines the out_connected bitmask. Used only for testing!";
 
     pub const DESC : &'static str = r#""#;
     pub const HELP : &'static str = r#""#;
@@ -66,14 +73,18 @@ impl DspNode for Test {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], _inputs: &[ProcBuf],
+        nctx: &NodeContext,
+        atoms: &[SAtom], _inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], _led: LedPhaseVals)
     {
-        use crate::dsp::{out_idx, at};
+        use crate::dsp::{out_idx, at, is_out_con, out_buf};
 
-        let p    = at::Test::p(atoms);
-        let trig = at::Test::trig(atoms);
-        let tsig = out_idx::Test::tsig();
+        let p     = at::Test::p(atoms);
+        let trig  = at::Test::trig(atoms);
+        let tsig  = out_idx::Test::tsig();
+
+        let mut out2  = out_buf::Test::out2(outputs);
+        let mut outc  = out_buf::Test::outc(outputs);
 
         let (out, tsig) = outputs.split_at_mut(tsig);
         let out  = &mut out[0];
@@ -99,6 +110,10 @@ impl DspNode for Test {
             out.write(frame, p.f());
             let t = self.trig_sig.next();
             tsig.write(frame, t);
+
+            out2.write(frame,
+                if is_out_con::Test::sig(nctx) { 1.0 } else { 0.0 });
+            outc.write(frame, nctx.out_connected as f32);
         }
     }
 

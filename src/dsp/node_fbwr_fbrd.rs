@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals};
+use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
 
 /// A simple amplifier
 #[derive(Debug, Clone)]
@@ -54,7 +54,8 @@ impl DspNode for FbWr {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
-        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _nctx: &NodeContext,
+        _atoms: &[SAtom], inputs: &[ProcBuf],
         _outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{inp};
@@ -126,7 +127,8 @@ impl DspNode for FbRd {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
-        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _nctx: &NodeContext,
+        _atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{out, inp, denorm};

@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, inp, at, denorm, DspNode, LedPhaseVals};
+use crate::dsp::{
+    NodeId, SAtom, ProcBuf, inp, at, denorm, DspNode, LedPhaseVals, NodeContext};
 
 #[macro_export]
 macro_rules! fa_out_mono { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -81,7 +82,8 @@ impl DspNode for Out {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _nctx: &NodeContext,
+        atoms: &[SAtom], inputs: &[ProcBuf],
         _outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         let in1  = inp::Out::ch1(inputs);

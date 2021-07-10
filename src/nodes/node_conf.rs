@@ -56,17 +56,17 @@ impl NodeInstance {
     pub fn new(id: NodeId) -> Self {
         Self {
             id,
-            in_use:     false,
-            prog_idx:   0,
-            out_start:  0,
-            out_end:    0,
-            in_start:   0,
-            in_end:     0,
-            at_start:   0,
-            at_end:     0,
-            mod_start:  0,
-            mod_end:    0,
-            in2mod_map: [None; MAX_INPUTS],
+            in_use:         false,
+            prog_idx:       0,
+            out_start:      0,
+            out_end:        0,
+            in_start:       0,
+            in_end:         0,
+            at_start:       0,
+            at_end:         0,
+            mod_start:      0,
+            mod_end:        0,
+            in2mod_map:     [None; MAX_INPUTS],
         }
     }
 
@@ -75,12 +75,13 @@ impl NodeInstance {
 
     pub fn as_op(&self) -> NodeOp {
         NodeOp {
-            idx:        self.prog_idx as u8,
-            out_idxlen: (self.out_start, self.out_end),
-            in_idxlen:  (self.in_start, self.in_end),
-            at_idxlen:  (self.at_start, self.at_end),
-            mod_idxlen: (self.mod_start, self.mod_end),
-            inputs:     vec![],
+            idx:            self.prog_idx as u8,
+            out_idxlen:     (self.out_start, self.out_end),
+            in_idxlen:      (self.in_start, self.in_end),
+            at_idxlen:      (self.at_start, self.at_end),
+            mod_idxlen:     (self.mod_start, self.mod_end),
+            out_connected:  0x0,
+            inputs:         vec![],
         }
     }
 

@@ -81,14 +81,34 @@ pub struct NodeOp {
     /// (<out vec index>, <own node input index>,
     ///  (<mod index into NodeProg::modops>, <mod amt>))
     pub inputs: Vec<(usize, usize, Option<usize>)>,
+    /// A bit mask which indicates which of the output ports are actually
+    /// used/connected to some input.
+    pub out_connected: u64,
+}
+
+impl NodeOp {
+    pub fn out_idx_belongs_to_nodeop(&self, idx: usize) -> bool {
+           idx >= self.out_idxlen.0
+        && idx <  self.out_idxlen.1
+    }
+
+    pub fn set_out_idx_connected_flag(&mut self, global_idx: usize) {
+        if !self.out_idx_belongs_to_nodeop(global_idx) {
+            return;
+        }
+
+        let local_idx = global_idx - self.out_idxlen.0;
+        self.out_connected |= 0x1 << local_idx;
+    }
 }
 
 impl std::fmt::Display for NodeOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Op(i={} out=({}-{}) in=({}-{}) at=({}-{}) mod=({}-{})",
+        write!(f, "Op(i={} out=({}-{}|{:x}) in=({}-{}) at=({}-{}) mod=({}-{})",
                self.idx,
                self.out_idxlen.0,
                self.out_idxlen.1,
+               self.out_connected,
                self.in_idxlen.0,
                self.in_idxlen.1,
                self.at_idxlen.0,
@@ -167,7 +187,6 @@ impl Drop for NodeProg {
     }
 }
 
-
 impl NodeProg {
     pub fn empty() -> Self {
         let out_fb = vec![];
@@ -237,13 +256,14 @@ impl NodeProg {
         &mut self.modops
     }
 
-    pub fn append_op(&mut self, node_op: NodeOp) {
+    pub fn append_op(&mut self, mut node_op: NodeOp) {
         for n_op in self.prog.iter_mut() {
             if n_op.idx == node_op.idx {
                 return;
             }
         }
 
+        node_op.out_connected = 0x0;
         self.prog.push(node_op);
     }
 
@@ -254,6 +274,12 @@ impl NodeProg {
         out_index: usize,
         mod_index: Option<usize>)
     {
+        for n_op in self.prog.iter_mut() {
+            if n_op.out_idx_belongs_to_nodeop(out_index) {
+                n_op.set_out_idx_connected_flag(out_index);
+            }
+        }
+
         for n_op in self.prog.iter_mut() {
             if n_op.idx == node_op.idx {
                 n_op.inputs.push((out_index, inp_index, mod_index));

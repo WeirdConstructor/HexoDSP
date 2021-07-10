@@ -1054,9 +1054,9 @@ mod tests {
         assert!(nodes[2].to_id(2) == NodeId::Sin(2));
 
         let prog = node_exec.get_prog();
-        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1) in=(0-2) at=(0-0) mod=(0-0))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2) in=(2-4) at=(0-0) mod=(0-0) cpy=(o0 => i2))");
-        assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3) in=(4-6) at=(0-0) mod=(0-0) cpy=(o1 => i4))");
+        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2) at=(0-0) mod=(0-0))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2|1) in=(2-4) at=(0-0) mod=(0-0) cpy=(o0 => i2))");
+        assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3|0) in=(4-6) at=(0-0) mod=(0-0) cpy=(o1 => i4))");
     }
 
     #[test]
@@ -1146,8 +1146,8 @@ mod tests {
 
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog.len(), 2);
-        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1) in=(0-2) at=(0-0) mod=(0-0))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-1) in=(2-5) at=(0-1) mod=(0-0) cpy=(o0 => i2))");
+        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2) at=(0-0) mod=(0-0))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-1|0) in=(2-5) at=(0-1) mod=(0-0) cpy=(o0 => i2))");
     }
 
     #[test]
@@ -1177,8 +1177,8 @@ mod tests {
 
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog.len(), 2);
-        assert_eq!(prog.prog[0].to_string(), "Op(i=2 out=(2-3) in=(4-6) at=(0-0) mod=(0-0))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-3) in=(6-9) at=(0-1) mod=(0-0) cpy=(o2 => i6))");
+        assert_eq!(prog.prog[0].to_string(), "Op(i=2 out=(2-3|1) in=(4-6) at=(0-0) mod=(0-0))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-3|0) in=(6-9) at=(0-1) mod=(0-0) cpy=(o2 => i6))");
     }
 
     #[test]
@@ -1278,10 +1278,10 @@ mod tests {
         node_exec.process_graph_updates();
 
         let prog = node_exec.get_prog();
-        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1) in=(0-2) at=(0-0) mod=(0-1))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-4) in=(6-8) at=(0-0) mod=(5-5))");
-        assert_eq!(prog.prog[2].to_string(), "Op(i=1 out=(1-2) in=(2-4) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
-        assert_eq!(prog.prog[3].to_string(), "Op(i=2 out=(2-3) in=(4-6) at=(0-0) mod=(3-5) cpy=(o1 => i4) cpy=(o3 => i5) mod=3 mod=4)");
+        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2) at=(0-0) mod=(0-1))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-4|1) in=(6-8) at=(0-0) mod=(5-5))");
+        assert_eq!(prog.prog[2].to_string(), "Op(i=1 out=(1-2|1) in=(2-4) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
+        assert_eq!(prog.prog[3].to_string(), "Op(i=2 out=(2-3|0) in=(4-6) at=(0-0) mod=(3-5) cpy=(o1 => i4) cpy=(o3 => i5) mod=3 mod=4)");
     }
 
     #[test]
@@ -1315,8 +1315,8 @@ mod tests {
         node_exec.process_graph_updates();
 
         let prog = node_exec.get_prog();
-        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1) in=(0-2) at=(0-0) mod=(0-1))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2) in=(2-4) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
-        assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3) in=(4-6) at=(0-0) mod=(3-3) cpy=(o1 => i4))");
+        assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2) at=(0-0) mod=(0-1))");
+        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2|1) in=(2-4) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
+        assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3|0) in=(4-6) at=(0-0) mod=(3-3) cpy=(o1 => i4))");
     }
 }

@@ -5,7 +5,7 @@
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{
     NodeId, SAtom, ProcBuf, denorm_offs,
-    out, inp, DspNode, LedPhaseVals
+    out, inp, DspNode, LedPhaseVals, NodeContext
 };
 use crate::dsp::helpers::fast_sin;
 
@@ -76,7 +76,8 @@ impl DspNode for Sin {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        _atoms: &[SAtom], _params: &[ProcBuf], inputs: &[ProcBuf],
+        _nctx: &NodeContext,
+        _atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         let o    = out::Sin::sig(outputs);
