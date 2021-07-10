@@ -674,11 +674,11 @@ mod tests {
                 .input(None, Some(0), None)
                 .out(None, None, Some(0)));
             matrix.set_param_modamt(
-                sin.inp_param("det").unwrap(), Some(-0.6));
+                sin.inp_param("det").unwrap(), Some(-0.6)).unwrap();
             matrix.sync().unwrap();
 
             matrix.set_param_modamt(
-                sin.inp_param("freq").unwrap(), Some(0.6));
+                sin.inp_param("freq").unwrap(), Some(0.6)).unwrap();
 
             matrix.to_repr()
         };
