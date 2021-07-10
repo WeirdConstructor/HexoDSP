@@ -715,6 +715,23 @@ pub fn process_1pole_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) ->
     *z
 }
 
+// one pole hp from valley rack free:
+// https://github.com/ValleyAudio/ValleyRackFree/blob/v1.0/src/Common/DSP/OnePoleFilters.cpp
+#[inline]
+pub fn process_1pole_highpass(input: f64, freq: f64, israte: f64, z: &mut f64, y: &mut f64) -> f64 {
+    let b  = (-std::f64::consts::TAU * freq * israte).exp();
+    let a  = (1.0 + b) / 2.0;
+    let a1 = - a;
+
+    let v =
+          a  * input
+        + a1 * *z
+        + b  * *y;
+    *y = v;
+    *z = input;
+    v
+}
+
 // one pole from:
 // http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.pdf
 // (page 5)
@@ -730,6 +747,21 @@ pub fn process_1pole_tpt_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64
     // let (m0, m1) = (0.0, 1.0);
     // (m0 * input + m1 * v2) as f32);
     v2
+}
+
+// one pole from:
+// http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.pdf
+// (page 5)
+#[inline]
+pub fn process_1pole_tpt_highpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
+    let g  = (std::f64::consts::PI * freq * israte).tan();
+    let a1 = g / (1.0 + g);
+
+    let v1 = a1 * (input - *z);
+    let v2 = v1 + *z;
+    *z = v2 + v1;
+
+    input - v2
 }
 
 // translated from Odin 2 Synthesizer Plugin

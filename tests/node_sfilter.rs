@@ -20,7 +20,7 @@ fn check_node_sfilter_compare() {
                        .out(None, None, noise.out("sig")));
     matrix.place(1, 2, Cell::empty(out)
                        .input(out.inp("ch2"), None, None));
-    pset_d(&mut matrix, sf, "freq", 100.0);
+    pset_d(&mut matrix, sf, "freq", 440.0);
     matrix.sync().unwrap();
 
     let ta = std::time::Instant::now();
@@ -43,7 +43,6 @@ fn check_node_sfilter_compare() {
     save_wav("check_noise_sfilt2.wav", &out_l);
     let ta = std::time::Instant::now().duration_since(ta);
     println!("ta2 Elapsed: {:?}", ta);
-
 
     pset_s(&mut matrix, sf, "ftype", 2);
 

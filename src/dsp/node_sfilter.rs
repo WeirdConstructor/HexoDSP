@@ -4,16 +4,21 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
-use crate::dsp::helpers::{process_1pole_lowpass, process_1pole_tpt_lowpass};
+use crate::dsp::helpers::{
+    process_1pole_lowpass,
+    process_1pole_highpass,
+    process_1pole_tpt_lowpass,
+    process_1pole_tpt_highpass,
+};
 
 #[macro_export]
 macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
         match ($v.round() as usize) {
             0  => "LP(1p)",
-            1  => "LP(1p,TPT)",
+            1  => "LP(1pt)",
             2  => "HP(1p)",
-            3  => "HP(1p,TPT)",
+            3  => "HP(1pt)",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -80,48 +85,46 @@ impl DspNode for SFilter {
         let out   = out::SFilter::sig(outputs);
 
         match ftype.i() {
-            // one pole lp from valley rack free:
-            // https://github.com/ValleyAudio/ValleyRackFree/blob/v1.0/src/Common/DSP/OnePoleFilters.cpp
             0 => {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = (denorm::SFilter::freq(freq, frame) as f64);
                     out.write(frame,
-                        process_1pole_lowpass(input, freq, self.israte, &mut self.z)
+                        process_1pole_lowpass(
+                            input, freq, self.israte, &mut self.z)
                         as f32);
                 }
             },
-            // one pole from:
-            // http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.pdf
-            // (page 5)
             1 => {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = (denorm::SFilter::freq(freq, frame) as f64);
                     out.write(frame,
-                        process_1pole_tpt_lowpass(input, freq, self.israte, &mut self.z)
+                        process_1pole_tpt_lowpass(
+                            input, freq, self.israte, &mut self.z)
                         as f32);
                 }
             },
-//            // From https://en.wikipedia.org/wiki/RC_circuit
-//            // has the same output as the SVF variant, takes the same amount of time.
-//            3 => {
-//                for frame in 0..ctx.nframes() {
-//                    let input = inp.read(frame) as f64;
-//                    let c =
-//                        2.0
-//                        / (std::f64::consts::TAU
-//                         * (denorm::SFilter::freq(freq, frame) as f64)
-//                         * self.israte);
-//
-//                    let y = (input + self.z - self.y * (1.0 - c)) / (1.0 + c);
-//                    self.z = input;
-//                    self.y = y;
-//
-//                    // highpass: self.z - self.y
-//                    out.write(frame, y as f32);
-//                }
-//            },
+            2 => {
+                for frame in 0..ctx.nframes() {
+                    let input = inp.read(frame) as f64;
+                    let freq = (denorm::SFilter::freq(freq, frame) as f64);
+                    out.write(frame,
+                        process_1pole_highpass(
+                            input, freq, self.israte, &mut self.z, &mut self.y)
+                        as f32);
+                }
+            },
+            3 => {
+                for frame in 0..ctx.nframes() {
+                    let input = inp.read(frame) as f64;
+                    let freq = (denorm::SFilter::freq(freq, frame) as f64);
+                    out.write(frame,
+                        process_1pole_tpt_highpass(
+                            input, freq, self.israte, &mut self.z)
+                        as f32);
+                }
+            },
             _ => {},
         }
     }
