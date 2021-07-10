@@ -143,3 +143,28 @@ fn check_node_noise_atv_offs_bipolar() {
     println!("mima {:?}", rms_mimax);
     assert_rmsmima!(rms_mimax[0], (0.2407, -0.0998, 0.8996));
 }
+
+#[test]
+fn check_node_noise_fft() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let noise = NodeId::Noise(0);
+    let out   = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(noise)
+                       .out(None, None, noise.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    pset_s(&mut matrix, noise, "mode", 0);
+    pset_n(&mut matrix, noise, "atv", 1.0);
+    pset_n(&mut matrix, noise, "offs", 0.0);
+    matrix.sync().unwrap();
+
+    let fft = run_and_get_fft4096(&mut node_exec, 50, 1000.0);
+    assert!(fft.len() > 15);
+    for (_freq, lvl) in fft {
+        assert_float_eq!(
+            (((lvl as i64 - 57) as f32).abs() / 10.0).floor(),
+            0.0);
+    }
+}

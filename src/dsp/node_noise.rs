@@ -38,7 +38,7 @@ impl Noise {
     }
 
     pub const atv  : &'static str =
-        "Noise atv\n.Attenuverter input, to attenuate or inverter \
+        "Noise atv\n.Attenuverter input, to attenuate or invert \
         the noise.\nRange: (-1..1)";
     pub const offs : &'static str =
         "Noise offs\n.Offset input, that is added to the output \

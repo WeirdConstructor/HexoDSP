@@ -10,7 +10,7 @@ pub fn init_cos_tab() {
     for i in 0..(FAST_COS_TAB_SIZE+1) {
         let phase : f32 =
             (i as f32)
-            * ((std::f32::consts::PI * 2.0)
+            * ((std::f32::consts::TAU)
                / (FAST_COS_TAB_SIZE as f32));
         unsafe {
             // XXX: note: mutable statics can be mutated by multiple
@@ -21,7 +21,7 @@ pub fn init_cos_tab() {
     }
 }
 
-const PHASE_SCALE : f32 = 1.0_f32 / (std::f32::consts::PI * 2.0_f32);
+const PHASE_SCALE : f32 = 1.0_f32 / (std::f32::consts::TAU);
 
 pub fn fast_cos(mut x: f32) -> f32 {
     x = x.abs(); // cosine is symmetrical around 0, let's get rid of negative values

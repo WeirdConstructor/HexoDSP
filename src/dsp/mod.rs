@@ -28,6 +28,8 @@ mod node_noise;
 mod node_map;
 #[allow(non_upper_case_globals)]
 mod node_smap;
+#[allow(non_upper_case_globals)]
+mod node_sfilter;
 
 pub mod tracker;
 mod satom;
@@ -56,6 +58,7 @@ use crate::fa_noise_mode;
 use crate::fa_map_clip;
 use crate::fa_smap_clip;
 use crate::fa_smap_mode;
+use crate::fa_sfilter_type;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -71,6 +74,7 @@ use node_allp::AllP;
 use node_noise::Noise;
 use node_map::Map;
 use node_smap::SMap;
+use node_sfilter::SFilter;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -574,6 +578,11 @@ macro_rules! node_list {
                (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                (1  offs  n_id      d_id  r_s    f_def stp_d -1.0, 1.0, 0.0)
                {2 0 mode setting(0) fa_noise_mode 0 1}
+               [0 sig],
+            sfilter => SFilter UIType::Generic UICategory::Signal
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
+               {2 0 ftype setting(0) fa_sfilter_type 0 1}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
