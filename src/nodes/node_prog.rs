@@ -51,7 +51,9 @@ impl ModOp {
         let inbuf  = &mut self.inbuf;
         let outbuf = &mut self.outbuf;
 
-        println!("PROCMA {}", self.amount);
+        if inbuf.is_null() {
+            return;
+        }
 
         for frame in 0..nframes {
             modbuf.write(frame,

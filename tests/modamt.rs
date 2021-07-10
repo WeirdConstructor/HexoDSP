@@ -1,0 +1,46 @@
+mod common;
+use common::*;
+
+#[test]
+fn check_param_mod_amt_no_input() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let sin = NodeId::Sin(0);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(sin)
+                       .out(None, None, sin.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    matrix.set_param_modamt(
+        sin.inp_param("freq").unwrap(), Some(0.2)).unwrap();
+
+    let rms = run_and_get_first_rms_mimax(&mut node_exec, 50.0);
+    assert_rmsmima!(rms, (0.4999, -1.0, 1.0));
+}
+
+#[test]
+fn check_param_mod_amt_with_input() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let sin  = NodeId::Sin(0);
+    let sin2 = NodeId::Sin(1);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(sin2)
+                       .out(None, None, sin2.out("sig")));
+    matrix.place(0, 1, Cell::empty(sin)
+                       .input(sin.inp("freq"), None, None)
+                       .out(None, None, sin.out("sig")));
+    matrix.place(0, 2, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    matrix.set_param_modamt(
+        sin.inp_param("freq").unwrap(), Some(0.2)).unwrap();
+
+    let rms = run_and_get_first_rms_mimax(&mut node_exec, 50.0);
+    assert_rmsmima!(rms, (0.4992, -1.0, 1.0));
+}
