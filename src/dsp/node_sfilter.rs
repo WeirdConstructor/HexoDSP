@@ -4,15 +4,16 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
+use crate::dsp::helpers::{process_1pole_lowpass, process_1pole_tpt_lowpass};
 
 #[macro_export]
 macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
         match ($v.round() as usize) {
-            0  => "LPDat(1p)",
-            1  => "LPSVF(1p)",
-            2  => "LPDAFX(1p)",
-            3  => "RC",
+            0  => "LP(1p)",
+            1  => "LP(1p,TPT)",
+            2  => "HP(1p)",
+            3  => "HP(1p,TPT)",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -84,14 +85,10 @@ impl DspNode for SFilter {
             0 => {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
-                    let b =
-                        (-std::f64::consts::TAU
-                         * (denorm::SFilter::freq(freq, frame) as f64)
-                         * self.israte).exp();
-                    let a = 1.0 - b;
-
-                    self.z = a * input + self.z * b;
-                    out.write(frame, self.z as f32);
+                    let freq = (denorm::SFilter::freq(freq, frame) as f64);
+                    out.write(frame,
+                        process_1pole_lowpass(input, freq, self.israte, &mut self.z)
+                        as f32);
                 }
             },
             // one pole from:
@@ -100,54 +97,31 @@ impl DspNode for SFilter {
             1 => {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
-                    let g =
-                        (std::f64::consts::PI
-                         * (denorm::SFilter::freq(freq, frame) as f64)
-                         * self.israte).tan();
-                    let a1 = g / (1.0 + g);
-
-                    let v1 = a1 * (input - self.z);
-                    let v2 = v1 + self.z;
-                    self.z = v2 + v1;
-
-                    let (m0, m1) = (0.0, 1.0);
-                    out.write(frame, (m0 * input + m1 * v2) as f32);
+                    let freq = (denorm::SFilter::freq(freq, frame) as f64);
+                    out.write(frame,
+                        process_1pole_tpt_lowpass(input, freq, self.israte, &mut self.z)
+                        as f32);
                 }
             },
-            // from DAFX by will pirkle:
-            2 => {
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let o =
-                        (-std::f64::consts::TAU
-                         * (denorm::SFilter::freq(freq, frame) as f64)
-                         * self.israte).cos();
-                    let y = 2.0 - o;
-                    let b = (y * y - 1.0).sqrt() - y;
-                    let a = 1.0 + b;
-
-                    self.z = a * input - b * self.z;
-                    out.write(frame, self.z as f32);
-                }
-            },
-            // From https://en.wikipedia.org/wiki/RC_circuit
-            3 => {
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let c =
-                        2.0
-                        / (std::f64::consts::TAU
-                         * (denorm::SFilter::freq(freq, frame) as f64)
-                         * self.israte);
-
-                    let y = (input + self.z - self.y * (1.0 - c)) / (1.0 + c);
-                    self.z = input;
-                    self.y = y;
-
-                    // highpass: self.z - self.y
-                    out.write(frame, y as f32);
-                }
-            },
+//            // From https://en.wikipedia.org/wiki/RC_circuit
+//            // has the same output as the SVF variant, takes the same amount of time.
+//            3 => {
+//                for frame in 0..ctx.nframes() {
+//                    let input = inp.read(frame) as f64;
+//                    let c =
+//                        2.0
+//                        / (std::f64::consts::TAU
+//                         * (denorm::SFilter::freq(freq, frame) as f64)
+//                         * self.israte);
+//
+//                    let y = (input + self.z - self.y * (1.0 - c)) / (1.0 + c);
+//                    self.z = input;
+//                    self.y = y;
+//
+//                    // highpass: self.z - self.y
+//                    out.write(frame, y as f32);
+//                }
+//            },
             _ => {},
         }
     }

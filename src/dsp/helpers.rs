@@ -705,6 +705,32 @@ impl Comb {
     }
 }
 
+// one pole lp from valley rack free:
+// https://github.com/ValleyAudio/ValleyRackFree/blob/v1.0/src/Common/DSP/OnePoleFilters.cpp
+#[inline]
+pub fn process_1pole_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
+    let b = (-std::f64::consts::TAU * freq * israte).exp();
+    let a = 1.0 - b;
+    *z = a * input + *z * b;
+    *z
+}
+
+// one pole from:
+// http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.pdf
+// (page 5)
+#[inline]
+pub fn process_1pole_tpt_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
+    let g  = (std::f64::consts::PI * freq * israte).tan();
+    let a1 = g / (1.0 + g);
+
+    let v1 = a1 * (input - *z);
+    let v2 = v1 + *z;
+    *z = v2 + v1;
+
+    // let (m0, m1) = (0.0, 1.0);
+    // (m0 * input + m1 * v2) as f32);
+    v2
+}
 
 // translated from Odin 2 Synthesizer Plugin
 // Copyright (C) 2020 TheWaveWarden
@@ -746,6 +772,8 @@ impl DCBlockFilter {
         y as f32
     }
 }
+
+
 
 #[cfg(test)]
 mod tests {
