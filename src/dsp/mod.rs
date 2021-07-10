@@ -81,6 +81,9 @@ pub const MAX_BLOCK_SIZE : usize = 128;
 /// currently executed node.
 /// This structure is created by the [crate::nodes::NodeExecutor] on the fly.
 pub struct NodeContext<'a> {
+    /// The bitmask that indicates which input ports are used/connected
+    /// to some output.
+    pub in_connected:  u64,
     /// The bitmask that indicates which output ports are used/connected
     /// to some input.
     pub out_connected:  u64,
@@ -1157,6 +1160,15 @@ macro_rules! make_node_info_enum {
             $(pub mod $variant {
                 $(#[inline] pub fn $out(nctx: &crate::dsp::NodeContext) -> bool {
                     nctx.out_connected & (1 << $out_idx) != 0x0
+                })*
+            })+
+        }
+
+        #[allow(non_snake_case)]
+        pub mod is_in_con {
+            $(pub mod $variant {
+                $(#[inline] pub fn $para(nctx: &crate::dsp::NodeContext) -> bool {
+                    nctx.in_connected & (1 << $in_idx) != 0x0
                 })*
             })+
         }

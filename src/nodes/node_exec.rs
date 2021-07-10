@@ -449,6 +449,7 @@ impl NodeExecutor {
                     exec_ctx,
                     &NodeContext {
                         out_connected: op.out_connected,
+                        in_connected:  op.in_connected,
                         params:        &prog.inp[inp.0..inp.1],
                     },
                     &prog.atoms[at.0..at.1],

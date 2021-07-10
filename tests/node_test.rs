@@ -79,3 +79,30 @@ fn check_node_test_out_connected() {
     assert_decimated_feq!(res.0, 1, vec![ mask as f32; 10 ]);
     assert_decimated_feq!(res.1, 1, vec![ 0.0; 10 ]);
 }
+
+#[test]
+fn check_node_test_in_connected() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 6, 3);
+
+    let test = NodeId::Test(0);
+    let tst2 = NodeId::Test(1);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(test)
+                       .out(None, None, test.out("sig")));
+    matrix.place(0, 1, Cell::empty(tst2)
+                       .input(tst2.inp("f"), None, None)
+                       .out(None, None, test.out("out3")));
+    matrix.place(0, 2, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let res = run_for_ms(&mut node_exec, 2.0);
+    assert_decimated_feq!(res.0, 1, vec![ 1.0; 10 ]);
+
+    matrix.place(0, 0, Cell::empty(NodeId::Nop));
+    matrix.sync().unwrap();
+
+    let res = run_for_ms(&mut node_exec, 2.0);
+    assert_decimated_feq!(res.0, 1, vec![ 0.0; 10 ]);
+}

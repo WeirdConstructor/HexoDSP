@@ -81,6 +81,7 @@ impl NodeInstance {
             at_idxlen:      (self.at_start, self.at_end),
             mod_idxlen:     (self.mod_start, self.mod_end),
             out_connected:  0x0,
+            in_connected:   0x0,
             inputs:         vec![],
         }
     }

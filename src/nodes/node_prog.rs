@@ -81,12 +81,29 @@ pub struct NodeOp {
     /// (<out vec index>, <own node input index>,
     ///  (<mod index into NodeProg::modops>, <mod amt>))
     pub inputs: Vec<(usize, usize, Option<usize>)>,
+    /// A bit mask which indicates which of the input ports are actually
+    /// used/connected to some output.
+    pub in_connected: u64,
     /// A bit mask which indicates which of the output ports are actually
     /// used/connected to some input.
     pub out_connected: u64,
 }
 
 impl NodeOp {
+    pub fn in_idx_belongs_to_nodeop(&self, idx: usize) -> bool {
+           idx >= self.in_idxlen.0
+        && idx <  self.in_idxlen.1
+    }
+
+    pub fn set_in_idx_connected_flag(&mut self, global_idx: usize) {
+        if !self.in_idx_belongs_to_nodeop(global_idx) {
+            return;
+        }
+
+        let local_idx = global_idx - self.in_idxlen.0;
+        self.in_connected |= 0x1 << local_idx;
+    }
+
     pub fn out_idx_belongs_to_nodeop(&self, idx: usize) -> bool {
            idx >= self.out_idxlen.0
         && idx <  self.out_idxlen.1
@@ -104,13 +121,14 @@ impl NodeOp {
 
 impl std::fmt::Display for NodeOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Op(i={} out=({}-{}|{:x}) in=({}-{}) at=({}-{}) mod=({}-{})",
+        write!(f, "Op(i={} out=({}-{}|{:x}) in=({}-{}|{:x}) at=({}-{}) mod=({}-{})",
                self.idx,
                self.out_idxlen.0,
                self.out_idxlen.1,
                self.out_connected,
                self.in_idxlen.0,
                self.in_idxlen.1,
+               self.in_connected,
                self.at_idxlen.0,
                self.at_idxlen.1,
                self.mod_idxlen.0,
@@ -264,6 +282,7 @@ impl NodeProg {
         }
 
         node_op.out_connected = 0x0;
+        node_op.in_connected  = 0x0;
         self.prog.push(node_op);
     }
 
@@ -282,6 +301,7 @@ impl NodeProg {
 
         for n_op in self.prog.iter_mut() {
             if n_op.idx == node_op.idx {
+                n_op.set_in_idx_connected_flag(inp_index);
                 n_op.inputs.push((out_index, inp_index, mod_index));
                 return;
             }

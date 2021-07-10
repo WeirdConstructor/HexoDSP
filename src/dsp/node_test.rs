@@ -50,7 +50,7 @@ impl Test {
     pub const sig : &'static str = "Test sig\nThe output of p as signal";
     pub const tsig : &'static str = "Test tsig\nA short trigger pulse will be generated when the 'trig' input is triggered.";
     pub const out2 : &'static str = "Test out2\nA test output that will emit 1.0 if output 'sig' is connected.";
-    pub const out3 : &'static str = "Test out3\n";
+    pub const out3 : &'static str = "Test out3\nA test output that will emit 1.0 if input 'f' is connected.";
     pub const out4 : &'static str = "Test out4\n";
     pub const outc : &'static str = "Test outc\nEmits a number that defines the out_connected bitmask. Used only for testing!";
 
@@ -77,13 +77,14 @@ impl DspNode for Test {
         atoms: &[SAtom], _inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], _led: LedPhaseVals)
     {
-        use crate::dsp::{out_idx, at, is_out_con, out_buf};
+        use crate::dsp::{out_idx, at, is_out_con, out_buf, is_in_con};
 
         let p     = at::Test::p(atoms);
         let trig  = at::Test::trig(atoms);
         let tsig  = out_idx::Test::tsig();
 
         let mut out2  = out_buf::Test::out2(outputs);
+        let mut out3  = out_buf::Test::out3(outputs);
         let mut outc  = out_buf::Test::outc(outputs);
 
         let (out, tsig) = outputs.split_at_mut(tsig);
@@ -113,6 +114,8 @@ impl DspNode for Test {
 
             out2.write(frame,
                 if is_out_con::Test::sig(nctx) { 1.0 } else { 0.0 });
+            out3.write(frame,
+                if is_in_con::Test::f(nctx) { 1.0 } else { 0.0 });
             outc.write(frame, nctx.out_connected as f32);
         }
     }
