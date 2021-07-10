@@ -109,6 +109,22 @@ impl DspNode for SFilter {
                     out.write(frame, (m0 * input + m1 * v2) as f32);
                 }
             },
+            // from DAFX by will pirkle:
+            2 => {
+                for frame in 0..ctx.nframes() {
+                    let input = inp.read(frame) as f64;
+                    let o =
+                        (-std::f64::consts::TAU
+                         * (denorm::SFilter::freq(freq, frame) as f64)
+                         * self.israte).cos();
+                    let y = 2.0 - o;
+                    let b = (y * y - 1.0).sqrt() - y;
+                    let a = 1.0 + b;
+
+                    self.z = a * input - b * self.z;
+                    out.write(frame, self.z as f32);
+                }
+            }
             _ => {},
         }
     }
