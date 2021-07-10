@@ -451,7 +451,6 @@ mod tests {
         assert!(MatrixRepr::deserialize(&s).is_ok());
     }
 
-
     #[test]
     fn check_repr_serialization() {
         use crate::nodes::new_node_engine;
@@ -654,6 +653,49 @@ mod tests {
                 assert_eq!(pat.get_edit_step(), 5);
                 assert_eq!(pat.rows(), 133);
             }
+        }
+    }
+
+    #[test]
+    fn check_matrix_repr_mod_amt_1() {
+        use crate::nodes::new_node_engine;
+
+        let mr = {
+            let (node_conf, mut _node_exec) = new_node_engine();
+            let mut matrix = Matrix::new(node_conf, 3, 3);
+
+            let sin = NodeId::Sin(0);
+
+            matrix.place(0, 0,
+                Cell::empty(sin)
+                .out(None, Some(0), None));
+            matrix.place(1, 0,
+                Cell::empty(NodeId::Out(0))
+                .input(None, Some(0), None)
+                .out(None, None, Some(0)));
+            matrix.set_param_modamt(
+                sin.inp_param("det").unwrap(), Some(-0.6));
+            matrix.sync().unwrap();
+
+            matrix.set_param_modamt(
+                sin.inp_param("freq").unwrap(), Some(0.6));
+
+            matrix.to_repr()
+        };
+
+        {
+            let (node_conf, mut _node_exec) = new_node_engine();
+            let mut matrix = Matrix::new(node_conf, 3, 3);
+
+            matrix.from_repr(&mr).unwrap();
+
+            let mut v = std::collections::HashMap::new();
+            matrix.for_each_atom(|_unique_idx, param_id, _atom, modamt| {
+                v.insert(param_id.name().to_string(), modamt);
+            });
+
+            assert_eq!(*v.get("freq").unwrap(), Some(0.6));
+            assert_eq!(*v.get("det").unwrap(), Some(-0.6));
         }
     }
 }
