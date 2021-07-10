@@ -9,8 +9,10 @@ use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
 macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
         match ($v.round() as usize) {
-            0  => "LP(1p)",
-            1  => "HP(1p)",
+            0  => "LPDat(1p)",
+            1  => "LPSVF(1p)",
+            2  => "LPDAFX(1p)",
+            3  => "RC",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -21,6 +23,7 @@ macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => 
 pub struct SFilter {
     israte: f64,
     z:      f64,
+    y:      f64,
 }
 
 impl SFilter {
@@ -28,6 +31,7 @@ impl SFilter {
         Self {
             israte: 1.0 / 44100.0,
             z:      0.0,
+            y:      0.0,
         }
     }
     pub const inp : &'static str =
@@ -57,6 +61,7 @@ impl DspNode for SFilter {
     }
     fn reset(&mut self) {
         self.z = 0.0;
+        self.y = 0.0;
     }
 
     #[inline]
@@ -124,7 +129,25 @@ impl DspNode for SFilter {
                     self.z = a * input - b * self.z;
                     out.write(frame, self.z as f32);
                 }
-            }
+            },
+            // From https://en.wikipedia.org/wiki/RC_circuit
+            3 => {
+                for frame in 0..ctx.nframes() {
+                    let input = inp.read(frame) as f64;
+                    let c =
+                        2.0
+                        / (std::f64::consts::TAU
+                         * (denorm::SFilter::freq(freq, frame) as f64)
+                         * self.israte);
+
+                    let y = (input + self.z - self.y * (1.0 - c)) / (1.0 + c);
+                    self.z = input;
+                    self.y = y;
+
+                    // highpass: self.z - self.y
+                    out.write(frame, y as f32);
+                }
+            },
             _ => {},
         }
     }

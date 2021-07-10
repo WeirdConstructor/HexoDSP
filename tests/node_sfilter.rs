@@ -53,6 +53,14 @@ fn check_node_sfilter_compare() {
     let ta = std::time::Instant::now().duration_since(ta);
     println!("ta3 Elapsed: {:?}", ta);
 
+    pset_s(&mut matrix, sf, "ftype", 3);
+
+    let ta = std::time::Instant::now();
+    let (out_l, _) = run_for_ms(&mut node_exec, 10000.0);
+    save_wav("check_noise_sfilt4.wav", &out_l);
+    let ta = std::time::Instant::now().duration_since(ta);
+    println!("ta4 Elapsed: {:?}", ta);
+
 //    let fft = run_and_get_fft4096(&mut node_exec, 5, 1000.0);
 //    for (fq, lvl) in fft {
 //        println!("{:5}: {}", fq, lvl);
