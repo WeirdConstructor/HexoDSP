@@ -45,17 +45,29 @@ impl SFilter {
     pub const freq : &'static str =
         "SFilter freq\nFilter cutoff frequency.\nRange: (-1..1)\n";
     pub const ftype : &'static str =
-        "SFilter ftype\nFilter type.";
+        "SFilter ftype\nThe filter type, there are varying types of \
+        filters available. Please consult the node documentation for \
+        a complete list.";
     pub const sig : &'static str =
         "SFilter sig\nFiltered signal output.\nRange: (-1..1)\n";
     pub const DESC : &'static str =
 r#"Simple Audio Filter
 
-This is a very simple collection of filters.
+This is a collection of more or less simple filters.
+There are only two parameters: Filter cutoff 'freq' and the 'res'onance.
 "#;
     pub const HELP : &'static str =
 r#"SFilter - Simple Audio Filter
 
+This is a collection of a few more or less simple filters
+of varying types. There are only few parameters for you to change: 'freq'
+and 'res'onance. You can switch between the types with the 'ftype'.
+There are currently following filters available:
+
+    HP(1p)    - One pole low-pass filter (6db)
+    HP(1pt)   - One pole low-pass filter (6db) (TPT form)
+    LP(1p)    - One pole high-pass filter (6db)
+    LP(1pt)   - One pole high-pass filter (6db) (TPT form)
 "#;
 }
 
