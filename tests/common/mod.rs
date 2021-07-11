@@ -1,6 +1,7 @@
 pub use hexodsp::matrix::*;
 pub use hexodsp::nodes::new_node_engine;
 pub use hexodsp::dsp::*;
+pub use hexodsp::NodeExecutor;
 
 use hound;
 //use num_complex::Complex;
@@ -248,6 +249,20 @@ pub fn pset_d(matrix: &mut Matrix, nid: NodeId, parm: &str, v_denorm: f32) {
     matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
 }
 
+#[allow(unused)]
+pub fn pset_n_wait(matrix: &mut Matrix, ne: &mut NodeExecutor, nid: NodeId, parm: &str, v_norm: f32) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param(p, SAtom::param(v_norm));
+    run_for_ms(ne, 15.0);
+}
+
+#[allow(unused)]
+pub fn pset_d_wait(matrix: &mut Matrix, ne: &mut NodeExecutor, nid: NodeId, parm: &str, v_denorm: f32) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
+    run_for_ms(ne, 15.0);
+}
+
 #[allow(dead_code)]
 pub fn save_wav(name: &str, buf: &[f32]) {
     let spec = hound::WavSpec {
@@ -406,6 +421,90 @@ pub fn run_and_get_fft4096(
     let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
     fft_thres_at_ms(&mut out_l[..], FFT::F4096, thres, offs_ms)
 }
+
+#[allow(unused)]
+pub fn calc_exp_avg_buckets4096(fft: &[(u16, u32)]) -> Vec<(u16, u32)> {
+    let mut avg     = vec![];
+    let mut last_n  = [0; 256];
+    let mut p       = 0;
+    let mut cur_len = 2;
+
+    for (i, (fq, lvl)) in fft.iter().enumerate() {
+        last_n[p] = *lvl;
+        p += 1;
+        if p >= cur_len {
+            avg.push((
+                *fq,
+                last_n
+                    .iter()
+                    .take(cur_len)
+                    .map(|x| *x)
+                    .sum::<u32>()
+                / (cur_len as u32)));
+            p = 0;
+        }
+
+        if i % 16 == 0 {
+            cur_len += 2;
+            if cur_len > last_n.len() {
+                cur_len = last_n.len();
+            }
+            //d// println!("len={}", cur_len);
+        }
+    }
+
+    avg
+}
+
+#[allow(unused)]
+pub fn avg_fft_freqs(round_by: f32, ranges: &[u16], fft: &[(u16, u32)]) -> Vec<(u16, u32)> {
+    let mut from = 0;
+    let mut out = vec![];
+    for rng in ranges.iter() {
+        out.push(
+            (from,
+             ((avg_fft_range(from, *rng, fft)
+               / round_by)
+              .floor() * round_by)
+             as u32));
+        from = *rng;
+    }
+
+    out
+}
+
+#[allow(unused)]
+pub fn avg_fft_range(from_freq: u16, to_freq: u16, fft: &[(u16, u32)]) -> f32 {
+    let mut count = 0;
+    let mut sum   = 0;
+    for (fq, lvl) in fft.iter() {
+        if from_freq <= *fq && *fq < to_freq {
+            sum   += *lvl;
+            count += 1;
+        }
+    }
+
+    sum as f32 / count as f32
+}
+
+
+#[allow(unused)]
+pub fn run_and_get_fft512(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    thres: u32,
+    offs_ms: f32) -> Vec<(u16, u32)>
+{
+    let min_samples_for_fft = 512.0;
+    let offs_samples        = (offs_ms * (SAMPLE_RATE / 1000.0)).ceil();
+    let min_len_samples =
+        offs_samples
+        // 2.0 * for safety margin
+        + 2.0 * min_samples_for_fft;
+    let run_len_s = min_len_samples / SAMPLE_RATE;
+    let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+    fft_thres_at_ms(&mut out_l[..], FFT::F512, thres, offs_ms)
+}
+
 
 #[allow(unused)]
 pub fn run_and_get_fft4096_now(

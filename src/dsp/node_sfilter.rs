@@ -89,7 +89,7 @@ impl DspNode for SFilter {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(10.0, 22050.0);
+                    let freq = freq.clamp(1.0, 22000.0);
                     out.write(frame,
                         process_1pole_lowpass(
                             input, freq, self.israte, &mut self.z)
@@ -100,7 +100,7 @@ impl DspNode for SFilter {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(10.0, 18000.0);
+                    let freq = freq.clamp(1.0, 22000.0);
                     out.write(frame,
                         process_1pole_tpt_lowpass(
                             input, freq, self.israte, &mut self.z)
@@ -111,7 +111,7 @@ impl DspNode for SFilter {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(10.0, 22050.0);
+                    let freq = freq.clamp(1.0, 22000.0);
                     out.write(frame,
                         process_1pole_highpass(
                             input, freq, self.israte, &mut self.z, &mut self.y)
@@ -122,7 +122,7 @@ impl DspNode for SFilter {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(10.0, 18000.0);
+                    let freq = freq.clamp(1.0, 22000.0);
                     out.write(frame,
                         process_1pole_tpt_highpass(
                             input, freq, self.israte, &mut self.z)
