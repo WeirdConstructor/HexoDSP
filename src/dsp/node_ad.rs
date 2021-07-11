@@ -234,7 +234,7 @@ impl DspNode for Ad {
     }
 
     fn graph_fun() -> Option<GraphFun> {
-        Some(Box::new(|gd: &dyn GraphAtomData, _init: bool, x: f32| -> f32 {
+        Some(Box::new(|gd: &dyn GraphAtomData, _init: bool, x: f32, xn: f32| -> f32 {
             let atk_idx  = NodeId::Ad(0).inp_param("atk").unwrap().inp();
             let dcy_idx  = NodeId::Ad(0).inp_param("dcy").unwrap().inp();
             let ashp_idx = NodeId::Ad(0).inp_param("ashp").unwrap().inp();
@@ -248,7 +248,9 @@ impl DspNode for Ad {
             let a = atk * 0.5;
             let d = dcy * 0.5;
             if x <= a {
-                if a < 0.0001 {
+                if xn > a {
+                    1.0
+                } else if a < 0.0001 {
                     0.0
                 } else {
                     let delta = 1.0 - ((a - x) / a);

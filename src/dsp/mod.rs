@@ -101,7 +101,7 @@ pub trait GraphAtomData {
     fn get_led(&self) -> f32;
 }
 
-pub type GraphFun = Box<dyn FnMut(&dyn GraphAtomData, bool, f32) -> f32>;
+pub type GraphFun = Box<dyn FnMut(&dyn GraphAtomData, bool, f32, f32) -> f32>;
 
 /// This trait represents a DspNode for the [crate::matrix::Matrix]
 pub trait DspNode {

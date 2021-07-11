@@ -121,7 +121,7 @@ impl DspNode for Test {
     }
 
     fn graph_fun() -> Option<GraphFun> {
-        Some(Box::new(|_gd: &dyn GraphAtomData, _init: bool, x: f32| -> f32 {
+        Some(Box::new(|_gd: &dyn GraphAtomData, _init: bool, x: f32, _xn: f32| -> f32 {
             x
         }))
     }
