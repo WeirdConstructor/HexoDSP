@@ -27,11 +27,11 @@ fn setup_sfilter_matrix() -> (Matrix, NodeExecutor) {
 fn fft_with_freq_res_type(
     matrix: &mut Matrix,
     node_exec: &mut NodeExecutor,
-    ftype: i64, freq: f32, _res: f32) -> Vec<(u16, u32)>
+    ftype: i64, freq: f32, res: f32) -> Vec<(u16, u32)>
 {
     let sf = NodeId::SFilter(0);
-    pset_d_wait(matrix, node_exec, sf, "freq", freq);
-//    pset_d_wait(&mut matrix, &mut node_exec, sf, "freq", freq);
+    pset_d(matrix, sf, "freq", freq);
+    pset_d_wait(matrix, node_exec, sf, "res", res);
     pset_s(matrix, sf, "ftype", ftype);
     run_and_get_fft4096(node_exec, 0, 1000.0)
 }
@@ -200,4 +200,64 @@ fn check_node_sfilter_highpass_tpt() {
         avg_fft_freqs(4.0, &[100, 1000, 4000, 12000, 22050], &fft[..]), vec![
             (0, 24), (100, 16), (1000, 16), (4000, 16), (12000, 16),
         ]);
+}
+
+
+#[test]
+fn check_node_sfilter_halsvf_lowpass() {
+    let (mut matrix, mut node_exec) = setup_sfilter_matrix();
+
+    // Low Pass Hal Chamberlin SVF @ 1000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 1000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (500, 20), (700, 50), (900, 240), (1000, 60),
+            (1500, 10), (2000, 0), (3000, 0), (4000, 0)
+        ]);
+
+    // Low Pass Hal Chamberlin SVF @ 1000Hz RES=0.5
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 1000.0, 0.5);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (500, 20), (700, 30), (900, 40), (1000, 20),
+            (1500, 0), (2000, 0), (3000, 0), (4000, 0)
+        ]);
+
+    // Low Pass Hal Chamberlin SVF @ 1000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 1000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 10), (500, 20), (700, 20), (900, 10), (1000, 10),
+            (1500, 0), (2000, 0), (3000, 0), (4000, 0)
+        ]);
+
+//    // High Pass TPT @ 4000Hz
+//    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 3, 4000.0, 0.0);
+//    assert_eq!(
+//        avg_fft_freqs(4.0, &[
+//            100, 250, 500, 750, 1000, 1500, 2000, 3000, 8000, 12000
+//        ], &fft[..]), vec![
+//            (0, 0), (100, 0), (250, 0), (500, 0), (750, 4), (1000, 4),
+//            (1500, 4), (2000, 8), (3000, 12), (8000, 16),
+//        ]);
+//
+//    // High Pass TPT @ 22050Hz
+//    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 3, 22050.0, 0.0);
+//    assert_eq!(
+//        avg_fft_freqs(4.0, &[100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+//            (0, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
+//        ]);
+//
+//    // High Pass TPT @ 0Hz
+//    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 3, 0.0, 0.0);
+//    assert_eq!(
+//        avg_fft_freqs(4.0, &[100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+//            (0, 24), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+//        ]);
 }

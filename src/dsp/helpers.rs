@@ -763,6 +763,63 @@ pub fn process_1pole_tpt_highpass(input: f64, freq: f64, israte: f64, z: &mut f6
     input - v2
 }
 
+const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
+// Hal Chamberlin's State Variable (12dB/oct) filter
+// https://www.earlevel.com/main/2003/03/02/the-digital-state-variable-filter/
+// Inspired by SynthV1 by Rui Nuno Capela, under the terms of
+// GPLv2 or any later:
+/// Process a HAL Chamberlin filter with two delays/state variables.
+/// The filter does internal oversampling with very simple decimation to
+/// rise the stability for cutoff frequency up to 16kHz.
+///
+/// * `input` - Input sample.
+/// * `freq` - Frequency in Hz. Please keep it inside 0.0 to 16000.0 Hz!
+/// otherwise the filter becomes unstable.
+/// * `res`  - Resonance from 0.0 to 0.99. Resonance of 1.0 is not recommended,
+/// as the filter will then oscillate itself out of control.
+/// * `band` - First state variable, containing the band pass result
+/// after processing.
+/// * `low` - Second state variable, containing the low pass result
+/// after processing.
+///
+/// Returned are the results of the high and notch filter.
+///
+///```
+///    let mut band = 0.0;
+///    let mut low  = 0.0;
+///    let mut freq = 1000.0;
+///
+///    for s in samples.iter() {
+///        let (high, notch) =
+///            process_hal_chamberlin_svf(
+///                s, freq, 0.5, &mut band, &mut low);
+///        // ... do something with the result here.
+///    }
+///```
+#[inline]
+pub fn process_hal_chamberlin_svf(
+    input: f64, freq: f64, res: f64, israte: f64, band: &mut f64, low: &mut f64)
+    -> (f64, f64)
+{
+    let q      = 1.0 - res;
+    let cutoff = 2.0 * (std::f64::consts::PI * freq * 0.5 * israte).sin();
+
+    let mut high  = 0.0;
+    let mut notch = 0.0;
+
+    for _ in 0..FILTER_OVERSAMPLE_HAL_CHAMBERLIN {
+        *low  += cutoff * *band;
+        high = input - *low - q * *band;
+        *band += cutoff * high;
+        notch = high + *low;
+    }
+
+    //d// println!("q={:4.2} cut={:8.3} freq={:8.1} LP={:8.3} HP={:8.3} BP={:8.3} N={:8.3}",
+    //d//     q, cutoff, freq, *low, high, *band, notch);
+
+    (high, notch)
+}
+
 // translated from Odin 2 Synthesizer Plugin
 // Copyright (C) 2020 TheWaveWarden
 // under GPLv3 or any later
