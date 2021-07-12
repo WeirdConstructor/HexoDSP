@@ -168,7 +168,7 @@ impl DspNode for SFilter {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 22000.0);
+                    let freq = freq.clamp(2.0, 16000.0);
                     let res  = denorm::SFilter::res(res, frame) as f64;
                     let res  = res.clamp(0.0, 0.99);
 
@@ -184,7 +184,7 @@ impl DspNode for SFilter {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 22000.0);
+                    let freq = freq.clamp(1.0, 16000.0);
                     let res  = denorm::SFilter::res(res, frame) as f64;
                     let res  = res.clamp(0.0, 0.99);
 
@@ -200,7 +200,7 @@ impl DspNode for SFilter {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 22000.0);
+                    let freq = freq.clamp(1.0, 16000.0);
                     let res  = denorm::SFilter::res(res, frame) as f64;
                     let res  = res.clamp(0.0, 0.99);
 
@@ -216,7 +216,7 @@ impl DspNode for SFilter {
                 for frame in 0..ctx.nframes() {
                     let input = inp.read(frame) as f64;
                     let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 22000.0);
+                    let freq = freq.clamp(1.0, 16000.0);
                     let res  = denorm::SFilter::res(res, frame) as f64;
                     let res  = res.clamp(0.0, 0.99);
 

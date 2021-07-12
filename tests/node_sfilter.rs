@@ -247,17 +247,34 @@ fn check_node_sfilter_halsvf_lowpass() {
 //            (1500, 4), (2000, 8), (3000, 12), (8000, 16),
 //        ]);
 //
-//    // High Pass TPT @ 22050Hz
-//    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 3, 22050.0, 0.0);
-//    assert_eq!(
-//        avg_fft_freqs(4.0, &[100, 1000, 4000, 12000, 22050], &fft[..]), vec![
-//            (0, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
-//        ]);
-//
-//    // High Pass TPT @ 0Hz
-//    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 3, 0.0, 0.0);
-//    assert_eq!(
-//        avg_fft_freqs(4.0, &[100, 1000, 4000, 12000, 22050], &fft[..]), vec![
-//            (0, 24), (100, 16), (1000, 16), (4000, 16), (12000, 16),
-//        ]);
+    // Low Pass Hal Chamberlin SVF @ 22050Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 22050.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]), vec![
+            (0, 24), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+            (16000, 24), (20000, 24)
+        ]);
+
+    // Low Pass Hal Chamberlin SVF @ 22050Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 22050.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]), vec![
+            (0, 16), (100, 16), (1000, 16), (4000, 24), (12000, 144),
+            (16000, 208), (20000, 24)
+        ]);
+
+    // Low Pass Hal Chamberlin SVF @ 0Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 0.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 0), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
+        ]);
+
+    // Low Pass Hal Chamberlin SVF @ 0Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 0.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[1, 5, 10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 56), (1, 0), (5, 0), (10, 0), (100, 0), (1000, 0),
+            (4000, 0), (12000, 0),
+        ]);
 }
