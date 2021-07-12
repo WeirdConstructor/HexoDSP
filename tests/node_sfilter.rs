@@ -237,37 +237,47 @@ fn check_node_sfilter_halsvf_lowpass() {
             (1500, 0), (2000, 0), (3000, 0), (4000, 0)
         ]);
 
-//    // High Pass TPT @ 4000Hz
-//    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 3, 4000.0, 0.0);
-//    assert_eq!(
-//        avg_fft_freqs(4.0, &[
-//            100, 250, 500, 750, 1000, 1500, 2000, 3000, 8000, 12000
-//        ], &fft[..]), vec![
-//            (0, 0), (100, 0), (250, 0), (500, 0), (750, 4), (1000, 4),
-//            (1500, 4), (2000, 8), (3000, 12), (8000, 16),
-//        ]);
-//
+    // Low Pass Hal Chamberlin SVF @ 4000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 4000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 24), (100, 16), (500, 20), (1000, 20), (2000, 40), (3500, 340),
+            (4000, 180), (5000, 20), (6000, 8), (8000, 0)
+        ]);
+
+    // Low Pass Hal Chamberlin SVF @ 4000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 4000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (100, 12), (500, 16), (1000, 16), (2000, 20), (3500, 20),
+            (4000, 16), (5000, 8), (6000, 4), (8000, 0)
+        ]);
+
     // Low Pass Hal Chamberlin SVF @ 22050Hz RES=0.0
     let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 22050.0, 0.0);
     assert_eq!(
         avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]), vec![
-            (0, 24), (100, 16), (1000, 16), (4000, 16), (12000, 16),
-            (16000, 24), (20000, 24)
+            (0, 16), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+            (16000, 24), (20000, 16)
         ]);
 
     // Low Pass Hal Chamberlin SVF @ 22050Hz RES=1.0
     let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 22050.0, 1.0);
     assert_eq!(
         avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]), vec![
-            (0, 16), (100, 16), (1000, 16), (4000, 24), (12000, 144),
-            (16000, 208), (20000, 24)
+            (0, 8), (100, 16), (1000, 16), (4000, 24), (12000, 160),
+            (16000, 176), (20000, 24)
         ]);
 
     // Low Pass Hal Chamberlin SVF @ 0Hz RES=0.0
     let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 4, 0.0, 0.0);
     assert_eq!(
         avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
-            (0, 0), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
+            (0, 12), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
         ]);
 
     // Low Pass Hal Chamberlin SVF @ 0Hz RES=1.0
