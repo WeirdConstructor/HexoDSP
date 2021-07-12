@@ -2,7 +2,7 @@ mod common;
 use common::*;
 
 fn setup_sfilter_matrix() -> (Matrix, NodeExecutor) {
-    let (node_conf, mut node_exec) = new_node_engine();
+    let (node_conf, node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
     let noise = NodeId::Noise(0);
@@ -49,6 +49,16 @@ fn check_node_sfilter_lowpass() {
             (0, 16), (100, 24), (250, 16), (500, 12), (750, 12), (1000, 12),
             (1500, 8), (2000, 4), (3000, 4), (4000, 0), (8000, 0), (12000, 0),
         ]);
+
+//    let v = run_and_get_fft4096_2(&mut node_exec, 1);
+//    assert_eq!(
+//        avg_fft_freqs(4.0, &[
+//            100, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 8000, 12000, 16000,
+//        ], &v[..]), vec![
+//            (0, 16), (100, 24), (250, 16), (500, 12), (750, 12), (1000, 12),
+//            (1500, 8), (2000, 4), (3000, 4), (4000, 0), (8000, 0), (12000, 0),
+//        ]);
+//    assert!(false);
 
     // Low Pass @ 4000Hz
     let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 0, 4000.0, 0.0);

@@ -143,5 +143,7 @@ impl DspNode for SFilter {
             },
             _ => {},
         }
+
+        ctx_vals[0].set(out.read(ctx.nframes() - 1));
     }
 }

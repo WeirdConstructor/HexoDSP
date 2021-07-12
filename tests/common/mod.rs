@@ -423,6 +423,18 @@ pub fn run_and_get_fft4096(
 }
 
 #[allow(unused)]
+pub fn run_and_get_fft4096_2(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    thres: u32) -> Vec<(u16, u32)>
+{
+    let min_samples_for_fft = 4096.0;
+    let min_len_samples = 2.0 * min_samples_for_fft;
+    let run_len_s = min_len_samples / SAMPLE_RATE;
+    let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+    fft_16k(&mut out_l[..], 4096, thres)
+}
+
+#[allow(unused)]
 pub fn calc_exp_avg_buckets4096(fft: &[(u16, u32)]) -> Vec<(u16, u32)> {
     let mut avg     = vec![];
     let mut last_n  = [0; 256];
@@ -591,4 +603,50 @@ pub fn fft_thres_at_ms(buf: &mut [f32], size: FFT, amp_thres: u32, ms_idx: f32) 
 
     res
 }
+
+pub fn fft_16k(buf: &mut [f32], len: usize, amp_thres: u32) -> Vec<(u16, u32)> {
+    let mut res = vec![];
+
+    if len > buf.len() {
+        return res;
+    }
+
+    // Hann window:
+    for (i, s) in buf[0..len].iter_mut().enumerate() {
+        let w =
+            0.5
+            * (1.0 
+               - ((2.0 * std::f32::consts::PI * i as f32)
+                  / (len as f32 - 1.0))
+                 .cos());
+        *s *= w;
+    }
+
+    use rustfft::{FftPlanner, num_complex::Complex};
+
+    let mut complex_buf =
+        buf.iter()
+           .map(|s| Complex { re: *s, im: 0.0 })
+           .collect::<Vec<Complex<f32>>>();
+
+    let mut p = FftPlanner::<f32>::new();
+    let fft = p.plan_fft_forward(len);
+
+    fft.process(&mut complex_buf[0..len]);
+
+    let amplitudes: Vec<_> =
+        complex_buf[0..len].iter().map(|c| c.norm() as u32).collect();
+    println!("fft: {:?}", &complex_buf[0..len]);
+
+    for (i, amp) in amplitudes.iter().enumerate() {
+        if *amp >= amp_thres {
+            let freq = (i as f32 * SAMPLE_RATE) / len as f32;
+            println!("{:6.0} {}", freq, *amp);
+            res.push((freq.round() as u16, *amp));
+        }
+    }
+
+    res
+}
+
 
