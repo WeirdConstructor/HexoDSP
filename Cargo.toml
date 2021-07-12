@@ -21,7 +21,6 @@ triple_buffer = "5.0.6"
 hound         = "3.4.0"
 
 [dev-dependencies]
-microfft    = "0.3.1"
 num-complex = "0.2"
 jack        = "0.6.6"
 rustfft     = "6.0.0"

@@ -4,8 +4,6 @@ pub use hexodsp::dsp::*;
 pub use hexodsp::NodeExecutor;
 
 use hound;
-//use num_complex::Complex;
-use microfft;
 
 pub const SAMPLE_RATE : f32 = 44100.0;
 #[allow(dead_code)]
@@ -431,7 +429,7 @@ pub fn run_and_get_fft4096_2(
     let min_len_samples = 2.0 * min_samples_for_fft;
     let run_len_s = min_len_samples / SAMPLE_RATE;
     let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
-    fft_16k(&mut out_l[..], 4096, thres)
+    fft(&mut out_l[..], FFT::F4096, thres)
 }
 
 #[allow(unused)]
@@ -539,72 +537,44 @@ pub enum FFT {
     F1024,
     F2048,
     F4096,
+    F8192,
+    F16384,
+    F65535,
+}
+
+impl FFT {
+    pub fn size(&self) -> usize {
+        match self {
+            FFT::F16      => 16,
+            FFT::F32      => 32,
+            FFT::F64      => 64,
+            FFT::F128     => 128,
+            FFT::F512     => 512,
+            FFT::F1024    => 1024,
+            FFT::F2048    => 2048,
+            FFT::F4096    => 4096,
+            FFT::F8192    => 8192,
+            FFT::F16384   => 16384,
+            FFT::F65535   => 65535,
+        }
+    }
 }
 
 pub fn fft_thres_at_ms(buf: &mut [f32], size: FFT, amp_thres: u32, ms_idx: f32) -> Vec<(u16, u32)> {
     let ms_sample_offs = ms_idx * (SAMPLE_RATE / 1000.0);
-    let fft_nbins = match size {
-        FFT::F16      => 16,
-        FFT::F32      => 32,
-        FFT::F64      => 64,
-        FFT::F128     => 128,
-        FFT::F512     => 512,
-        FFT::F1024    => 1024,
-        FFT::F2048    => 2048,
-        FFT::F4096    => 4096,
-    };
+    let fft_nbins = size.size();
     let len = fft_nbins;
-
-    let idx     = ms_sample_offs as usize;
-    let mut res = vec![];
+    let idx = ms_sample_offs as usize;
 
     if (idx + len) > buf.len() {
-        return res;
+        return vec![];
     }
 
-    // Hann window:
-    for (i, s) in buf[idx..(idx + len)].iter_mut().enumerate() {
-        let w =
-            0.5
-            * (1.0 
-               - ((2.0 * std::f32::consts::PI * i as f32)
-                  / (fft_nbins as f32 - 1.0))
-                 .cos());
-        *s *= w;
-    }
-
-    let spec =
-        match size {
-            FFT::F16 =>
-                microfft::real::rfft_16(&mut buf[idx..(idx + len)]),
-            FFT::F32 =>
-                microfft::real::rfft_32(&mut buf[idx..(idx + len)]),
-            FFT::F64 =>
-                microfft::real::rfft_64(&mut buf[idx..(idx + len)]),
-            FFT::F128 =>
-                microfft::real::rfft_128(&mut buf[idx..(idx + len)]),
-            FFT::F512 =>
-                microfft::real::rfft_512(&mut buf[idx..(idx + len)]),
-            FFT::F1024 =>
-                microfft::real::rfft_1024(&mut buf[idx..(idx + len)]),
-            FFT::F2048 =>
-                microfft::real::rfft_2048(&mut buf[idx..(idx + len)]),
-            FFT::F4096 =>
-                microfft::real::rfft_4096(&mut buf[idx..(idx + len)]),
-        };
-    let amplitudes: Vec<_> = spec.iter().map(|c| c.norm() as u32).collect();
-
-    for (i, amp) in amplitudes.iter().enumerate() {
-        if *amp >= amp_thres {
-            let freq = (i as f32 * SAMPLE_RATE) / fft_nbins as f32;
-            res.push((freq.round() as u16, *amp));
-        }
-    }
-
-    res
+    fft(&mut buf[idx..(idx + len)], size, amp_thres)
 }
 
-pub fn fft_16k(buf: &mut [f32], len: usize, amp_thres: u32) -> Vec<(u16, u32)> {
+pub fn fft(buf: &mut [f32], size: FFT, amp_thres: u32) -> Vec<(u16, u32)> {
+    let len = size.size();
     let mut res = vec![];
 
     if len > buf.len() {
@@ -636,12 +606,12 @@ pub fn fft_16k(buf: &mut [f32], len: usize, amp_thres: u32) -> Vec<(u16, u32)> {
 
     let amplitudes: Vec<_> =
         complex_buf[0..len].iter().map(|c| c.norm() as u32).collect();
-    println!("fft: {:?}", &complex_buf[0..len]);
+//    println!("fft: {:?}", &complex_buf[0..len]);
 
     for (i, amp) in amplitudes.iter().enumerate() {
         if *amp >= amp_thres {
             let freq = (i as f32 * SAMPLE_RATE) / len as f32;
-            println!("{:6.0} {}", freq, *amp);
+//            println!("{:6.0} {}", freq, *amp);
             res.push((freq.round() as u16, *amp));
         }
     }
