@@ -346,7 +346,8 @@ fn check_node_sfilter_halsvf_highpass() {
     // High Pass Hal Chamberlin SVF @ 22050Hz RES=0.0
     let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 5, 22050.0, 0.0);
     assert_eq!(
-        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]), vec![
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
             (0, 0), (100, 0), (1000, 8), (4000, 24),
             (12000, 32), (16000, 40), (20000, 40)
         ]);
@@ -354,7 +355,8 @@ fn check_node_sfilter_halsvf_highpass() {
     // High Pass Hal Chamberlin SVF @ 22050Hz RES=1.0
     let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 5, 22050.0, 1.0);
     assert_eq!(
-        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]), vec![
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
             (0, 0), (100, 0), (1000, 0), (4000, 8), (12000, 144),
             (16000, 192), (20000, 48)
         ]);
