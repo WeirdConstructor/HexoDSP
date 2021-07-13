@@ -708,6 +708,14 @@ impl Comb {
 // one pole lp from valley rack free:
 // https://github.com/ValleyAudio/ValleyRackFree/blob/v1.0/src/Common/DSP/OnePoleFilters.cpp
 #[inline]
+/// Process a very simple one pole 6dB low pass filter.
+/// Useful in various applications, from usage in a synthesizer to
+/// damping stuff in a reverb/delay.
+///
+/// * `input`  - Input sample
+/// * `freq`   - Frequency between 1.0 and 22000.0Hz
+/// * `israte` - 1.0 / samplerate
+/// * `z`      - The internal one sample buffer of the filter.
 pub fn process_1pole_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
     let b = (-std::f64::consts::TAU * freq * israte).exp();
     let a = 1.0 - b;
@@ -718,6 +726,13 @@ pub fn process_1pole_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) ->
 // one pole hp from valley rack free:
 // https://github.com/ValleyAudio/ValleyRackFree/blob/v1.0/src/Common/DSP/OnePoleFilters.cpp
 #[inline]
+/// Process a very simple one pole 6dB high pass filter.
+/// Useful in various applications.
+///
+/// * `input`  - Input sample
+/// * `freq`   - Frequency between 1.0 and 22000.0Hz
+/// * `israte` - 1.0 / samplerate
+/// * `z`      - The internal one sample buffer of the filter.
 pub fn process_1pole_highpass(input: f64, freq: f64, israte: f64, z: &mut f64, y: &mut f64) -> f64 {
     let b  = (-std::f64::consts::TAU * freq * israte).exp();
     let a  = (1.0 + b) / 2.0;
@@ -735,6 +750,14 @@ pub fn process_1pole_highpass(input: f64, freq: f64, israte: f64, z: &mut f64, y
 // http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.pdf
 // (page 5)
 #[inline]
+/// Process a very simple one pole 6dB low pass filter in TPT form.
+/// Useful in various applications, from usage in a synthesizer to
+/// damping stuff in a reverb/delay.
+///
+/// * `input`  - Input sample
+/// * `freq`   - Frequency between 1.0 and 22000.0Hz
+/// * `israte` - 1.0 / samplerate
+/// * `z`      - The internal one sample buffer of the filter.
 pub fn process_1pole_tpt_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
     let g = (std::f64::consts::PI * freq * israte).tan();
     let a = g / (1.0 + g);
@@ -752,6 +775,13 @@ pub fn process_1pole_tpt_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64
 // http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.pdf
 // (page 5)
 #[inline]
+/// Process a very simple one pole 6dB high pass filter in TPT form.
+/// Useful in various applications.
+///
+/// * `input`  - Input sample
+/// * `freq`   - Frequency between 1.0 and 22000.0Hz
+/// * `israte` - 1.0 / samplerate
+/// * `z`      - The internal one sample buffer of the filter.
 pub fn process_1pole_tpt_highpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
     let g  = (std::f64::consts::PI * freq * israte).tan();
     let a1 = g / (1.0 + g);
