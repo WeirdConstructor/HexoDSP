@@ -2,10 +2,14 @@
 // This is a part of HexoDSP. Released under (A)GPLv3 or any later.
 // See README.md and COPYING for details.
 
+/// Logarithmic table size of the table in [fast_cos] / [fast_sin].
 static FAST_COS_TAB_LOG2_SIZE : usize = 9;
+/// Table size of the table in [fast_cos] / [fast_sin].
 static FAST_COS_TAB_SIZE : usize      = 1 << FAST_COS_TAB_LOG2_SIZE; // =512
+/// The wave table of [fast_cos] / [fast_sin].
 static mut FAST_COS_TAB : [f32; 513] = [0.0; 513];
 
+/// Initializes the cosine wave table for [fast_cos] and [fast_sin].
 pub fn init_cos_tab() {
     for i in 0..(FAST_COS_TAB_SIZE+1) {
         let phase : f32 =
@@ -21,8 +25,21 @@ pub fn init_cos_tab() {
     }
 }
 
+/// Internal phase increment/scaling for [fast_cos].
 const PHASE_SCALE : f32 = 1.0_f32 / (std::f32::consts::TAU);
 
+/// A faster implementation of cosine. It's not that much faster than
+/// Rust's built in cosine function. But YMMV.
+///
+/// Don't forget to call [init_cos_tab] before using this!
+///
+///```
+/// use hexodsp::dsp::helpers::*;
+/// init_cos_tab(); // Once on process initialization.
+///
+/// // ...
+/// assert!((fast_cos(std::f32::consts::PI) - -1.0).abs() < 0.001);
+///```
 pub fn fast_cos(mut x: f32) -> f32 {
     x = x.abs(); // cosine is symmetrical around 0, let's get rid of negative values
 
@@ -45,12 +62,27 @@ pub fn fast_cos(mut x: f32) -> f32 {
     }
 }
 
+/// A faster implementation of sine. It's not that much faster than
+/// Rust's built in sine function. But YMMV.
+///
+/// Don't forget to call [init_cos_tab] before using this!
+///
+///```
+/// use hexodsp::dsp::helpers::*;
+/// init_cos_tab(); // Once on process initialization.
+///
+/// // ...
+/// assert!((fast_sin(0.5 * std::f32::consts::PI) - 1.0).abs() < 0.001);
+///```
 pub fn fast_sin(x: f32) -> f32 {
     fast_cos(x - (std::f32::consts::PI / 2.0))
 }
 
+/// A wavetable filled entirely with white noise.
+/// Don't forget to call [init_white_noise_tab] before using it.
 static mut WHITE_NOISE_TAB: [f64; 1024] = [0.0; 1024];
 
+/// Initializes [WHITE_NOISE_TAB].
 pub fn init_white_noise_tab() {
     let mut rng = RandGen::new();
     unsafe {
@@ -61,6 +93,8 @@ pub fn init_white_noise_tab() {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+/// Random number generator based on xoroshiro128.
+/// Requires two internal state variables. You may prefer [SplitMix64] or [Rng].
 pub struct RandGen {
     r: [u64; 2],
 }
@@ -68,6 +102,7 @@ pub struct RandGen {
 // Taken from xoroshiro128 crate under MIT License
 // Implemented by Matthew Scharley (Copyright 2016)
 // https://github.com/mscharley/rust-xoroshiro128
+/// Given the mutable `state` generates the next pseudo random number.
 pub fn next_xoroshiro128(state: &mut [u64; 2]) -> u64 {
     let s0: u64     = state[0];
     let mut s1: u64 = state[1];
@@ -83,6 +118,7 @@ pub fn next_xoroshiro128(state: &mut [u64; 2]) -> u64 {
 // Taken from rand::distributions
 // Licensed under the Apache License, Version 2.0
 // Copyright 2018 Developers of the Rand project.
+/// Maps any `u64` to a `f64` in the open interval `[0.0, 1.0)`.
 pub fn u64_to_open01(u: u64) -> f64 {
     use core::f64::EPSILON;
     let float_size         = std::mem::size_of::<f64>() as u32 * 8;
@@ -98,16 +134,20 @@ impl RandGen {
         }
     }
 
+    /// Next random unsigned 64bit integer.
     pub fn next(&mut self) -> u64 {
         next_xoroshiro128(&mut self.r)
     }
 
+    /// Next random float between `[0.0, 1.0)`.
     pub fn next_open01(&mut self) -> f64 {
         u64_to_open01(self.next())
     }
 }
 
 #[derive(Debug, Copy, Clone)]
+/// Random number generator based on [SplitMix64].
+/// Requires two internal state variables. You may prefer [SplitMix64] or [Rng].
 pub struct Rng {
     sm: SplitMix64,
 }
@@ -149,6 +189,7 @@ impl Rng {
 #[derive(Debug, Copy, Clone)]
 pub struct SplitMix64(pub u64);
 
+/// Internal random constant for [SplitMix64].
 const PHI: u64 = 0x9e3779b97f4a7c15;
 
 impl SplitMix64 {
@@ -340,7 +381,27 @@ pub fn quick_tanh(v: f32) -> f32 {
     num / den
 }
 
-/// A helper function for exponential envelopes:
+/// A helper function for exponential envelopes.
+/// It's a bit faster than calling the `pow` function of Rust.
+///
+/// * `x` the input value
+/// * `v' the shape value.
+/// Which is linear at `0.5`, the forth root of `x` at `1.0` and x to the power
+/// of 4 at `0.0`. You can vary `v` as you like.
+///
+///```
+/// use hexodsp::dsp::helpers::*;
+///
+/// assert!(((sqrt4_to_pow4(0.25, 0.0) - 0.25_f32 * 0.25 * 0.25 * 0.25)
+///          .abs() - 1.0)
+///         < 0.0001);
+///
+/// assert!(((sqrt4_to_pow4(0.25, 1.0) - (0.25_f32).sqrt().sqrt())
+///          .abs() - 1.0)
+///         < 0.0001);
+///
+/// assert!(((sqrt4_to_pow4(0.25, 0.5) - 0.25_f32).abs() - 1.0) < 0.0001);
+///```
 #[inline]
 pub fn sqrt4_to_pow4(x: f32, v: f32) -> f32 {
     if v > 0.75 {
@@ -851,6 +912,7 @@ pub fn process_1pole_tpt_highpass(input: f64, freq: f64, israte: f64, z: &mut f6
     input - v2
 }
 
+/// The internal oversampling factor of [process_hal_chamberlin_svf].
 const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
 // Hal Chamberlin's State Variable (12dB/oct) filter
 // https://www.earlevel.com/main/2003/03/02/the-digital-state-variable-filter/
