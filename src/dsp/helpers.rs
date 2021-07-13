@@ -716,6 +716,20 @@ impl Comb {
 /// * `freq`   - Frequency between 1.0 and 22000.0Hz
 /// * `israte` - 1.0 / samplerate
 /// * `z`      - The internal one sample buffer of the filter.
+///
+///```
+///    use hexodsp::dsp::helpers::*;
+///
+///    let samples  = vec![0.0; 44100];
+///    let mut z    = 0.0;
+///    let mut freq = 1000.0;
+///
+///    for s in samples.iter() {
+///        let s_out =
+///            process_1pole_lowpass(*s, freq, 1.0 / 44100.0, &mut z);
+///        // ... do something with the result here.
+///    }
+///```
 pub fn process_1pole_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
     let b = (-std::f64::consts::TAU * freq * israte).exp();
     let a = 1.0 - b;
@@ -732,7 +746,23 @@ pub fn process_1pole_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) ->
 /// * `input`  - Input sample
 /// * `freq`   - Frequency between 1.0 and 22000.0Hz
 /// * `israte` - 1.0 / samplerate
-/// * `z`      - The internal one sample buffer of the filter.
+/// * `z`      - The first internal buffer of the filter.
+/// * `y`      - The second internal buffer of the filter.
+///
+///```
+///    use hexodsp::dsp::helpers::*;
+///
+///    let samples  = vec![0.0; 44100];
+///    let mut z    = 0.0;
+///    let mut y    = 0.0;
+///    let mut freq = 1000.0;
+///
+///    for s in samples.iter() {
+///        let s_out =
+///            process_1pole_highpass(*s, freq, 1.0 / 44100.0, &mut z, &mut y);
+///        // ... do something with the result here.
+///    }
+///```
 pub fn process_1pole_highpass(input: f64, freq: f64, israte: f64, z: &mut f64, y: &mut f64) -> f64 {
     let b  = (-std::f64::consts::TAU * freq * israte).exp();
     let a  = (1.0 + b) / 2.0;
@@ -758,6 +788,20 @@ pub fn process_1pole_highpass(input: f64, freq: f64, israte: f64, z: &mut f64, y
 /// * `freq`   - Frequency between 1.0 and 22000.0Hz
 /// * `israte` - 1.0 / samplerate
 /// * `z`      - The internal one sample buffer of the filter.
+///
+///```
+///    use hexodsp::dsp::helpers::*;
+///
+///    let samples  = vec![0.0; 44100];
+///    let mut z    = 0.0;
+///    let mut freq = 1000.0;
+///
+///    for s in samples.iter() {
+///        let s_out =
+///            process_1pole_tpt_highpass(*s, freq, 1.0 / 44100.0, &mut z);
+///        // ... do something with the result here.
+///    }
+///```
 pub fn process_1pole_tpt_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
     let g = (std::f64::consts::PI * freq * israte).tan();
     let a = g / (1.0 + g);
@@ -782,6 +826,20 @@ pub fn process_1pole_tpt_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64
 /// * `freq`   - Frequency between 1.0 and 22000.0Hz
 /// * `israte` - 1.0 / samplerate
 /// * `z`      - The internal one sample buffer of the filter.
+///
+///```
+///    use hexodsp::dsp::helpers::*;
+///
+///    let samples  = vec![0.0; 44100];
+///    let mut z    = 0.0;
+///    let mut freq = 1000.0;
+///
+///    for s in samples.iter() {
+///        let s_out =
+///            process_1pole_tpt_lowpass(*s, freq, 1.0 / 44100.0, &mut z);
+///        // ... do something with the result here.
+///    }
+///```
 pub fn process_1pole_tpt_highpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
     let g  = (std::f64::consts::PI * freq * israte).tan();
     let a1 = g / (1.0 + g);
@@ -815,6 +873,9 @@ const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
 /// Returned are the results of the high and notch filter.
 ///
 ///```
+///    use hexodsp::dsp::helpers::*;
+///
+///    let samples  = vec![0.0; 44100];
 ///    let mut band = 0.0;
 ///    let mut low  = 0.0;
 ///    let mut freq = 1000.0;
@@ -822,7 +883,7 @@ const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
 ///    for s in samples.iter() {
 ///        let (high, notch) =
 ///            process_hal_chamberlin_svf(
-///                s, freq, 0.5, &mut band, &mut low);
+///                *s, freq, 0.5, 1.0 / 44100.0, &mut band, &mut low);
 ///        // ... do something with the result here.
 ///    }
 ///```
