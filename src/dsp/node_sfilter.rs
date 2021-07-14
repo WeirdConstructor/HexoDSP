@@ -20,10 +20,10 @@ macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => 
             1  => "LP 1pt",
             2  => "HP 1p",
             3  => "HP 1pt",
-            4  => "LP 12s",
-            5  => "HP 12s",
-            6  => "BP 12s",
-            7  => "NO 12s",
+            4  => "LP 12c",
+            5  => "HP 12c",
+            6  => "BP 12c",
+            7  => "NO 12c",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -77,10 +77,14 @@ There are currently following filters available:
     HP 1pt    - One pole low-pass filter (6db) (TPT form)
     LP 1p     - One pole high-pass filter (6db)
     LP 1pt    - One pole high-pass filter (6db) (TPT form)
-    LP 12s    - Low-pass Hal Chamberlin state variable filter (12dB)
-    HP 12s    - High-pass Hal Chamberlin state variable filter (12dB)
-    BP 12s    - Band-pass Hal Chamberlin state variable filter (12dB)
-    NO 12s    - Notch Hal Chamberlin state variable filter (12dB)
+
+The Hal Chamberlin filters are an older state variable filter design,
+that is limited to max cutoff frequency of 16kHz.
+
+    LP 12c    - Low-pass Hal Chamberlin state variable filter (12dB)
+    HP 12c    - High-pass Hal Chamberlin state variable filter (12dB)
+    BP 12c    - Band-pass Hal Chamberlin state variable filter (12dB)
+    NO 12c    - Notch Hal Chamberlin state variable filter (12dB)
 "#;
 }
 
