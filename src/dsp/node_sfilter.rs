@@ -10,6 +10,7 @@ use crate::dsp::helpers::{
     process_1pole_tpt_lowpass,
     process_1pole_tpt_highpass,
     process_hal_chamberlin_svf,
+    process_simper_svf,
 };
 
 #[macro_export]
@@ -24,6 +25,11 @@ macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => 
             5  => "HP 12c",
             6  => "BP 12c",
             7  => "NO 12c",
+            8  => "LP 12s",
+            9  => "HP 12s",
+           10  => "BP 12s",
+           11  => "NO 12s",
+           12  => "PK 12s",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -85,7 +91,52 @@ that is limited to max cutoff frequency of 16kHz.
     HP 12c    - High-pass Hal Chamberlin state variable filter (12dB)
     BP 12c    - Band-pass Hal Chamberlin state variable filter (12dB)
     NO 12c    - Notch Hal Chamberlin state variable filter (12dB)
+
+The (Andrew) Simper state variable filter is a newer design.
+
+    LP 12s    - Low-pass Simper state variable filter (12dB)
+    HP 12s    - High-pass Simper state variable filter (12dB)
+    BP 12s    - Band-pass Simper state variable filter (12dB)
+    NO 12s    - Notch Simper state variable filter (12dB)
+    PK 12s    - Peak Simper state variable filter (12dB)
 "#;
+}
+
+macro_rules! process_filter_fun {
+    ($nframes: expr, $inp: expr, $out: ident, $freq: ident, $res: ident,
+     $input: ident, $minfreq: expr, $maxfreq: expr, $block: block) => { {
+        for frame in 0..$nframes {
+            let $input = $inp.read(frame) as f64;
+            let $freq  = denorm::SFilter::freq($freq, frame) as f64;
+            let $freq  = $freq.clamp($minfreq, $maxfreq);
+            let $res   = denorm::SFilter::res($res, frame) as f64;
+            let $res   = $res.clamp(0.0, 0.99);
+            let s = $block;
+            $out.write(frame, s as f32);
+        }
+    } };
+    ($nframes: expr, $inp: expr, $out: ident, $freq: ident, $res: ident,
+     $input: ident, $maxfreq: expr, $block: block) => { {
+        for frame in 0..$nframes {
+            let $input = $inp.read(frame) as f64;
+            let $freq  = denorm::SFilter::freq($freq, frame) as f64;
+            let $freq  = $freq.clamp(1.0, $maxfreq);
+            let $res   = denorm::SFilter::res($res, frame) as f64;
+            let $res   = $res.clamp(0.0, 0.99);
+            let s = $block;
+            $out.write(frame, s as f32);
+        }
+    } };
+    ($nframes: expr, $inp: expr, $out: ident, $freq: ident,
+     $input: ident, $maxfreq: expr, $block: block) => { {
+        for frame in 0..$nframes {
+            let $input = $inp.read(frame) as f64;
+            let $freq  = denorm::SFilter::freq($freq, frame) as f64;
+            let $freq  = $freq.clamp(1.0, $maxfreq);
+            let s = $block;
+            $out.write(frame, s as f32);
+        }
+    } }
 }
 
 impl DspNode for SFilter {
@@ -125,112 +176,82 @@ impl DspNode for SFilter {
 
         match ftype {
             0 => { // Lowpass
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 22000.0);
-                    out.write(frame,
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, input, 22000.0, {
                         process_1pole_lowpass(
                             input, freq, self.israte, &mut self.z)
-                        as f32);
-                }
+                    })
             },
             1 => { // Lowpass TPT
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 22000.0);
-                    out.write(frame,
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, input, 22000.0, {
                         process_1pole_tpt_lowpass(
                             input, freq, self.israte, &mut self.z)
-                        as f32);
-                }
+                    })
             },
             2 => { // Highpass
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 22000.0);
-                    out.write(frame,
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, input, 22000.0, {
                         process_1pole_highpass(
                             input, freq, self.israte, &mut self.z, &mut self.y)
-                        as f32);
-                }
+                    })
             },
             3 => { // Highpass TPT
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 22000.0);
-                    out.write(frame,
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, input, 22000.0, {
                         process_1pole_tpt_highpass(
                             input, freq, self.israte, &mut self.z)
-                        as f32);
-                }
+                    })
             },
             4 => { // Low Pass Hal Chamberlin SVF
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(2.0, 16000.0);
-                    let res  = denorm::SFilter::res(res, frame) as f64;
-                    let res  = res.clamp(0.0, 0.99);
-
-                    let (_high, _notch) =
-                        process_hal_chamberlin_svf(
-                            input, freq, res, self.israte,
-                            &mut self.z, &mut self.y);
-
-                    out.write(frame, self.y as f32);
-                }
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, res, input, 2.0, 16000.0, {
+                        let (_high, _notch) =
+                            process_hal_chamberlin_svf(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y);
+                        self.y
+                    });
             },
             5 => { // High Pass Hal Chamberlin SVF
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 16000.0);
-                    let res  = denorm::SFilter::res(res, frame) as f64;
-                    let res  = res.clamp(0.0, 0.99);
-
-                    let (high, _notch) =
-                        process_hal_chamberlin_svf(
-                            input, freq, res, self.israte,
-                            &mut self.z, &mut self.y);
-
-                    out.write(frame, high as f32);
-                }
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, res, input, 16000.0, {
+                        let (high, _notch) =
+                            process_hal_chamberlin_svf(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y);
+                        high
+                    });
             },
             6 => { // Band Pass Hal Chamberlin SVF
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 16000.0);
-                    let res  = denorm::SFilter::res(res, frame) as f64;
-                    let res  = res.clamp(0.0, 0.99);
-
-                    let (_high, _notch) =
-                        process_hal_chamberlin_svf(
-                            input, freq, res, self.israte,
-                            &mut self.z, &mut self.y);
-
-                    out.write(frame, self.z as f32);
-                }
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, res, input, 16000.0, {
+                        let (_high, _notch) =
+                            process_hal_chamberlin_svf(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y);
+                        self.z
+                    });
             },
             7 => { // Notch Hal Chamberlin SVF
-                for frame in 0..ctx.nframes() {
-                    let input = inp.read(frame) as f64;
-                    let freq = denorm::SFilter::freq(freq, frame) as f64;
-                    let freq = freq.clamp(1.0, 16000.0);
-                    let res  = denorm::SFilter::res(res, frame) as f64;
-                    let res  = res.clamp(0.0, 0.99);
-
-                    let (_high, notch) =
-                        process_hal_chamberlin_svf(
-                            input, freq, res, self.israte,
-                            &mut self.z, &mut self.y);
-
-                    out.write(frame, notch as f32);
-                }
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, res, input, 16000.0, {
+                        let (_high, notch) =
+                            process_hal_chamberlin_svf(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y);
+                        notch
+                    });
+            },
+            8 => { // Simper SVF Low Pass
+                process_filter_fun!(
+                    ctx.nframes(), inp, out, freq, res, input, 22000.0, {
+                        let (low, _band, _high) =
+                            process_simper_svf(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y);
+                        low
+                    });
             },
             _ => {},
         }

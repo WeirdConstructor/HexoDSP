@@ -927,6 +927,7 @@ const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
 /// otherwise the filter becomes unstable.
 /// * `res`  - Resonance from 0.0 to 0.99. Resonance of 1.0 is not recommended,
 /// as the filter will then oscillate itself out of control.
+/// * `israte` - 1.0 divided by the sampling rate (eg. 1.0 / 44100.0).
 /// * `band` - First state variable, containing the band pass result
 /// after processing.
 /// * `low` - Second state variable, containing the low pass result
@@ -971,6 +972,73 @@ pub fn process_hal_chamberlin_svf(
     //d//     q, cutoff, freq, *low, high, *band, notch);
 
     (high, notch)
+}
+
+/// This function processes a Simper SVF. It's a much newer algorithm
+/// for filtering and provides easy to calculate multiple outputs.
+///
+/// * `input` - Input sample.
+/// * `freq` - Frequency in Hz.
+/// otherwise the filter becomes unstable.
+/// * `res`  - Resonance from 0.0 to 0.99. Resonance of 1.0 is not recommended,
+/// as the filter will then oscillate itself out of control.
+/// * `israte` - 1.0 divided by the sampling rate (eg. 1.0 / 44100.0).
+/// * `band` - First state variable, containing the band pass result
+/// after processing.
+/// * `low` - Second state variable, containing the low pass result
+/// after processing.
+///
+/// This function returns the low pass, band pass and high pass signal.
+/// For a notch or peak filter signal, please consult the following example:
+///
+///```
+///    use hexodsp::dsp::helpers::*;
+///
+///    let samples   = vec![0.0; 44100];
+///    let mut ic1eq = 0.0;
+///    let mut ic2eq = 0.0;
+///    let mut freq  = 1000.0;
+///
+///    for s in samples.iter() {
+///        let (low, band, high) =
+///            process_simper_svf(
+///                *s, freq, 0.5, 1.0 / 44100.0, &mut ic1eq, &mut ic2eq);
+///
+///        // You can easily calculate the notch and peak results too:
+///        let notch = low + high;
+///        let peak  = low - high;
+///        // ... do something with the result here.
+///    }
+///```
+// Simper SVF taken from baseplug (Rust crate) example svf_simper.rs:
+// implemented from https://cytomic.com/files/dsp/SvfLinearTrapOptimised2.pdf
+// thanks, andy!
+#[inline]
+pub fn process_simper_svf(
+    input: f64, freq: f64, res: f64, israte: f64, ic1eq: &mut f64, ic2eq: &mut f64
+) -> (f64, f64, f64) {
+    let g = (std::f64::consts::PI * freq * israte).tan();
+    let k = 2f64 - (1.9f64 * res);
+
+    let a1 = 1.0 / (1.0 + (g * (g + k)));
+    let a2 = g * a1;
+    let a3 = g * a2;
+
+    let v3 = input - *ic2eq;
+    let v1 = (a1 * *ic1eq) + (a2 * v3);
+    let v2 = *ic2eq + (a2 * *ic1eq) + (a3 * v3);
+
+    *ic1eq = (2.0 * v1) - *ic1eq;
+    *ic2eq = (2.0 * v2) - *ic2eq;
+
+    // low   = v2
+    // band  = v1
+    // high  = input - k * v1 - v2
+    // notch = low + high            = input - k * v1
+    // peak  = low - high            = 2 * v2 - input + k * v1
+    // all   = low + high - k * band = input - 2 * k * v1
+
+    (v2, v1, input - k * v1 - v2)
 }
 
 // translated from Odin 2 Synthesizer Plugin
