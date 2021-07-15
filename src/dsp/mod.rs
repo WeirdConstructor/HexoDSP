@@ -868,8 +868,8 @@ macro_rules! make_node_info_enum {
         impl std::fmt::Display for NodeId {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
-                    NodeId::$v1           => write!(f, "{}", stringify!($s1)),
-                    $(NodeId::$variant(i) => write!(f, "{} {}", stringify!($str), i)),+
+                    NodeId::$v1           => write!(f, "{}", stringify!($v1)),
+                    $(NodeId::$variant(i) => write!(f, "{} {}", stringify!($variant), i)),+
                 }
             }
         }
