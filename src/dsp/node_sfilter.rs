@@ -89,14 +89,16 @@ There are currently following filters available:
     LP 1pt    - One pole high-pass filter (6db) (TPT form)
 
 The Hal Chamberlin filters are an older state variable filter design,
-that is limited to max cutoff frequency of 16kHz.
+that is limited to max cutoff frequency of 16kHz. For a more stable
+filter use the "12s" variants.
 
     LP 12c    - Low-pass Hal Chamberlin state variable filter (12dB)
     HP 12c    - High-pass Hal Chamberlin state variable filter (12dB)
     BP 12c    - Band-pass Hal Chamberlin state variable filter (12dB)
     NO 12c    - Notch Hal Chamberlin state variable filter (12dB)
 
-The (Andrew) Simper state variable filter is a newer design.
+The (Andrew) Simper state variable filter is a newer design
+and stable up to 22kHz at 44.1kHz sampling rate.
 
     LP 12s    - Low-pass Simper state variable filter (12dB)
     HP 12s    - High-pass Simper state variable filter (12dB)
