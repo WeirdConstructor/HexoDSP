@@ -38,9 +38,11 @@ macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => 
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct SFilter {
-    israte: f64,
-    z:      f64,
-    y:      f64,
+    israte: f32,
+    z:      f32,
+    y:      f32,
+    k:      f32,
+    h:      f32,
     otype:  i8,
 }
 
@@ -50,6 +52,8 @@ impl SFilter {
             israte: 1.0 / 44100.0,
             z:      0.0,
             y:      0.0,
+            k:      0.0,
+            h:      0.0,
             otype:  -1,
         }
     }
@@ -101,6 +105,56 @@ The (Andrew) Simper state variable filter is a newer design.
     PK 12s    - Peak Simper state variable filter (12dB)
 "#;
 }
+
+macro_rules! process_filter_fun32 {
+    ($nframes: expr, $inp: expr, $out: ident, $freq: ident, $res: ident,
+     $input: ident, $minfreq: expr, $maxfreq: expr, $block: block) => { {
+        for frame in 0..$nframes {
+            let $input = $inp.read(frame);
+            let $freq  = denorm::SFilter::freq($freq, frame);
+            let $freq  = $freq.clamp($minfreq, $maxfreq);
+            let $res   = denorm::SFilter::res($res, frame);
+            let $res   = $res.clamp(0.0, 0.99);
+            let s = $block;
+            $out.write(frame, s);
+        }
+    } };
+    ($nframes: expr, $inp: expr, $out: ident, $freq: ident, $res: ident,
+     $input: ident, $maxfreq: expr, $block: block) => { {
+        for frame in 0..$nframes {
+            let $input = $inp.read(frame);
+            let $freq  = denorm::SFilter::freq($freq, frame);
+            let $freq  = $freq.clamp(1.0, $maxfreq);
+            let $res   = denorm::SFilter::res($res, frame);
+            let $res   = $res.clamp(0.0, 0.99);
+            let s = $block;
+            $out.write(frame, s);
+        }
+    } };
+    ($nframes: expr, $inp: expr, $out: ident, $freq: ident, $res: ident,
+     $maxres: expr, $input: ident, $maxfreq: expr, $block: block) => { {
+        for frame in 0..$nframes {
+            let $input = $inp.read(frame);
+            let $freq  = denorm::SFilter::freq($freq, frame);
+            let $freq  = $freq.clamp(1.0, $maxfreq);
+            let $res   = denorm::SFilter::res($res, frame);
+            let $res   = $res.clamp(0.0, $maxres);
+            let s = $block;
+            $out.write(frame, s);
+        }
+    } };
+    ($nframes: expr, $inp: expr, $out: ident, $freq: ident,
+     $input: ident, $maxfreq: expr, $block: block) => { {
+        for frame in 0..$nframes {
+            let $input = $inp.read(frame);
+            let $freq  = denorm::SFilter::freq($freq, frame);
+            let $freq  = $freq.clamp(1.0, $maxfreq);
+            let s = $block;
+            $out.write(frame, s);
+        }
+    } }
+}
+
 
 macro_rules! process_filter_fun {
     ($nframes: expr, $inp: expr, $out: ident, $freq: ident, $res: ident,
@@ -155,11 +209,13 @@ impl DspNode for SFilter {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.israte = 1.0 / (srate as f64);
+        self.israte = 1.0 / srate;
     }
     fn reset(&mut self) {
         self.z     = 0.0;
         self.y     = 0.0;
+        self.k     = 0.0;
+        self.h     = 0.0;
         self.otype = -1;
     }
 
@@ -183,40 +239,42 @@ impl DspNode for SFilter {
         if ftype != self.otype {
             self.y = 0.0;
             self.z = 0.0;
+            self.k = 0.0;
+            self.h = 0.0;
             self.otype = ftype;
         }
 
         match ftype {
             0 => { // Lowpass
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, input, 22000.0, {
                         process_1pole_lowpass(
                             input, freq, self.israte, &mut self.z)
                     })
             },
             1 => { // Lowpass TPT
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, input, 22000.0, {
                         process_1pole_tpt_lowpass(
                             input, freq, self.israte, &mut self.z)
                     })
             },
             2 => { // Highpass
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, input, 22000.0, {
                         process_1pole_highpass(
                             input, freq, self.israte, &mut self.z, &mut self.y)
                     })
             },
             3 => { // Highpass TPT
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, input, 22000.0, {
                         process_1pole_tpt_highpass(
                             input, freq, self.israte, &mut self.z)
                     })
             },
             4 => { // Low Pass Hal Chamberlin SVF
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, res, input, 2.0, 16000.0, {
                         let (_high, _notch) =
                             process_hal_chamberlin_svf(
@@ -226,7 +284,7 @@ impl DspNode for SFilter {
                     });
             },
             5 => { // High Pass Hal Chamberlin SVF
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, res, input, 16000.0, {
                         let (high, _notch) =
                             process_hal_chamberlin_svf(
@@ -236,7 +294,7 @@ impl DspNode for SFilter {
                     });
             },
             6 => { // Band Pass Hal Chamberlin SVF
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, res, input, 16000.0, {
                         let (_high, _notch) =
                             process_hal_chamberlin_svf(
@@ -246,7 +304,7 @@ impl DspNode for SFilter {
                     });
             },
             7 => { // Notch Hal Chamberlin SVF
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, res, input, 16000.0, {
                         let (_high, notch) =
                             process_hal_chamberlin_svf(
@@ -256,12 +314,12 @@ impl DspNode for SFilter {
                     });
             },
             8 => { // Simper SVF Low Pass
-                process_filter_fun!(
+                process_filter_fun32!(
                     ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
                         let (low, _band, _high) =
                             process_simper_svf(
                                 input, freq, res, self.israte,
-                                &mut self.z, &mut self.y);
+                                &mut self.k, &mut self.h);
                         low
                     });
             },

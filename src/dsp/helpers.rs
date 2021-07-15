@@ -791,8 +791,8 @@ impl Comb {
 ///        // ... do something with the result here.
 ///    }
 ///```
-pub fn process_1pole_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
-    let b = (-std::f64::consts::TAU * freq * israte).exp();
+pub fn process_1pole_lowpass(input: f32, freq: f32, israte: f32, z: &mut f32) -> f32 {
+    let b = (-std::f32::consts::TAU * freq * israte).exp();
     let a = 1.0 - b;
     *z = a * input + *z * b;
     *z
@@ -824,8 +824,8 @@ pub fn process_1pole_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) ->
 ///        // ... do something with the result here.
 ///    }
 ///```
-pub fn process_1pole_highpass(input: f64, freq: f64, israte: f64, z: &mut f64, y: &mut f64) -> f64 {
-    let b  = (-std::f64::consts::TAU * freq * israte).exp();
+pub fn process_1pole_highpass(input: f32, freq: f32, israte: f32, z: &mut f32, y: &mut f32) -> f32 {
+    let b  = (-std::f32::consts::TAU * freq * israte).exp();
     let a  = (1.0 + b) / 2.0;
 
     let v =
@@ -863,8 +863,8 @@ pub fn process_1pole_highpass(input: f64, freq: f64, israte: f64, z: &mut f64, y
 ///        // ... do something with the result here.
 ///    }
 ///```
-pub fn process_1pole_tpt_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
-    let g = (std::f64::consts::PI * freq * israte).tan();
+pub fn process_1pole_tpt_lowpass(input: f32, freq: f32, israte: f32, z: &mut f32) -> f32 {
+    let g = (std::f32::consts::PI * freq * israte).tan();
     let a = g / (1.0 + g);
 
     let v1 = a * (input - *z);
@@ -901,8 +901,8 @@ pub fn process_1pole_tpt_lowpass(input: f64, freq: f64, israte: f64, z: &mut f64
 ///        // ... do something with the result here.
 ///    }
 ///```
-pub fn process_1pole_tpt_highpass(input: f64, freq: f64, israte: f64, z: &mut f64) -> f64 {
-    let g  = (std::f64::consts::PI * freq * israte).tan();
+pub fn process_1pole_tpt_highpass(input: f32, freq: f32, israte: f32, z: &mut f32) -> f32 {
+    let g  = (std::f32::consts::PI * freq * israte).tan();
     let a1 = g / (1.0 + g);
 
     let v1 = a1 * (input - *z);
@@ -952,11 +952,11 @@ const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
 ///```
 #[inline]
 pub fn process_hal_chamberlin_svf(
-    input: f64, freq: f64, res: f64, israte: f64, band: &mut f64, low: &mut f64)
-    -> (f64, f64)
+    input: f32, freq: f32, res: f32, israte: f32, band: &mut f32, low: &mut f32)
+    -> (f32, f32)
 {
     let q      = 1.0 - res;
-    let cutoff = 2.0 * (std::f64::consts::PI * freq * 0.5 * israte).sin();
+    let cutoff = 2.0 * (std::f32::consts::PI * freq * 0.5 * israte).sin();
 
     let mut high  = 0.0;
     let mut notch = 0.0;
@@ -1015,11 +1015,11 @@ pub fn process_hal_chamberlin_svf(
 // thanks, andy!
 #[inline]
 pub fn process_simper_svf(
-    input: f64, freq: f64, res: f64, israte: f64, ic1eq: &mut f64, ic2eq: &mut f64
-) -> (f64, f64, f64) {
-    let g = (std::f64::consts::PI * freq * israte).tan();
+    input: f32, freq: f32, res: f32, israte: f32, ic1eq: &mut f32, ic2eq: &mut f32
+) -> (f32, f32, f32) {
+    let g = (std::f32::consts::PI * freq * israte).tan();
     // XXX: the 1.989 were tuned by hand, so the resonance is more audible.
-    let k = 2f64 - (1.989f64 * res);
+    let k = 2f32 - (1.989f32 * res);
 
     let a1 = 1.0 / (1.0 + (g * (g + k)));
     let a2 = g * a1;
