@@ -1018,7 +1018,8 @@ pub fn process_simper_svf(
     input: f64, freq: f64, res: f64, israte: f64, ic1eq: &mut f64, ic2eq: &mut f64
 ) -> (f64, f64, f64) {
     let g = (std::f64::consts::PI * freq * israte).tan();
-    let k = 2f64 - (1.9f64 * res);
+    // XXX: the 1.989 were tuned by hand, so the resonance is more audible.
+    let k = 2f64 - (1.989f64 * res);
 
     let a1 = 1.0 / (1.0 + (g * (g + k)));
     let a2 = g * a1;
