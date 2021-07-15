@@ -127,6 +127,18 @@ macro_rules! process_filter_fun {
             $out.write(frame, s as f32);
         }
     } };
+    ($nframes: expr, $inp: expr, $out: ident, $freq: ident, $res: ident,
+     $maxres: expr, $input: ident, $maxfreq: expr, $block: block) => { {
+        for frame in 0..$nframes {
+            let $input = $inp.read(frame) as f64;
+            let $freq  = denorm::SFilter::freq($freq, frame) as f64;
+            let $freq  = $freq.clamp(1.0, $maxfreq);
+            let $res   = denorm::SFilter::res($res, frame) as f64;
+            let $res   = $res.clamp(0.0, $maxres);
+            let s = $block;
+            $out.write(frame, s as f32);
+        }
+    } };
     ($nframes: expr, $inp: expr, $out: ident, $freq: ident,
      $input: ident, $maxfreq: expr, $block: block) => { {
         for frame in 0..$nframes {
@@ -245,7 +257,7 @@ impl DspNode for SFilter {
             },
             8 => { // Simper SVF Low Pass
                 process_filter_fun!(
-                    ctx.nframes(), inp, out, freq, res, input, 22000.0, {
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
                         let (low, _band, _high) =
                             process_simper_svf(
                                 input, freq, res, self.israte,
