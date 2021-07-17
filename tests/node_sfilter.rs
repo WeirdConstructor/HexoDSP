@@ -727,3 +727,271 @@ fn check_node_sfilter_simpersvf_highpass() {
             (0, 92), (10, 36), (100, 16), (1000, 20), (4000, 16), (12000, 20)
         ]);
 }
+
+#[test]
+fn check_node_sfilter_simpersvf_bandpass() {
+    let (mut matrix, mut node_exec) = setup_sfilter_matrix();
+
+    // Band Pass Simper SVF @ 1000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 1000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            250, 500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (250, 0), (500, 10), (700, 40), (900, 230),
+            (1000, 70), (1500, 10), (2000, 0), (3000, 0), (4000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 1000Hz RES=0.5
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 1000.0, 0.5);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            250, 500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (250, 0), (500, 10), (700, 10), (900, 10),
+            (1000, 10), (1500, 10), (2000, 0), (3000, 0), (4000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 1000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 1000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            250, 500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (250, 0), (500, 8), (700, 8), (900, 8),
+            (1000, 8), (1500, 4), (2000, 4), (3000, 4), (4000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 4000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 4000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (100, 0), (500, 0), (1000, 0), (2000, 20),
+            (3500, 320), (4000, 170), (5000, 20), (6000, 10), (8000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 4000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 4000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (100, 0), (500, 0), (1000, 0), (2000, 0), (3500, 10),
+            (4000, 0), (5000, 0), (6000, 0), (8000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 22050Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 22050.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 0), (100, 0), (1000, 0), (4000, 0),
+            (12000, 0), (16000, 0), (20000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 22050Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 22050.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
+            (16000, 0), (20000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 0Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 0.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 4), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 0Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 10, 0.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 12), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0)
+        ]);
+}
+
+#[test]
+fn check_node_sfilter_simpersvf_notch() {
+    let (mut matrix, mut node_exec) = setup_sfilter_matrix();
+
+    // Notch Simper SVF @ 1000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 1000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 850, 900, 950, 1000, 1100, 1200, 1400, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 10), (500, 10), (700, 10), (850, 10), (900, 20), (950, 10),
+            (1000, 10), (1100, 20), (1200, 20), (1400, 20), (2000, 10),
+            (3000, 10), (4000, 10)
+        ]);
+
+    // Notch Simper SVF @ 1000Hz RES=0.5
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 1000.0, 0.5);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 850, 900, 950, 1000, 1100, 1200, 1400, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 10), (500, 10), (700, 0), (850, 0), (900, 0), (950, 0),
+            (1000, 0), (1100, 0), (1200, 0), (1400, 10), (2000, 10),
+            (3000, 10), (4000, 10)
+        ]);
+
+    // Notch Simper SVF @ 1000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 1000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 850, 900, 950, 1000, 1100, 1200, 1400, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 10), (500, 0), (700, 0), (850, 0), (900, 0), (950, 0),
+            (1000, 0), (1100, 0), (1200, 0), (1400, 0), (2000, 10),
+            (3000, 10), (4000, 10)
+        ]);
+
+    // Notch Simper SVF @ 4000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 4000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 4500, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (100, 10), (500, 10), (1000, 10), (2000, 10), (3500, 10),
+            (4000, 20), (4500, 10), (5000, 10), (6000, 20), (8000, 10)
+        ]);
+
+    // Notch Simper SVF @ 4000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 4000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (100, 10), (500, 10), (1000, 10), (2000, 0), (3500, 0),
+            (4000, 0), (5000, 0), (6000, 10), (8000, 10)
+        ]);
+
+    // Notch Simper SVF @ 22050Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 22050.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 16), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+            (16000, 16), (20000, 16)
+        ]);
+
+    // Notch Simper SVF @ 22050Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 22050.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 8), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+            (16000, 16), (20000, 16)
+        ]);
+
+    // Notch Simper SVF @ 0Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 0.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 32), (10, 12), (100, 20), (1000, 16), (4000, 16), (12000, 16)
+        ]);
+
+    // Notch Simper SVF @ 0Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 11, 0.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 20), (10, 32), (100, 16), (1000, 20), (4000, 16), (12000, 20)
+        ]);
+}
+
+#[test]
+fn check_node_sfilter_simpersvf_peak() {
+    let (mut matrix, mut node_exec) = setup_sfilter_matrix();
+
+    // Peak Simper SVF @ 1000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 1000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 850, 900, 950, 1000, 1100, 1200, 1400, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (500, 30), (700, 70), (850, 120), (900, 340), (950, 620),
+            (1000, 320), (1100, 170), (1200, 80), (1400, 40), (2000, 20),
+            (3000, 20), (4000, 10)
+        ]);
+
+    // Peak Simper SVF @ 1000Hz RES=0.5
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 1000.0, 0.5);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 850, 900, 950, 1000, 1100, 1200, 1400, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (500, 20), (700, 30), (850, 40), (900, 30), (950, 40),
+            (1000, 40), (1100, 40), (1200, 20), (1400, 20), (2000, 20),
+            (3000, 20), (4000, 20)
+        ]);
+
+    // Peak Simper SVF @ 1000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 1000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 850, 900, 950, 1000, 1100, 1200, 1400, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 10), (500, 10), (700, 10), (850, 10), (900, 10), (950, 10),
+            (1000, 20), (1100, 10), (1200, 10), (1400, 10), (2000, 10),
+            (3000, 20), (4000, 10)
+        ]);
+
+    // Peak Simper SVF @ 4000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 4000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 4500, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (100, 10), (500, 20), (1000, 20), (2000, 50),
+            (3500, 640), (4000, 630), (4500, 80), (5000, 60),
+            (6000, 30), (8000, 20)
+        ]);
+
+    // Peak Simper SVF @ 4000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 4000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (100, 10), (500, 10), (1000, 10), (2000, 10), (3500, 20),
+            (4000, 20), (5000, 10), (6000, 10), (8000, 20)
+        ]);
+
+    // Peak Simper SVF @ 22050Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 22050.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 16), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+            (16000, 16), (20000, 16)
+        ]);
+
+    // Peak Simper SVF @ 22050Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 22050.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 8), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+            (16000, 16), (20000, 24)
+        ]);
+
+    // Peak Simper SVF @ 0Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 0.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 28), (10, 12), (100, 20), (1000, 16), (4000, 16), (12000, 16)
+        ]);
+
+    // Peak Simper SVF @ 0Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 12, 0.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 164), (10, 40), (100, 16), (1000, 20), (4000, 16), (12000, 20)
+        ]);
+}
