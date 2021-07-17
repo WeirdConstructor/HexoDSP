@@ -325,6 +325,46 @@ impl DspNode for SFilter {
                         low
                     });
             },
+            9 => { // Simper SVF High Pass
+                process_filter_fun32!(
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
+                        let (_low, _band, high) =
+                            process_simper_svf(
+                                input, freq, res, self.israte,
+                                &mut self.k, &mut self.h);
+                        high
+                    });
+            },
+            10 => { // Simper SVF Band Pass
+                process_filter_fun32!(
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
+                        let (_low, band, _high) =
+                            process_simper_svf(
+                                input, freq, res, self.israte,
+                                &mut self.k, &mut self.h);
+                        band
+                    });
+            },
+            11 => { // Simper SVF Notch
+                process_filter_fun32!(
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
+                        let (low, _band, high) =
+                            process_simper_svf(
+                                input, freq, res, self.israte,
+                                &mut self.k, &mut self.h);
+                        low + high
+                    });
+            },
+            12 => { // Simper SVF Peak
+                process_filter_fun32!(
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
+                        let (low, _band, high) =
+                            process_simper_svf(
+                                input, freq, res, self.israte,
+                                &mut self.k, &mut self.h);
+                        low - high
+                    });
+            },
             _ => {},
         }
 
