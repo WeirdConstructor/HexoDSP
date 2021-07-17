@@ -80,7 +80,7 @@ impl PatternSequencer {
     {
         let col = &self.data[col][..];
 
-        let last_row_idx : f32 = (self.rows as f32) - 0.000001;
+        let last_row_idx : f32 = (self.rows as f32) - 0.00001;
         let rows = self.rows;
 
         for ((phase, out), out_gate) in
@@ -112,7 +112,7 @@ impl PatternSequencer {
     {
         let col = &self.data[col][..];
 
-        let last_row_idx : f32 = (self.rows as f32) - 0.000001;
+        let last_row_idx : f32 = (self.rows as f32) - 0.00001;
         let rows = self.rows;
 
         for ((phase, out), out_gate) in
@@ -134,7 +134,7 @@ impl PatternSequencer {
     {
         let col = &self.data[col_idx][..];
 
-        let last_row_idx : f32 = (self.rows as f32) - 0.000001;
+        let last_row_idx : f32 = (self.rows as f32) - 0.00001;
         let rows = self.rows;
 
         for ((phase, out), out_gate) in

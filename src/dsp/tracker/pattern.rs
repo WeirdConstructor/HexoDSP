@@ -145,7 +145,7 @@ impl PatternData {
                 let mut start_idx   = 0;
                 let mut end_idx     = 0;
 
-                while end_idx <= self.rows {
+                while end_idx <= out_col.len() {
                     let mut break_after_write = false;
                     let cur_value =
                         if end_idx == self.rows {
@@ -191,7 +191,7 @@ impl PatternData {
             PatternColType::Note => {
                 let mut cur_value = (0.0, 0);
 
-                for row in 0..self.rows {
+                for row in 0..out_col.len() {
                     if let Some(new_value) = self.data[row][col] {
                         cur_value = (
                             ((new_value as i32 - 69) as f32 * 0.1) / 12.0,
@@ -208,7 +208,7 @@ impl PatternData {
             PatternColType::Step => {
                 let mut cur_value = (0.0, 0);
 
-                for row in 0..self.rows {
+                for row in 0..out_col.len() {
                     if let Some(new_value) = self.data[row][col] {
                         cur_value = (
                             ((new_value & 0xFFF) as f32) / (0xFFF as f32),
@@ -222,7 +222,12 @@ impl PatternData {
                 }
             },
             PatternColType::Gate => {
-                for row in 0..self.rows {
+                // XXX: We need to iterate over all rows, even if
+                //      self.rows < out_col.len(), because empty cells
+                //      are not equal to float 0.0. Maybe we should change
+                //      this internal format!? But in either case we transmit
+                //      a full row to the backend anyways.
+                for row in 0..out_col.len() {
                     out_col[row] =
                         if let Some(new_value) = self.data[row][col] {
                             (f32::from_bits(new_value as u32), 1)
