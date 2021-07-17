@@ -575,7 +575,7 @@ macro_rules! node_list {
                (2  g     n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.7)
                [0 sig],
             noise => Noise UIType::Generic UICategory::Osc
-               (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.5)
                (1  offs  n_id      d_id  r_s    f_def stp_d -1.0, 1.0, 0.0)
                {2 0 mode setting(0) fa_noise_mode 0 1}
                [0 sig],
