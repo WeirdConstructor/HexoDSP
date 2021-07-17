@@ -145,6 +145,7 @@ pub struct MatrixRepr {
     pub params:     Vec<(ParamId, f32, Option<f32>)>,
     pub atoms:      Vec<(ParamId, SAtom)>,
     pub patterns:   Vec<Option<PatternRepr>>,
+    pub properties: Vec<(String, SAtom)>,
 }
 
 #[derive(Debug, Clone)]
@@ -231,16 +232,18 @@ fn serialize_atom(atom: &SAtom) -> Value {
 
 impl MatrixRepr {
     pub fn empty() -> Self {
-        let cells    = vec![];
-        let params   = vec![];
-        let atoms    = vec![];
-        let patterns = vec![];
+        let cells      = vec![];
+        let params     = vec![];
+        let atoms      = vec![];
+        let patterns   = vec![];
+        let properties = vec![];
 
         Self {
             cells,
             params,
             atoms,
             patterns,
+            properties,
         }
     }
 
@@ -337,6 +340,15 @@ impl MatrixRepr {
             }
         }
 
+        let props = &v["props"];
+        if let Value::Array(props) = props {
+            for v in props.iter() {
+                let key = v[0].as_str().unwrap_or("");
+                m.properties.push(
+                    (key.to_string(), deserialize_atom(&v[1])?));
+            }
+        }
+
         let patterns = &v["patterns"];
         if let Value::Array(patterns) = patterns {
             for p in patterns.iter() {
@@ -355,6 +367,7 @@ impl MatrixRepr {
             "VERSION": 1,
         });
 
+        self.properties.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
         self.params.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
         self.atoms.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
@@ -394,6 +407,15 @@ impl MatrixRepr {
         }
 
         v["atoms"] = atoms;
+
+        let mut props = json!([]);
+        if let Value::Array(props) = &mut props {
+            for (k, v) in self.properties.iter() {
+                props.push(json!([k, serialize_atom(v)]));
+            }
+        }
+
+        v["props"] = props;
 
         let mut cells = json!([]);
         if let Value::Array(cells) = &mut cells {
@@ -447,7 +469,7 @@ mod tests {
         let s = matrix_repr.serialize();
 
         assert_eq!(s,
-            "{\"VERSION\":1,\"atoms\":[],\"cells\":[],\"params\":[],\"patterns\":[]}");
+            "{\"VERSION\":1,\"atoms\":[],\"cells\":[],\"params\":[],\"patterns\":[],\"props\":[]}");
         assert!(MatrixRepr::deserialize(&s).is_ok());
     }
 
@@ -477,7 +499,7 @@ mod tests {
         let s = mr.serialize();
 
         assert_eq!(s,
-          "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,0,-1]],[\"out\",0,1,0,[-1,0,-1],[-1,-1,0]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}");
+          "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,0,-1]],[\"out\",0,1,0,[-1,0,-1],[-1,-1,0]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
 
         let mut mr2 = MatrixRepr::deserialize(&s).unwrap();
 
@@ -660,7 +682,7 @@ mod tests {
     fn check_matrix_repr_mod_amt_1() {
         use crate::nodes::new_node_engine;
 
-        let mr = {
+        let s = {
             let (node_conf, mut _node_exec) = new_node_engine();
             let mut matrix = Matrix::new(node_conf, 3, 3);
 
@@ -680,13 +702,15 @@ mod tests {
             matrix.set_param_modamt(
                 sin.inp_param("freq").unwrap(), Some(0.6)).unwrap();
 
-            matrix.to_repr()
+            let mut mr = matrix.to_repr();
+            mr.serialize().to_string()
         };
 
         {
             let (node_conf, mut _node_exec) = new_node_engine();
             let mut matrix = Matrix::new(node_conf, 3, 3);
 
+            let mr = MatrixRepr::deserialize(&s).unwrap();
             matrix.from_repr(&mr).unwrap();
 
             let mut v = std::collections::HashMap::new();
@@ -696,6 +720,31 @@ mod tests {
 
             assert_eq!(*v.get("freq").unwrap(), Some(0.6));
             assert_eq!(*v.get("det").unwrap(), Some(-0.6));
+        }
+    }
+
+    #[test]
+    fn check_matrix_repr_properties() {
+        use crate::nodes::new_node_engine;
+
+        let s = {
+            let (node_conf, mut _node_exec) = new_node_engine();
+            let mut matrix = Matrix::new(node_conf, 3, 3);
+
+            matrix.set_prop("test", SAtom::setting(31337));
+
+            let mut mr = matrix.to_repr();
+            mr.serialize().to_string()
+        };
+
+        {
+            let (node_conf, mut _node_exec) = new_node_engine();
+            let mut matrix = Matrix::new(node_conf, 3, 3);
+
+            let mr = MatrixRepr::deserialize(&s).unwrap();
+            matrix.from_repr(&mr).unwrap();
+
+            assert_eq!(matrix.get_prop("test").unwrap().i(), 31337);
         }
     }
 }

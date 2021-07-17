@@ -15,7 +15,7 @@ pub use crate::monitor::MON_SIG_CNT;
 use crate::matrix_repr::*;
 use crate::dsp::tracker::PatternData;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// This is a cell/tile of the hexagonal [Matrix].
 ///
@@ -297,6 +297,11 @@ pub struct Matrix {
     /// by [Matrix::sync] and [Matrix::check].
     edges: Vec<Edge>,
 
+    /// Holds custom user defined properties. They are saved with
+    /// the [MatrixRepr] and you can set and retrieve these properties
+    /// using [Matrix::set_prop] and [Matrix::get_prop].
+    properties: HashMap<String, SAtom>,
+
     /// Stores the [dsp::ParamId] of the inputs that have an output
     /// assigned to them. It's updates when [Matrix::edges] is updated and used
     /// by [Matrix::param_input_is_used] to return whether a parameter is
@@ -326,6 +331,7 @@ impl Matrix {
             graph_ordering:  NodeGraphOrdering::new(),
             edges:           Vec::with_capacity(MAX_ALLOCATED_NODES * 2),
             assigned_inputs: HashSet::new(),
+            properties:      HashMap::new(),
             config,
             w,
             h,
@@ -455,6 +461,7 @@ impl Matrix {
         self.matrix[x * self.h + y] = cell;
     }
 
+    /// Clears the contents of the matrix. It's completely empty after this.
     pub fn clear(&mut self) {
         for cell in self.matrix.iter_mut() {
             *cell = Cell::empty(NodeId::Nop);
@@ -464,12 +471,15 @@ impl Matrix {
         self.edges.clear();
         self.assigned_inputs.clear();
         self.saved_matrix = None;
+        self.properties.clear();
 
         self.config.delete_nodes();
         self.monitor_cell(Cell::empty(NodeId::Nop));
         let _ = self.sync();
     }
 
+    /// Iterates through all atoms. This is useful for reading
+    /// the atoms after a [MatrixRepr] has been loaded with [Matrix::from_repr].
     pub fn for_each_atom<F: FnMut(usize, ParamId, &SAtom, Option<f32>)>(&self, f: F) {
         self.config.for_each_param(f);
     }
@@ -533,11 +543,18 @@ impl Matrix {
             tracker_id += 1;
         }
 
+        let properties =
+            self.properties
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.clone()))
+                .collect();
+
         MatrixRepr {
             cells,
             params,
             atoms,
             patterns,
+            properties,
         }
     }
 
@@ -553,6 +570,10 @@ impl Matrix {
             &repr.params[..],
             &repr.atoms[..]);
 
+        for (key, val) in repr.properties.iter() {
+            self.set_prop(key, val.clone());
+        }
+
         for cell_repr in repr.cells.iter() {
             let cell = Cell::from_repr(cell_repr);
             self.place(cell.x as usize, cell.y as usize, cell);
@@ -567,6 +588,38 @@ impl Matrix {
         }
 
         self.sync()
+    }
+
+    /// Saves a property in the matrix, these can be retrieved
+    /// using [Matrix::get_prop] and are saved/loaded along with
+    /// the [MatrixRepr]. See also [Matrix::to_repr] and [Matrix::from_repr].
+    ///
+    ///```
+    /// use hexodsp::*;
+    ///
+    /// let repr = {
+    ///     let (node_conf, mut _node_exec) = new_node_engine();
+    ///     let mut matrix = Matrix::new(node_conf, 3, 3);
+    ///
+    ///     matrix.set_prop("test", SAtom::setting(31337));
+    ///
+    ///     matrix.to_repr()
+    /// };
+    ///
+    /// let (node_conf, mut _node_exec) = new_node_engine();
+    /// let mut matrix2 = Matrix::new(node_conf, 3, 3);
+    ///
+    /// matrix2.from_repr(&repr).unwrap();
+    /// assert_eq!(matrix2.get_prop("test").unwrap().i(), 31337);
+    ///```
+    pub fn set_prop(&mut self, key: &str, val: SAtom) {
+        self.properties.insert(key.to_string(), val);
+    }
+
+    /// Retrieves a matrix property. See also [Matrix::set_prop] for an
+    /// example and more information.
+    pub fn get_prop(&mut self, key: &str) -> Option<&SAtom> {
+        self.properties.get(key)
     }
 
     /// Receives the most recent data for the monitored signal at index `idx`.

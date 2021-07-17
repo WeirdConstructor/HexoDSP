@@ -627,3 +627,29 @@ fn check_node_sampl_rev_2() {
         0.6802875, 0.79366875, 0.90705
     ]);
 }
+
+#[test]
+fn check_node_sampl_4() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let smpl = NodeId::Sampl(0);
+    let out  = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smpl)
+                       .out(None, None, smpl.out("sig")));
+    matrix.place(0, 1, Cell::empty(out)
+                       .input(out.inp("ch1"), None, None));
+    matrix.sync().unwrap();
+
+    let sample_p = smpl.inp_param("sample").unwrap();
+    matrix.set_param(sample_p, SAtom::audio_unloaded("hr.wav"));
+
+    let fft = run_and_get_fft4096(&mut node_exec, 0, 1000.0);
+    assert_eq!(
+        avg_fft_freqs(4.0,
+            &[10, 100, 200, 300, 440, 800, 1000, 2000, 3000, 4000, 12000, 22050],
+            &fft[..]), vec![
+                (0, 32), (10, 204), (100, 104), (200, 16), (300, 32), (440, 8),
+                (800, 4), (1000, 0), (2000, 0), (3000, 0), (4000, 0), (12000, 0)
+            ]);
+}
