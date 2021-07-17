@@ -905,6 +905,13 @@ macro_rules! make_node_info_enum {
                 }
             }
 
+            pub fn label(&self) -> &'static str {
+                match self {
+                    NodeId::$v1           => stringify!($v1),
+                    $(NodeId::$variant(_) => stringify!($variant)),+
+                }
+            }
+
             pub fn name(&self) -> &'static str {
                 match self {
                     NodeId::$v1           => stringify!($s1),
