@@ -34,7 +34,6 @@ impl ModOp {
     }
 
     pub fn lock(&mut self, inbuf: ProcBuf, outbuf: ProcBuf) -> ProcBuf {
-        println!("LOCK MA {}", self.amount);
         self.inbuf  = inbuf;
         self.outbuf = outbuf;
         self.modbuf
