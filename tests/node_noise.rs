@@ -12,6 +12,7 @@ fn check_node_noise_bipolar() {
                        .out(None, None, noise.out("sig")));
     matrix.place(0, 1, Cell::empty(out)
                        .input(out.inp("ch1"), None, None));
+    pset_n(&mut matrix, noise, "atv", 1.0);
     matrix.sync().unwrap();
 
     let (out_l, _) = run_for_ms(&mut node_exec, 25.0);
@@ -41,6 +42,8 @@ fn check_node_noise_seed() {
                        .out(None, None, nois2.out("sig")));
     matrix.place(1, 1, Cell::empty(out)
                        .input(out.inp("ch2"), None, None));
+    pset_n(&mut matrix, noise, "atv", 1.0);
+    pset_n(&mut matrix, nois2, "atv", 1.0);
     matrix.sync().unwrap();
 
     let (out_l, out_r) = run_for_ms(&mut node_exec, 25.0);
@@ -64,6 +67,7 @@ fn check_node_noise_unipolar() {
     matrix.place(0, 1, Cell::empty(out)
                        .input(out.inp("ch1"), None, None));
     pset_s(&mut matrix, noise, "mode", 1);
+    pset_n(&mut matrix, noise, "atv", 1.0);
     matrix.sync().unwrap();
 
     let (out_l, _) = run_for_ms(&mut node_exec, 25.0);

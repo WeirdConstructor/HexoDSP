@@ -98,7 +98,8 @@ filter use the "12s" variants.
     NO 12c    - Notch Hal Chamberlin state variable filter (12dB)
 
 The (Andrew) Simper state variable filter is a newer design
-and stable up to 22kHz at 44.1kHz sampling rate.
+and stable up to 22kHz at 44.1kHz sampling rate. It's overall more precise
+and less quirky than the Hal Chamberlin SVF.
 
     LP 12s    - Low-pass Simper state variable filter (12dB)
     HP 12s    - High-pass Simper state variable filter (12dB)
