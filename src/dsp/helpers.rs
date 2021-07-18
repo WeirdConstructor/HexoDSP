@@ -1046,6 +1046,34 @@ pub fn process_simper_svf(
 /// It provides multiple outputs for low, high and band pass and a notch
 /// output.
 ///
+/// * `input` - Input sample.
+/// * `freq` - Frequency in Hz.
+/// otherwise the filter becomes unstable.
+/// * `res`  - Resonance from 0.0 to 0.99. Resonance of 1.0 is not recommended,
+/// as the filter will then oscillate itself out of control.
+/// * `israte` - 1.0 divided by the sampling rate (`1.0 / 44100.0`).
+/// * `b0` to `b4` - Internal values used for filtering.
+///
+///```
+///    use hexodsp::dsp::helpers::*;
+///
+///    let samples  = vec![0.0; 44100];
+///    let mut b0   = 0.0;
+///    let mut b1   = 0.0;
+///    let mut b2   = 0.0;
+///    let mut b3   = 0.0;
+///    let mut b4   = 0.0;
+///    let mut freq = 1000.0;
+///
+///    for s in samples.iter() {
+///        let (low, band, high, notch) =
+///            process_stilson_moog(
+///                *s, freq, 0.5, 1.0 / 44100.0,
+///                &mut b0, &mut b1, &mut b2, &mut b3, &mut b4);
+///
+///        // ... do something with the result here.
+///    }
+///```
 // Stilson/Moog implementation partly translated from SynthV1 by rncbc
 // https://github.com/rncbc/synthv1/blob/master/src/synthv1_filter.h#L103
 // under GPLv2 or any later.
