@@ -918,7 +918,7 @@ const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
 // https://www.earlevel.com/main/2003/03/02/the-digital-state-variable-filter/
 // Inspired by SynthV1 by Rui Nuno Capela, under the terms of
 // GPLv2 or any later:
-/// Process a HAL Chamberlin filter with two delays/state variables.
+/// Process a HAL Chamberlin filter with two delays/state variables that is 12dB.
 /// The filter does internal oversampling with very simple decimation to
 /// rise the stability for cutoff frequency up to 16kHz.
 ///
@@ -974,7 +974,7 @@ pub fn process_hal_chamberlin_svf(
     (high, notch)
 }
 
-/// This function processes a Simper SVF. It's a much newer algorithm
+/// This function processes a Simper SVF with 12dB. It's a much newer algorithm
 /// for filtering and provides easy to calculate multiple outputs.
 ///
 /// * `input` - Input sample.
@@ -1040,6 +1040,44 @@ pub fn process_simper_svf(
     // all   = low + high - k * band = input - 2 * k * v1
 
     (v2, v1, input - k * v1 - v2)
+}
+
+/// This function implements a simple Stilson/Moog filter with 24dB.
+/// It provides multiple outputs for low, high and band pass and a notch
+/// output.
+///
+// Stilson/Moog implementation partly translated from SynthV1 by rncbc
+// https://github.com/rncbc/synthv1/blob/master/src/synthv1_filter.h#L103
+// under GPLv2 or any later.
+#[inline]
+pub fn process_stilson_moog(
+    input: f32, freq: f32, res: f32, israte: f32,
+    b0: &mut f32, b1: &mut f32, b2: &mut f32, b3: &mut f32, b4: &mut f32
+) -> (f32, f32, f32, f32) {
+//    let cutoff = freq * israte;
+//    let cutoff = (std::f32::consts::PI * freq * israte).tan();
+    let cutoff = 2.0 * freq * israte;
+
+    let c = 1.0 - cutoff;
+    let p = cutoff + 0.8 * cutoff * c;
+    let f = p + p - 1.0;
+//    let f = 2.0 * cutoff.sin() - 1.0;
+    let q = res * (1.0 + 0.5 * c * (1.0 - c + 5.6 * c * c));
+
+    let inp = input - q * *b4;
+    let t1 = *b1; *b1 = (inp + *b0) * p - *b1 * f;
+    let t2 = *b2; *b2 = (*b1 + t1)  * p - *b2 * f;
+    let t1 = *b3; *b3 = (*b2 + t2)  * p - *b3 * f;
+                  *b4 = (*b3 + t1)  * p - *b4 * f;
+
+    *b4 = *b4 - *b4 * *b4 * *b4 * 0.166667; // clipping
+
+    *b0 = inp;
+
+    let band = 3.0 * (*b3 - *b4);
+
+    // low, band, high, notch
+    (*b4, band, inp - *b4, band - inp)
 }
 
 // translated from Odin 2 Synthesizer Plugin

@@ -11,6 +11,7 @@ use crate::dsp::helpers::{
     process_1pole_tpt_highpass,
     process_hal_chamberlin_svf,
     process_simper_svf,
+    process_stilson_moog,
 };
 
 #[macro_export]
@@ -30,6 +31,10 @@ macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => 
            10  => "BP 12s",
            11  => "NO 12s",
            12  => "PK 12s",
+           13  => "LP 24m",
+           14  => "HP 24m",
+           15  => "BP 24m",
+           16  => "NO 24m",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -43,6 +48,7 @@ pub struct SFilter {
     y:      f32,
     k:      f32,
     h:      f32,
+    m:      f32,
     otype:  i8,
 }
 
@@ -54,6 +60,7 @@ impl SFilter {
             y:      0.0,
             k:      0.0,
             h:      0.0,
+            m:      0.0,
             otype:  -1,
         }
     }
@@ -219,6 +226,7 @@ impl DspNode for SFilter {
         self.y     = 0.0;
         self.k     = 0.0;
         self.h     = 0.0;
+        self.m     = 0.0;
         self.otype = -1;
     }
 
@@ -244,6 +252,7 @@ impl DspNode for SFilter {
             self.z = 0.0;
             self.k = 0.0;
             self.h = 0.0;
+            self.m = 0.0;
             self.otype = ftype;
         }
 
@@ -364,6 +373,18 @@ impl DspNode for SFilter {
                                 input, freq, res, self.israte,
                                 &mut self.k, &mut self.h);
                         low - high
+                    });
+            },
+            13 => { // Stilson/Moog Low Pass
+                process_filter_fun32!(
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
+                        let (low, _band, _high, _notch) =
+                            process_stilson_moog(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y, &mut self.k,
+                                &mut self.h, &mut self.m);
+
+                        low
                     });
             },
             _ => {},

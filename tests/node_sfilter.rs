@@ -995,3 +995,97 @@ fn check_node_sfilter_simpersvf_peak() {
             (0, 164), (10, 40), (100, 16), (1000, 20), (4000, 16), (12000, 20)
         ]);
 }
+
+#[test]
+fn check_node_sfilter_moog_lowpass() {
+    let (mut matrix, mut node_exec) = setup_sfilter_matrix();
+
+    // Low Pass Stilson/Moog @ 1000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 1000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 200, 400, 500, 700, 900, 1000, 1100, 1200,
+            1500, 2000, 3000, 4000, 6000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (100, 4), (200, 4), (400, 0), (500, 4), (700, 4),
+            (900, 12), (1000, 36), (1100, 80), (1200, 8),
+            (1500, 0), (2000, 0), (3000, 0), (4000, 0), (6000, 0)
+        ]);
+
+    // Low Pass Stilson/Moog @ 1000Hz RES=0.5
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 1000.0, 0.5);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 200, 400, 500, 700, 900, 1000, 1100, 1200,
+            1500, 2000, 3000, 4000, 6000, 12000
+        ], &fft[..]), vec![
+            (0, 4), (100, 4), (200, 4), (400, 4), (500, 8),
+            (700, 12), (900, 16), (1000, 12), (1100, 8), (1200, 4),
+            (1500, 0), (2000, 0), (3000, 0), (4000, 0), (6000, 0)
+        ]);
+
+    // Low Pass Stilson/Moog @ 1000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 1000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 200, 400, 500, 700, 900, 1000, 1100, 1200,
+            1500, 2000, 3000, 4000, 6000, 12000
+        ], &fft[..]), vec![
+            (0, 16), (100, 16), (200, 16), (400, 4), (500, 12), (700, 8),
+            (900, 4), (1000, 4), (1100, 0), (1200, 0), (1500, 0), (2000, 0),
+            (3000, 0), (4000, 0), (6000, 0)
+        ]);
+
+    // Low Pass Stilson/Moog @ 4000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 4000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 24), (100, 16), (500, 20), (1000, 20), (2000, 36), (3500, 332),
+            (4000, 164), (5000, 20), (6000, 8), (8000, 0)
+        ]);
+
+    // Low Pass Stilson/Moog @ 4000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 4000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 20), (100, 12), (500, 16), (1000, 16), (2000, 12), (3500, 8),
+            (4000, 8), (5000, 4), (6000, 4), (8000, 0)
+        ]);
+
+    // Low Pass Stilson/Moog @ 22050Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 22050.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050, 22051], &fft[..]), vec![
+            (0, 16), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+            (16000, 16), (20000, 16), (22050, 0)
+        ]);
+
+    // Low Pass Stilson/Moog @ 22050Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 22050.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050, 22051], &fft[..]), vec![
+            (0, 8), (100, 16), (1000, 16), (4000, 16), (12000, 16),
+            (16000, 16), (20000, 16), (22050, 0)
+        ]);
+
+    // Low Pass Stilson/Moog @ 0Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 0.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050, 22051], &fft[..]), vec![
+            (0, 0), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
+            (22050, 0)
+        ]);
+
+    // Low Pass Stilson/Moog @ 0Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 0.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[1, 5, 10, 100, 1000, 4000, 12000, 22050, 22051], &fft[..]), vec![
+            (0, 68), (1, 0), (5, 0), (10, 4), (100, 0), (1000, 0),
+            (4000, 0), (12000, 0), (22050, 0)
+        ]);
+}
+

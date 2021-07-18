@@ -583,7 +583,7 @@ macro_rules! node_list {
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
                (2  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
-               {3 0 ftype setting(8) fa_sfilter_type 0 12}
+               {3 0 ftype setting(8) fa_sfilter_type 0 16}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
