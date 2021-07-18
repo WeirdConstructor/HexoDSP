@@ -1049,19 +1049,20 @@ pub fn process_simper_svf(
 // Stilson/Moog implementation partly translated from SynthV1 by rncbc
 // https://github.com/rncbc/synthv1/blob/master/src/synthv1_filter.h#L103
 // under GPLv2 or any later.
+//
+// It's also found on MusicDSP and has probably no proper license anyways.
+// See also: https://github.com/ddiakopoulos/MoogLadders
+// and https://github.com/ddiakopoulos/MoogLadders/blob/master/src/MusicDSPModel.h
 #[inline]
 pub fn process_stilson_moog(
     input: f32, freq: f32, res: f32, israte: f32,
     b0: &mut f32, b1: &mut f32, b2: &mut f32, b3: &mut f32, b4: &mut f32
 ) -> (f32, f32, f32, f32) {
-//    let cutoff = freq * israte;
-//    let cutoff = (std::f32::consts::PI * freq * israte).tan();
     let cutoff = 2.0 * freq * israte;
 
     let c = 1.0 - cutoff;
     let p = cutoff + 0.8 * cutoff * c;
     let f = p + p - 1.0;
-//    let f = 2.0 * cutoff.sin() - 1.0;
     let q = res * (1.0 + 0.5 * c * (1.0 - c + 5.6 * c * c));
 
     let inp = input - q * *b4;

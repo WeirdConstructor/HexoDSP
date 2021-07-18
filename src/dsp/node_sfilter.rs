@@ -73,17 +73,20 @@ impl SFilter {
     pub const ftype : &'static str =
         "SFilter ftype\nThe filter type, there are varying types of \
         filters available. Please consult the node documentation for \
-        a complete list.";
+        a complete list.\n\
+        Types: 1p/1pt=one poles, 12c=Hal Chamberlin SVF,\n\
+        12s=Simper SVF, 24m=Moog\n\
+        Outputs: LP=Low-,HP=High-,BP=Band-Pass,NO=Notch,PK=Peak";
     pub const sig : &'static str =
         "SFilter sig\nFiltered signal output.\nRange: (-1..1)\n";
     pub const DESC : &'static str =
-r#"Simple Audio Filter
+r#"Simple Filter
 
 This is a collection of more or less simple filters.
 There are only two parameters: Filter cutoff 'freq' and the 'res'onance.
 "#;
     pub const HELP : &'static str =
-r#"SFilter - Simple Audio Filter
+r#"SFilter - Simple Audio Filter Collection
 
 This is a collection of a few more or less simple filters
 of varying types. There are only few parameters for you to change: 'freq'
@@ -113,6 +116,19 @@ and less quirky than the Hal Chamberlin SVF.
     BP 12s    - Band-pass Simper state variable filter (12dB)
     NO 12s    - Notch Simper state variable filter (12dB)
     PK 12s    - Peak Simper state variable filter (12dB)
+
+Next page: more filters (eg. Moog)
+---page---
+SFilter - Simple Audio Filter Collection
+
+For a more colored filter reach for the Stilson/Moog filter with a 24dB
+fall off per octave.
+
+    LP 24m    - Low-pass Stilson/Moog filter (24dB)
+    HP 24m    - High-pass Stilson/Moog filter (24dB)
+    BP 24m    - Band-pass Stilson/Moog filter (24dB)
+    NO 24m    - Notch Stilson/Moog filter (24dB)
+
 "#;
 }
 
@@ -383,8 +399,40 @@ impl DspNode for SFilter {
                                 input, freq, res, self.israte,
                                 &mut self.z, &mut self.y, &mut self.k,
                                 &mut self.h, &mut self.m);
-
                         low
+                    });
+            },
+            14 => { // Stilson/Moog High Pass
+                process_filter_fun32!(
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
+                        let (_low, _band, high, _notch) =
+                            process_stilson_moog(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y, &mut self.k,
+                                &mut self.h, &mut self.m);
+                        high
+                    });
+            },
+            15 => { // Stilson/Moog Band Pass
+                process_filter_fun32!(
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
+                        let (_low, band, _high, _notch) =
+                            process_stilson_moog(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y, &mut self.k,
+                                &mut self.h, &mut self.m);
+                        band
+                    });
+            },
+            16 => { // Stilson/Moog Notch
+                process_filter_fun32!(
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
+                        let (_low, _band, _high, notch) =
+                            process_stilson_moog(
+                                input, freq, res, self.israte,
+                                &mut self.z, &mut self.y, &mut self.k,
+                                &mut self.h, &mut self.m);
+                        notch
                     });
             },
             _ => {},

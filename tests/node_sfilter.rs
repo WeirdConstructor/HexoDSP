@@ -1042,8 +1042,8 @@ fn check_node_sfilter_moog_lowpass() {
         avg_fft_freqs(4.0, &[
             100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
         ], &fft[..]), vec![
-            (0, 24), (100, 16), (500, 20), (1000, 20), (2000, 36), (3500, 332),
-            (4000, 164), (5000, 20), (6000, 8), (8000, 0)
+            (0, 4), (100, 4), (500, 4), (1000, 4), (2000, 4),
+            (3500, 20), (4000, 52), (5000, 4), (6000, 0), (8000, 0)
         ]);
 
     // Low Pass Stilson/Moog @ 4000Hz RES=0.0
@@ -1053,7 +1053,7 @@ fn check_node_sfilter_moog_lowpass() {
             100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
         ], &fft[..]), vec![
             (0, 20), (100, 12), (500, 16), (1000, 16), (2000, 12), (3500, 8),
-            (4000, 8), (5000, 4), (6000, 4), (8000, 0)
+            (4000, 4), (5000, 4), (6000, 0), (8000, 0)
         ]);
 
     // Low Pass Stilson/Moog @ 22050Hz RES=0.0
@@ -1061,15 +1061,15 @@ fn check_node_sfilter_moog_lowpass() {
     assert_eq!(
         avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050, 22051], &fft[..]), vec![
             (0, 16), (100, 16), (1000, 16), (4000, 16), (12000, 16),
-            (16000, 16), (20000, 16), (22050, 0)
+            (16000, 16), (20000, 8), (22050, 0)
         ]);
 
     // Low Pass Stilson/Moog @ 22050Hz RES=1.0
     let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 22050.0, 1.0);
     assert_eq!(
         avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050, 22051], &fft[..]), vec![
-            (0, 8), (100, 16), (1000, 16), (4000, 16), (12000, 16),
-            (16000, 16), (20000, 16), (22050, 0)
+            (0, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
+            (16000, 0), (20000, 0), (22050, 0)
         ]);
 
     // Low Pass Stilson/Moog @ 0Hz RES=0.0
@@ -1084,8 +1084,182 @@ fn check_node_sfilter_moog_lowpass() {
     let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 13, 0.0, 1.0);
     assert_eq!(
         avg_fft_freqs(4.0, &[1, 5, 10, 100, 1000, 4000, 12000, 22050, 22051], &fft[..]), vec![
-            (0, 68), (1, 0), (5, 0), (10, 4), (100, 0), (1000, 0),
+            (0, 0), (1, 0), (5, 0), (10, 0), (100, 0), (1000, 0),
             (4000, 0), (12000, 0), (22050, 0)
+        ]);
+}
+
+#[test]
+fn check_node_sfilter_moog_highpass() {
+    let (mut matrix, mut node_exec) = setup_sfilter_matrix();
+
+    // High Pass Stilson/Moog @ 1000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 1000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (500, 10), (700, 20), (900, 40), (1000, 140),
+            (1500, 30), (2000, 10), (3000, 10), (4000, 10)
+        ]);
+
+    // High Pass Stilson/Moog @ 1000Hz RES=0.5
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 1000.0, 0.5);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (500, 10), (700, 40), (900, 50), (1000, 40),
+            (1500, 20), (2000, 20), (3000, 10), (4000, 10)
+        ]);
+
+    // High Pass Stilson/Moog @ 1000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 1000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 10), (500, 20), (700, 20), (900, 20), (1000, 20),
+            (1500, 20), (2000, 10), (3000, 20), (4000, 10)
+        ]);
+
+    // High Pass Stilson/Moog @ 4000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 4000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (100, 0), (500, 0), (1000, 4), (2000, 16),
+            (3500, 68), (4000, 200), (5000, 36), (6000, 24), (8000, 16)
+        ]);
+
+    // High Pass Stilson/Moog @ 4000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 4000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (100, 0), (500, 8), (1000, 16), (2000, 24), (3500, 28),
+            (4000, 24), (5000, 20), (6000, 20), (8000, 20)
+        ]);
+
+    // High Pass Stilson/Moog @ 22050Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 22050.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 0), (100, 0), (1000, 0), (4000, 0),
+            (12000, 0), (16000, 0), (20000, 8)
+        ]);
+
+    // High Pass Stilson/Moog @ 22050Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 22050.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
+            (16000, 0), (20000, 0)
+        ]);
+
+    // High Pass Stilson/Moog @ 0Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 0.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 0), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0)
+        ]);
+
+    // High Pass Stilson/Moog @ 0Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 14, 0.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 0), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0)
+        ]);
+}
+
+#[test]
+fn check_node_sfilter_moog_bandpass() {
+    let (mut matrix, mut node_exec) = setup_sfilter_matrix();
+
+    // Band Pass Simper SVF @ 1000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 1000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            250, 500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (250, 0), (500, 10), (700, 40), (900, 230),
+            (1000, 70), (1500, 10), (2000, 0), (3000, 0), (4000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 1000Hz RES=0.5
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 1000.0, 0.5);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            250, 500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (250, 0), (500, 10), (700, 10), (900, 10),
+            (1000, 10), (1500, 10), (2000, 0), (3000, 0), (4000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 1000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 1000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[
+            250, 500, 700, 900, 1000, 1500, 2000, 3000, 4000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (250, 0), (500, 8), (700, 8), (900, 8),
+            (1000, 8), (1500, 4), (2000, 4), (3000, 4), (4000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 4000Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 4000.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (100, 0), (500, 0), (1000, 0), (2000, 20),
+            (3500, 320), (4000, 170), (5000, 20), (6000, 10), (8000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 4000Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 4000.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(10.0, &[
+            100, 500, 1000, 2000, 3500, 4000, 5000, 6000, 8000, 12000
+        ], &fft[..]), vec![
+            (0, 0), (100, 0), (500, 0), (1000, 0), (2000, 0), (3500, 10),
+            (4000, 0), (5000, 0), (6000, 0), (8000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 22050Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 22050.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 0), (100, 0), (1000, 0), (4000, 0),
+            (12000, 0), (16000, 0), (20000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 22050Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 22050.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(8.0, &[100, 1000, 4000, 12000, 16000, 20000, 22050], &fft[..]),
+        vec![
+            (0, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0),
+            (16000, 0), (20000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 0Hz RES=0.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 0.0, 0.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 4), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0)
+        ]);
+
+    // Band Pass Simper SVF @ 0Hz RES=1.0
+    let fft = fft_with_freq_res_type(&mut matrix, &mut node_exec, 15, 0.0, 1.0);
+    assert_eq!(
+        avg_fft_freqs(4.0, &[10, 100, 1000, 4000, 12000, 22050], &fft[..]), vec![
+            (0, 12), (10, 0), (100, 0), (1000, 0), (4000, 0), (12000, 0)
         ]);
 }
 
