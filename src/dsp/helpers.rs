@@ -82,6 +82,7 @@ pub fn fast_sin(x: f32) -> f32 {
 /// Don't forget to call [init_white_noise_tab] before using it.
 static mut WHITE_NOISE_TAB: [f64; 1024] = [0.0; 1024];
 
+#[allow(rustdoc::private_intra_doc_links)]
 /// Initializes [WHITE_NOISE_TAB].
 pub fn init_white_noise_tab() {
     let mut rng = RandGen::new();

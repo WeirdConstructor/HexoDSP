@@ -302,7 +302,7 @@ pub struct Matrix {
     /// using [Matrix::set_prop] and [Matrix::get_prop].
     properties: HashMap<String, SAtom>,
 
-    /// Stores the [dsp::ParamId] of the inputs that have an output
+    /// Stores the [crate::dsp::ParamId] of the inputs that have an output
     /// assigned to them. It's updates when [Matrix::edges] is updated and used
     /// by [Matrix::param_input_is_used] to return whether a parameter is
     /// controlled by some output port.
