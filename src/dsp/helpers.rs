@@ -1011,27 +1011,35 @@ pub fn process_hal_chamberlin_svf(
 ///        // ... do something with the result here.
 ///    }
 ///```
-// Simper SVF taken from baseplug (Rust crate) example svf_simper.rs:
-// implemented from https://cytomic.com/files/dsp/SvfLinearTrapOptimised2.pdf
-// thanks, andy!
+// Simper SVF implemented from
+// https://cytomic.com/files/dsp/SvfLinearTrapezoidalSin.pdf
+// Big thanks go to Andrew Simper @ Cytomic for developing and publishing
+// the paper.
 #[inline]
 pub fn process_simper_svf(
     input: f32, freq: f32, res: f32, israte: f32, ic1eq: &mut f32, ic2eq: &mut f32
 ) -> (f32, f32, f32) {
-    let g = (std::f32::consts::PI * freq * israte).tan();
     // XXX: the 1.989 were tuned by hand, so the resonance is more audible.
     let k = 2f32 - (1.989f32 * res);
+    let w = std::f32::consts::PI * freq * israte;
 
-    let a1 = 1.0 / (1.0 + (g * (g + k)));
-    let a2 = g * a1;
-    let a3 = g * a2;
+    let s1  = w.sin();
+    let s2  = (2.0 * w).sin();
+    let nrm = 1.0 / (2.0 + k * s2);
 
-    let v3 = input - *ic2eq;
-    let v1 = (a1 * *ic1eq) + (a2 * v3);
-    let v2 = *ic2eq + (a2 * *ic1eq) + (a3 * v3);
+    let g0 = s2 * nrm;
+    let g1 = (-2.0 * s1 * s1 - k * s2) * nrm;
+    let g2 = (2.0 * s1 * s1) * nrm;
 
-    *ic1eq = (2.0 * v1) - *ic1eq;
-    *ic2eq = (2.0 * v2) - *ic2eq;
+    let t0 = input - *ic2eq;
+    let t1 = g0 * t0 + g1 * *ic1eq;
+    let t2 = g2 * t0 + g0 * *ic1eq;
+
+    let v1 = t1 + *ic1eq;
+    let v2 = t2 + *ic2eq;
+
+    *ic1eq += 2.0 * t1;
+    *ic2eq += 2.0 * t2;
 
     // low   = v2
     // band  = v1
