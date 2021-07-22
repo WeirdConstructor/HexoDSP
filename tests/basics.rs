@@ -752,7 +752,7 @@ fn check_matrix_tseq() {
 
     let pat = matrix.get_pattern_data(0).unwrap();
     {
-        let mut pr = pat.borrow_mut();
+        let mut pr = pat.lock().unwrap();
         pr.set_rows(16);
         pr.set_cell_value(0,  0, 0xFFF);
         pr.set_cell_value(15, 0, 0x000);
@@ -820,7 +820,7 @@ fn check_matrix_tseq_trig() {
 
     let pat = matrix.get_pattern_data(0).unwrap();
     {
-        let mut pr = pat.borrow_mut();
+        let mut pr = pat.lock().unwrap();
         pr.set_rows(16);
         pr.set_cell_value(0,  0, 0xFFF);
         pr.set_cell_value(15, 0, 0x000);
@@ -889,7 +889,7 @@ fn check_matrix_tseq_gate() {
 
     let pat = matrix.get_pattern_data(0).unwrap();
     {
-        let mut pr = pat.borrow_mut();
+        let mut pr = pat.lock().unwrap();
         pr.set_rows(16);
         pr.set_col_gate_type(0);
         // pulse_width:
@@ -966,7 +966,7 @@ fn check_matrix_tseq_2col_gate_bug() {
 
     let pat = matrix.get_pattern_data(0).unwrap();
     {
-        let mut pr = pat.borrow_mut();
+        let mut pr = pat.lock().unwrap();
         pr.set_rows(2);
         pr.set_col_value_type(0);
         pr.set_col_gate_type(1);
@@ -1129,7 +1129,7 @@ fn check_matrix_tseq_perf() {
 
     let pat = matrix.get_pattern_data(0).unwrap();
     {
-        let mut pr = pat.borrow_mut();
+        let mut pr = pat.lock().unwrap();
         pr.set_rows(16);
         pr.set_col_note_type(0);
         pr.set_col_gate_type(1);

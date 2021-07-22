@@ -7,8 +7,7 @@ mod sequencer;
 
 use ringbuf::{RingBuffer, Producer, Consumer};
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 pub const MAX_COLS         : usize = 6;
 pub const MAX_PATTERN_LEN  : usize = 256;
@@ -36,7 +35,7 @@ pub enum PatternUpdateMsg {
 }
 
 pub struct Tracker {
-    data:      Rc<RefCell<PatternData>>,
+    data:      Arc<Mutex<PatternData>>,
     data_prod: Producer<PatternUpdateMsg>,
     seq:       Option<PatternSequencer>,
     seq_cons:  Option<Consumer<PatternUpdateMsg>>,
@@ -69,17 +68,17 @@ impl Tracker {
         let (prod, con) = rb.split();
 
         Self {
-            data:      Rc::new(RefCell::new(PatternData::new(MAX_PATTERN_LEN))),
+            data:      Arc::new(Mutex::new(PatternData::new(MAX_PATTERN_LEN))),
             data_prod: prod,
             seq:       Some(PatternSequencer::new(MAX_PATTERN_LEN)),
             seq_cons:  Some(con),
         }
     }
 
-    pub fn data(&self) -> Rc<RefCell<PatternData>> { self.data.clone() }
+    pub fn data(&self) -> Arc<Mutex<PatternData>> { self.data.clone() }
 
     pub fn send_one_update(&mut self) -> bool {
-        let mut data = self.data.borrow_mut();
+        let mut data = self.data.lock().unwrap();
 
         for col in 0..MAX_COLS {
             if data.col_is_modified_reset(col) {
@@ -181,11 +180,11 @@ mod tests {
         let mut t = Tracker::new();
         let mut backend = t.get_backend();
 
-        t.data().borrow_mut().set_rows(16);
-        t.data().borrow_mut().set_col_step_type(0);
-        t.data().borrow_mut().set_cell_value(0,  0, 0xFFF);
-        t.data().borrow_mut().set_cell_value(7,  0, 0x777);
-        t.data().borrow_mut().set_cell_value(15, 0, 0x000);
+        t.data().lock().unwrap().set_rows(16);
+        t.data().lock().unwrap().set_col_step_type(0);
+        t.data().lock().unwrap().set_cell_value(0,  0, 0xFFF);
+        t.data().lock().unwrap().set_cell_value(7,  0, 0x777);
+        t.data().lock().unwrap().set_cell_value(15, 0, 0x000);
 
         while t.send_one_update() { }
         while backend.check_updates() { }
@@ -209,11 +208,11 @@ mod tests {
         let mut t = Tracker::new();
         let mut backend = t.get_backend();
 
-        t.data().borrow_mut().set_rows(16);
-        t.data().borrow_mut().set_col_value_type(0);
-        t.data().borrow_mut().set_cell_value(0,  0, 0xFFF);
-        t.data().borrow_mut().set_cell_value(7,  0, 0x777);
-        t.data().borrow_mut().set_cell_value(15, 0, 0x000);
+        t.data().lock().unwrap().set_rows(16);
+        t.data().lock().unwrap().set_col_value_type(0);
+        t.data().lock().unwrap().set_cell_value(0,  0, 0xFFF);
+        t.data().lock().unwrap().set_cell_value(7,  0, 0x777);
+        t.data().lock().unwrap().set_cell_value(15, 0, 0x000);
 
         while t.send_one_update() { }
         while backend.check_updates() { }
@@ -236,12 +235,12 @@ mod tests {
         let mut t = Tracker::new();
         let mut backend = t.get_backend();
 
-        t.data().borrow_mut().set_rows(4);
-        t.data().borrow_mut().set_col_gate_type(0);
-        t.data().borrow_mut().set_cell_value(0,  0, 0xFF7);
-        t.data().borrow_mut().clear_cell(1, 0);
-        t.data().borrow_mut().set_cell_value(2,  0, 0xFF0);
-        t.data().borrow_mut().set_cell_value(3,  0, 0xFFF);
+        t.data().lock().unwrap().set_rows(4);
+        t.data().lock().unwrap().set_col_gate_type(0);
+        t.data().lock().unwrap().set_cell_value(0,  0, 0xFF7);
+        t.data().lock().unwrap().clear_cell(1, 0);
+        t.data().lock().unwrap().set_cell_value(2,  0, 0xFF0);
+        t.data().lock().unwrap().set_cell_value(3,  0, 0xFFF);
 
         while t.send_one_update() { }
         while backend.check_updates() { }

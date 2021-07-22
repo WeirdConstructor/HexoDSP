@@ -248,8 +248,7 @@ impl Cell {
     }
 }
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 /// To report back cycle errors from [Matrix::check] and [Matrix::sync].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -370,7 +369,7 @@ impl Matrix {
     }
 
     pub fn get_pattern_data(&self, tracker_id: usize)
-        -> Option<Rc<RefCell<PatternData>>>
+        -> Option<Arc<Mutex<PatternData>>>
     {
         self.config.get_pattern_data(tracker_id)
     }
@@ -537,8 +536,8 @@ impl Matrix {
         let mut tracker_id = 0;
         while let Some(pdata) = self.get_pattern_data(tracker_id) {
             patterns.push(
-                if pdata.borrow().is_unset() { None }
-                else { Some(pdata.borrow().to_repr()) });
+                if pdata.lock().unwrap().is_unset() { None }
+                else { Some(pdata.lock().unwrap().to_repr()) });
 
             tracker_id += 1;
         }
@@ -582,7 +581,7 @@ impl Matrix {
         for (tracker_id, pat) in repr.patterns.iter().enumerate() {
             if let Some(pat) = pat {
                 if let Some(pd) = self.get_pattern_data(tracker_id) {
-                    pd.borrow_mut().from_repr(pat);
+                    pd.lock().unwrap().from_repr(pat);
                 }
             }
         }

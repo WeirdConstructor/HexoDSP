@@ -625,7 +625,7 @@ mod tests {
 
             {
                 let pat_ref = matrix.get_pattern_data(0).unwrap();
-                let mut pat = pat_ref.borrow_mut();
+                let mut pat = pat_ref.lock().unwrap();
 
                 for col in 0..MAX_COLS {
                     pat.set_col_note_type(col);
@@ -663,7 +663,7 @@ mod tests {
             assert_eq!(s, orig_serial);
 
             let pat_ref = matrix.get_pattern_data(0).unwrap();
-            let mut pat = pat_ref.borrow_mut();
+            let mut pat = pat_ref.lock().unwrap();
 
             for col in 0..MAX_COLS {
                 assert!(pat.is_col_note(col));

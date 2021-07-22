@@ -21,9 +21,7 @@ use crate::monitor::{
 use crate::dsp::tracker::{Tracker, PatternData};
 
 use ringbuf::{RingBuffer, Producer};
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 
 use triple_buffer::Output;
@@ -662,7 +660,7 @@ impl NodeConfigurator {
     }
 
     pub fn get_pattern_data(&self, tracker_id: usize)
-        -> Option<Rc<RefCell<PatternData>>>
+        -> Option<Arc<Mutex<PatternData>>>
     {
         if tracker_id >= self.trackers.len() {
             return None;
