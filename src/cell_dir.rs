@@ -29,7 +29,7 @@ impl CellDir {
 
     #[inline]
     pub fn is_output(&self) -> bool {
-        let e = self.to_edge();
+        let e = self.as_edge();
         e <= 2
     }
 
@@ -39,7 +39,7 @@ impl CellDir {
     }
 
     #[inline]
-    pub fn to_edge(&self) -> u8 {
+    pub fn as_edge(&self) -> u8 {
         *self as u8
     }
 
