@@ -948,7 +948,6 @@ impl Matrix {
         let mut prog = self.config.rebuild_node_ports();
 
         for node_id in ordered_nodes.iter() {
-            println!("PROG NODE ORD: {:?}", node_id);
             self.config.add_prog_node(&mut prog, node_id);
         }
 

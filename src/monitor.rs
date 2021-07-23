@@ -513,8 +513,6 @@ mod tests {
 
         let sl = frontend.get_minmax_monitor_samples(0);
 
-        println!("{:?}", sl);
-
         assert_eq!(sl[MONITOR_MINMAX_SAMPLES - 1], (-0.7, 0.6));
         assert_eq!(sl[MONITOR_MINMAX_SAMPLES - 2], (-0.7, 0.8));
         assert_eq!(sl[MONITOR_MINMAX_SAMPLES - 3], (-0.9, 0.8));
@@ -614,7 +612,6 @@ mod tests {
         backend.check_recycle();
 
         let sl = frontend.get_minmax_monitor_samples(0);
-        println!("{:?}", sl);
 
         assert_eq!(
             (sl[MONITOR_MINMAX_SAMPLES - 1].1 * 10000.0).floor() as u32,

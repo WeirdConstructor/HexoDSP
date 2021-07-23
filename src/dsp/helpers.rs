@@ -159,7 +159,6 @@ impl Rng {
     }
 
     pub fn seed(&mut self, seed: u64) {
-        println!("SEED {}", seed);
         self.sm = SplitMix64::new(seed);
     }
 

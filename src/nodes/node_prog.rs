@@ -348,8 +348,6 @@ impl NodeProg {
 
     pub fn assign_outputs(&mut self) {
         for op in self.prog.iter() {
-
-            println!("ASSIGN OUTPUTS: {}", op);
             // First step is copying the ProcBufs to the `cur_inp` current
             // input buffer vector. It holds the data for smoothed paramter
             // inputs or just constant values since the last smoothing.

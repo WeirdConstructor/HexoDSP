@@ -27,7 +27,7 @@ impl DropThread {
 
                 while let Some(_node) = graph_drop_con.pop() {
                     // drop it ...
-                    println!("Dropped some shit...");
+                    //d// println!("Dropped some shit...");
                 }
 
                 std::thread::sleep(std::time::Duration::from_millis(250));

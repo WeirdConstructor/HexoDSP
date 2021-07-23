@@ -354,7 +354,6 @@ impl NodeConfigurator {
             if let Some(modamt) = &mut nparam.modamt {
                 mod_idx  = Some(modamt.0);
                 modamt.1 = v.unwrap_or(0.0);
-                println!("SET NPARAM MOD AMT {:?} {:?} {}", param, mod_idx, modamt.1);
             }
         }
 
@@ -365,7 +364,6 @@ impl NodeConfigurator {
             self.param_modamt.get(&param).copied().flatten()
         {
             if v.is_none() {
-                println!("SET NEW NONE MOD AMT {:?}", param);
                 self.param_modamt.insert(param, v);
                 true
 
@@ -374,7 +372,6 @@ impl NodeConfigurator {
                 self.param_modamt.insert(param, v);
 
                 if let Some(mod_idx) = mod_idx {
-                println!("SET UPD MOD AMT {:?} {:?} {:?}", param, mod_idx, modamt);
                     let _ =
                         self.shared.quick_update_prod.push(
                             QuickMessage::ModamtUpdate { mod_idx, modamt });
@@ -692,8 +689,6 @@ impl NodeConfigurator {
     }
 
     pub fn create_node(&mut self, ni: NodeId) -> Option<(&NodeInfo, u8)> {
-        println!("create_node: {}", ni);
-
         if let Some((mut node, info)) = node_factory(ni) {
             let mut index : Option<usize> = None;
 
@@ -826,8 +821,8 @@ impl NodeConfigurator {
             //   allocation in the output vector.
             *node_instance = Some(ni);
 
-            println!("INSERT[{}]: {:?} outidx: {},{} inidx: {},{} atidx: {},{}",
-                     i, id, out_idx, out_len, in_idx, in_len, at_idx, at_len);
+            //d// println!("INSERT[{}]: {:?} outidx: {},{} inidx: {},{} atidx: {},{}",
+            //d//          i, id, out_idx, out_len, in_idx, in_len, at_idx, at_len);
 
             // Create new parameters and initialize them if they did not
             // already exist previously
