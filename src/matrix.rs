@@ -98,7 +98,7 @@ impl Cell {
     /// let repr = some_cell.to_repr();
     /// assert_eq!(
     ///     repr.serialize().to_string(),
-    ///     "[\"sin\",0,0,0,[-1,0,0],[-1,0,0]]");
+    ///     "[\"sin\",0,0,0,[-1,\"freq\",\"freq\"],[-1,\"sig\",\"sig\"]]");
     ///```
     pub fn to_repr(&self) -> CellRepr {
         CellRepr {
@@ -518,7 +518,7 @@ impl Matrix {
     ///
     /// let mut serialized = matrix.to_repr().serialize().to_string();
     ///
-    /// assert!(serialized.find("\"sin\",2,0,0,[-1,-1,-1],[-1,0,-1]").is_some());
+    /// assert!(serialized.find("\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]").is_some());
     /// assert!(serialized.find("\"freq\",-0.100").is_some());
     ///```
     ///

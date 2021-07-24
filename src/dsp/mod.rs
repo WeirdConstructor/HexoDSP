@@ -30,6 +30,8 @@ mod node_map;
 mod node_smap;
 #[allow(non_upper_case_globals)]
 mod node_sfilter;
+#[allow(non_upper_case_globals)]
+mod node_mix3;
 
 pub mod tracker;
 mod satom;
@@ -75,6 +77,7 @@ use node_noise::Noise;
 use node_map::Map;
 use node_smap::SMap;
 use node_sfilter::SFilter;
+use node_mix3::Mix3;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -483,6 +486,15 @@ macro_rules! node_list {
                (1 gain  n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
                (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
                {3 0 neg_att setting(1) fa_amp_neg_att 0  1}
+               [0 sig],
+            mix3 => Mix3 UIType::Generic UICategory::NtoM
+               (0 ch1   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (1 ch2   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (2 ch3   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (3 gain1 n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (4 gain2 n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (5 gain3 n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (6 ogain n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
                [0 sig],
             smap => SMap UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
@@ -1027,6 +1039,19 @@ macro_rules! make_node_info_enum {
                     $(NodeId::$variant(_) => {
                         match name {
                             $(stringify!($para) => Some($in_idx),)*
+                            _ => None,
+                        }
+                    }),+
+                }
+            }
+
+            pub fn inp_name_by_idx(&self, idx: u8) -> Option<&'static str> {
+                match self {
+                    NodeId::$v1           => None,
+                    $(NodeId::$variant(_) => {
+                        match idx {
+                            $($in_idx    => Some(stringify!($para)),)*
+                            $($in_at_idx => Some(stringify!($atom)),)*
                             _ => None,
                         }
                     }),+

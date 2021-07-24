@@ -27,6 +27,49 @@ fn deserialize_node_id(v: &Value, i1: usize, i2: usize)
     Ok(nid.to_instance(v[i2].as_i64().unwrap_or(0) as usize))
 }
 
+fn inp2idx(node_id: NodeId, v: &Value) -> i16 {
+    let inp = v.as_i64().unwrap_or(-2) as i16;
+
+    if inp > -2 { inp }
+    else {
+        v.as_str()
+         .map(|s| node_id.inp(s).map(|i| i as i16).unwrap_or(-1))
+         .unwrap_or(-1)
+    }
+}
+
+fn out2idx(node_id: NodeId, v: &Value) -> i16 {
+    let out = v.as_i64().unwrap_or(-2) as i16;
+
+    if out > -2 { out }
+    else {
+        v.as_str()
+         .map(|s| node_id.out(s).map(|i| i as i16).unwrap_or(-1))
+         .unwrap_or(-1)
+    }
+}
+
+fn inp_idx2value(node_id: NodeId, idx: i16) -> Value {
+    if idx == -1 {
+        json!(-1)
+    } else {
+        node_id.inp_name_by_idx(idx as u8)
+            .map(|n| json!(n))
+            .unwrap_or_else(|| json!(-1))
+    }
+}
+
+fn out_idx2value(node_id: NodeId, idx: i16) -> Value {
+    if idx == -1 {
+        json!(-1)
+    } else {
+        node_id.out_name_by_idx(idx as u8)
+            .map(|n| json!(n))
+            .unwrap_or_else(|| json!(-1))
+    }
+}
+
+
 impl CellRepr {
     pub fn serialize(&self) -> Value {
         json!([
@@ -34,25 +77,31 @@ impl CellRepr {
             self.node_id.instance(),
             self.x,
             self.y,
-            [self.inp[0], self.inp[1], self.inp[2]],
-            [self.out[0], self.out[1], self.out[2]],
+            [inp_idx2value(self.node_id, self.inp[0]),
+             inp_idx2value(self.node_id, self.inp[1]),
+             inp_idx2value(self.node_id, self.inp[2])],
+            [out_idx2value(self.node_id, self.out[0]),
+             out_idx2value(self.node_id, self.out[1]),
+             out_idx2value(self.node_id, self.out[2])],
         ])
     }
 
     pub fn deserialize(v: &Value) -> Result<Self, MatrixDeserError> {
+        let node_id = deserialize_node_id(v, 0, 1)?;
+
         Ok(Self {
-            node_id: deserialize_node_id(v, 0, 1)?,
+            node_id,
             x:       v[2].as_i64().unwrap_or(0) as usize,
             y:       v[3].as_i64().unwrap_or(0) as usize,
             inp: [
-                v[4][0].as_i64().unwrap_or(-1) as i16,
-                v[4][1].as_i64().unwrap_or(-1) as i16,
-                v[4][2].as_i64().unwrap_or(-1) as i16,
+                inp2idx(node_id, &v[4][0]),
+                inp2idx(node_id, &v[4][1]),
+                inp2idx(node_id, &v[4][2])
             ],
             out: [
-                v[5][0].as_i64().unwrap_or(-1) as i16,
-                v[5][1].as_i64().unwrap_or(-1) as i16,
-                v[5][2].as_i64().unwrap_or(-1) as i16,
+                out2idx(node_id, &v[5][0]),
+                out2idx(node_id, &v[5][1]),
+                out2idx(node_id, &v[5][2])
             ],
         })
     }
@@ -499,8 +548,7 @@ mod tests {
         let s = mr.serialize();
 
         assert_eq!(s,
-          "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,0,-1]],[\"out\",0,1,0,[-1,0,-1],[-1,-1,0]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
-
+            "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
         let mut mr2 = MatrixRepr::deserialize(&s).unwrap();
 
         let s2 = mr2.serialize();
@@ -546,7 +594,7 @@ mod tests {
     fn check_cell_repr() {
         let cell =
             Cell::empty(NodeId::Out(2))
-            .input(Some(2), Some(0), Some(3))
+            .input(Some(2), Some(0), Some(1))
             .out(Some(11), Some(4), Some(1));
         let cr = cell.to_repr();
 
@@ -746,5 +794,45 @@ mod tests {
 
             assert_eq!(matrix.get_prop("test").unwrap().i(), 31337);
         }
+    }
+
+    #[test]
+    fn check_matrix_repr_old_format2new() {
+         let old_format =
+            "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\
+             \"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,0,-1]],[\"out\",0,1,0,\
+             [-1,0,-1],[-1,-1,0]]],\"params\":[[\"out\",0,\"ch1\",0.0],\
+             [\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\
+             \"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],\
+             [\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\",\
+             -0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":\
+             [null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null,null,null,null,null,\
+             null,null,null,null,null,null,null,null],\"props\":[]}";
+
+        let mut mr = MatrixRepr::deserialize(old_format).unwrap();
+        let new_format = mr.serialize().to_string();
+
+        assert_eq!(new_format,
+            "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,\
+            0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"o\
+            ut\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],\
+            [\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\
+            \",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,nul\
+            l,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,\
+            null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,nu\
+            ll,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null\
+            ,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,n\
+            ull,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,nul\
+            l,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,\
+            null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
     }
 }
