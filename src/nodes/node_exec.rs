@@ -11,6 +11,9 @@ use crate::dsp::{NodeId, Node, NodeContext, MAX_BLOCK_SIZE};
 use crate::util::{Smoother, AtomicFloat};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
 
+use std::io::Write;
+use crate::log;
+
 use ringbuf::{Producer, Consumer};
 use std::sync::Arc;
 
@@ -54,6 +57,9 @@ pub struct NodeExecutor {
 
     /// The connection with the [crate::nodes::NodeConfigurator].
     shared: SharedNodeExec,
+
+    /// A flag to remember if we already initialized the logger on the audio thread.
+    dsp_log_init: bool,
 }
 
 /// Contains anything that connects the [NodeExecutor] with the frontend part.
@@ -198,6 +204,7 @@ impl NodeExecutor {
             prog:              NodeProg::empty(),
             monitor_signal_cur_inp_indices: [UNUSED_MONITOR_IDX; MON_SIG_CNT],
             exec_ctx:          NodeExecContext::new(),
+            dsp_log_init:      false,
             shared,
         }
     }
@@ -212,6 +219,10 @@ impl NodeExecutor {
                         std::mem::replace(
                             &mut self.nodes[index as usize],
                             node);
+
+                    log(|w| {
+                        let _ = write!(w, "[dbg] Create node index={}", index); });
+
                     let _ =
                         self.shared.graph_drop_prod.push(
                             DropMsg::Node { node: prev_node });
@@ -231,10 +242,16 @@ impl NodeExecutor {
                     self.monitor_signal_cur_inp_indices =
                         [UNUSED_MONITOR_IDX; MON_SIG_CNT];
 
+                    log(|w| {
+                        let _ = write!(w,
+                            "[dbg] Cleared graph ({} nodes)",
+                            self.prog.prog.len()); });
+
                     let prev_prog = std::mem::replace(&mut self.prog, prog);
                     let _ =
                         self.shared.graph_drop_prod.push(
                             DropMsg::Prog { prog: prev_prog });
+
                 },
                 GraphMessage::NewProg { prog, copy_old_out } => {
                     let mut prev_prog = std::mem::replace(&mut self.prog, prog);
@@ -295,6 +312,11 @@ impl NodeExecutor {
                     let _ =
                         self.shared.graph_drop_prod.push(
                             DropMsg::Prog { prog: prev_prog });
+
+                    log(|w| { let _ =
+                        write!(w,
+                            "[dbg] Created new graph (node count={})",
+                            self.prog.prog.len()); });
                 },
             }
         }
@@ -420,6 +442,14 @@ impl NodeExecutor {
     #[inline]
     pub fn process<T: NodeAudioContext>(&mut self, ctx: &mut T) {
         // let tb = std::time::Instant::now();
+
+        if !self.dsp_log_init
+           && crate::log::init_thread_logger("dsp")
+        {
+            self.dsp_log_init = true;
+            crate::log(|w| {
+                let _ = write!(w, "DSP thread logger initialized"); });
+        }
 
         self.process_param_updates(ctx.nframes());
 
