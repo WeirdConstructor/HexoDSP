@@ -29,7 +29,7 @@ impl AllP {
         "AllP sig\nThe output of allpass filter.\nRange: (-1..1)";
 
     pub const DESC : &'static str =
-r#"Simple Single Allpass Filter
+r#"Single Allpass Filter
 
 This is an allpass filter that can be used to build reverbs
 or anything you might find it useful for.

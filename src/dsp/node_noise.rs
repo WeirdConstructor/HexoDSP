@@ -51,7 +51,7 @@ impl Noise {
         "Noise sig\nThe noise output.\nRange: (-1..1)";
 
     pub const DESC : &'static str =
-r#"A Simple Noise Oscillator
+r#"Noise Oscillator
 
 This is a very simple noise oscillator, which can be used for any kind of audio rate noise.
 And as a source for sample & hold like nodes to generate low frequency modulation.
