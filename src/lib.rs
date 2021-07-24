@@ -260,7 +260,9 @@ pub mod monitor;
 pub mod matrix_repr;
 pub mod sample_lib;
 mod util;
+pub mod log;
 
+pub use log::log;
 pub use nodes::{new_node_engine, NodeConfigurator, NodeExecutor};
 pub use cell_dir::CellDir;
 pub use matrix::{Matrix, Cell};
