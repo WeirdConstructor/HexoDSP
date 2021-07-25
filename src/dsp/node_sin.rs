@@ -16,15 +16,20 @@ pub struct Sin {
     srate: f32,
     /// Oscillator phase
     phase: f32,
+    /// Initial phase offset
+    init_phase: f32,
 }
 
 const TWOPI : f32 = 2.0 * std::f32::consts::PI;
 
 impl Sin {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId) -> Self {
+        let init_phase = nid.init_phase();
+
         Self {
             srate: 44100.0,
-            phase: 0.0,
+            phase: init_phase,
+            init_phase,
         }
     }
     pub const freq : &'static str =
@@ -70,7 +75,7 @@ impl DspNode for Sin {
     }
 
     fn reset(&mut self) {
-        self.phase = 0.0;
+        self.phase = self.init_phase;
     }
 
     #[inline]

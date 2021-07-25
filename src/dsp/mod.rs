@@ -963,6 +963,23 @@ macro_rules! make_node_info_enum {
                 }
             }
 
+            /// Consistently initialize the phase for oscillators.
+            /// This does some fixed phase offset for the first 3
+            /// instances, which is usually relied on by the automated
+            /// tests.
+            #[inline]
+            pub fn init_phase(&self) -> f32 {
+                // The first 3 instances get a fixed predefined phase to
+                // not mess up the automated tests so easily.
+                match self.instance() {
+                    0 => 0.0,
+                    1 => 0.05,
+                    2 => 0.1,
+                    // 0.25 just to protect against sine cancellation
+                    _ => crate::dsp::helpers::rand_01() * 0.25
+                }
+            }
+
             /// This maps the atom index of the node to the absolute
             /// ParamId in the GUI (and in the [crate::matrix::Matrix]).
             /// The Atom/Param duality is a bit weird because they share

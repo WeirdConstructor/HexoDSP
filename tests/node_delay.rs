@@ -83,7 +83,7 @@ fn check_node_delay_time_mod() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 4, 4);
 
-    let sin  = NodeId::Sin(0);
+    let sin  = NodeId::Sin(1);
     let dly  = NodeId::Delay(0);
     let out  = NodeId::Out(0);
     matrix.place(1, 1, Cell::empty(sin)
@@ -106,7 +106,7 @@ fn check_node_delay_time_mod() {
     assert_eq!(fft[0], (431,  614));
     assert_eq!(fft[1], (441, 1012));
 
-    let sin2 = NodeId::Sin(1);
+    let sin2 = NodeId::Sin(0);
     matrix.place(0, 3, Cell::empty(sin2)
                        .out(sin2.out("sig"), None, None));
 
@@ -122,15 +122,15 @@ fn check_node_delay_time_mod() {
     let fft = run_and_get_fft4096_now(&mut node_exec, 110);
     // Expect a sine sweep over a
     // range of low frequencies:
-    assert_eq!(fft[0],  (108, 111));
-    assert_eq!(fft[5],  (312, 110));
-    assert_eq!(fft[10], (700, 110));
+    assert_eq!(fft[0],  (86,  112));
+    assert_eq!(fft[5],  (237, 112));
+    assert_eq!(fft[10], (517, 111));
 
     // Sweep upwards:
     run_for_ms(&mut node_exec, 300.0);
     let fft = run_and_get_fft4096_now(&mut node_exec, 122);
     assert_eq!(fft[0], (2509, 123));
-    assert_eq!(fft[8], (2821, 123));
+    assert_eq!(fft[7], (2821, 123));
 
     // Sweep at mostly highest point:
     run_for_ms(&mut node_exec, 700.0);

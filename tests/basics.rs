@@ -45,8 +45,8 @@ fn check_matrix_sine() {
     let sin_led_val = matrix.led_value_for(&sin);
     let out_led_val = matrix.led_value_for(&out);
 
-    assert_float_eq!(sin_led_val, -0.057622954);
-    assert_float_eq!(out_led_val, -0.057622954);
+    assert_float_eq!(sin_led_val, 0.54018);
+    assert_float_eq!(out_led_val, 0.54018);
 }
 
 #[test]
@@ -94,7 +94,7 @@ fn check_sine_pitch_change() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
-    let sin = NodeId::Sin(2);
+    let sin = NodeId::Sin(0);
     let out = NodeId::Out(0);
     matrix.place(0, 0, Cell::empty(sin)
                        .out(None, sin.out("sig"), None));
@@ -255,7 +255,7 @@ fn check_matrix_monitor() {
     }
 
     let rms_mimax = calc_rms_mimax_each_ms(&out_l[..], 50.0);
-    assert_float_eq!(rms_mimax[0].0, 0.5013241);
+    assert_float_eq!(rms_mimax[0].0, 0.49901);
 
     // let ta = std::time::Instant::now();
 
@@ -1082,10 +1082,10 @@ fn check_matrix_node_feedback() {
             // The frequency will be established a bit later because
             // the parameter setting of 880 Hz will be smoothed:
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.6889244, 0.9872897, 0.40561166, -0.5643036, -0.99751425,
-            -0.42060927, 0.6112674, 0.979101, 0.21974884, -0.81355125,
-            -0.83687085, 0.23462467, 0.9970811, 0.35165882, -0.8186541,
-            -0.7396998, 0.5222105, 0.9234876, -0.2683919, -0.983062 ]);
+            0.8791775, 0.8898413, 0.10330327, -0.79178804, -0.92698133,
+            -0.11967586, 0.8259115, 0.86836, -0.09246742, -0.9534301,
+            -0.62676203, 0.5235326, 0.9718173, 0.04517236, -0.9560416,
+            -0.49554884, 0.7601789, 0.75973713, -0.5529301, -0.8783003 ]);
 
     // Let the frequency settle...
     run_for_ms(&mut node_exec, 80.0);

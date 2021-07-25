@@ -4,7 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
-use crate::dsp::helpers::{rand_01, PolyBlepOscillator};
+use crate::dsp::helpers::PolyBlepOscillator;
 
 #[macro_export]
 macro_rules! fa_bosc_wtype { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -28,13 +28,7 @@ pub struct BOsc {
 
 impl BOsc {
     pub fn new(nid: &NodeId) -> Self {
-        let init_phase =
-            if nid.instance() > 0 {
-                // 0.5 just to protect against sine cancellation
-                rand_01() * 0.5
-            } else {
-                0.0
-            };
+        let init_phase = nid.init_phase();
 
         Self {
             osc: PolyBlepOscillator::new(init_phase),

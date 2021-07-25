@@ -42,7 +42,7 @@ fn check_param_mod_amt_with_input() {
         sin.inp_param("freq").unwrap(), Some(0.2)).unwrap();
 
     let rms = run_and_get_first_rms_mimax(&mut node_exec, 50.0);
-    assert_rmsmima!(rms, (0.4992, -1.0, 1.0));
+    assert_rmsmima!(rms, (0.48997, -1.0, 1.0));
 }
 
 #[test]
