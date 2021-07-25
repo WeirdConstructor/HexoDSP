@@ -32,8 +32,28 @@ fn check_node_mix3_1() {
         .input(None, out_1.inp("ch1"), None)
         .out(None, None, None));
 
+    pset_d(&mut matrix, amp_1, "inp", 0.200);
+    pset_d(&mut matrix, mix3_1, "gain2", 0.2); // 0.04
+
+    pset_d(&mut matrix, amp_2, "inp", -0.300);
+    pset_d(&mut matrix, mix3_1, "gain1", 0.1); // -0.03
+
+    pset_d(&mut matrix, amp_3, "inp", 0.500);
+    pset_d(&mut matrix, mix3_1, "gain3", 0.5); // 0.25
+
+    pset_d(&mut matrix, mix3_1, "ogain", 1.0);
     matrix.sync().unwrap();
 
+    // hexodsp::save_patch_to_file(&mut matrix, "check_matrix_ser_mix3.hxy")
+    //     .unwrap();
+
     let res = run_for_ms(&mut node_exec, 25.0);
-    assert_float_eq!(res.0[100], 0.0075585);
+    // The sum is 0.26
+    assert_float_eq!(res.0[100], 0.26);
+
+    pset_d_wait(&mut matrix, &mut node_exec, mix3_1, "gain1", 1.0);
+
+    let res = run_for_ms(&mut node_exec, 25.0);
+    // The sum is now (0.25 + 0.04) - 0.3 == -0.01
+    assert_float_eq!(res.0[100], -0.01);
 }
