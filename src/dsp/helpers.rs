@@ -2,6 +2,8 @@
 // This is a part of HexoDSP. Released under (A)GPLv3 or any later.
 // See README.md and COPYING for details.
 
+use std::cell::RefCell;
+
 /// Logarithmic table size of the table in [fast_cos] / [fast_sin].
 static FAST_COS_TAB_LOG2_SIZE : usize = 9;
 /// Table size of the table in [fast_cos] / [fast_sin].
@@ -166,6 +168,15 @@ impl Rng {
     pub fn next(&mut self) -> f32 {
         self.sm.next_open01() as f32
     }
+}
+
+thread_local! {
+    static GLOBAL_RNG: RefCell<Rng> = RefCell::new(Rng::new());
+}
+
+#[inline]
+pub fn rand_01() -> f32 {
+    GLOBAL_RNG.with(|r| r.borrow_mut().next())
 }
 
 // Copyright 2018 Developers of the Rand project.
@@ -1158,7 +1169,205 @@ impl DCBlockFilter {
     }
 }
 
+// PolyBLEP by Tale
+// (slightly modified)
+// http://www.kvraudio.com/forum/viewtopic.php?t=375517
+// from http://www.martin-finke.de/blog/articles/audio-plugins-018-polyblep-oscillator/
+//
+// default for `pw' should be 1.0, it's the pulse width
+// for the square wave.
+#[allow(dead_code)]
+fn poly_blep_64(t: f64, dt: f64) -> f64 {
+    if t < dt {
+        let t = t / dt;
+        2. * t - (t * t) - 1.
 
+    } else if t > (1.0 - dt) {
+        let t = (t - 1.0) / dt;
+        (t * t) + 2. * t + 1.
+
+    } else {
+        0.
+    }
+}
+
+fn poly_blep(t: f32, dt: f32) -> f32 {
+    if t < dt {
+        let t = t / dt;
+        2. * t - (t * t) - 1.
+
+    } else if t > (1.0 - dt) {
+        let t = (t - 1.0) / dt;
+        (t * t) + 2. * t + 1.
+
+    } else {
+        0.
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PolyBlepOscillator {
+    phase:       f32,
+    init_phase:  f32,
+    last_output: f32,
+}
+
+impl PolyBlepOscillator {
+    pub fn new(init_phase: f32) -> Self {
+        Self {
+            phase:       0.0,
+            last_output: 0.0,
+            init_phase,
+        }
+    }
+
+    #[inline]
+    pub fn reset(&mut self) {
+        self.phase       = self.init_phase;
+        self.last_output = 0.0;
+    }
+
+//    #[inline]
+//    pub fn next_tri(&mut self) -> f32 {
+//        let value = -1.0 + (2.0 * self.phase);
+//        2.0 * (value.abs() - 0.5)
+//    }
+
+    #[inline]
+    pub fn next_sin(&mut self, freq: f32, israte: f32) -> f32 {
+        let phase_inc = freq * israte;
+
+        let s = fast_sin(self.phase * 2.0 * std::f32::consts::PI);
+
+        self.phase += phase_inc;
+        self.phase = self.phase.fract();
+
+        s as f32
+    }
+
+    #[inline]
+    pub fn next_tri(&mut self, freq: f32, israte: f32) -> f32 {
+        let phase_inc = freq * israte;
+
+        let mut s =
+            if self.phase < 0.5 { 1.0 }
+            else                { -1.0 };
+
+        s += poly_blep(self.phase, phase_inc);
+        s -= poly_blep((self.phase + 0.5).fract(), phase_inc);
+
+        // leaky integrator: y[n] = A * x[n] + (1 - A) * y[n-1]
+        s = phase_inc * s + (1.0 - phase_inc) * self.last_output;
+        self.last_output = s;
+
+        self.phase += phase_inc;
+        self.phase = self.phase.fract();
+
+        // the signal is a bit too weak, we need to amplify it
+        // or else the volume diff between the different waveforms
+        // is too big:
+        s * 4.0
+    }
+
+    #[inline]
+    pub fn next_saw(&mut self, freq: f32, israte: f32) -> f32 {
+        let phase_inc = freq * israte;
+
+        let mut s = (2.0 * self.phase) - 1.0;
+        s -= poly_blep(self.phase, phase_inc);
+
+        self.phase += phase_inc;
+        self.phase = self.phase.fract();
+
+        s
+    }
+
+    #[inline]
+    pub fn next_pulse(&mut self, freq: f32, israte: f32, pw: f32) -> f32 {
+        let phase_inc = freq * israte;
+
+        let pw = (0.1 * pw) + ((1.0 - pw) * 0.5); // some scaling
+        let dc_compensation = (0.5 - pw) * 2.0;
+
+        let mut s =
+            if self.phase < pw { 1.0 }
+            else { -1.0 };
+
+        s += poly_blep(self.phase, phase_inc);
+        s -= poly_blep((self.phase + (1.0 - pw)).fract(),
+                            phase_inc);
+
+        s += dc_compensation;
+
+        self.phase += phase_inc;
+        self.phase = self.phase.fract();
+
+        s
+    }
+}
+
+//pub struct UnisonBlep {
+//    oscs: Vec<PolyBlepOscillator>,
+////    dc_block: crate::filter::DCBlockFilter,
+//}
+//
+//impl UnisonBlep {
+//    pub fn new(max_unison: usize) -> Self {
+//        let mut oscs = vec![];
+//        let mut rng = RandGen::new();
+//
+//        let dis_init_phase = 0.05;
+//        for i in 0..(max_unison + 1) {
+//            // randomize phases so we fatten the unison, get
+//            // less DC and not an amplified signal until the
+//            // detune desyncs the waves.
+//            // But no random phase for first, so we reduce the click
+//            let init_phase =
+//                if i == 0 { 0.0 } else { rng.next_open01() };
+//            oscs.push(PolyBlepOscillator::new(init_phase));
+//        }
+//
+//        Self {
+//            oscs,
+////            dc_block: crate::filter::DCBlockFilter::new(),
+//        }
+//    }
+//
+//    pub fn set_sample_rate(&mut self, srate: f32) {
+////        self.dc_block.set_sample_rate(srate);
+//        for o in self.oscs.iter_mut() {
+//            o.set_sample_rate(srate);
+//        }
+//    }
+//
+//    pub fn reset(&mut self) {
+////        self.dc_block.reset();
+//        for o in self.oscs.iter_mut() {
+//            o.reset();
+//        }
+//    }
+//
+//    pub fn next<P: OscillatorInputParams>(&mut self, params: &P) -> f32 {
+//        let unison =
+//            (params.unison().floor() as usize)
+//            .min(self.oscs.len() - 1);
+//        let detune = params.detune() as f64;
+//
+//        let mix = (1.0 / ((unison + 1) as f32)).sqrt();
+//
+//        let mut s = mix * self.oscs[0].next(params, 0.0);
+//
+//        for u in 0..unison {
+//            let detune_factor =
+//                detune * (((u / 2) + 1) as f64
+//                          * if (u % 2) == 0 { 1.0 } else { -1.0 });
+//            s += mix * self.oscs[u + 1].next(params, detune_factor * 0.01);
+//        }
+//
+////        self.dc_block.next(s)
+//        s
+//    }
+//}
 
 #[cfg(test)]
 mod tests {

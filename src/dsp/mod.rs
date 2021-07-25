@@ -32,6 +32,8 @@ mod node_smap;
 mod node_sfilter;
 #[allow(non_upper_case_globals)]
 mod node_mix3;
+#[allow(non_upper_case_globals)]
+mod node_bosc;
 
 pub mod tracker;
 mod satom;
@@ -61,6 +63,7 @@ use crate::fa_map_clip;
 use crate::fa_smap_clip;
 use crate::fa_smap_mode;
 use crate::fa_sfilter_type;
+use crate::fa_bosc_wtype;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -78,6 +81,7 @@ use node_map::Map;
 use node_smap::SMap;
 use node_sfilter::SFilter;
 use node_mix3::Mix3;
+use node_bosc::BOsc;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -547,6 +551,12 @@ macro_rules! node_list {
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
                (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
+               [0 sig],
+            bosc => BOsc UIType::Generic UICategory::Osc
+               (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
+               (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
+               (2 pw    n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
+               {3 0 wtype setting(0) fa_bosc_wtype 0 3}
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
