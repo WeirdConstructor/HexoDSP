@@ -27,6 +27,18 @@ impl CellDir {
         }
     }
 
+    pub fn flip(&self) -> Self {
+        match self {
+            CellDir::TR => CellDir::BL,
+            CellDir::BR => CellDir::TL,
+            CellDir::B  => CellDir::T,
+            CellDir::BL => CellDir::TR,
+            CellDir::TL => CellDir::BR,
+            CellDir::T  => CellDir::B,
+            CellDir::C  => CellDir::T,
+        }
+    }
+
     #[inline]
     pub fn is_output(&self) -> bool {
         let e = self.as_edge();
