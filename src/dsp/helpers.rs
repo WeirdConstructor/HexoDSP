@@ -1304,6 +1304,26 @@ impl PolyBlepOscillator {
 
         s
     }
+
+    #[inline]
+    pub fn next_pulse_no_dc(&mut self, freq: f32, israte: f32, pw: f32) -> f32 {
+        let phase_inc = freq * israte;
+
+        let pw = (0.1 * pw) + ((1.0 - pw) * 0.5); // some scaling
+
+        let mut s =
+            if self.phase < pw { 1.0 }
+            else { -1.0 };
+
+        s += poly_blep(self.phase, phase_inc);
+        s -= poly_blep((self.phase + (1.0 - pw)).fract(),
+                            phase_inc);
+
+        self.phase += phase_inc;
+        self.phase = self.phase.fract();
+
+        s
+    }
 }
 
 //pub struct UnisonBlep {
