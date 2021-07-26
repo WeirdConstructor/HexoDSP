@@ -611,6 +611,10 @@ pub fn fft(buf: &mut [f32], size: FFT, amp_thres: u32) -> Vec<(u16, u32)> {
     for (i, amp) in amplitudes.iter().enumerate() {
         if *amp >= amp_thres {
             let freq = (i as f32 * SAMPLE_RATE) / len as f32;
+            if freq > 22050.0 {
+                // no freqency images above nyquist...
+                continue;
+            }
 //            println!("{:6.0} {}", freq, *amp);
             res.push((freq.round() as u16, *amp));
         }
