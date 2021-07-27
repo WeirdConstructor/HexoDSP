@@ -126,6 +126,19 @@ or contain nothing at all. For step and value columns these values
 are mapped to the 0.0-1.0 CV signal range, with 0xFFF being 1.0
 and 0x000 being 0.0.
 
+Value examples:     1.0   0.9  0.75   0.5  0.25   0.1
+                  0xFFF 0xE70 0xC00 0x800 0x400 0x19A
+Gate examples:
+    Probability  Ratcheting   Gate Length        full on gate: 0xFFF
+      6%  0x000  16   0x000   1/16  0x000      2 short pulses: 0xFE0
+     18%  0x200  14   0x020   3/16  0x002      4 short pulses: 0xFC0
+     25%  0x300  13   0x030   4/16  0x003        2 50% pulses: 0xFE7
+     50%  0x700   9   0x070   8/16  0x007        half on gate: 0xFF7
+     62%  0x900   7   0x090  10/16  0x009         short pulse: 0xFF0
+     75%  0xC00   4   0x0C0  12/16  0x00C    rare short pulse: 0xEF0
+     87%  0xE00   2   0x0E0  15/16  0x00E   50/50 short pulse: 0x7F0
+    100%  0xF00   1   0x0F0  16/16  0x00F   50/50 full gate:   0x7FF
+
 On the next page you can read about the gate cells and the gate outputs.
 ---page---
 Gate Input and Output
@@ -136,10 +149,11 @@ The gate cells are differently coded:
          With 0x00F being the full row, and 0x000 being 1/16th of a row.
 - 0x0F0: The second nibble controls ratcheting, with 0x0F0 being one
          gate per row, and 0x000 being 16 gates per row.
+         Length of these gates is controlled by the last significant nibble.
 - 0xF00: The most significant nibble controls probability of the
          whole gate cell. With 0xF00 meaning the gate will always be
          triggered, and 0x000 means that the gate is only triggered with
-         6% probability. 50% is 0x070.
+         6% probability. 50% is 0x700.
 
 The behaviour of the 6 gate outputs of TSeq depend on the corresponding
 column type:
