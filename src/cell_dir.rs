@@ -91,4 +91,40 @@ impl CellDir {
             _           => (0, 0),
         }
     }
+
+    /// If it returns 0 they are not adjacent,
+    /// if it returns 1 the data flow direction is pos_a => pos_b
+    /// if it returns -1 the data flow direction is pos_b => pos_a
+    pub fn are_adjacent(pos_a: (usize, usize), pos_b: (usize, usize)) -> Option<CellDir> {
+        let ipos_a = (pos_a.0 as i32, pos_a.1 as i32);
+        let ipos_b = (pos_b.0 as i32, pos_b.1 as i32);
+
+        let (ox, oy) = CellDir::T.as_offs(pos_a.0);
+        if ipos_b == (ipos_a.0 + ox, ipos_a.1 + oy) {
+            return Some(CellDir::T);
+        }
+        let (ox, oy) = CellDir::TL.as_offs(pos_a.0);
+        if ipos_b == (ipos_a.0 + ox, ipos_a.1 + oy) {
+            return Some(CellDir::TL);
+        }
+        let (ox, oy) = CellDir::BL.as_offs(pos_a.0);
+        if ipos_b == (ipos_a.0 + ox, ipos_a.1 + oy) {
+            return Some(CellDir::BL);
+        }
+
+        let (ox, oy) = CellDir::TR.as_offs(pos_a.0);
+        if ipos_b == (ipos_a.0 + ox, ipos_a.1 + oy) {
+            return Some(CellDir::TR);
+        }
+        let (ox, oy) = CellDir::BR.as_offs(pos_a.0);
+        if ipos_b == (ipos_a.0 + ox, ipos_a.1 + oy) {
+            return Some(CellDir::BR);
+        }
+        let (ox, oy) = CellDir::B.as_offs(pos_a.0);
+        if ipos_b == (ipos_a.0 + ox, ipos_a.1 + oy) {
+            return Some(CellDir::B);
+        }
+
+        None
+    }
 }
