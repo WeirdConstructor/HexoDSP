@@ -7,7 +7,7 @@ use crate::dsp::{
     NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext,
     GraphAtomData, GraphFun,
 };
-use crate::dsp::helpers::{PolyBlepOscillator, lerp};
+use crate::dsp::helpers::PolyBlepOscillator;
 
 #[macro_export]
 macro_rules! fa_bosc_wtype { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -152,14 +152,14 @@ impl DspNode for BOsc {
         let mut osc = Box::new(PolyBlepOscillator::new(0.0));
         let israte = 1.0 / 128.0;
 
-        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, x: f32, xn: f32| -> f32 {
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
             let wtype = NodeId::BOsc(0).inp_param("wtype").unwrap().inp();
             let pw    = NodeId::BOsc(0).inp_param("pw").unwrap().inp();
-            let det   = NodeId::BOsc(0).inp_param("det").unwrap().inp();
+            // let det   = NodeId::BOsc(0).inp_param("det").unwrap().inp();
 
             let wtype = gd.get(wtype as u32).map(|a| a.i()).unwrap_or(0);
             let pw    = gd.get_denorm(pw as u32);
-            let det   = gd.get_norm(det as u32);
+            // let det   = gd.get_norm(det as u32);
 
             // the detune scaling with lerp is wrong...
             // let pow = lerp((det + 0.2) * (1.0 / 0.4), 0.25, 4.0);
