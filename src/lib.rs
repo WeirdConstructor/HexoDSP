@@ -266,7 +266,7 @@ pub use log::log;
 pub use nodes::{new_node_engine, NodeConfigurator, NodeExecutor};
 pub use cell_dir::CellDir;
 pub use matrix::{Matrix, Cell};
-pub use dsp::{NodeId, SAtom, NodeInfo};
+pub use dsp::{NodeId, ParamId, SAtom, NodeInfo};
 pub use matrix_repr::load_patch_from_file;
 pub use matrix_repr::save_patch_to_file;
 pub use sample_lib::{SampleLibrary, SampleLoadError};
