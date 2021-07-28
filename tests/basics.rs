@@ -221,7 +221,7 @@ fn check_matrix_monitor() {
     matrix.monitor_cell(*matrix.get(0, 0).unwrap());
 
     let (mut out_l, _out_r) =
-        run_realtime_no_input(&mut node_exec, 0.2, true);
+        run_realtime_no_input(&mut node_exec, 0.3, true);
 
     // Give the MonitorProcessor some time to work on the buffers.
     std::thread::sleep(std::time::Duration::from_millis(100));
@@ -234,11 +234,11 @@ fn check_matrix_monitor() {
 
         assert_eq!((sl[sl.len() - 1].0  * 10000.0) as i64, -1000);
         assert_eq!((sl[sl.len() - 1].1  * 10000.0) as i64, -1000);
-        assert_eq!((sl[sl.len() - 11].0 * 10000.0) as i64, -1000);
+        assert_eq!((sl[sl.len() - 13].0 * 10000.0) as i64, -1000);
         // Here we see that the paramter is smoothed in:
-        assert_eq!((sl[sl.len() - 11].1 * 10000.0) as i64,    -2);
-        assert_eq!((sl[sl.len() - 12].0 * 10000.0) as i64,     0);
-        assert_eq!((sl[sl.len() - 12].1 * 10000.0) as i64,     0);
+        assert_eq!((sl[sl.len() - 14].1 * 10000.0) as i64,    -2);
+        assert_eq!((sl[sl.len() - 15].0 * 10000.0) as i64,     0);
+        assert_eq!((sl[sl.len() - 15].1 * 10000.0) as i64,     0);
     }
 
     for i in 3..6 {
@@ -248,10 +248,10 @@ fn check_matrix_monitor() {
 
         assert_eq!((sl[sl.len() - 1].0  * 10000.0) as i64, -9999);
         assert_eq!((sl[sl.len() - 1].1  * 10000.0) as i64,  9999);
-        assert_eq!((sl[sl.len() - 11].0 * 10000.0) as i64, -9999);
-        assert_eq!((sl[sl.len() - 11].1 * 10000.0) as i64,  9999);
-        assert_eq!((sl[sl.len() - 12].0 * 10000.0) as i64,     0);
-        assert_eq!((sl[sl.len() - 12].1 * 10000.0) as i64,     0);
+        assert_eq!((sl[sl.len() - 14].0 * 10000.0) as i64, -9999);
+        assert_eq!((sl[sl.len() - 14].1 * 10000.0) as i64,  9999);
+        assert_eq!((sl[sl.len() - 15].0 * 10000.0) as i64,     0);
+        assert_eq!((sl[sl.len() - 15].1 * 10000.0) as i64,     0);
     }
 
     let rms_mimax = calc_rms_mimax_each_ms(&out_l[..], 50.0);

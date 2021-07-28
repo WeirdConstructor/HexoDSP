@@ -615,7 +615,7 @@ mod tests {
 
         assert_eq!(
             (sl[MONITOR_MINMAX_SAMPLES - 1].1 * 10000.0).floor() as u32,
-            9921);
+            9937);
 
         assert_eq!(
             backend.count_unused_mon_bufs(),
