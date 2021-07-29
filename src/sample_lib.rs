@@ -58,6 +58,7 @@ impl SampleLibrary {
                     v.push(s?);
                 }
             },
+            // http://blog.bjornroche.com/2009/12/int-float-int-its-jungle-out-there.html
             hound::SampleFormat::Int => {
                 for s in rd.samples::<i16>().step_by(channels) {
                     let s = s?;
