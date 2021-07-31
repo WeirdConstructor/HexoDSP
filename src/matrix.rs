@@ -36,7 +36,7 @@ use std::collections::{HashMap, HashSet};
 ///
 /// matrix.sync().unwrap();
 ///```
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Cell {
     node_id:  NodeId,
     x:        u8,
@@ -178,6 +178,20 @@ impl Cell {
         (self.x as usize, self.y as usize)
     }
 
+    pub fn offs_dir(&mut self, dir: CellDir) -> bool {
+        if let Some(new_pos) =
+            dir.offs_pos((self.x as usize, self.y as usize))
+        {
+            self.x = new_pos.0 as u8;
+            self.y = new_pos.1 as u8;
+            true
+        }
+        else
+        {
+            false
+        }
+    }
+
     pub fn has_dir_set(&self, dir: CellDir) -> bool {
         match dir {
             CellDir::TR => self.out1.is_some(),
@@ -258,6 +272,8 @@ pub enum MatrixError {
         output1: (NodeId, u8),
         output2: (NodeId, u8),
     },
+    NonEmptyCell { cell: Cell },
+    PosOutOfRange
 }
 
 /// An intermediate data structure to store a single edge in the [Matrix].
@@ -437,6 +453,58 @@ impl Matrix {
 
         if let Err(e) = self.check() {
             self.restore_matrix();
+            Err(e)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Like [Matrix::change_matrix] but the function passed to this
+    /// needs to return a `Result<(), MatrixError>`.
+    pub fn change_matrix_err<F>(&mut self, mut f: F)
+        -> Result<(), MatrixError>
+        where F: FnMut(&mut Self) -> Result<(), MatrixError>
+    {
+        self.save_matrix();
+
+        if let Err(e) = f(self) {
+            self.restore_matrix();
+            return Err(e);
+        }
+
+        if let Err(e) = self.check() {
+            self.restore_matrix();
+            Err(e)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Tries to place all `cells` at once, if they are placed in empty
+    /// cells only! Returns an error of the destination cell is not empty
+    /// or out of range, or if the placement of the cluster results in any
+    /// other inconsistencies.
+    ///
+    /// This action must be wrapped with [Matrix::change_matrix_err]!
+    ///
+    /// Restores the matrix to the previous state if placing fails.
+    pub fn place_multiple(&mut self, cells: &[Cell]) -> Result<(), MatrixError> {
+        for cell in cells {
+            let x = cell.pos().0;
+            let y = cell.pos().1;
+
+            if let Some(existing) = self.get(x, y) {
+                if !existing.is_empty() {
+                    return Err(MatrixError::NonEmptyCell { cell: *existing });
+                }
+
+                self.place(x, y, *cell);
+            } else {
+                return Err(MatrixError::PosOutOfRange);
+            }
+        }
+
+        if let Err(e) = self.check() {
             Err(e)
         } else {
             Ok(())

@@ -73,6 +73,73 @@ impl CellDir {
         }
     }
 
+    pub fn path_from_to(mut a: (usize, usize), b: (usize, usize))
+        -> Vec<CellDir>
+    {
+        let mut path = vec![];
+
+        let mut defensive_max : i32 = 1024;
+
+        while (a.0 != b.0 || a.1 != b.1) && defensive_max > 0 {
+            //d// println!("ITER START: A={:?} B={:?}", a, b);
+            defensive_max -= 1;
+
+            let mut min_distance = 99999.0;
+            let mut min_dir      = CellDir::C;
+            let mut min_new_a    = a;
+
+            for e in 0..6 {
+                let dir = Self::from(e);
+
+                if let Some(new_pos) = dir.offs_pos(a) {
+                    let dist = 
+                          (b.0 as f32 - new_pos.0 as f32).powf(2.0)
+                        + (b.1 as f32 - new_pos.1 as f32).powf(2.0);
+
+                    //d// println!("DIST={:5.3} FOR {:?} (B={:?})", dist, new_pos, b);
+
+                    if dist < min_distance {
+                        min_distance = dist;
+                        min_dir      = dir;
+                        min_new_a    = new_pos;
+                    }
+                } else {
+                    //d// println!("NOPOS {:?} {:?}", dir, a);
+                }
+            }
+
+            if min_distance < 99999.0 {
+                //d// println!("A={:?} => {:?} DIR={:?} B={:?}", a, min_new_a, min_dir, b);
+                a = min_new_a;
+                path.push(min_dir);
+            } else {
+                //d// println!("ITER BREAK");
+                break;
+            }
+
+            //d// println!("ITER END: A={:?} B={:?} MAX={}", a, b, defensive_max);
+        }
+
+        //d// println!("PATH: {:?}", path);
+
+        path
+    }
+
+    pub fn offs_pos(&self, pos: (usize, usize)) -> Option<(usize, usize)> {
+        let offs = self.as_offs(pos.0);
+
+        let new_pos = (
+            pos.0 as i32 + offs.0,
+            pos.1 as i32 + offs.1
+        );
+
+        if new_pos.0 >= 0 && new_pos.1 >= 0 {
+            Some((new_pos.0 as usize, new_pos.1 as usize))
+        } else {
+            None
+        }
+    }
+
     pub fn as_offs(&self, x: usize) -> (i32, i32) {
         let even = x % 2 == 0;
         match self {

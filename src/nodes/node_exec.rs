@@ -17,6 +17,12 @@ use crate::log;
 use ringbuf::{Producer, Consumer};
 use std::sync::Arc;
 
+use core::arch::x86_64::{
+    _MM_FLUSH_ZERO_ON,
+    _MM_SET_FLUSH_ZERO_MODE,
+//    _MM_GET_FLUSH_ZERO_MODE
+};
+
 /// Holds the complete allocation of nodes and
 /// the program. New Nodes or the program is
 /// not newly allocated in the audio backend, but it is
@@ -255,6 +261,8 @@ impl NodeExecutor {
                 },
                 GraphMessage::NewProg { prog, copy_old_out } => {
                     let mut prev_prog = std::mem::replace(&mut self.prog, prog);
+
+                    unsafe { _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON); }
 
                     self.monitor_signal_cur_inp_indices =
                         [UNUSED_MONITOR_IDX; MON_SIG_CNT];
