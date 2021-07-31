@@ -260,6 +260,23 @@ impl Cell {
         self.out3 = o3;
         self
     }
+
+    /// If the port is connected, it will return the position of the other cell.
+    pub fn is_port_dir_connected(self, m: &mut Matrix, dir: CellDir) -> Option<(usize, usize)> {
+        if self.has_dir_set(dir) {
+            if let Some(new_pos) =
+                dir.offs_pos((self.x as usize, self.y as usize))
+            {
+                if let Some(dst_cell) = m.get(new_pos.0, new_pos.1) {
+                    if dst_cell.has_dir_set(dir.flip()) {
+                        return Some(new_pos);
+                    }
+                }
+            }
+        }
+
+        None
+    }
 }
 
 use std::sync::{Arc, Mutex};
@@ -526,6 +543,13 @@ impl Matrix {
         cell.x = x as u8;
         cell.y = y as u8;
         self.matrix[x * self.h + y] = cell;
+    }
+
+    /// Set the cell at it's assigned position. This is basically a shorthand
+    /// for [Matrix::place]. As if you would call:
+    /// `m.place(cell.pos().0, cell.pos().1, cell)`.
+    pub fn place_cell(&mut self, cell: Cell) {
+        self.place(cell.pos().0, cell.pos().1, cell);
     }
 
     /// Clears the contents of the matrix. It's completely empty after this.
