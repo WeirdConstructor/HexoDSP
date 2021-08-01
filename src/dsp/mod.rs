@@ -1115,6 +1115,10 @@ macro_rules! make_node_info_enum {
                     $(NodeId::$variant(i) => *i as usize),+
                 }
             }
+
+            pub fn list_all(&self) -> Vec<NodeId> {
+                vec![$(NodeId::$variant(0)),+]
+            }
         }
 
         #[allow(non_snake_case, unused_variables)]
@@ -1379,6 +1383,22 @@ macro_rules! make_node_info_enum {
                 match self {
                     NodeInfo::$v1           => 0,
                     $(NodeInfo::$variant(n) => n.1.in_count()),+
+                }
+            }
+
+            pub fn default_output(&self) -> Option<u8> {
+                if self.out_count() > 0 {
+                    Some(0)
+                } else {
+                    None
+                }
+            }
+
+            pub fn default_input(&self) -> Option<u8> {
+                if self.in_count() > 0 {
+                    Some(0)
+                } else {
+                    None
                 }
             }
 

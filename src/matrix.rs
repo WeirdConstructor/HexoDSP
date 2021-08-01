@@ -151,6 +151,13 @@ impl Cell {
 
     pub fn set_node_id(&mut self, new_id: NodeId) {
         self.node_id = new_id;
+        // With a new node id, we also need new I/Os:
+        self.in1 = None;
+        self.in2 = None;
+        self.in3 = None;
+        self.out1 = None;
+        self.out2 = None;
+        self.out3 = None;
     }
 
     pub fn label<'a>(&self, buf: &'a mut [u8]) -> Option<&'a str> {
@@ -261,8 +268,37 @@ impl Cell {
         self
     }
 
+    /// Finds the first free input (one without an adjacent cell). If any free input
+    /// has an assigned input, that edge is returned.
+    pub fn find_adjacent_free_input(&self, m: &mut Matrix) -> Option<(CellDir, Option<u8>)> {
+        let mut free_inputs = vec![];
+
+        for dir in [CellDir::T, CellDir::TL, CellDir::BL] {
+            if let Some(pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
+                if m.get(pos.0, pos.1)
+                    .map(|c| c.is_empty())
+                    .unwrap_or(false)
+                {
+                    free_inputs.push(dir);
+                }
+            }
+        }
+
+        for in_dir in &free_inputs {
+            if self.has_dir_set(*in_dir) {
+                return Some((*in_dir, self.local_port_idx(*in_dir)));
+            }
+        }
+
+        if free_inputs.len() > 0 {
+            Some((free_inputs[0], None))
+        } else {
+            None
+        }
+    }
+
     /// If the port is connected, it will return the position of the other cell.
-    pub fn is_port_dir_connected(self, m: &mut Matrix, dir: CellDir) -> Option<(usize, usize)> {
+    pub fn is_port_dir_connected(&self, m: &mut Matrix, dir: CellDir) -> Option<(usize, usize)> {
         if self.has_dir_set(dir) {
             if let Some(new_pos) =
                 dir.offs_pos((self.x as usize, self.y as usize))
