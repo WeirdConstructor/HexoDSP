@@ -168,6 +168,11 @@ impl Rng {
     pub fn next(&mut self) -> f32 {
         self.sm.next_open01() as f32
     }
+
+    #[inline]
+    pub fn next_u64(&mut self) -> u64 {
+        self.sm.next_u64()
+    }
 }
 
 thread_local! {
@@ -177,6 +182,11 @@ thread_local! {
 #[inline]
 pub fn rand_01() -> f32 {
     GLOBAL_RNG.with(|r| r.borrow_mut().next())
+}
+
+#[inline]
+pub fn rand_u64() -> u64 {
+    GLOBAL_RNG.with(|r| r.borrow_mut().next_u64())
 }
 
 // Copyright 2018 Developers of the Rand project.
@@ -207,6 +217,15 @@ impl SplitMix64 {
     pub fn new(seed: u64) -> Self { Self(seed) }
     pub fn new_from_i64(seed: i64) -> Self {
         Self::new(u64::from_be_bytes(seed.to_be_bytes()))
+    }
+
+    pub fn new_time_seed() -> Self {
+        use std::time::SystemTime;
+
+        match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+            Ok(n) => Self::new(n.as_secs() as u64),
+            Err(_) => Self::new(123456789),
+        }
     }
 
     #[inline]

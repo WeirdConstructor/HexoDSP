@@ -1115,11 +1115,9 @@ macro_rules! make_node_info_enum {
                     $(NodeId::$variant(i) => *i as usize),+
                 }
             }
-
-            pub fn list_all(&self) -> Vec<NodeId> {
-                vec![$(NodeId::$variant(0)),+]
-            }
         }
+
+        pub const ALL_NODE_IDS : &'static [NodeId] = &[$(NodeId::$variant(0)),+];
 
         #[allow(non_snake_case, unused_variables)]
         pub mod round {

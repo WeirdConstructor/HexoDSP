@@ -270,31 +270,77 @@ impl Cell {
 
     /// Finds the first free input (one without an adjacent cell). If any free input
     /// has an assigned input, that edge is returned.
-    pub fn find_adjacent_free_input(&self, m: &mut Matrix) -> Option<(CellDir, Option<u8>)> {
-        let mut free_inputs = vec![];
+    /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
+    /// and any with `CellDir::C`.
+    pub fn find_first_adjacent_free(&self, m: &mut Matrix, dir: CellDir) -> Option<(CellDir, Option<u8>)> {
+        let mut free_ports = vec![];
 
-        for dir in [CellDir::T, CellDir::TL, CellDir::BL] {
+        let options : &[CellDir] =
+            if dir == CellDir::C {
+                &[CellDir::T, CellDir::TL, CellDir::BL,
+                  CellDir::TR, CellDir::BR, CellDir::B]
+
+            } else if dir.is_input() {
+                &[CellDir::T, CellDir::TL, CellDir::BL]
+
+            } else {
+                &[CellDir::TR, CellDir::BR, CellDir::B]
+            };
+
+        for dir in options {
             if let Some(pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
                 if m.get(pos.0, pos.1)
                     .map(|c| c.is_empty())
                     .unwrap_or(false)
                 {
-                    free_inputs.push(dir);
+                    free_ports.push(dir);
                 }
             }
         }
 
-        for in_dir in &free_inputs {
-            if self.has_dir_set(*in_dir) {
-                return Some((*in_dir, self.local_port_idx(*in_dir)));
+        for in_dir in &free_ports {
+            if self.has_dir_set(**in_dir) {
+                return Some((**in_dir, self.local_port_idx(**in_dir)));
             }
         }
 
-        if free_inputs.len() > 0 {
-            Some((free_inputs[0], None))
+        if free_ports.len() > 0 {
+            Some((*free_ports[0], None))
         } else {
             None
         }
+    }
+
+    /// Finds the all adjacent free places around the current cell.
+    /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
+    /// and any with `CellDir::C`.
+    pub fn find_all_adjacent_free(&self, m: &mut Matrix, dir: CellDir) -> Vec<(CellDir, (usize, usize))> {
+        let mut free_ports = vec![];
+
+        let options : &[CellDir] =
+            if dir == CellDir::C {
+                &[CellDir::T, CellDir::TL, CellDir::BL,
+                  CellDir::TR, CellDir::BR, CellDir::B]
+
+            } else if dir.is_input() {
+                &[CellDir::T, CellDir::TL, CellDir::BL]
+
+            } else {
+                &[CellDir::TR, CellDir::BR, CellDir::B]
+            };
+
+        for dir in options {
+            if let Some(pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
+                if m.get(pos.0, pos.1)
+                    .map(|c| c.is_empty())
+                    .unwrap_or(false)
+                {
+                    free_ports.push((*dir, pos));
+                }
+            }
+        }
+
+        free_ports.to_vec()
     }
 
     /// If the port is connected, it will return the position of the other cell.
