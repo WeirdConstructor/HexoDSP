@@ -1205,6 +1205,33 @@ fn poly_blep(t: f32, dt: f32) -> f32 {
     }
 }
 
+/// This is a band-limited oscillator based on the PolyBlep technique.
+/// Here is a quick example on how to use it:
+///
+///```
+/// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+///
+/// // Randomize the initial phase to make cancellation on summing less
+/// // likely:
+/// let mut osc =
+///     PolyBlepOscillator::new(rand_01() * 0.25);
+///
+///
+/// let freq   = 440.0; // Hz
+/// let israte = 1.0 / 44100.0; // Seconds per Sample
+/// let pw     = 0.2;   // Pulse-Width for the next_pulse()
+/// let waveform = 0;   // 0 being pulse in this example, 1 being sawtooth
+///
+/// // in your process function:
+/// for output_sample in block_of_samples.iter_mut() {
+///    *output_sample =
+///        if waveform == 1 {
+///             osc.next_saw(freq, israte)
+///        } else {
+///             osc.next_pulse(freq, israte, pw)
+///        }
+/// }
+///```
 #[derive(Debug, Clone)]
 pub struct PolyBlepOscillator {
     phase:       f32,
@@ -1213,6 +1240,18 @@ pub struct PolyBlepOscillator {
 }
 
 impl PolyBlepOscillator {
+    /// Create a new instance of [PolyBlepOscillator].
+    ///
+    /// * `init_phase` - Initial phase of the oscillator.
+    /// Range of this parameter is from 0.0 to 1.0. Passing a random
+    /// value is advised for preventing phase cancellation when summing multiple
+    /// oscillators.
+    ///
+    ///```
+    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    ///
+    /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
+    ///```
     pub fn new(init_phase: f32) -> Self {
         Self {
             phase:       0.0,
@@ -1221,18 +1260,30 @@ impl PolyBlepOscillator {
         }
     }
 
+    /// Reset the internal state of the oscillator as if you just called
+    /// [PolyBlepOscillator::new].
     #[inline]
     pub fn reset(&mut self) {
         self.phase       = self.init_phase;
         self.last_output = 0.0;
     }
 
-//    #[inline]
-//    pub fn next_tri(&mut self) -> f32 {
-//        let value = -1.0 + (2.0 * self.phase);
-//        2.0 * (value.abs() - 0.5)
-//    }
-
+    /// Creates the next sample of a sine wave.
+    ///
+    /// * `freq` - The frequency in Hz.
+    /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
+    ///```
+    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    ///
+    /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
+    ///
+    /// let freq   = 440.0; // Hz
+    /// let israte = 1.0 / 44100.0; // Seconds per Sample
+    ///
+    /// // ...
+    /// let sample = osc.next_sin(freq, israte);
+    /// // ...
+    ///```
     #[inline]
     pub fn next_sin(&mut self, freq: f32, israte: f32) -> f32 {
         let phase_inc = freq * israte;
@@ -1245,6 +1296,23 @@ impl PolyBlepOscillator {
         s as f32
     }
 
+    /// Creates the next sample of a triangle wave. Please note that the
+    /// bandlimited waveform needs a few initial samples to swing in.
+    ///
+    /// * `freq` - The frequency in Hz.
+    /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
+    ///```
+    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    ///
+    /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
+    ///
+    /// let freq   = 440.0; // Hz
+    /// let israte = 1.0 / 44100.0; // Seconds per Sample
+    ///
+    /// // ...
+    /// let sample = osc.next_tri(freq, israte);
+    /// // ...
+    ///```
     #[inline]
     pub fn next_tri(&mut self, freq: f32, israte: f32) -> f32 {
         let phase_inc = freq * israte;
@@ -1269,6 +1337,22 @@ impl PolyBlepOscillator {
         s * 4.0
     }
 
+    /// Creates the next sample of a sawtooth wave.
+    ///
+    /// * `freq` - The frequency in Hz.
+    /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
+    ///```
+    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    ///
+    /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
+    ///
+    /// let freq   = 440.0; // Hz
+    /// let israte = 1.0 / 44100.0; // Seconds per Sample
+    ///
+    /// // ...
+    /// let sample = osc.next_saw(freq, israte);
+    /// // ...
+    ///```
     #[inline]
     pub fn next_saw(&mut self, freq: f32, israte: f32) -> f32 {
         let phase_inc = freq * israte;
@@ -1282,6 +1366,27 @@ impl PolyBlepOscillator {
         s
     }
 
+    /// Creates the next sample of a pulse wave.
+    /// In comparison to [PolyBlepOscillator::next_pulse_no_dc] this
+    /// version is DC compensated, so that you may add multiple different
+    /// pulse oscillators for a unison effect without too big DC issues.
+    ///
+    /// * `freq` - The frequency in Hz.
+    /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
+    /// * `pw` - The pulse width. Use the value 0.0 for a square wave.
+    ///```
+    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    ///
+    /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
+    ///
+    /// let freq   = 440.0; // Hz
+    /// let israte = 1.0 / 44100.0; // Seconds per Sample
+    /// let pw     = 0.0; // 0.0 is a square wave.
+    ///
+    /// // ...
+    /// let sample = osc.next_pulse(freq, israte);
+    /// // ...
+    ///```
     #[inline]
     pub fn next_pulse(&mut self, freq: f32, israte: f32, pw: f32) -> f32 {
         let phase_inc = freq * israte;
@@ -1305,6 +1410,27 @@ impl PolyBlepOscillator {
         s
     }
 
+    /// Creates the next sample of a pulse wave.
+    /// In comparison to [PolyBlepOscillator::next_pulse] this
+    /// version is not DC compensated. So be careful when adding multiple
+    /// of this or generally using it in an audio context.
+    ///
+    /// * `freq` - The frequency in Hz.
+    /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
+    /// * `pw` - The pulse width. Use the value 0.0 for a square wave.
+    ///```
+    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    ///
+    /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
+    ///
+    /// let freq   = 440.0; // Hz
+    /// let israte = 1.0 / 44100.0; // Seconds per Sample
+    /// let pw     = 0.0; // 0.0 is a square wave.
+    ///
+    /// // ...
+    /// let sample = osc.next_pulse_no_dc(freq, israte, pw);
+    /// // ...
+    ///```
     #[inline]
     pub fn next_pulse_no_dc(&mut self, freq: f32, israte: f32, pw: f32) -> f32 {
         let phase_inc = freq * israte;
