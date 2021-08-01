@@ -1209,7 +1209,7 @@ fn poly_blep(t: f32, dt: f32) -> f32 {
 /// Here is a quick example on how to use it:
 ///
 ///```
-/// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+/// use hexodsp::dsp::helpers::{PolyBlepOscillator, rand_01};
 ///
 /// // Randomize the initial phase to make cancellation on summing less
 /// // likely:
@@ -1222,6 +1222,7 @@ fn poly_blep(t: f32, dt: f32) -> f32 {
 /// let pw     = 0.2;   // Pulse-Width for the next_pulse()
 /// let waveform = 0;   // 0 being pulse in this example, 1 being sawtooth
 ///
+/// let mut block_of_samples = [0.0; 128];
 /// // in your process function:
 /// for output_sample in block_of_samples.iter_mut() {
 ///    *output_sample =
@@ -1248,7 +1249,7 @@ impl PolyBlepOscillator {
     /// oscillators.
     ///
     ///```
-    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    /// use hexodsp::dsp::helpers::{PolyBlepOscillator, rand_01};
     ///
     /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
     ///```
@@ -1273,7 +1274,7 @@ impl PolyBlepOscillator {
     /// * `freq` - The frequency in Hz.
     /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
     ///```
-    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    /// use hexodsp::dsp::helpers::{PolyBlepOscillator, rand_01};
     ///
     /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
     ///
@@ -1302,7 +1303,7 @@ impl PolyBlepOscillator {
     /// * `freq` - The frequency in Hz.
     /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
     ///```
-    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    /// use hexodsp::dsp::helpers::{PolyBlepOscillator, rand_01};
     ///
     /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
     ///
@@ -1342,7 +1343,7 @@ impl PolyBlepOscillator {
     /// * `freq` - The frequency in Hz.
     /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
     ///```
-    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    /// use hexodsp::dsp::helpers::{PolyBlepOscillator, rand_01};
     ///
     /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
     ///
@@ -1375,7 +1376,7 @@ impl PolyBlepOscillator {
     /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
     /// * `pw` - The pulse width. Use the value 0.0 for a square wave.
     ///```
-    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    /// use hexodsp::dsp::helpers::{PolyBlepOscillator, rand_01};
     ///
     /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
     ///
@@ -1384,7 +1385,7 @@ impl PolyBlepOscillator {
     /// let pw     = 0.0; // 0.0 is a square wave.
     ///
     /// // ...
-    /// let sample = osc.next_pulse(freq, israte);
+    /// let sample = osc.next_pulse(freq, israte, pw);
     /// // ...
     ///```
     #[inline]
@@ -1419,7 +1420,7 @@ impl PolyBlepOscillator {
     /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
     /// * `pw` - The pulse width. Use the value 0.0 for a square wave.
     ///```
-    /// use HexoDSP::dsp::helpers::{PolyBlepOscillator, rand_01};
+    /// use hexodsp::dsp::helpers::{PolyBlepOscillator, rand_01};
     ///
     /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
     ///
