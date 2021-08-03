@@ -652,6 +652,54 @@ impl UICategory {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum RandNodeSelector {
+    Any,
+    OnlyUseful,
+}
+
+fn rand_node_satisfies_spec(nid: NodeId, sel: RandNodeSelector) -> bool {
+    if let NodeId::Nop = nid {
+        return false;
+    }
+
+    match sel {
+        RandNodeSelector::Any => true,
+        RandNodeSelector::OnlyUseful => {
+            match nid {
+                NodeId::Nop     => false,
+                NodeId::Out(_)  => false,
+                NodeId::FbRd(_) => false,
+                NodeId::Test(_) => false,
+                _ => true,
+            }
+        },
+    }
+}
+
+pub fn get_rand_node_id(count: usize, sel: RandNodeSelector) -> Vec<NodeId> {
+    let mut sm  = crate::dsp::helpers::SplitMix64::new_time_seed();
+    let mut out = vec![];
+
+    let mut cnt = 0;
+    while cnt < 100 && out.len() < count {
+        let cur = ALL_NODE_IDS[sm.next_u64() as usize % ALL_NODE_IDS.len()];
+
+        if rand_node_satisfies_spec(cur, sel) {
+            out.push(cur);
+        }
+
+        cnt += 1;
+    }
+
+    while out.len() < count {
+        out.push(NodeId::Nop);
+    }
+
+    out
+}
+
+
 macro_rules! make_node_info_enum {
     ($s1: ident => $v1: ident,
         $($str: ident => $variant: ident
