@@ -34,7 +34,10 @@ mod node_sfilter;
 mod node_mix3;
 #[allow(non_upper_case_globals)]
 mod node_bosc;
+#[allow(non_upper_case_globals)]
+mod node_vosc;
 
+pub mod biquad;
 pub mod tracker;
 mod satom;
 pub mod helpers;
@@ -82,6 +85,7 @@ use node_smap::SMap;
 use node_sfilter::SFilter;
 use node_mix3::Mix3;
 use node_bosc::BOsc;
+use node_vosc::VOsc;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -399,6 +403,15 @@ macro_rules! r_fq { ($x: expr, $coarse: expr) => {
     }
 } }
 
+/// The rounding function for vs (v scale) UI knobs
+macro_rules! r_vps { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        n_vps!((d_vps!($x)).round())
+    } else {
+        n_vps!((d_vps!($x) * 10.0).round() / 10.0)
+    }
+} }
+
 /// The default steps function:
 macro_rules! stp_d { () => { (20.0, 100.0) } }
 /// The UI steps to control parameters with a finer fine control:
@@ -412,6 +425,11 @@ macro_rules! r_id { ($x: expr, $coarse: expr) => { $x } }
 // Default formatting function
 macro_rules! f_def { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     write!($formatter, "{:6.3}", $denorm_v)
+} }
+
+// Default formatting function with very low precision
+macro_rules! f_defvlp { ($formatter: expr, $v: expr, $denorm_v: expr) => {
+    write!($formatter, "{:4.1}", $denorm_v)
 } }
 
 macro_rules! f_freq { ($formatter: expr, $v: expr, $denorm_v: expr) => {
@@ -448,6 +466,7 @@ macro_rules! f_det { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     }
 } }
 
+
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
 define_exp!{n_gain d_gain 0.0, 2.0}
@@ -463,6 +482,8 @@ define_exp!{n_ftme d_ftme 0.25, 1000.0}
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
 define_lin!{n_ogin d_ogin 0.0, 2.0}
+
+define_lin!{n_vps d_vps 1.0, 10.0}
 
 // A note about the input-indicies:
 //
@@ -557,6 +578,13 @@ macro_rules! node_list {
                (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
                (2 pw    n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                {3 0 wtype setting(0) fa_bosc_wtype 0 3}
+               [0 sig],
+            vosc => VOsc UIType::Generic UICategory::Osc
+               (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
+               (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
+               (2 d     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
+               (3 v     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
+               (4 vs    n_vps     d_vps r_vps f_defvlp stp_d  0.0, 1.0,   1.0)
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
