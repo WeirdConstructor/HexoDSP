@@ -1,6 +1,7 @@
 // Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
-// This is a part of HexoDSP. Released under (A)GPLv3 or any later.
+// This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
+
 use crate::dsp::NodeId;
 use crate::nodes::MAX_ALLOCATED_NODES;
 use std::collections::HashMap;
