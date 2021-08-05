@@ -72,6 +72,7 @@ use crate::fa_bosc_wtype;
 use crate::fa_biqfilt_type;
 use crate::fa_biqfilt_ord;
 use crate::fa_vosc_ovr;
+use crate::fa_vosc_dist;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -433,6 +434,11 @@ macro_rules! f_def { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     write!($formatter, "{:6.3}", $denorm_v)
 } }
 
+// Default formatting function with low precision
+macro_rules! f_deflp { ($formatter: expr, $v: expr, $denorm_v: expr) => {
+    write!($formatter, "{:5.2}", $denorm_v)
+} }
+
 // Default formatting function with very low precision
 macro_rules! f_defvlp { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     write!($formatter, "{:4.1}", $denorm_v)
@@ -488,6 +494,8 @@ define_exp!{n_ftme d_ftme 0.25, 1000.0}
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
 define_lin!{n_ogin d_ogin 0.0, 2.0}
+
+define_lin!{n_pgin d_pgin 1.0, 10.0}
 
 define_lin!{n_vps d_vps 0.0, 20.0}
 
@@ -591,7 +599,9 @@ macro_rules! node_list {
                (2 d     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (3 v     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (4 vs    n_vps     d_vps r_vps f_defvlp stp_d  0.0, 1.0,   0.0)
-               {5 0 ovr setting(0) fa_vosc_ovr 0 1}
+               (5 damt  n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.0)
+               {6 0 dist setting(0) fa_vosc_dist 0 3}
+               {7 1 ovr  setting(0) fa_vosc_ovr 0 1}
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)

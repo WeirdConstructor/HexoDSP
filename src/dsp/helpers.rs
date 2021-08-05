@@ -287,6 +287,7 @@ pub fn note_to_freq(note: f32) -> f32 {
 /// threshold:   0.0 - 100.0     default = 0.8
 /// i:           signal
 /// ```
+#[inline]
 pub fn f_distort(gain: f32, threshold: f32, i: f32) -> f32 {
     gain * (
         i * ( i.abs() + threshold )
@@ -303,6 +304,7 @@ pub fn f_distort(gain: f32, threshold: f32, i: f32) -> f32 {
 /// threshold:   0.0 - 100.0     default = 0.8
 /// i:           signal
 /// ```
+#[inline]
 pub fn f_fold_distort(gain: f32, threshold: f32, i: f32) -> f32 {
     if i >= threshold || i < -threshold {
         gain
@@ -370,6 +372,7 @@ pub fn quicker_tanh64(v: f64) -> f64 {
     v / (1.0 + square / (3.0 + square / 5.0))
 }
 
+#[inline]
 pub fn quicker_tanh(v: f32) -> f32 {
     let square = v * v;
     v / (1.0 + square / (3.0 + square / 5.0))

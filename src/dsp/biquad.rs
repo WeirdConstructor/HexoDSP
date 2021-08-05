@@ -164,19 +164,19 @@ impl ButterLowpass {
 //
 // Which was originally taken from https://github.com/jatinchowdhury18/ChowDSP-VCV/blob/master/src/shared/AAFilter.hpp
 // Copyright (c) 2020 jatinchowdhury18
-/// Implements oversampling with a ratio of 4 and a 4 times cascade
-/// of Butterworth lowpass filters.
-#[derive(Debug, Copy, Clone, Default)]
-pub struct Oversampling4x4 {
+/// Implements oversampling with a ratio of N and a 4 times cascade
+/// of Butterworth lowpass filters (~48dB?).
+#[derive(Debug, Copy, Clone)]
+pub struct Oversampling<const N: usize> {
     filters: [Biquad; 4],
-    buffer:  [f32; 4],
+    buffer:  [f32; N],
 }
 
-impl Oversampling4x4 {
+impl<const N: usize> Oversampling<N> {
     pub fn new() -> Self {
         let mut this = Self {
             filters: [Biquad::new(); 4],
-            buffer: [0.0; 4],
+            buffer: [0.0; N],
         };
 
         this.set_sample_rate(44100.0);
@@ -185,26 +185,26 @@ impl Oversampling4x4 {
     }
 
     pub fn reset(&mut self) {
-        self.buffer = [0.0; 4];
+        self.buffer = [0.0; N];
         for filt in &mut self.filters {
             filt.reset();
         }
     }
 
     pub fn set_sample_rate(&mut self, srate: f32) {
-        let cutoff = 0.98 * (srate / 2.0);
+        let cutoff = 0.98 * (0.5 * srate);
+
+        let ovr_srate = ((N as f32) * srate);
 
         for filt in &mut self.filters {
-            filt.set_coefs(BiquadCoefs::butter_lowpass(srate, cutoff));
+            filt.set_coefs(BiquadCoefs::butter_lowpass(ovr_srate, cutoff));
         }
     }
 
     #[inline]
     pub fn upsample(&mut self, v: f32) {
-        self.buffer[0] = 4.0 * v;
-        self.buffer[1] = 0.0;
-        self.buffer[2] = 0.0;
-        self.buffer[3] = 0.0;
+        self.buffer.fill(0.0);
+        self.buffer[0] = (N as f32) * v;
 
         for s in &mut self.buffer {
             for filt in &mut self.filters {
@@ -214,7 +214,7 @@ impl Oversampling4x4 {
     }
 
     #[inline]
-    pub fn resample_buffer(&mut self) -> &mut [f32; 4] { &mut self.buffer }
+    pub fn resample_buffer(&mut self) -> &mut [f32; N] { &mut self.buffer }
 
     #[inline]
     pub fn downsample(&mut self) -> f32 {
