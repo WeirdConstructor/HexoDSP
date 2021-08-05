@@ -4,7 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::biquad::Oversampling;
-use crate::dsp::helpers::{quicker_tanh, f_distort, f_fold_distort};
+use crate::dsp::helpers::{VPSOscillator, apply_distortion};
 use crate::dsp::{
     NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext,
     GraphAtomData, GraphFun,
@@ -21,41 +21,13 @@ macro_rules! fa_vosc_ovrsmpl { ($formatter: expr, $v: expr, $denorm_v: expr) => 
     write!($formatter, "{}", s)
 } } }
 
-#[macro_export]
-macro_rules! fa_vosc_dist { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-    let s =
-        match ($v.round() as usize) {
-            0  => "Off",
-            1  => "tanh",
-            2  => "?!?",
-            3  => "fold",
-            _  => "?",
-        };
-    write!($formatter, "{}", s)
-} } }
-
-#[inline]
-fn apply_distortion(s: f32, damt: f32, dist_type: u8) -> f32 {
-    match dist_type {
-        1 => (damt.clamp(0.01, 1.0) * 100.0 * s).tanh(),
-        2 => f_distort(1.0, damt * damt * damt * 1000.0, s),
-        3 => {
-            let damt = damt.clamp(0.0, 0.99);
-            let damt = 1.0 - damt * damt;
-            f_fold_distort(1.0, damt, s) * (1.0 / damt)
-        },
-        _ => s,
-    }
-}
-
 const OVERSAMPLING : usize = 4;
 
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct VOsc {
-//    osc: PolyBlepOscillator,
     israte: f32,
-    phase:  f32,
+    osc:    VPSOscillator,
     oversampling: Box<Oversampling<OVERSAMPLING>>,
 }
 
@@ -64,8 +36,8 @@ impl VOsc {
         let init_phase = nid.init_phase();
 
         Self {
-            israte: 1.0 / 44100.0,
-            phase: init_phase,
+            israte:       1.0 / 44100.0,
+            osc:          VPSOscillator::new(init_phase),
             oversampling: Box::new(Oversampling::new()),
         }
     }
@@ -114,49 +86,6 @@ ways to manipulate them.
 
 }
 
-#[inline]
-fn s(p: f32) -> f32 {
-    -(std::f32::consts::TAU * p).cos()
-}
-
-#[inline]
-fn phi_vps(x: f32, v: f32, d: f32) -> f32 {
-    if x < d {
-        (v * x) / d
-    } else {
-        v + ((1.0 - v) * (x - d))/(1.0 - d)
-    }
-}
-
-#[inline]
-fn limit_v(d: f32, v: f32) -> f32 {
-    let delta = 0.5 - (d - 0.5).abs();
-    if delta < 0.05 {
-        let x = (0.05 - delta) * 19.99;
-//        println!("X: {}, d={}, v={}, delta={}", x, d, v, delta);
-        if d < 0.5 {
-            let max = 1.0 - (x * 0.5);
-            if v > max && v < 1.0 {
-                max
-
-            } else if v >= 1.0 && v < (1.0 + max) {
-                1.0 + max
-//                v.clamp(0.0, max)
-            } else {
-                v
-            }
-        } else {
-            if v < 1.0 {
-                v.clamp(x * 0.5, 1.0)
-            } else {
-                v
-            }
-        }
-    } else {
-        v
-    }
-}
-
 impl DspNode for VOsc {
     fn outputs() -> usize { 1 }
 
@@ -166,9 +95,8 @@ impl DspNode for VOsc {
     }
 
     fn reset(&mut self) {
-        self.phase = 0.0;
         self.oversampling.reset();
-//        self.osc.reset();
+        self.osc.reset();
     }
 
     #[inline]
@@ -180,20 +108,22 @@ impl DspNode for VOsc {
     {
         use crate::dsp::{out, inp, denorm, denorm_offs, at};
 
-        let freq  = inp::VOsc::freq(inputs);
-        let det   = inp::VOsc::det(inputs);
-        let d     = inp::VOsc::d(inputs);
-        let v     = inp::VOsc::v(inputs);
-        let vs    = inp::VOsc::vs(inputs);
-        let damt  = inp::VOsc::damt(inputs);
-        let out   = out::VOsc::sig(outputs);
-        let ovrsmpl   = at::VOsc::ovrsmpl(atoms);
-        let dist  = at::VOsc::dist(atoms);
+        let freq    = inp::VOsc::freq(inputs);
+        let det     = inp::VOsc::det(inputs);
+        let d       = inp::VOsc::d(inputs);
+        let v       = inp::VOsc::v(inputs);
+        let vs      = inp::VOsc::vs(inputs);
+        let damt    = inp::VOsc::damt(inputs);
+        let out     = out::VOsc::sig(outputs);
+        let ovrsmpl = at::VOsc::ovrsmpl(atoms);
+        let dist    = at::VOsc::dist(atoms);
 
         let israte = self.israte;
 
         let dist       = dist.i() as u8;
         let oversample = ovrsmpl.i() == 1;
+
+        let mut osc = &mut self.osc;
 
         if oversample {
             for frame in 0..ctx.nframes() {
@@ -203,16 +133,12 @@ impl DspNode for VOsc {
                 let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
                 let damt = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
 
-                let v = limit_v(d, v + vs);
+                let v = VPSOscillator::limit_v(d, v + vs);
 
                 let overbuf = self.oversampling.resample_buffer();
                 for b in overbuf {
-                    let s = s(phi_vps(self.phase, v, d));
-
+                    let s = osc.next(freq, israte, d, v);
                     *b = apply_distortion(s, damt, dist);
-
-                    self.phase += freq * israte;
-                    self.phase = self.phase.fract();
                 }
 
                 out.write(frame, self.oversampling.downsample());
@@ -224,17 +150,13 @@ impl DspNode for VOsc {
                 let v    = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
                 let d    = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
                 let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
-                let damt  = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
+                let damt = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
 
-                let v = limit_v(d, v + vs);
-
-                let s = s(phi_vps(self.phase, v, d));
+                let v = VPSOscillator::limit_v(d, v + vs);
+                let s = osc.next(freq, israte * (OVERSAMPLING as f32), d, v);
                 let s = apply_distortion(s, damt, dist);
 
                 out.write(frame, s);
-
-                self.phase += freq * (israte * (OVERSAMPLING as f32));
-                self.phase = self.phase.fract();
             }
         }
 
@@ -242,9 +164,14 @@ impl DspNode for VOsc {
     }
 
     fn graph_fun() -> Option<GraphFun> {
+        let mut osc = VPSOscillator::new(0.0);
         let israte = 1.0 / 128.0;
 
-        Some(Box::new(move |gd: &dyn GraphAtomData, _init: bool, x: f32, _xn: f32| -> f32 {
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
+            if init {
+                osc.reset();
+            }
+
             let v     = NodeId::VOsc(0).inp_param("v").unwrap().inp();
             let vs    = NodeId::VOsc(0).inp_param("vs").unwrap().inp();
             let d     = NodeId::VOsc(0).inp_param("d").unwrap().inp();
@@ -257,9 +184,8 @@ impl DspNode for VOsc {
             let damt  = gd.get_denorm(damt as u32);
             let dist  = gd.get(dist as u32).map(|a| a.i()).unwrap_or(0);
 
-            let v = limit_v(d, v + vs);
-
-            let s = s(phi_vps(x, v, d));
+            let v = VPSOscillator::limit_v(d, v + vs);
+            let s = osc.next(1.0, israte, d, v);
             let s = apply_distortion(s, damt, dist as u8);
 
             (s + 1.0) * 0.5

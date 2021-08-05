@@ -72,7 +72,7 @@ use crate::fa_bosc_wtype;
 use crate::fa_biqfilt_type;
 use crate::fa_biqfilt_ord;
 use crate::fa_vosc_ovrsmpl;
-use crate::fa_vosc_dist;
+use crate::fa_distort;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -600,8 +600,8 @@ macro_rules! node_list {
                (3 v     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (4 vs    n_vps     d_vps r_vps f_defvlp stp_d  0.0, 1.0,   0.0)
                (5 damt  n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.0)
-               {6 0 dist setting(0) fa_vosc_dist 0 3}
-               {7 1 ovrsmpl  setting(0) fa_vosc_ovrsmpl 0 1}
+               {6 0 dist     setting(0) fa_distort 0 3}
+               {7 1 ovrsmpl  setting(1) fa_vosc_ovrsmpl 0 1}
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)

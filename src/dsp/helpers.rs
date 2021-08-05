@@ -1475,6 +1475,156 @@ impl PolyBlepOscillator {
     }
 }
 
+// This oscillator is based on the work "VECTOR PHASESHAPING SYNTHESIS"
+// by: Jari Kleimola*, Victor Lazzarini†, Joseph Timoney†, Vesa Välimäki*
+// *Aalto University School of Electrical Engineering Espoo, Finland;
+// †National University of Ireland, Maynooth Ireland
+//
+// See also this PDF: http://recherche.ircam.fr/pub/dafx11/Papers/55_e.pdf
+/// Vector Phase Shaping Oscillator.
+/// The parameters `d` and `v` control the shape of the sinus
+/// wave. This leads to interesting modulation properties of those
+/// control values.
+///
+///```
+/// use hexodsp::dsp::helpers::{VPSOscillator, rand_01};
+///
+/// // Randomize the initial phase to make cancellation on summing less
+/// // likely:
+/// let mut osc =
+///     VPSOscillator::new(rand_01() * 0.25);
+///
+///
+/// let freq   = 440.0; // Hz
+/// let israte = 1.0 / 44100.0; // Seconds per Sample
+/// let d      = 0.5;   // Range: 0.0 to 1.0
+/// let v      = 0.75;  // Range: 0.0 to 1.0
+///
+/// let mut block_of_samples = [0.0; 128];
+/// // in your process function:
+/// for output_sample in block_of_samples.iter_mut() {
+///     // It is advised to limit the `v` value, because with certain
+///     // `d` values the combination creates just a DC offset.
+///     let v = VPSOscillator::limit_v(d, v);
+///     *output_sample = osc.next(freq, israte, d, v);
+/// }
+///```
+#[derive(Debug, Clone)]
+pub struct VPSOscillator {
+    phase:       f32,
+    init_phase:  f32,
+}
+
+impl VPSOscillator {
+    /// Create a new instance of [VPSOscillator].
+    ///
+    /// * `init_phase` - The initial phase of the oscillator.
+    pub fn new(init_phase: f32) -> Self {
+        Self {
+            phase:       0.0,
+            init_phase,
+        }
+    }
+
+    /// Reset the phase of the oscillator to the initial phase.
+    #[inline]
+    pub fn reset(&mut self) {
+        self.phase = self.init_phase;
+    }
+
+    #[inline]
+    fn s(p: f32) -> f32 {
+        -(std::f32::consts::TAU * p).cos()
+    }
+
+    #[inline]
+    fn phi_vps(x: f32, v: f32, d: f32) -> f32 {
+        if x < d {
+            (v * x) / d
+        } else {
+            v + ((1.0 - v) * (x - d))/(1.0 - d)
+        }
+    }
+
+    /// This rather complicated function blends out some
+    /// combinations of 'd' and 'v' that just lead to a constant DC
+    /// offset. Which is not very useful in an audio oscillator
+    /// context.
+    ///
+    /// Call this before passing `v` to [VPSOscillator::next].
+    #[inline]
+    pub fn limit_v(d: f32, v: f32) -> f32 {
+        let delta = 0.5 - (d - 0.5).abs();
+        if delta < 0.05 {
+            let x = (0.05 - delta) * 19.99;
+            if d < 0.5 {
+                let mm = x * 0.5;
+                let max = 1.0 - mm;
+                if v > max && v < 1.0 {
+                    max
+                } else if v >= 1.0 && v < (1.0 + mm) {
+                    1.0 + mm
+                } else {
+                    v
+                }
+            } else {
+                if v < 1.0 {
+                    v.clamp(x * 0.5, 1.0)
+                } else {
+                    v
+                }
+            }
+        } else {
+            v
+        }
+    }
+
+    /// Creates the next sample of this oscillator.
+    ///
+    /// * `freq` - The frequency in Hz.
+    /// * `israte` - The inverse sampling rate, or seconds per sample as in eg. `1.0 / 44100.0`.
+    /// * `d` - The phase distortion parameter `d` which must be in the range `0.0` to `1.0`.
+    /// * `v` - The phase distortion parameter `v` which must be in the range `0.0` to `1.0`.
+    ///
+    /// It is advised to limit the `v` using the [VPSOscillator::limit_v] function
+    /// before calling this function. To prevent DC offsets when modulating the parameters.
+    pub fn next(&mut self, freq: f32, israte: f32, d: f32, v: f32) -> f32 {
+        let s = Self::s(Self::phi_vps(self.phase, v, d));
+
+        self.phase += freq * israte;
+        self.phase = self.phase.fract();
+
+        s
+    }
+}
+
+#[macro_export]
+macro_rules! fa_distort { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "Off",
+            1  => "tanh",
+            2  => "?!?",
+            3  => "fold",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
+} } }
+
+#[inline]
+pub fn apply_distortion(s: f32, damt: f32, dist_type: u8) -> f32 {
+    match dist_type {
+        1 => (damt.clamp(0.01, 1.0) * 100.0 * s).tanh(),
+        2 => f_distort(1.0, damt * damt * damt * 1000.0, s),
+        3 => {
+            let damt = damt.clamp(0.0, 0.99);
+            let damt = 1.0 - damt * damt;
+            f_fold_distort(1.0, damt, s) * (1.0 / damt)
+        },
+        _ => s,
+    }
+}
+
 //pub struct UnisonBlep {
 //    oscs: Vec<PolyBlepOscillator>,
 ////    dc_block: crate::filter::DCBlockFilter,
