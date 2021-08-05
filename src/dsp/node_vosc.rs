@@ -3,23 +3,22 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
+use crate::dsp::biquad::Oversampling4x4;
 use crate::dsp::{
     NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext,
     GraphAtomData, GraphFun,
 };
 
-//#[macro_export]
-//macro_rules! fa_bosc_wtype { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-//    let s =
-//        match ($v.round() as usize) {
-//            0  => "Sin",
-//            1  => "Tri",
-//            2  => "Saw",
-//            3  => "Pulse",
-//            _  => "?",
-//        };
-//    write!($formatter, "{}", s)
-//} } }
+#[macro_export]
+macro_rules! fa_vosc_ovr { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+    let s =
+        match ($v.round() as usize) {
+            0  => "Off",
+            1  => "On",
+            _  => "?",
+        };
+    write!($formatter, "{}", s)
+} } }
 
 /// A simple amplifier
 #[derive(Debug, Clone)]
@@ -27,6 +26,7 @@ pub struct VOsc {
 //    osc: PolyBlepOscillator,
     israte: f32,
     phase:  f32,
+    oversampling: Box<Oversampling4x4>,
 }
 
 impl VOsc {
@@ -36,6 +36,7 @@ impl VOsc {
         Self {
             israte: 1.0 / 44100.0,
             phase: init_phase,
+            oversampling: Box::new(Oversampling4x4::new()),
         }
     }
 
@@ -54,6 +55,8 @@ impl VOsc {
         "VOsc v\n\nRange: (0..1)\n";
     pub const vs : &'static str =
         "VOsc vs\nScaling factor for 'v'.\nRange: (0..1)\n";
+    pub const ovr : &'static str =
+        "VOsc ovr\nEnable/Disable oversampling.";
     pub const wtype : &'static str =
         "VOsc wtype\nWaveform type\nAvailable waveforms:\n\
             Sin   - Sine Waveform\n\
@@ -95,11 +98,13 @@ impl DspNode for VOsc {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.israte = 1.0 / srate;
+        self.israte = 1.0 / (srate * 4.0);
+        self.oversampling.set_sample_rate(srate);
     }
 
     fn reset(&mut self) {
         self.phase = 0.0;
+        self.oversampling.reset();
 //        self.osc.reset();
     }
 
@@ -118,20 +123,46 @@ impl DspNode for VOsc {
         let v    = inp::VOsc::v(inputs);
         let vs   = inp::VOsc::vs(inputs);
         let out  = out::VOsc::sig(outputs);
+        let ovr  = at::VOsc::ovr(atoms);
 
         let israte = self.israte;
 
-        for frame in 0..ctx.nframes() {
-            let freq = denorm_offs::VOsc::freq(freq, det.read(frame), frame);
-            let v  = denorm::VOsc::v(v, frame);
-            let d  = denorm::VOsc::d(d, frame);
-            let vs = denorm::VOsc::vs(vs, frame);
+        let oversample = ovr.i() == 1;
 
-            let s = s(phi_vps(self.phase, v * vs, d));
-            out.write(frame, s);
+        if oversample {
+            for frame in 0..ctx.nframes() {
+                let overbuf = self.oversampling.resample_buffer();
 
-            self.phase += freq * israte;
-            self.phase = self.phase.fract();
+                for i in 0..4 {
+                    let freq = denorm_offs::VOsc::freq(freq, det.read(frame), frame);
+                    let v  = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
+                    let d  = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
+                    let vs = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
+
+                    let s = s(phi_vps(self.phase, v + vs, d));
+
+                    overbuf[i] = s;
+
+                    self.phase += freq * israte;
+                    self.phase = self.phase.fract();
+                }
+
+                out.write(frame, self.oversampling.downsample());
+            }
+        } else {
+            for frame in 0..ctx.nframes() {
+                let freq = denorm_offs::VOsc::freq(freq, det.read(frame), frame);
+                let v  = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
+                let d  = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
+                let vs = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
+
+                let s = s(phi_vps(self.phase, v + vs, d));
+
+                out.write(frame, s);
+
+                self.phase += freq * (israte * 4.0);
+                self.phase = self.phase.fract();
+            }
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
@@ -145,11 +176,11 @@ impl DspNode for VOsc {
             let vs = NodeId::VOsc(0).inp_param("vs").unwrap().inp();
             let d  = NodeId::VOsc(0).inp_param("d").unwrap().inp();
 
-            let v  = gd.get_denorm(v as u32);
-            let vs = gd.get_denorm(vs as u32);
-            let d  = gd.get_denorm(d as u32);
+            let v  = gd.get_denorm(v as u32).clamp(0.0, 1.0);
+            let d  = gd.get_denorm(d as u32).clamp(0.0, 1.0);
+            let vs = gd.get_denorm(vs as u32).clamp(0.0, 20.0);
 
-            let s = s(phi_vps(x, v * vs, d));
+            let s = s(phi_vps(x, v + vs, d));
             (s + 1.0) * 0.5
         }))
     }

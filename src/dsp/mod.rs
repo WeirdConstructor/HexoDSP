@@ -71,6 +71,7 @@ use crate::fa_sfilter_type;
 use crate::fa_bosc_wtype;
 use crate::fa_biqfilt_type;
 use crate::fa_biqfilt_ord;
+use crate::fa_vosc_ovr;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -488,7 +489,7 @@ define_exp!{n_ftme d_ftme 0.25, 1000.0}
 // to reach more exact "1.0".
 define_lin!{n_ogin d_ogin 0.0, 2.0}
 
-define_lin!{n_vps d_vps 1.0, 10.0}
+define_lin!{n_vps d_vps 0.0, 20.0}
 
 // A note about the input-indicies:
 //
@@ -589,7 +590,8 @@ macro_rules! node_list {
                (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
                (2 d     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (3 v     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
-               (4 vs    n_vps     d_vps r_vps f_defvlp stp_d  0.0, 1.0,   1.0)
+               (4 vs    n_vps     d_vps r_vps f_defvlp stp_d  0.0, 1.0,   0.0)
+               {5 0 ovr setting(0) fa_vosc_ovr 0 1}
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)

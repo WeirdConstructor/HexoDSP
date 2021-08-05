@@ -166,7 +166,8 @@ impl ButterLowpass {
 // Copyright (c) 2020 jatinchowdhury18
 /// Implements oversampling with a ratio of 4 and a 4 times cascade
 /// of Butterworth lowpass filters.
-struct Oversampling4x4 {
+#[derive(Debug, Copy, Clone, Default)]
+pub struct Oversampling4x4 {
     filters: [Biquad; 4],
     buffer:  [f32; 4],
 }
@@ -219,8 +220,9 @@ impl Oversampling4x4 {
     pub fn downsample(&mut self) -> f32 {
         let mut ret = 0.0;
         for s in &mut self.buffer {
+            ret = *s;
             for filt in &mut self.filters {
-                ret = filt.tick(*s);
+                ret = filt.tick(ret);
             }
         }
 
