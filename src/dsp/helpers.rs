@@ -1509,6 +1509,37 @@ impl PolyBlepOscillator {
 ///     *output_sample = osc.next(freq, israte, d, v);
 /// }
 ///```
+///
+/// It can be beneficial to apply distortion and oversampling.
+/// Especially oversampling can be important for some `d` and `v`
+/// combinations, even without distortion.
+///
+///```
+/// use hexodsp::dsp::helpers::{VPSOscillator, rand_01, apply_distortion};
+/// use hexodsp::dsp::biquad::Oversampling;
+///
+/// let mut osc = VPSOscillator::new(rand_01() * 0.25);
+/// let mut ovr : Oversampling<4> = Oversampling::new();
+///
+/// let freq   = 440.0; // Hz
+/// let israte = 1.0 / 44100.0; // Seconds per Sample
+/// let d      = 0.5;   // Range: 0.0 to 1.0
+/// let v      = 0.75;  // Range: 0.0 to 1.0
+///
+/// let mut block_of_samples = [0.0; 128];
+/// // in your process function:
+/// for output_sample in block_of_samples.iter_mut() {
+///     // It is advised to limit the `v` value, because with certain
+///     // `d` values the combination creates just a DC offset.
+///     let v = VPSOscillator::limit_v(d, v);
+///
+///     let overbuf = ovr.resample_buffer();
+///     for b in overbuf {
+///         *b = apply_distortion(osc.next(freq, israte, d, v), 0.9,  1);
+///     }
+///     *output_sample = ovr.downsample();
+/// }
+///```
 #[derive(Debug, Clone)]
 pub struct VPSOscillator {
     phase:       f32,
