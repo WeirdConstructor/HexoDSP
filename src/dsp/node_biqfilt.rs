@@ -11,6 +11,7 @@ macro_rules! fa_biqfilt_type { ($formatter: expr, $v: expr, $denorm_v: expr) => 
     let s =
         match ($v.round() as usize) {
             0  => "BtW LP",
+            1  => "Res",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -60,7 +61,7 @@ impl BiqFilt {
     pub const gain : &'static str =
         "BiqFilt gain\nFilter gain.\nRange: (0..1)\n";
     pub const ftype : &'static str =
-        "BiqFilt ftype\n";
+        "BiqFilt ftype\n'BtW LP' Butterworth Low-Pass, 'Res' Resonator";
     pub const order : &'static str =
         "BiqFilt order\n";
     pub const sig : &'static str =
@@ -130,6 +131,7 @@ impl DspNode for BiqFilt {
             // recalculate coeffs of all in the cascade
             let coefs =
                 match ftype {
+                    1 => BiquadCoefs::resonator(self.srate, cfreq, cq),
                     _ => BiquadCoefs::butter_lowpass(self.srate, cfreq),
                 };
 
@@ -144,7 +146,10 @@ impl DspNode for BiqFilt {
             self.ogain = cgain;
         }
 
-        let order = order.i() as u8;
+        let mut order = order.i() as u8;
+        if ftype == 1 { // The resonator just blows up with higher orders.
+            order = 0;
+        }
 
         for frame in 0..ctx.nframes() {
             let freq  = denorm::BiqFilt::freq(freq, frame);

@@ -645,7 +645,7 @@ macro_rules! node_list {
                (1 freq   n_pit     d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 1000.0)
                (2 q      n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
                (3 gain   n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
-               {4 0 ftype setting(0) fa_biqfilt_type 0 0}
+               {4 0 ftype setting(0) fa_biqfilt_type 0 1}
                {5 1 order setting(0) fa_biqfilt_ord  0 3}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
