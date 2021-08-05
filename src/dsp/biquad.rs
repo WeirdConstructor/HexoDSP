@@ -21,6 +21,9 @@ pub struct BiquadCoefs {
     pub b2: f32,
 }
 
+// TODO:
+// https://github.com/VCVRack/Befaco/blob/v1/src/ChowDSP.hpp#L339
+// more coeffs from there ^^^^^^^^^^^^^ ?
 impl BiquadCoefs {
     /// Returns settings for a Butterworth lowpass filter.
     /// Cutoff is the -3 dB point of the filter in Hz.
@@ -60,7 +63,7 @@ impl BiquadCoefs {
 }
 
 /// 2nd order IIR filter implemented in normalized Direct Form I.
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Biquad {
     coefs: BiquadCoefs,
     x1: f32,
@@ -84,7 +87,7 @@ impl Biquad {
         self.coefs = coefs;
     }
 
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.x1 = 0.0;
         self.x2 = 0.0;
         self.y1 = 0.0;
@@ -92,7 +95,7 @@ impl Biquad {
     }
 
     #[inline]
-    fn tick(&mut self, input: f32) -> f32 {
+    pub fn tick(&mut self, input: f32) -> f32 {
         let x0 = input;
         let y0 =
               self.coefs.b0 * x0

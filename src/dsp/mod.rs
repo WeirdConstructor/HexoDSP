@@ -36,6 +36,8 @@ mod node_mix3;
 mod node_bosc;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
+#[allow(non_upper_case_globals)]
+mod node_biqfilt;
 
 pub mod biquad;
 pub mod tracker;
@@ -67,6 +69,8 @@ use crate::fa_smap_clip;
 use crate::fa_smap_mode;
 use crate::fa_sfilter_type;
 use crate::fa_bosc_wtype;
+use crate::fa_biqfilt_type;
+use crate::fa_biqfilt_ord;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -86,6 +90,7 @@ use node_sfilter::SFilter;
 use node_mix3::Mix3;
 use node_bosc::BOsc;
 use node_vosc::VOsc;
+use node_biqfilt::BiqFilt;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -634,6 +639,14 @@ macro_rules! node_list {
                (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
                (2  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
                {3 0 ftype setting(8) fa_sfilter_type 0 16}
+               [0 sig],
+            biqfilt => BiqFilt UIType::Generic UICategory::Signal
+               (0 inp    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1 freq   n_pit     d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 1000.0)
+               (2 q      n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
+               (3 gain   n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               {4 0 ftype setting(0) fa_biqfilt_type 0 0}
+               {5 1 order setting(0) fa_biqfilt_ord  0 3}
                [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
