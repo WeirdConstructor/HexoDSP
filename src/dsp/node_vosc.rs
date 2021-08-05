@@ -131,14 +131,13 @@ impl DspNode for VOsc {
 
         if oversample {
             for frame in 0..ctx.nframes() {
+                let freq = denorm_offs::VOsc::freq(freq, det.read(frame), frame);
+                let v    = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
+                let d    = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
+                let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
+
                 let overbuf = self.oversampling.resample_buffer();
-
                 for i in 0..4 {
-                    let freq = denorm_offs::VOsc::freq(freq, det.read(frame), frame);
-                    let v  = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
-                    let d  = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
-                    let vs = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
-
                     let s = s(phi_vps(self.phase, v + vs, d));
 
                     overbuf[i] = s;
@@ -152,9 +151,9 @@ impl DspNode for VOsc {
         } else {
             for frame in 0..ctx.nframes() {
                 let freq = denorm_offs::VOsc::freq(freq, det.read(frame), frame);
-                let v  = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
-                let d  = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
-                let vs = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
+                let v    = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
+                let d    = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
+                let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
 
                 let s = s(phi_vps(self.phase, v + vs, d));
 
