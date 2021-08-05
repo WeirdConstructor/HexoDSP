@@ -11,7 +11,7 @@ use crate::dsp::{
 };
 
 #[macro_export]
-macro_rules! fa_vosc_ovr { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+macro_rules! fa_vosc_ovrsmpl { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
         match ($v.round() as usize) {
             0  => "Off",
@@ -89,8 +89,8 @@ impl VOsc {
         "VOsc dist\nDistortion.";
     pub const damt : &'static str =
         "VOsc damt\nDistortion amount.";
-    pub const ovr : &'static str =
-        "VOsc ovr\nEnable/Disable oversampling.";
+    pub const ovrsmpl : &'static str =
+        "VOsc ovrsmpl\nEnable/Disable oversampling.";
     pub const wtype : &'static str =
         "VOsc wtype\nWaveform type\nAvailable waveforms:\n\
             Sin   - Sine Waveform\n\
@@ -135,9 +135,22 @@ fn limit_v(d: f32, v: f32) -> f32 {
         let x = (0.05 - delta) * 19.99;
 //        println!("X: {}, d={}, v={}, delta={}", x, d, v, delta);
         if d < 0.5 {
-            v.clamp(0.0, 1.0 - (x * 0.5))
+            let max = 1.0 - (x * 0.5);
+            if v > max && v < 1.0 {
+                max
+
+            } else if v >= 1.0 && v < (1.0 + max) {
+                1.0 + max
+//                v.clamp(0.0, max)
+            } else {
+                v
+            }
         } else {
-            v.clamp(x * 0.5, 1.0)
+            if v < 1.0 {
+                v.clamp(x * 0.5, 1.0)
+            } else {
+                v
+            }
         }
     } else {
         v
@@ -174,13 +187,13 @@ impl DspNode for VOsc {
         let vs    = inp::VOsc::vs(inputs);
         let damt  = inp::VOsc::damt(inputs);
         let out   = out::VOsc::sig(outputs);
-        let ovr   = at::VOsc::ovr(atoms);
+        let ovrsmpl   = at::VOsc::ovrsmpl(atoms);
         let dist  = at::VOsc::dist(atoms);
 
         let israte = self.israte;
 
         let dist       = dist.i() as u8;
-        let oversample = ovr.i() == 1;
+        let oversample = ovrsmpl.i() == 1;
 
         if oversample {
             for frame in 0..ctx.nframes() {
@@ -190,11 +203,11 @@ impl DspNode for VOsc {
                 let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
                 let damt = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
 
-                let v = limit_v(d, v);
+                let v = limit_v(d, v + vs);
 
                 let overbuf = self.oversampling.resample_buffer();
                 for b in overbuf {
-                    let s = s(phi_vps(self.phase, v + vs, d));
+                    let s = s(phi_vps(self.phase, v, d));
 
                     *b = apply_distortion(s, damt, dist);
 
@@ -213,7 +226,9 @@ impl DspNode for VOsc {
                 let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
                 let damt  = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
 
-                let s = s(phi_vps(self.phase, v + vs, d));
+                let v = limit_v(d, v + vs);
+
+                let s = s(phi_vps(self.phase, v, d));
                 let s = apply_distortion(s, damt, dist);
 
                 out.write(frame, s);
@@ -242,9 +257,9 @@ impl DspNode for VOsc {
             let damt  = gd.get_denorm(damt as u32);
             let dist  = gd.get(dist as u32).map(|a| a.i()).unwrap_or(0);
 
-            let v = limit_v(d, v);
+            let v = limit_v(d, v + vs);
 
-            let s = s(phi_vps(x, v + vs, d));
+            let s = s(phi_vps(x, v, d));
             let s = apply_distortion(s, damt, dist as u8);
 
             (s + 1.0) * 0.5
