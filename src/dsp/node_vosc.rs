@@ -128,6 +128,22 @@ fn phi_vps(x: f32, v: f32, d: f32) -> f32 {
     }
 }
 
+#[inline]
+fn limit_v(d: f32, v: f32) -> f32 {
+    let delta = 0.5 - (d - 0.5).abs();
+    if delta < 0.05 {
+        let x = (0.05 - delta) * 19.99;
+//        println!("X: {}, d={}, v={}, delta={}", x, d, v, delta);
+        if d < 0.5 {
+            v.clamp(0.0, 1.0 - (x * 0.5))
+        } else {
+            v.clamp(x * 0.5, 1.0)
+        }
+    } else {
+        v
+    }
+}
+
 impl DspNode for VOsc {
     fn outputs() -> usize { 1 }
 
@@ -172,7 +188,9 @@ impl DspNode for VOsc {
                 let v    = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
                 let d    = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
                 let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
-                let damt  = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
+                let damt = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
+
+                let v = limit_v(d, v);
 
                 let overbuf = self.oversampling.resample_buffer();
                 for b in overbuf {
@@ -223,6 +241,8 @@ impl DspNode for VOsc {
             let vs    = gd.get_denorm(vs as u32).clamp(0.0, 20.0);
             let damt  = gd.get_denorm(damt as u32);
             let dist  = gd.get(dist as u32).map(|a| a.i()).unwrap_or(0);
+
+            let v = limit_v(d, v);
 
             let s = s(phi_vps(x, v + vs, d));
             let s = apply_distortion(s, damt, dist as u8);
