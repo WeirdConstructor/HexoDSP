@@ -153,7 +153,7 @@ impl DspNode for BiqFilt {
             let gain  = denorm::BiqFilt::gain(gain, frame);
 
             let mut s = inp.read(frame);
-            for i in 0..order {
+            for i in 0..=order {
                 s = self.cascade[i as usize].tick(s);
             }
 
