@@ -454,10 +454,13 @@ macro_rules! r_lfot { ($x: expr, $coarse: expr) => {
         } else if denv < 1500.0 {
             n_lfot!((denv / 50.0).round() * 50.0)
 
+        } else if denv < 2500.0 {
+            n_lfot!((denv / 100.0).round() * 100.0)
+
         } else if denv < 5000.0 {
             n_lfot!((denv / 500.0).round() * 500.0)
 
-        } else if denv < 15000.0 {
+        } else if denv < 60000.0 {
             n_lfot!((denv / 1000.0).round() * 1000.0)
 
         } else {
@@ -543,14 +546,17 @@ macro_rules! f_lfot { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     if $denorm_v < 10.0 {
         write!($formatter, "{:5.1}Hz", 1000.0 / $denorm_v)
 
-    } else if $denorm_v < 500.0 {
+    } else if $denorm_v < 250.0 {
         write!($formatter, "{:4.1}ms", $denorm_v)
 
-    } else if $denorm_v < 5000.0 {
+    } else if $denorm_v < 1500.0 {
         write!($formatter, "{:4.0}ms", $denorm_v)
 
-    } else {
+    } else if $denorm_v < 10000.0 {
         write!($formatter, "{:5.2}s", $denorm_v / 1000.0)
+
+    } else {
+        write!($formatter, "{:5.1}s", $denorm_v / 1000.0)
     }
 } }
 
