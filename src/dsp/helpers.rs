@@ -1653,6 +1653,98 @@ impl VPSOscillator {
     }
 }
 
+// Adapted from https://github.com/ValleyAudio/ValleyRackFree/blob/v1.0/src/Common/DSP/LFO.hpp
+//
+// ValleyRackFree Copyright (C) 2020, Valley Audio Soft, Dale Johnson
+// Adapted under the GPL-3.0-or-later License.
+/// An LFO with a variable reverse point, which can go from reverse Saw, to Tri
+/// and to Saw, depending on the reverse point.
+#[derive(Debug, Clone, Copy)]
+pub struct TriSawLFO {
+    /// The (inverse) sample rate. Eg. 1.0 / 44100.0.
+    israte: f64,
+    /// The current oscillator phase.
+    phase:  f64,
+    /// The point from where the falling edge will be used.
+    rev:    f64,
+    /// Whether the LFO is currently rising
+    rising: bool,
+    /// The frequency.
+    freq:   f64,
+    /// Precomputed rise/fall rate of the LFO.
+    rise_r: f64,
+    fall_r: f64,
+}
+
+impl TriSawLFO {
+    pub fn new() -> Self {
+        let mut this = Self {
+            israte: 1.0 / 44100.0,
+            phase:  0.0,
+            rev:    0.5,
+            rising: true,
+            freq:   1.0,
+            fall_r: 0.0,
+            rise_r: 0.0,
+        };
+        this.recalc();
+        this
+    }
+
+    #[inline]
+    fn recalc(&mut self) {
+        self.rev    = self.rev.clamp(0.0001, 0.999);
+        self.rise_r =  1.0 / self.rev;
+        self.fall_r = -1.0 / (1.0 - self.rev);
+    }
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.israte = 1.0 / (srate as f64);
+        self.recalc();
+    }
+
+    pub fn reset(&mut self) {
+        self.phase  = 0.0;
+        self.rev    = 0.5;
+        self.rising = true;
+    }
+
+    #[inline]
+    pub fn set(&mut self, freq: f32, rev: f32) {
+        self.freq = freq as f64;
+        self.rev  = rev  as f64;
+        self.recalc();
+    }
+
+    #[inline]
+    pub fn next_unipolar(&mut self) -> f64 {
+        if self.phase >= 1.0 {
+            self.phase -= 1.0;
+            self.rising = true;
+        }
+
+        if self.phase >= self.rev {
+            self.rising = false;
+        }
+
+        let s =
+            if self.rising {
+                self.phase * self.rise_r
+            } else {
+                self.phase * self.fall_r - self.fall_r
+            };
+
+        self.phase += self.freq * self.israte;
+
+        s
+    }
+
+    #[inline]
+    pub fn next_bipolar(&mut self) -> f64 {
+        (self.next_unipolar() * 2.0) - 1.0
+    }
+}
+
 #[macro_export]
 macro_rules! fa_distort { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =

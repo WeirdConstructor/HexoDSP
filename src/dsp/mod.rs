@@ -40,6 +40,8 @@ mod node_vosc;
 mod node_biqfilt;
 #[allow(non_upper_case_globals)]
 mod node_comb;
+#[allow(non_upper_case_globals)]
+mod node_tslfo;
 
 pub mod biquad;
 pub mod tracker;
@@ -97,6 +99,7 @@ use node_bosc::BOsc;
 use node_vosc::VOsc;
 use node_biqfilt::BiqFilt;
 use node_comb::Comb;
+use node_tslfo::TsLfo;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -302,13 +305,25 @@ macro_rules! define_exp {
 macro_rules! define_exp4 {
     ($n_id: ident $d_id: ident $min: expr, $max: expr) => {
         macro_rules! $n_id { ($x: expr) => {
-            (($x - $min) / ($max - $min)).abs().sqrt().sqrt()
+            (($x - $min) / ($max - $min) as f32).abs().sqrt().sqrt()
         } }
         macro_rules! $d_id { ($x: expr) => {
             { let x : f32 = $x * $x * $x * $x; $min * (1.0 - x) + $max * x }
         } }
     }
 }
+
+macro_rules! define_exp6 {
+    ($n_id: ident $d_id: ident $min: expr, $max: expr) => {
+        macro_rules! $n_id { ($x: expr) => {
+            (($x - $min) / ($max - $min) as f32).abs().powf(1.0 / 6.0)
+        } }
+        macro_rules! $d_id { ($x: expr) => {
+            { let x : f32 = ($x).powf(6.0); $min * (1.0 - x) + $max * x }
+        } }
+    }
+}
+
 
 macro_rules! n_pit { ($x: expr) => {
     ((($x as f32).max(0.01) / 440.0).log2() / 10.0)
@@ -423,6 +438,62 @@ macro_rules! r_vps { ($x: expr, $coarse: expr) => {
     }
 } }
 
+/// The rounding function for LFO time knobs
+macro_rules! r_lfot { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        let denv = d_lfot!($x);
+
+        if denv < 10.0 {
+            let hz = 1000.0 / denv;
+            let hz = (hz / 10.0).round() * 10.0;
+            n_lfot!(1000.0 / hz)
+
+        } else if denv < 250.0 {
+            n_lfot!((denv / 5.0).round() * 5.0)
+
+        } else if denv < 1500.0 {
+            n_lfot!((denv / 50.0).round() * 50.0)
+
+        } else if denv < 5000.0 {
+            n_lfot!((denv / 500.0).round() * 500.0)
+
+        } else if denv < 15000.0 {
+            n_lfot!((denv / 1000.0).round() * 1000.0)
+
+        } else {
+            n_lfot!((denv / 5000.0).round() * 5000.0)
+        }
+    } else {
+        let denv = d_lfot!($x);
+
+        let o =
+        if denv < 10.0 {
+            let hz = 1000.0 / denv;
+            let hz = hz.round();
+            n_lfot!(1000.0 / hz)
+
+        } else if denv < 100.0 {
+            n_lfot!(denv.round())
+
+        } else if denv < 1000.0 {
+            n_lfot!((denv / 5.0).round() * 5.0)
+
+        } else if denv < 2500.0 {
+            n_lfot!((denv / 10.0).round() * 10.0)
+
+        } else if denv < 25000.0 {
+            n_lfot!((denv / 100.0).round() * 100.0)
+
+        } else {
+            n_lfot!((denv / 500.0).round() * 500.0)
+        };
+
+        println!("ROUND C {} => {}", d_lfot!($x), d_lfot!(o));
+
+        o
+    }
+} }
+
 /// The default steps function:
 macro_rules! stp_d { () => { (20.0, 100.0) } }
 /// The UI steps to control parameters with a finer fine control:
@@ -468,6 +539,22 @@ macro_rules! f_ms { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     }
 } }
 
+macro_rules! f_lfot { ($formatter: expr, $v: expr, $denorm_v: expr) => {
+    if $denorm_v < 10.0 {
+        write!($formatter, "{:5.1}Hz", 1000.0 / $denorm_v)
+
+    } else if $denorm_v < 500.0 {
+        write!($formatter, "{:4.1}ms", $denorm_v)
+
+    } else if $denorm_v < 5000.0 {
+        write!($formatter, "{:4.0}ms", $denorm_v)
+
+    } else {
+        write!($formatter, "{:5.2}s", $denorm_v / 1000.0)
+    }
+} }
+
+
 macro_rules! f_det { ($formatter: expr, $v: expr, $denorm_v: expr) => {
     {
         let sign      = if $denorm_v < 0.0 { -1.0 } else { 1.0 };
@@ -492,6 +579,7 @@ define_exp!{n_declick d_declick 0.0, 50.0}
 
 define_exp!{n_env d_env 0.0, 1000.0}
 
+define_exp6!{n_lfot d_lfot 0.1,300000.0}
 define_exp!{n_time d_time 0.5,  5000.0}
 define_exp!{n_ftme d_ftme 0.1,  1000.0}
 
@@ -622,7 +710,7 @@ macro_rules! node_list {
             fbrd => FbRd UIType::Generic UICategory::IOUtil
                (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                [0 sig],
-            ad   => Ad   UIType::Generic UICategory::CV
+            ad   => Ad   UIType::Generic UICategory::Mod
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (2  atk   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 3.0)
@@ -632,6 +720,11 @@ macro_rules! node_list {
                {6 0 mult setting(0) fa_ad_mult  0 2}
                [0 sig]
                [1 eoet],
+            tslfo => TsLfo UIType::Generic UICategory::Mod
+                (0 time  n_lfot   d_lfot r_lfot f_lfot stp_f 0.0, 1.0, 1000.0)
+                (1 trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+                (2 rev   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+                [0 sig],
             delay => Delay UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
