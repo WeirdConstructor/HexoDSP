@@ -85,9 +85,9 @@ make it more harmonic you can apply oversampling.
     pub const HELP : &'static str =
 r#"VOsc - Vector Phase Shaping Oscillator
 
-A vector phase shaping oscillator, to create interesting waveforms and ways to
-manipulate them. It has two parameters ('v' and 'd') to shape the phase of the
-sinusoid wave, and a third parameter 'vs' to add extra spice.
+A vector phase shaping oscillator, to create interesting waveforms and
+ways to manipulate them. It has two parameters ('v' and 'd') to shape the
+phase of the sinusoid wave, and a third parameter 'vs' to add extra spice.
 With distortion you can beef up the oscillator output even more and to
 make it more harmonic you can apply oversampling.
 "#;
