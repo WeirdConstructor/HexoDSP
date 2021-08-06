@@ -34,7 +34,9 @@ impl Comb {
     pub const inp  : &'static str =
         "Comb inp\nThe signal input for the comb filter.\nRange: (-1..1)";
     pub const g : &'static str =
-        "Comb g\nThe internal factor for the comb filter.\nRange: (-1..1)";
+        "Comb g\nThe internal factor for the comb filter. Be careful with high 'g' \
+        values (> 0.75) in feedback mode, you will probably have to attenuate \
+        the output a bit yourself.\nRange: (-1..1)";
     pub const time : &'static str =
         "Comb time\nThe comb delay time.\nRange: (0..1)";
     pub const sig  : &'static str =
@@ -54,6 +56,10 @@ r#"Comb - A Simple Comb Filter
 This is a comb filter that can be used for filtering
 as well as for building reverbs or anything you might
 find it useful for.
+
+Attention: Be careful with high 'g' values, you might need to
+attenuate the output manually for the feedback combfilter mode,
+because the feedback adds up quickly.
 
 For typical arrangements in combination with allpass filters,
 see the documentation of the 'Comb' node!

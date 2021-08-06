@@ -1096,9 +1096,8 @@ pub fn process_simper_svf(
     (v2, v1, input - k * v1 - v2)
 }
 
-/// This function implements a simple Stilson/Moog filter with 24dB.
-/// It provides multiple outputs for low, high and band pass and a notch
-/// output.
+/// This function implements a simple Stilson/Moog low pass filter with 24dB.
+/// It provides only a low pass output.
 ///
 /// * `input` - Input sample.
 /// * `freq` - Frequency in Hz.
@@ -1106,7 +1105,8 @@ pub fn process_simper_svf(
 /// * `res`  - Resonance from 0.0 to 0.99. Resonance of 1.0 is not recommended,
 /// as the filter will then oscillate itself out of control.
 /// * `israte` - 1.0 divided by the sampling rate (`1.0 / 44100.0`).
-/// * `b0` to `b4` - Internal values used for filtering.
+/// * `b0` to `b3` - Internal values used for filtering.
+/// * `delay` - A buffer holding other delayed samples.
 ///
 ///```
 ///    use hexodsp::dsp::helpers::*;
@@ -1116,51 +1116,62 @@ pub fn process_simper_svf(
 ///    let mut b1   = 0.0;
 ///    let mut b2   = 0.0;
 ///    let mut b3   = 0.0;
-///    let mut b4   = 0.0;
+///    let mut delay = [0.0; 4];
 ///    let mut freq = 1000.0;
 ///
 ///    for s in samples.iter() {
-///        let (low, band, high, notch) =
+///        let low =
 ///            process_stilson_moog(
 ///                *s, freq, 0.5, 1.0 / 44100.0,
-///                &mut b0, &mut b1, &mut b2, &mut b3, &mut b4);
+///                &mut b0, &mut b1, &mut b2, &mut b3,
+///                &mut delay);
 ///
 ///        // ... do something with the result here.
 ///    }
 ///```
-// Stilson/Moog implementation partly translated from SynthV1 by rncbc
-// https://github.com/rncbc/synthv1/blob/master/src/synthv1_filter.h#L103
-// under GPLv2 or any later.
+// Stilson/Moog implementation partly translated from here:
+// https://github.com/ddiakopoulos/MoogLadders/blob/master/src/MusicDSPModel.h
+// without any copyright as found on musicdsp.org
+// (http://www.musicdsp.org/showone.php?id=24).
 //
 // It's also found on MusicDSP and has probably no proper license anyways.
 // See also: https://github.com/ddiakopoulos/MoogLadders
+// and https://github.com/rncbc/synthv1/blob/master/src/synthv1_filter.h#L103
 // and https://github.com/ddiakopoulos/MoogLadders/blob/master/src/MusicDSPModel.h
 #[inline]
 pub fn process_stilson_moog(
     input: f32, freq: f32, res: f32, israte: f32,
-    b0: &mut f32, b1: &mut f32, b2: &mut f32, b3: &mut f32, b4: &mut f32
-) -> (f32, f32, f32, f32) {
+    b0: &mut f32, b1: &mut f32, b2: &mut f32, b3: &mut f32,
+    delay: &mut [f32; 4],
+) -> f32 {
+
     let cutoff = 2.0 * freq * israte;
 
-    let c = 1.0 - cutoff;
-    let p = cutoff + 0.8 * cutoff * c;
-    let f = p + p - 1.0;
-    let q = res * (1.0 + 0.5 * c * (1.0 - c + 5.6 * c * c));
+    let p = cutoff * (1.8 - 0.8 * cutoff);
+    let k = 2.0 * (cutoff * std::f32::consts::PI * 0.5).sin() - 1.0;
 
-    let inp = input - q * *b4;
-    let t1 = *b1; *b1 = (inp + *b0) * p - *b1 * f;
-    let t2 = *b2; *b2 = (*b1 + t1)  * p - *b2 * f;
-    let t1 = *b3; *b3 = (*b2 + t2)  * p - *b3 * f;
-                  *b4 = (*b3 + t1)  * p - *b4 * f;
+    let t1 = (1.0 - p) * 1.386249;
+    let t2 = 12.0 + t1 * t1;
 
-    *b4 = *b4 - *b4 * *b4 * *b4 * 0.166667; // clipping
+    let res = res * (t2 + 6.0 * t1) / (t2 - 6.0 * t1);
 
-    *b0 = inp;
+	let x = input - res * *b3;
 
-    let band = 3.0 * (*b3 - *b4);
+    // Four cascaded one-pole filters (bilinear transform)
+    *b0 = x   * p + delay[0] * p - k * *b0;
+    *b1 = *b0 * p + delay[1] * p - k * *b1;
+    *b2 = *b1 * p + delay[2] * p - k * *b2;
+    *b3 = *b2 * p + delay[3] * p - k * *b3;
 
-    // low, band, high, notch
-    (*b4, band, inp - *b4, band - inp)
+    // Clipping band-limited sigmoid
+    *b3 -= (*b3 * *b3 * *b3) * 0.166667;
+
+    delay[0] = x;
+    delay[1] = *b0;
+    delay[2] = *b1;
+    delay[3] = *b2;
+
+    *b3
 }
 
 // translated from Odin 2 Synthesizer Plugin

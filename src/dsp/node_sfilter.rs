@@ -32,9 +32,6 @@ macro_rules! fa_sfilter_type { ($formatter: expr, $v: expr, $denorm_v: expr) => 
            11  => "NO 12s",
            12  => "PK 12s",
            13  => "LP 24m",
-           14  => "HP 24m",
-           15  => "BP 24m",
-           16  => "NO 24m",
             _  => "?",
         };
     write!($formatter, "{}", s)
@@ -48,7 +45,7 @@ pub struct SFilter {
     y:      f32,
     k:      f32,
     h:      f32,
-    m:      f32,
+    delay:  [f32; 4],
     otype:  i8,
 }
 
@@ -60,7 +57,7 @@ impl SFilter {
             y:      0.0,
             k:      0.0,
             h:      0.0,
-            m:      0.0,
+            delay:  [0.0; 4],
             otype:  -1,
         }
     }
@@ -126,9 +123,6 @@ fall off per octave. Beware high cutoff frequencies for this filter,
 as it can become quite unstable.
 
     LP 24m    - Low-pass Stilson/Moog filter (24dB)
-    HP 24m    - High-pass Stilson/Moog filter (24dB)
-    BP 24m    - Band-pass Stilson/Moog filter (24dB)
-    NO 24m    - Notch Stilson/Moog filter (24dB)
 
 "#;
 }
@@ -243,7 +237,7 @@ impl DspNode for SFilter {
         self.y     = 0.0;
         self.k     = 0.0;
         self.h     = 0.0;
-        self.m     = 0.0;
+        self.delay = [0.0; 4];
         self.otype = -1;
     }
 
@@ -269,7 +263,7 @@ impl DspNode for SFilter {
             self.z = 0.0;
             self.k = 0.0;
             self.h = 0.0;
-            self.m = 0.0;
+            self.delay = [0.0; 4];
             self.otype = ftype;
         }
 
@@ -394,46 +388,14 @@ impl DspNode for SFilter {
             },
             13 => { // Stilson/Moog Low Pass
                 process_filter_fun32!(
-                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
-                        let (low, _band, _high, _notch) =
-                            process_stilson_moog(
-                                input, freq, res, self.israte,
-                                &mut self.z, &mut self.y, &mut self.k,
-                                &mut self.h, &mut self.m);
-                        low
-                    });
-            },
-            14 => { // Stilson/Moog High Pass
-                process_filter_fun32!(
-                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
-                        let (_low, _band, high, _notch) =
-                            process_stilson_moog(
-                                input, freq, res, self.israte,
-                                &mut self.z, &mut self.y, &mut self.k,
-                                &mut self.h, &mut self.m);
-                        high
-                    });
-            },
-            15 => { // Stilson/Moog Band Pass
-                process_filter_fun32!(
-                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
-                        let (_low, band, _high, _notch) =
-                            process_stilson_moog(
-                                input, freq, res, self.israte,
-                                &mut self.z, &mut self.y, &mut self.k,
-                                &mut self.h, &mut self.m);
-                        band
-                    });
-            },
-            16 => { // Stilson/Moog Notch
-                process_filter_fun32!(
-                    ctx.nframes(), inp, out, freq, res, 1.0, input, 22000.0, {
-                        let (_low, _band, _high, notch) =
-                            process_stilson_moog(
-                                input, freq, res, self.israte,
-                                &mut self.z, &mut self.y, &mut self.k,
-                                &mut self.h, &mut self.m);
-                        notch
+                    ctx.nframes(), inp, out, freq, res, 1.0, input, 20000.0, {
+                        // Clip here, to prevent blowups, because the
+                        // moog filter is quite touchy...
+                        let input = input.clamp(-1.0, 1.0);
+                        process_stilson_moog(
+                            input, freq, res, self.israte,
+                            &mut self.z, &mut self.y, &mut self.k,
+                            &mut self.h, &mut self.delay)
                     });
             },
             _ => {},
