@@ -799,7 +799,8 @@ impl Comb {
     #[inline]
     pub fn next_feedback(&mut self, time: f32, g: f32, v: f32) -> f32 {
         let s = self.delay.cubic_interpolate_at(time);
-        self.delay.feed(v + s * g);
+        let v = v + s * g;
+        self.delay.feed(v);
         v
     }
 

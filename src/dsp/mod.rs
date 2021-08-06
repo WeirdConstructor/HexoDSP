@@ -38,6 +38,8 @@ mod node_bosc;
 mod node_vosc;
 #[allow(non_upper_case_globals)]
 mod node_biqfilt;
+#[allow(non_upper_case_globals)]
+mod node_comb;
 
 pub mod biquad;
 pub mod tracker;
@@ -73,6 +75,7 @@ use crate::fa_biqfilt_type;
 use crate::fa_biqfilt_ord;
 use crate::fa_vosc_ovrsmpl;
 use crate::fa_distort;
+use crate::fa_comb_mode;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -93,6 +96,7 @@ use node_mix3::Mix3;
 use node_bosc::BOsc;
 use node_vosc::VOsc;
 use node_biqfilt::BiqFilt;
+use node_comb::Comb;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -489,7 +493,7 @@ define_exp!{n_declick d_declick 0.0, 50.0}
 define_exp!{n_env d_env 0.0, 1000.0}
 
 define_exp!{n_time d_time 0.5,  5000.0}
-define_exp!{n_ftme d_ftme 0.25, 1000.0}
+define_exp!{n_ftme d_ftme 0.1,  1000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
@@ -640,6 +644,12 @@ macro_rules! node_list {
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  time  n_ftme   d_ftme r_fms  f_ms  stp_m  0.0, 1.0, 25.0)
                (2  g     n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.7)
+               [0 sig],
+            comb  => Comb UIType::Generic UICategory::Signal
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1  time  n_ftme   d_ftme r_fms  f_ms  stp_m  0.0, 1.0, 25.0)
+               (2  g     n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.7)
+               {3 0 mode setting(0) fa_comb_mode 0 1}
                [0 sig],
             noise => Noise UIType::Generic UICategory::Osc
                (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.5)

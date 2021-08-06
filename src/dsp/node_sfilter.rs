@@ -122,7 +122,8 @@ Next page: more filters (eg. Moog)
 SFilter - Simple Audio Filter Collection
 
 For a more colored filter reach for the Stilson/Moog filter with a 24dB
-fall off per octave.
+fall off per octave. Beware high cutoff frequencies for this filter,
+as it can become quite unstable.
 
     LP 24m    - Low-pass Stilson/Moog filter (24dB)
     HP 24m    - High-pass Stilson/Moog filter (24dB)
