@@ -844,6 +844,56 @@ pub fn process_1pole_lowpass(input: f32, freq: f32, israte: f32, z: &mut f32) ->
     *z
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct OnePoleLPF {
+    israte:     f32,
+    a:          f32,
+    b:          f32,
+    freq:       f32,
+    z:          f32,
+}
+
+impl OnePoleLPF {
+    pub fn new() -> Self {
+        Self {
+            israte: 1.0 / 44100.0,
+            a:      0.0,
+            b:      0.0,
+            freq:   1000.0,
+            z:      0.0,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.z = 0.0;
+    }
+
+    #[inline]
+    fn recalc(&mut self) {
+        self.b = (-std::f32::consts::TAU * self.freq * self.israte).exp();
+        self.a = 1.0 - self.b;
+    }
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.israte = 1.0 / srate;
+        self.recalc();
+    }
+
+    #[inline]
+    pub fn set_freq(&mut self, freq: f32) {
+        if freq != self.freq {
+            self.freq = freq;
+            self.recalc();
+        }
+    }
+
+    #[inline]
+    pub fn process(&mut self, input: f32) -> f32 {
+        self.z = self.a * input + self.z * self.b;
+        self.z
+    }
+}
+
 // one pole hp from valley rack free:
 // https://github.com/ValleyAudio/ValleyRackFree/blob/v1.0/src/Common/DSP/OnePoleFilters.cpp
 #[inline]
@@ -882,6 +932,68 @@ pub fn process_1pole_highpass(input: f32, freq: f32, israte: f32, z: &mut f32, y
     *z = input;
     v
 }
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct OnePoleHPF {
+    israte:     f32,
+    a:          f32,
+    b:          f32,
+    freq:       f32,
+    z:          f32,
+    y:          f32,
+}
+
+impl OnePoleHPF {
+    pub fn new() -> Self {
+        Self {
+            israte: 1.0 / 44100.0,
+            a:      0.0,
+            b:      0.0,
+            freq:   1000.0,
+            z:      0.0,
+            y:      0.0,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.z = 0.0;
+        self.y = 0.0;
+    }
+
+    #[inline]
+    fn recalc(&mut self) {
+        self.b = (-std::f32::consts::TAU * self.freq * self.israte).exp();
+        self.a = (1.0 + self.b) / 2.0;
+    }
+
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.israte = 1.0 / srate;
+        self.recalc();
+    }
+
+    #[inline]
+    pub fn set_freq(&mut self, freq: f32) {
+        if freq != self.freq {
+            self.freq = freq;
+            self.recalc();
+        }
+    }
+
+    #[inline]
+    pub fn process(&mut self, input: f32) -> f32 {
+        let v =
+              self.a * input
+            - self.a * self.z
+            + self.b * self.y;
+
+        self.y = v;
+        self.z = input;
+
+        v
+    }
+}
+
 
 // one pole from:
 // http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.pdf

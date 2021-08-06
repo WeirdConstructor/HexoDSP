@@ -45,6 +45,7 @@ mod node_tslfo;
 
 pub mod biquad;
 pub mod tracker;
+pub mod dattorro;
 mod satom;
 pub mod helpers;
 
