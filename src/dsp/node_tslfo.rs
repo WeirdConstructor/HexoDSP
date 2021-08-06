@@ -25,7 +25,8 @@ impl TsLfo {
 
     pub const time : &'static str =
         "TsLfo time\nThe frequency or period time of the LFO, goes all the \
-        way from 0.1ms up to 30s.\nRange: (0..1)\n";
+        way from 0.1ms up to 30s. Please note, that the text entry is always \
+        in milliseconds.\nRange: (0..1)\n";
     pub const trig : &'static str =
         "TsLfo trig\nTriggers a phase reset of the LFO.\nRange: (0..1)\n";
     pub const rev : &'static str =
@@ -100,6 +101,7 @@ impl DspNode for TsLfo {
 
     fn graph_fun() -> Option<GraphFun> {
         let mut lfo = TriSawLFO::new();
+        lfo.set_sample_rate(160.0);
 
         Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, xn: f32| -> f32 {
             if init {
@@ -109,7 +111,7 @@ impl DspNode for TsLfo {
 
                 let time = gd.get_norm(time_idx as u32).sqrt();
                 let rev  = gd.get_norm(rev_idx as u32);
-                lfo.set(0.2 * (1.0 - time) + time * 1.0, rev);
+                lfo.set(5.0 * (1.0 - time) + time * 1.0, rev);
             }
 
             lfo.next_unipolar() as f32
