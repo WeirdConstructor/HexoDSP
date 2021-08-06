@@ -31,20 +31,30 @@ const DAT_LEFT_APF2_TIME_MS  : f32 = 1800.0 / DAT_SAMPLES_PER_MS;
 const DAT_RIGHT_APF1_TIME_MS : f32 = 908.0  / DAT_SAMPLES_PER_MS;
 const DAT_RIGHT_APF2_TIME_MS : f32 = 2656.0 / DAT_SAMPLES_PER_MS;
 
-//    const long _kLeftApf1Time = 672;
-//    const long _kLeftDelay1Time = 4453;
-//    const long _kLeftApf2Time = 1800;
-//    const long _kLeftDelay2Time = 3720;
-//
-//    const long _kRightApf1Time = 908;
-//    const long _kRightDelay1Time = 4217;
-//    const long _kRightApf2Time = 2656;
-//    const long _kRightDelay2Time = 3163;
+const DAT_LEFT_DELAY1_TIME_MS : f32 = 4453.0  / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_DELAY2_TIME_MS : f32 = 3720.0  / DAT_SAMPLES_PER_MS;
+
+const DAT_RIGHT_DELAY1_TIME_MS : f32 = 4217.0 / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_DELAY2_TIME_MS : f32 = 3163.0 / DAT_SAMPLES_PER_MS;
+
+const DAT_TAPS_TIME_MS : [f32; 7] = [
+    266.0  / DAT_SAMPLES_PER_MS,
+    2974.0 / DAT_SAMPLES_PER_MS,
+    1913.0 / DAT_SAMPLES_PER_MS,
+    1996.0 / DAT_SAMPLES_PER_MS,
+    1990.0 / DAT_SAMPLES_PER_MS,
+    187.0  / DAT_SAMPLES_PER_MS,
+    1066.0 / DAT_SAMPLES_PER_MS,
+];
+
+const DAT_LFO_FREQS_HZ : [f32; 4] = [ 0.1, 0.15, 0.12, 0.18 ];
 
 const DAT_INPUT_DIFFUSION1 : f32 = 0.75;
 const DAT_INPUT_DIFFUSION2 : f32 = 0.625;
 const DAT_PLATE_DIFFUSION1 : f32 = 0.7;
 const DAT_PLATE_DIFFUSION2 : f32 = 0.5;
+
+const DAT_LFO_EXCURSION_MS : f32 = 16.0 / DAT_SAMPLES_PER_MS;
 
 use crate::dsp::helpers::{
     AllPass,
@@ -67,21 +77,20 @@ pub struct DattorroReverb {
     input_lpf: OnePoleLPF,
 
     pre_delay:  DelayBuffer,
-    input_apfs: [(AllPass, f32); 4],
+    input_apfs: [(AllPass, f32, f32); 4],
 
-    apf1:   [(AllPass, f32); 2],
+    apf1:   [(AllPass, f32, f32); 2],
     hpf:    [OnePoleHPF; 2],
     lpf:    [OnePoleLPF; 2],
-    apf2:   [AllPass; 2],
-    delay1: [DelayBuffer; 2],
-    delay2: [DelayBuffer; 2],
-
-    time_scale_factor: f32,
+    apf2:   [(AllPass, f32, f32); 2],
+    delay1: [(DelayBuffer, f32); 2],
+    delay2: [(DelayBuffer, f32); 2],
 }
 
 pub trait DattorroReverbParams {
     /// Time for the pre-delay of the reverb.
     fn pre_delay_time_s(&self) -> f32;
+    fn time_scale(&self) -> f32;
 }
 
 impl DattorroReverb {
@@ -98,15 +107,14 @@ impl DattorroReverb {
             input_lpf: OnePoleLPF::new(),
 
             pre_delay:  DelayBuffer::new(),
-            input_apfs: [(AllPass::new(), 0.0); 4],
+            input_apfs: Default::default(),
 
-            apf1:   [(AllPass::new(), 0.0); 2],
+            apf1:   Default::default(),
             hpf:    [OnePoleHPF::new(); 2],
             lpf:    [OnePoleLPF::new(); 2],
-            apf2:   [AllPass::new(); 2],
-            delay1: [DelayBuffer::new(); 2],
-            delay2: [DelayBuffer::new(); 2],
-            time_scale_factor: 1.0,
+            apf2:   Default::default(),
+            delay1: Default::default(),
+            delay2: Default::default(),
         };
 
         this.reset();
@@ -115,20 +123,64 @@ impl DattorroReverb {
     }
 
     pub fn reset(&mut self) {
+        self.input_lpf.reset();
+        self.input_hpf.reset();
+
         self.input_lpf.set_freq(22000.0);
         self.input_hpf.set_freq(0.0);
 
-        self.input_apfs[0].1 = DAT_INPUT_APF_TIMES_MS[0];
-        self.input_apfs[1].1 = DAT_INPUT_APF_TIMES_MS[1];
-        self.input_apfs[2].1 = DAT_INPUT_APF_TIMES_MS[2];
-        self.input_apfs[3].1 = DAT_INPUT_APF_TIMES_MS[3];
+        self.input_apfs[0] =
+            (AllPass::new(), DAT_INPUT_APF_TIMES_MS[0], DAT_INPUT_DIFFUSION1);
+        self.input_apfs[1] =
+            (AllPass::new(), DAT_INPUT_APF_TIMES_MS[1], DAT_INPUT_DIFFUSION1);
+        self.input_apfs[2] =
+            (AllPass::new(), DAT_INPUT_APF_TIMES_MS[2], DAT_INPUT_DIFFUSION2);
+        self.input_apfs[3] =
+            (AllPass::new(), DAT_INPUT_APF_TIMES_MS[3], DAT_INPUT_DIFFUSION2);
+
+        self.apf1[0] =
+            (AllPass::new(), DAT_LEFT_APF1_TIME_MS, -DAT_PLATE_DIFFUSION1);
+        self.apf1[1] =
+            (AllPass::new(), DAT_RIGHT_APF1_TIME_MS, -DAT_PLATE_DIFFUSION1);
+        self.apf2[0] =
+            (AllPass::new(), DAT_LEFT_APF2_TIME_MS, -DAT_PLATE_DIFFUSION2);
+        self.apf2[1] =
+            (AllPass::new(), DAT_RIGHT_APF2_TIME_MS, -DAT_PLATE_DIFFUSION2);
+
+        self.delay1[0] = (DelayBuffer::new(), DAT_LEFT_DELAY1_TIME_MS);
+        self.delay1[1] = (DelayBuffer::new(), DAT_RIGHT_DELAY1_TIME_MS);
+        self.delay2[0] = (DelayBuffer::new(), DAT_LEFT_DELAY2_TIME_MS);
+        self.delay2[1] = (DelayBuffer::new(), DAT_RIGHT_DELAY2_TIME_MS);
+
+        self.lpf[0].reset();
+        self.lpf[1].reset();
+        self.lpf[0].set_freq(10000.0);
+        self.lpf[1].set_freq(10000.0);
+
+        self.hpf[0].reset();
+        self.hpf[1].reset();
+        self.hpf[0].set_freq(0.0);
+        self.hpf[1].set_freq(0.0);
+
+        self.lfos[0].set(DAT_LFO_FREQS_HZ[0], 0.5);
+        self.lfos[0].set_phase_offs(0.0);
+        self.lfos[0].reset();
+        self.lfos[1].set(DAT_LFO_FREQS_HZ[1], 0.5);
+        self.lfos[1].set_phase_offs(0.25);
+        self.lfos[1].reset();
+        self.lfos[2].set(DAT_LFO_FREQS_HZ[2], 0.5);
+        self.lfos[2].set_phase_offs(0.5);
+        self.lfos[2].reset();
+        self.lfos[3].set(DAT_LFO_FREQS_HZ[3], 0.5);
+        self.lfos[3].set_phase_offs(0.75);
+        self.lfos[3].reset();
 
         self.set_time_scale(1.0);
     }
 
     #[inline]
     pub fn set_time_scale(&mut self, scale: f32) {
-        if (self.last_scale - scale).abs() > std::f32::consts::EPSILON {
+        if (self.last_scale - scale).abs() > std::f32::EPSILON {
             let scale = scale.max(0.0001);
             self.last_scale = scale;
 
@@ -140,9 +192,16 @@ impl DattorroReverb {
     }
 
     pub fn set_sample_rate(&mut self, srate: f32) {
-        self.time_scale_factor = srate / DAT_SAMPLE_RATE;
     }
 
-    pub fn process(&mut self, params: &mut dyn DattorroReverbParams, input: f32) -> (f32, f32) {
+    pub fn process(
+        &mut self,
+        params: &mut dyn DattorroReverbParams,
+        input_l: f32, input_r: f32
+    ) -> (f32, f32)
+    {
+        self.set_time_scale(params.time_scale());
+
+        (0.0, 0.0)
     }
 }

@@ -655,7 +655,7 @@ impl TriggerSampleClock {
 /// Default size of the delay buffer: 5 seconds at 8 times 48kHz
 const DEFAULT_DELAY_BUFFER_SAMPLES : usize = 8 * 48000 * 5;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct DelayBuffer {
     data:   Vec<f32>,
     wr:     usize,
@@ -748,7 +748,7 @@ impl DelayBuffer {
 /// Default size of the delay buffer: 1 seconds at 8 times 48kHz
 const DEFAULT_ALLPASS_COMB_SAMPLES : usize = 8 * 48000;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AllPass {
     delay: DelayBuffer,
 }
@@ -1289,7 +1289,7 @@ pub fn process_stilson_moog(
 // translated from Odin 2 Synthesizer Plugin
 // Copyright (C) 2020 TheWaveWarden
 // under GPLv3 or any later
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct DCBlockFilter {
     xm1:    f64,
     ym1:    f64,
@@ -1786,6 +1786,8 @@ pub struct TriSawLFO {
     /// Precomputed rise/fall rate of the LFO.
     rise_r: f64,
     fall_r: f64,
+    /// Initial phase offset.
+    init_phase: f64,
 }
 
 impl TriSawLFO {
@@ -1798,9 +1800,15 @@ impl TriSawLFO {
             freq:   1.0,
             fall_r: 0.0,
             rise_r: 0.0,
+            init_phase: 0.0,
         };
         this.recalc();
         this
+    }
+
+    pub fn set_phase_offs(&mut self, phase: f64) {
+        self.init_phase = phase;
+        self.phase      = phase;
     }
 
     #[inline]
@@ -1816,7 +1824,7 @@ impl TriSawLFO {
     }
 
     pub fn reset(&mut self) {
-        self.phase  = 0.0;
+        self.phase  = self.init_phase;
         self.rev    = 0.5;
         self.rising = true;
     }
