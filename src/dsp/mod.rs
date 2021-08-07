@@ -42,6 +42,8 @@ mod node_biqfilt;
 mod node_comb;
 #[allow(non_upper_case_globals)]
 mod node_tslfo;
+#[allow(non_upper_case_globals)]
+mod node_pverb;
 
 pub mod biquad;
 pub mod tracker;
@@ -101,6 +103,7 @@ use node_vosc::VOsc;
 use node_biqfilt::BiqFilt;
 use node_comb::Comb;
 use node_tslfo::TsLfo;
+use node_pverb::PVerb;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -770,6 +773,24 @@ macro_rules! node_list {
                {4 0 ftype setting(0) fa_biqfilt_type 0 1}
                {5 1 order setting(0) fa_biqfilt_ord  0 3}
                [0 sig],
+            pverb => PVerb UIType::Generic UICategory::Signal
+               ( 0 in_l   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               ( 1 in_r   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               ( 2 predly n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 0.0)
+               ( 3 size   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               ( 4 dcy    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.25)
+               ( 5 ilpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 22050.0)
+               ( 6 ihpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 0.0)
+               ( 7 idif   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
+               ( 8 dmix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
+               ( 9 mspeed n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
+               (10 mshp   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
+               (11 mdepth n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
+               (12 rlpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 22050.0)
+               (13 rhpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 0.0)
+               (14 mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               [0 sig_l]
+               [1 sig_r],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
                {1 0 p     param(0.0) fa_test_s 0  10}

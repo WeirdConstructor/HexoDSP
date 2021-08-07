@@ -740,6 +740,21 @@ impl DelayBuffer {
         self.wr = (self.wr + 1) % self.data.len();
     }
 
+    /// Combines [DelayBuffer::cubic_interpolate_at] and [DelayBuffer::feed]
+    /// into one convenient function.
+    #[inline]
+    pub fn next_cubic(&mut self, delay_time_ms: f32, input: f32) -> f32 {
+        let res = self.cubic_interpolate_at(delay_time_ms);
+        self.feed(input);
+        res
+    }
+
+    /// Shorthand for [DelayBuffer::cubic_interpolate_at].
+    #[inline]
+    pub fn tap(&self, delay_time_ms: f32) -> f32 {
+        self.cubic_interpolate_at(delay_time_ms)
+    }
+
     /// Fetch a sample from the delay buffer at the given time.
     ///
     /// * `delay_time_ms` - Delay time in milliseconds.
@@ -815,6 +830,11 @@ impl AllPass {
     }
 
     #[inline]
+    pub fn delay_tap(&self, time: f32) -> f32 {
+        self.delay.cubic_interpolate_at(time)
+    }
+
+    #[inline]
     pub fn next(&mut self, time: f32, g: f32, v: f32) -> f32 {
         let s = self.delay.cubic_interpolate_at(time);
         self.delay.feed(v + s * g);
@@ -840,6 +860,11 @@ impl Comb {
 
     pub fn reset(&mut self) {
         self.delay.reset();
+    }
+
+    #[inline]
+    pub fn delay_tap(&self, time: f32) -> f32 {
+        self.delay.cubic_interpolate_at(time)
     }
 
     #[inline]
