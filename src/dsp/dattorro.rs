@@ -102,6 +102,8 @@ pub struct DattorroReverb {
 
     left_sum:  f32,
     right_sum: f32,
+
+    dbg_count: usize,
 }
 
 pub trait DattorroReverbParams {
@@ -158,6 +160,8 @@ impl DattorroReverb {
 
             left_sum: 0.0,
             right_sum: 0.0,
+
+            dbg_count: 0,
         };
 
         this.reset();
@@ -403,6 +407,19 @@ impl DattorroReverb {
         let left = self.apf2[0].0.next(left_apf2_delay_ms, self.apf2[0].2, left);
         let left = self.delay2[0].0.next_cubic(self.delay2[0].1, left);
 
+        if self.dbg_count % 48 == 0 {
+            println!("APFS dcy={:8.6}; {:8.6} {:8.6} {:8.6} {:8.6}",
+                decay,
+                left_apf1_delay_ms, right_apf1_delay_ms,
+                left_apf2_delay_ms, right_apf2_delay_ms);
+            println!("DELY1/2 {:8.6} / {:8.6} | {:8.6} / {:8.6}",
+                self.delay1[0].1,
+                self.delay2[0].1,
+                self.delay1[1].1,
+                self.delay2[1].1);
+        }
+
+
         // Right Sum => APF1 => Delay1 => LPF => HPF => APF2 => Delay2
         // And then send this over to the left sum.
         let right = self.right_sum;
@@ -438,6 +455,8 @@ impl DattorroReverb {
 
         let left_out  = self.out_dc_block[0].next(left_accum);
         let right_out = self.out_dc_block[1].next(right_accum);
+
+        self.dbg_count += 1;
 
 //        (left_out * 0.5, right_out * 0.5)
         (left_out * 0.5, right_out * 0.5)

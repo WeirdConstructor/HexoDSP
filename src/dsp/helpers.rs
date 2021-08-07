@@ -821,9 +821,9 @@ impl DelayBuffer {
     }
 
     #[inline]
-    pub fn nearest_at(&self, delay_time: f32) -> f32 {
+    pub fn nearest_at(&self, delay_time_ms: f32) -> f32 {
         let len  = self.data.len();
-        let offs = (delay_time * self.srate).floor() as usize % len;
+        let offs = ((delay_time_ms * self.srate) / 1000.0).floor() as usize % len;
         let idx  = ((self.wr + len) - offs) % len;
         self.data[idx]
     }
@@ -860,13 +860,13 @@ impl AllPass {
     }
 
     #[inline]
-    pub fn delay_tap_n(&self, time: f32) -> f32 {
-        self.delay.tap_n(time)
+    pub fn delay_tap_n(&self, time_ms: f32) -> f32 {
+        self.delay.tap_n(time_ms)
     }
 
     #[inline]
-    pub fn next(&mut self, time: f32, g: f32, v: f32) -> f32 {
-        let s = self.delay.cubic_interpolate_at(time);
+    pub fn next(&mut self, time_ms: f32, g: f32, v: f32) -> f32 {
+        let s = self.delay.linear_interpolate_at(time_ms);
         let input = v + -g * s;
         self.delay.feed(input);
         input * g + s
@@ -894,13 +894,13 @@ impl Comb {
     }
 
     #[inline]
-    pub fn delay_tap_c(&self, time: f32) -> f32 {
-        self.delay.tap_c(time)
+    pub fn delay_tap_c(&self, time_ms: f32) -> f32 {
+        self.delay.tap_c(time_ms)
     }
 
     #[inline]
-    pub fn delay_tap_n(&self, time: f32) -> f32 {
-        self.delay.tap_n(time)
+    pub fn delay_tap_n(&self, time_ms: f32) -> f32 {
+        self.delay.tap_n(time_ms)
     }
 
     #[inline]
