@@ -15,6 +15,8 @@
 // And: https://ccrma.stanford.edu/~dattorro/music.html
 // And: https://ccrma.stanford.edu/~dattorro/EffectDesignPart1.pdf
 
+use crate::dsp::helpers::crossfade;
+
 const DAT_SAMPLE_RATE    : f32 = 29761.0;
 const DAT_SAMPLES_PER_MS : f32 = DAT_SAMPLE_RATE / 1000.0;
 
@@ -86,6 +88,9 @@ pub struct DattorroReverb {
     apf2:   [(AllPass, f32, f32); 2],
     delay1: [(DelayBuffer, f32); 2],
     delay2: [(DelayBuffer, f32); 2],
+
+    left_sum:  f32,
+    right_sum: f32,
 }
 
 pub trait DattorroReverbParams {
@@ -108,7 +113,10 @@ pub trait DattorroReverbParams {
     fn mod_depth(&self) -> f32;
     /// Modulation shape (from saw to tri to saw), range: 0.0 to 1.0
     fn mod_shape(&self) -> f32;
-    /// The amount of diffusion going on, range: 0.0 to 1.0
+    /// The mix between output from the pre-delay and the input diffusion.
+    /// range: 0.0 to 1.0. Default should be 1.0
+    fn input_diffusion_mix(&self) -> f32;
+    /// The amount of plate diffusion going on, range: 0.0 to 1.0
     fn diffusion(&self) -> f32;
 }
 
@@ -134,6 +142,9 @@ impl DattorroReverb {
             apf2:   Default::default(),
             delay1: Default::default(),
             delay2: Default::default(),
+
+            left_sum: 0.0,
+            right_sum: 0.0,
         };
 
         this.reset();
@@ -200,6 +211,9 @@ impl DattorroReverb {
         self.out_dc_block[1].reset();
 
         self.pre_delay.reset();
+
+        self.left_sum  = 0.0;
+        self.right_sum = 0.0;
 
         self.set_time_scale(1.0);
     }
@@ -298,6 +312,7 @@ impl DattorroReverb {
         input_l: f32, input_r: f32
     ) -> (f32, f32)
     {
+        // Some parameter setup...
         self.set_time_scale(params.time_scale());
 
         self.hpf[0].set_freq(params.reverb_high_cutoff_hz());
@@ -322,6 +337,35 @@ impl DattorroReverb {
         let (left_apf1_delay_ms, right_apf1_delay_ms,
              left_apf2_delay_ms, right_apf2_delay_ms)
             = self.calc_apf_delay_times(params);
+
+        // Input into their corresponding DC blockers
+        let input_r = self.inp_dc_block[0].next(input_r);
+        let input_l = self.inp_dc_block[1].next(input_l);
+
+        // Sum of DC outputs => LPF => HPF
+        self.input_lpf.set_freq(params.input_low_cutoff_hz());
+        self.input_hpf.set_freq(params.input_high_cutoff_hz());
+        let out_lpf = self.input_lpf.process(input_r + input_l);
+        let out_hpf = self.input_hpf.process(out_lpf);
+
+        // HPF => Pre-Delay
+        let out_pre_delay =
+            self.pre_delay.cubic_interpolate_at(params.pre_delay_time_ms());
+        self.pre_delay.feed(out_hpf);
+
+        // Pre-Delay => 4 All-Pass filters
+        let mut diffused = out_pre_delay;
+        for (apf, time, g) in &mut self.input_apfs {
+            diffused = apf.next(*time, *g, diffused);
+        }
+
+        // Mix between diffused and pre-delayed intput for further processing
+        let tank_feed =
+            crossfade(out_pre_delay, diffused, params.input_diffusion_mix());
+
+        // First tap for the output
+        self.left_sum  += tank_feed;
+        self.right_sum += tank_feed;
 
         (0.0, 0.0)
     }

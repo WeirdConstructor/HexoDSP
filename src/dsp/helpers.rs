@@ -740,11 +740,14 @@ impl DelayBuffer {
         self.wr = (self.wr + 1) % self.data.len();
     }
 
+    /// Fetch a sample from the delay buffer at the given time.
+    ///
+    /// * `delay_time_ms` - Delay time in milliseconds.
     #[inline]
-    pub fn cubic_interpolate_at(&self, delay_time: f32) -> f32 {
+    pub fn cubic_interpolate_at(&self, delay_time_ms: f32) -> f32 {
         let data   = &self.data[..];
         let len    = data.len();
-        let s_offs = (delay_time * self.srate) / 1000.0;
+        let s_offs = (delay_time_ms * self.srate) / 1000.0;
         let offs   = s_offs.floor() as usize % len;
         let fract  = s_offs.fract();
 
