@@ -9,7 +9,7 @@ use crate::dsp::helpers::AllPass;
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct AllP {
-    allpass: Box<AllPass>,
+    allpass: Box<AllPass<f64>>,
 }
 
 impl AllP {
@@ -72,7 +72,7 @@ impl DspNode for AllP {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.allpass.set_sample_rate(srate);
+        self.allpass.set_sample_rate(srate as f64);
     }
 
     fn reset(&mut self) {
@@ -100,9 +100,9 @@ impl DspNode for AllP {
 
             out.write(frame,
                 ap.next(
-                    denorm::AllP::time(time, frame),
-                    denorm::AllP::g(g, frame),
-                    v));
+                    denorm::AllP::time(time, frame) as f64,
+                    denorm::AllP::g(g, frame) as f64,
+                    v as f64) as f32);
         }
 
         let last_frame = ctx.nframes() - 1;

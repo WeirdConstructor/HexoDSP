@@ -20,7 +20,7 @@ macro_rules! fa_delay_mode { ($formatter: expr, $v: expr, $denorm_v: expr) => { 
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Delay {
-    buffer:             Box<DelayBuffer>,
+    buffer:             Box<DelayBuffer<f32>>,
     clock:              TriggerSampleClock,
 }
 

@@ -36,41 +36,41 @@ impl DatParams {
 }
 
 impl DattorroReverbParams for DatParams {
-    fn pre_delay_time_ms(&self) -> f32 {
-        denorm::PVerb::predly(&self.predly, self.frame)
+    fn pre_delay_time_ms(&self) -> f64 {
+        denorm::PVerb::predly(&self.predly, self.frame) as f64
     }
-    fn time_scale(&self) -> f32 {
-        denorm::PVerb::size(&self.size, self.frame)
+    fn time_scale(&self) -> f64 {
+        denorm::PVerb::size(&self.size, self.frame) as f64
     }
-    fn decay(&self) -> f32 {
-        denorm::PVerb::dcy(&self.dcy, self.frame)
+    fn decay(&self) -> f64 {
+        denorm::PVerb::dcy(&self.dcy, self.frame) as f64
     }
-    fn input_low_cutoff_hz(&self) -> f32 {
-        denorm::PVerb::ilpf(&self.ilpf, self.frame)
+    fn input_low_cutoff_hz(&self) -> f64 {
+        denorm::PVerb::ilpf(&self.ilpf, self.frame) as f64
     }
-    fn input_high_cutoff_hz(&self) -> f32 {
-        denorm::PVerb::ihpf(&self.ihpf, self.frame)
+    fn input_high_cutoff_hz(&self) -> f64 {
+        denorm::PVerb::ihpf(&self.ihpf, self.frame) as f64
     }
-    fn diffusion(&self) -> f32 {
-        denorm::PVerb::idif(&self.idif, self.frame)
+    fn diffusion(&self) -> f64 {
+        denorm::PVerb::idif(&self.idif, self.frame) as f64
     }
-    fn input_diffusion_mix(&self) -> f32 {
-        denorm::PVerb::dmix(&self.dmix, self.frame)
+    fn input_diffusion_mix(&self) -> f64 {
+        denorm::PVerb::dmix(&self.dmix, self.frame) as f64
     }
-    fn mod_speed(&self) -> f32 {
-        denorm::PVerb::mspeed(&self.mspeed, self.frame)
+    fn mod_speed(&self) -> f64 {
+        denorm::PVerb::mspeed(&self.mspeed, self.frame) as f64
     }
-    fn mod_depth(&self) -> f32 {
-        denorm::PVerb::mdepth(&self.mdepth, self.frame)
+    fn mod_depth(&self) -> f64 {
+        denorm::PVerb::mdepth(&self.mdepth, self.frame) as f64
     }
-    fn mod_shape(&self) -> f32 {
-        denorm::PVerb::mshp(&self.mshp, self.frame)
+    fn mod_shape(&self) -> f64 {
+        denorm::PVerb::mshp(&self.mshp, self.frame) as f64
     }
-    fn reverb_low_cutoff_hz(&self) -> f32 {
-        denorm::PVerb::rlpf(&self.rlpf, self.frame)
+    fn reverb_low_cutoff_hz(&self) -> f64 {
+        denorm::PVerb::rlpf(&self.rlpf, self.frame) as f64
     }
-    fn reverb_high_cutoff_hz(&self) -> f32 {
-        denorm::PVerb::rhpf(&self.rhpf, self.frame)
+    fn reverb_high_cutoff_hz(&self) -> f64 {
+        denorm::PVerb::rhpf(&self.rhpf, self.frame) as f64
     }
 }
 
@@ -147,7 +147,7 @@ impl DspNode for PVerb {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.verb.set_sample_rate(srate);
+        self.verb.set_sample_rate(srate as f64);
     }
 
     fn reset(&mut self) {
@@ -196,10 +196,12 @@ impl DspNode for PVerb {
             let (i_l, i_r) = (in_l.read(frame), in_r.read(frame));
 
             params.set_frame(frame);
-            let (l, r) = verb.process(&mut params, i_l, i_r);
+            let (l, r) = verb.process(&mut params, i_l as f64, i_r as f64);
 
-            out_l.write(frame, crossfade(i_l, l, denorm::PVerb::mix(mix, frame)));
-            out_r.write(frame, crossfade(i_r, r, denorm::PVerb::mix(mix, frame)));
+            out_l.write(
+                frame, crossfade(i_l, l as f32, denorm::PVerb::mix(mix, frame)));
+            out_r.write(
+                frame, crossfade(i_r, r as f32, denorm::PVerb::mix(mix, frame)));
         }
 
         ctx_vals[0].set(

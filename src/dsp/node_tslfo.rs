@@ -11,7 +11,7 @@ use super::helpers::{TriSawLFO, Trigger};
 
 #[derive(Debug, Clone)]
 pub struct TsLfo {
-    lfo:    Box<TriSawLFO>,
+    lfo:    Box<TriSawLFO<f64>>,
     trig:   Trigger,
 }
 
@@ -58,7 +58,7 @@ impl DspNode for TsLfo {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.lfo.set_sample_rate(srate);
+        self.lfo.set_sample_rate(srate as f64);
     }
 
     fn reset(&mut self) {
@@ -90,8 +90,8 @@ impl DspNode for TsLfo {
             let time_ms = denorm::TsLfo::time(time, frame).clamp(0.1, 300000.0);
 
             lfo.set(
-                1000.0 / time_ms,
-                denorm::TsLfo::rev(rev, frame));
+                (1000.0 / time_ms) as f64,
+                denorm::TsLfo::rev(rev, frame) as f64);
 
             out.write(frame, lfo.next_unipolar() as f32);
         }

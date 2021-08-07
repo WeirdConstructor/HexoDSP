@@ -3,6 +3,7 @@
 // See README.md and COPYING for details.
 
 use std::cell::RefCell;
+use num_traits::{Float, FloatConst, cast::FromPrimitive};
 
 /// Logarithmic table size of the table in [fast_cos] / [fast_sin].
 static FAST_COS_TAB_LOG2_SIZE : usize = 9;
@@ -698,31 +699,35 @@ impl TriggerSampleClock {
 /// Default size of the delay buffer: 5 seconds at 8 times 48kHz
 const DEFAULT_DELAY_BUFFER_SAMPLES : usize = 8 * 48000 * 5;
 
-#[derive(Debug, Clone, Default)]
-pub struct DelayBuffer {
-    data:   Vec<f32>,
-    wr:     usize,
-    srate:  f32,
+macro_rules! fc {
+    ($F: ident, $e: expr) => { F::from_f64($e).unwrap() }
 }
 
-impl DelayBuffer {
+#[derive(Debug, Clone, Default)]
+pub struct DelayBuffer<F: Float> {
+    data:   Vec<F>,
+    wr:     usize,
+    srate:  F,
+}
+
+impl<F: Float + FromPrimitive> DelayBuffer<F> {
     pub fn new() -> Self {
         Self {
-            data:   vec![0.0; DEFAULT_DELAY_BUFFER_SAMPLES],
+            data:   vec![fc!(F,0.0); DEFAULT_DELAY_BUFFER_SAMPLES],
             wr:     0,
-            srate:  44100.0,
+            srate:  fc!(F, 44100.0),
         }
     }
 
     pub fn new_with_size(size: usize) -> Self {
         Self {
-            data:   vec![0.0; size],
+            data:   vec![fc!(F, 0.0); size],
             wr:     0,
-            srate:  44100.0,
+            srate:  fc!(F, 44100.0),
         }
     }
 
-    pub fn set_sample_rate(&mut self, srate: f32) {
+    pub fn set_sample_rate(&mut self, srate: F) {
         self.srate = srate;
     }
 
@@ -735,7 +740,7 @@ impl DelayBuffer {
     /// Please note: For sample accurate feedback you need to retrieve the
     /// output of the delay line before feeding in a new signal.
     #[inline]
-    pub fn feed(&mut self, input: f32) {
+    pub fn feed(&mut self, input: F) {
         self.data[self.wr] = input;
         self.wr = (self.wr + 1) % self.data.len();
     }
@@ -743,7 +748,7 @@ impl DelayBuffer {
     /// Combines [DelayBuffer::cubic_interpolate_at] and [DelayBuffer::feed]
     /// into one convenient function.
     #[inline]
-    pub fn next_cubic(&mut self, delay_time_ms: f32, input: f32) -> f32 {
+    pub fn next_cubic(&mut self, delay_time_ms: F, input: F) -> F {
         let res = self.cubic_interpolate_at(delay_time_ms);
         self.feed(input);
         res
@@ -751,26 +756,26 @@ impl DelayBuffer {
 
     /// Shorthand for [DelayBuffer::cubic_interpolate_at].
     #[inline]
-    pub fn tap_c(&self, delay_time_ms: f32) -> f32 {
+    pub fn tap_c(&self, delay_time_ms: F) -> F {
         self.cubic_interpolate_at(delay_time_ms)
     }
 
     /// Shorthand for [DelayBuffer::cubic_interpolate_at].
     #[inline]
-    pub fn tap_n(&self, delay_time_ms: f32) -> f32 {
+    pub fn tap_n(&self, delay_time_ms: F) -> F {
         self.nearest_at(delay_time_ms)
     }
 
     /// Shorthand for [DelayBuffer::cubic_interpolate_at].
     #[inline]
-    pub fn tap_l(&self, delay_time_ms: f32) -> f32 {
+    pub fn tap_l(&self, delay_time_ms: F) -> F {
         self.linear_interpolate_at(delay_time_ms)
     }
 
     /// Fetch a sample from the delay buffer at the given time.
     ///
     /// * `delay_time_ms` - Delay time in milliseconds.
-    pub fn linear_interpolate_at(&self, delay_time_ms: f32) -> f32 {
+    pub fn linear_interpolate_at(&self, delay_time_ms: F) -> F {
         let data   = &self.data[..];
         let len    = data.len();
         let s_offs = (delay_time_ms * self.srate) / 1000.0;
@@ -781,7 +786,7 @@ impl DelayBuffer {
         let x0  = data[i       % len];
         let x1  = data[(i + 1) % len];
 
-        let fract = fract as f32;
+        let fract = fract as F;
         x0 * (1.0 - fract) + x1 * fract
     }
 
@@ -789,7 +794,7 @@ impl DelayBuffer {
     ///
     /// * `delay_time_ms` - Delay time in milliseconds.
     #[inline]
-    pub fn cubic_interpolate_at(&self, delay_time_ms: f32) -> f32 {
+    pub fn cubic_interpolate_at(&self, delay_time_ms: F) -> F {
         let data   = &self.data[..];
         let len    = data.len();
         let s_offs = (delay_time_ms * self.srate) / 1000.0;
@@ -816,12 +821,12 @@ impl DelayBuffer {
         let a     = w + v + (x2 - x0) * 0.5;
         let b_neg = w + a;
 
-        let fract = fract as f32;
+        let fract = fract as F;
         (((a * fract) - b_neg) * fract + c) * fract + x0
     }
 
     #[inline]
-    pub fn nearest_at(&self, delay_time_ms: f32) -> f32 {
+    pub fn nearest_at(&self, delay_time_ms: F) -> F {
         let len  = self.data.len();
         let offs = ((delay_time_ms * self.srate) / 1000.0).floor() as usize % len;
         let idx  = ((self.wr + len) - offs) % len;
@@ -829,7 +834,7 @@ impl DelayBuffer {
     }
 
     #[inline]
-    pub fn at(&self, delay_sample_count: usize) -> f32 {
+    pub fn at(&self, delay_sample_count: usize) -> F {
         let len  = self.data.len();
         let idx  = ((self.wr + len) - delay_sample_count) % len;
         self.data[idx]
@@ -840,18 +845,18 @@ impl DelayBuffer {
 const DEFAULT_ALLPASS_COMB_SAMPLES : usize = 8 * 48000;
 
 #[derive(Debug, Clone, Default)]
-pub struct AllPass {
-    delay: DelayBuffer,
+pub struct AllPass<F: Float> {
+    delay: DelayBuffer<F>,
 }
 
-impl AllPass {
+impl<F: Float> AllPass<F> {
     pub fn new() -> Self {
         Self {
             delay: DelayBuffer::new_with_size(DEFAULT_ALLPASS_COMB_SAMPLES),
         }
     }
 
-    pub fn set_sample_rate(&mut self, srate: f32) {
+    pub fn set_sample_rate(&mut self, srate: F) {
         self.delay.set_sample_rate(srate);
     }
 
@@ -860,13 +865,13 @@ impl AllPass {
     }
 
     #[inline]
-    pub fn delay_tap_n(&self, time_ms: f32) -> f32 {
+    pub fn delay_tap_n(&self, time_ms: F) -> F {
         self.delay.tap_n(time_ms)
     }
 
     #[inline]
-    pub fn next(&mut self, time_ms: f32, g: f32, v: f32) -> f32 {
-        let s = self.delay.linear_interpolate_at(time_ms);
+    pub fn next(&mut self, time_ms: F, g: F, v: F) -> F {
+        let s = self.delay.nearest_at(time_ms);
         let input = v + -g * s;
         self.delay.feed(input);
         input * g + s
@@ -875,7 +880,7 @@ impl AllPass {
 
 #[derive(Debug, Clone)]
 pub struct Comb {
-    delay: DelayBuffer,
+    delay: DelayBuffer<f32>,
 }
 
 impl Comb {
@@ -951,15 +956,15 @@ pub fn process_1pole_lowpass(input: f32, freq: f32, israte: f32, z: &mut f32) ->
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct OnePoleLPF {
-    israte:     f32,
-    a:          f32,
-    b:          f32,
-    freq:       f32,
-    z:          f32,
+pub struct OnePoleLPF<F: Float> {
+    israte:     F,
+    a:          F,
+    b:          F,
+    freq:       F,
+    z:          F,
 }
 
-impl OnePoleLPF {
+impl<F: Float + FloatConst> OnePoleLPF<F> {
     pub fn new() -> Self {
         Self {
             israte: 1.0 / 44100.0,
@@ -976,17 +981,17 @@ impl OnePoleLPF {
 
     #[inline]
     fn recalc(&mut self) {
-        self.b = (-std::f32::consts::TAU * self.freq * self.israte).exp();
+        self.b = (-F::TAU * self.freq * self.israte).exp();
         self.a = 1.0 - self.b;
     }
 
-    pub fn set_sample_rate(&mut self, srate: f32) {
+    pub fn set_sample_rate(&mut self, srate: F) {
         self.israte = 1.0 / srate;
         self.recalc();
     }
 
     #[inline]
-    pub fn set_freq(&mut self, freq: f32) {
+    pub fn set_freq(&mut self, freq: F) {
         if freq != self.freq {
             self.freq = freq;
             self.recalc();
@@ -994,7 +999,7 @@ impl OnePoleLPF {
     }
 
     #[inline]
-    pub fn process(&mut self, input: f32) -> f32 {
+    pub fn process(&mut self, input: F) -> F {
         self.z = self.a * input + self.z * self.b;
         self.z
     }
@@ -1040,16 +1045,16 @@ pub fn process_1pole_highpass(input: f32, freq: f32, israte: f32, z: &mut f32, y
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct OnePoleHPF {
-    israte:     f32,
-    a:          f32,
-    b:          f32,
-    freq:       f32,
-    z:          f32,
-    y:          f32,
+pub struct OnePoleHPF<F: Float> {
+    israte:     F,
+    a:          F,
+    b:          F,
+    freq:       F,
+    z:          F,
+    y:          F,
 }
 
-impl OnePoleHPF {
+impl<F: Float + FloatConst> OnePoleHPF<F> {
     pub fn new() -> Self {
         Self {
             israte: 1.0 / 44100.0,
@@ -1068,18 +1073,18 @@ impl OnePoleHPF {
 
     #[inline]
     fn recalc(&mut self) {
-        self.b = (-std::f32::consts::TAU * self.freq * self.israte).exp();
+        self.b = (-F::TAU * self.freq * self.israte).exp();
         self.a = (1.0 + self.b) / 2.0;
     }
 
 
-    pub fn set_sample_rate(&mut self, srate: f32) {
+    pub fn set_sample_rate(&mut self, srate: F) {
         self.israte = 1.0 / srate;
         self.recalc();
     }
 
     #[inline]
-    pub fn set_freq(&mut self, freq: f32) {
+    pub fn set_freq(&mut self, freq: F) {
         if freq != self.freq {
             self.freq = freq;
             self.recalc();
@@ -1087,7 +1092,7 @@ impl OnePoleHPF {
     }
 
     #[inline]
-    pub fn process(&mut self, input: f32) -> f32 {
+    pub fn process(&mut self, input: F) -> F {
         let v =
               self.a * input
             - self.a * self.z
@@ -1396,13 +1401,13 @@ pub fn process_stilson_moog(
 // Copyright (C) 2020 TheWaveWarden
 // under GPLv3 or any later
 #[derive(Debug, Clone, Copy)]
-pub struct DCBlockFilter {
-    xm1:    f64,
-    ym1:    f64,
-    r:      f64,
+pub struct DCBlockFilter<F: Float> {
+    xm1:    F,
+    ym1:    F,
+    r:      F,
 }
 
-impl DCBlockFilter {
+impl<F: Float> DCBlockFilter<F> {
     pub fn new() -> Self {
         Self {
             xm1: 0.0,
@@ -1416,7 +1421,7 @@ impl DCBlockFilter {
         self.ym1 = 0.0;
     }
 
-    pub fn set_sample_rate(&mut self, srate: f32) {
+    pub fn set_sample_rate(&mut self, srate: F) {
         self.r = 0.995;
         if srate > 90000.0 {
             self.r = 0.9965;
@@ -1425,11 +1430,11 @@ impl DCBlockFilter {
         }
     }
 
-    pub fn next(&mut self, input: f32) -> f32 {
+    pub fn next(&mut self, input: F) -> F {
         let y = input as f64 - self.xm1 + self.r * self.ym1;
         self.xm1 = input as f64;
         self.ym1 = y;
-        y as f32
+        y as F
     }
 }
 
@@ -1878,25 +1883,25 @@ impl VPSOscillator {
 /// An LFO with a variable reverse point, which can go from reverse Saw, to Tri
 /// and to Saw, depending on the reverse point.
 #[derive(Debug, Clone, Copy)]
-pub struct TriSawLFO {
+pub struct TriSawLFO<F: Float> {
     /// The (inverse) sample rate. Eg. 1.0 / 44100.0.
-    israte: f64,
+    israte: F,
     /// The current oscillator phase.
-    phase:  f64,
+    phase:  F,
     /// The point from where the falling edge will be used.
-    rev:    f64,
+    rev:    F,
     /// Whether the LFO is currently rising
     rising: bool,
     /// The frequency.
-    freq:   f64,
+    freq:   F,
     /// Precomputed rise/fall rate of the LFO.
-    rise_r: f64,
-    fall_r: f64,
+    rise_r: F,
+    fall_r: F,
     /// Initial phase offset.
-    init_phase: f64,
+    init_phase: F,
 }
 
-impl TriSawLFO {
+impl<F: Float> TriSawLFO<F> {
     pub fn new() -> Self {
         let mut this = Self {
             israte: 1.0 / 44100.0,
@@ -1912,7 +1917,7 @@ impl TriSawLFO {
         this
     }
 
-    pub fn set_phase_offs(&mut self, phase: f64) {
+    pub fn set_phase_offs(&mut self, phase: F) {
         self.init_phase = phase;
         self.phase      = phase;
     }
@@ -1924,8 +1929,8 @@ impl TriSawLFO {
         self.fall_r = -1.0 / (1.0 - self.rev);
     }
 
-    pub fn set_sample_rate(&mut self, srate: f32) {
-        self.israte = 1.0 / (srate as f64);
+    pub fn set_sample_rate(&mut self, srate: F) {
+        self.israte = 1.0 / (srate as F);
         self.recalc();
     }
 
@@ -1936,14 +1941,14 @@ impl TriSawLFO {
     }
 
     #[inline]
-    pub fn set(&mut self, freq: f32, rev: f32) {
-        self.freq = freq as f64;
-        self.rev  = rev  as f64;
+    pub fn set(&mut self, freq: F, rev: F) {
+        self.freq = freq as F;
+        self.rev  = rev  as F;
         self.recalc();
     }
 
     #[inline]
-    pub fn next_unipolar(&mut self) -> f64 {
+    pub fn next_unipolar(&mut self) -> F {
         if self.phase >= 1.0 {
             self.phase -= 1.0;
             self.rising = true;
@@ -1966,7 +1971,7 @@ impl TriSawLFO {
     }
 
     #[inline]
-    pub fn next_bipolar(&mut self) -> f64 {
+    pub fn next_bipolar(&mut self) -> F {
         (self.next_unipolar() * 2.0) - 1.0
     }
 }

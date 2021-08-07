@@ -17,29 +17,29 @@
 
 use crate::dsp::helpers::crossfade;
 
-const DAT_SAMPLE_RATE    : f32 = 29761.0;
-const DAT_SAMPLES_PER_MS : f32 = DAT_SAMPLE_RATE / 1000.0;
+const DAT_SAMPLE_RATE    : f64 = 29761.0;
+const DAT_SAMPLES_PER_MS : f64 = DAT_SAMPLE_RATE / 1000.0;
 
-const DAT_INPUT_APF_TIMES_MS : [f32; 4] = [
+const DAT_INPUT_APF_TIMES_MS : [f64; 4] = [
     141.0 / DAT_SAMPLES_PER_MS,
     107.0 / DAT_SAMPLES_PER_MS,
     379.0 / DAT_SAMPLES_PER_MS,
     277.0 / DAT_SAMPLES_PER_MS,
 ];
 
-const DAT_LEFT_APF1_TIME_MS  : f32 = 672.0  / DAT_SAMPLES_PER_MS;
-const DAT_LEFT_APF2_TIME_MS  : f32 = 1800.0 / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_APF1_TIME_MS  : f64 = 672.0  / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_APF2_TIME_MS  : f64 = 1800.0 / DAT_SAMPLES_PER_MS;
 
-const DAT_RIGHT_APF1_TIME_MS : f32 = 908.0  / DAT_SAMPLES_PER_MS;
-const DAT_RIGHT_APF2_TIME_MS : f32 = 2656.0 / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_APF1_TIME_MS : f64 = 908.0  / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_APF2_TIME_MS : f64 = 2656.0 / DAT_SAMPLES_PER_MS;
 
-const DAT_LEFT_DELAY1_TIME_MS : f32 = 4453.0  / DAT_SAMPLES_PER_MS;
-const DAT_LEFT_DELAY2_TIME_MS : f32 = 3720.0  / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_DELAY1_TIME_MS : f64 = 4453.0  / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_DELAY2_TIME_MS : f64 = 3720.0  / DAT_SAMPLES_PER_MS;
 
-const DAT_RIGHT_DELAY1_TIME_MS : f32 = 4217.0 / DAT_SAMPLES_PER_MS;
-const DAT_RIGHT_DELAY2_TIME_MS : f32 = 3163.0 / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_DELAY1_TIME_MS : f64 = 4217.0 / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_DELAY2_TIME_MS : f64 = 3163.0 / DAT_SAMPLES_PER_MS;
 
-const DAT_LEFT_TAPS_TIME_MS : [f32; 7] = [
+const DAT_LEFT_TAPS_TIME_MS : [f64; 7] = [
     266.0  / DAT_SAMPLES_PER_MS,
     2974.0 / DAT_SAMPLES_PER_MS,
     1913.0 / DAT_SAMPLES_PER_MS,
@@ -49,7 +49,7 @@ const DAT_LEFT_TAPS_TIME_MS : [f32; 7] = [
     1066.0 / DAT_SAMPLES_PER_MS,
 ];
 
-const DAT_RIGHT_TAPS_TIME_MS : [f32; 7] = [
+const DAT_RIGHT_TAPS_TIME_MS : [f64; 7] = [
     353.0  / DAT_SAMPLES_PER_MS,
     3627.0 / DAT_SAMPLES_PER_MS,
     1228.0 / DAT_SAMPLES_PER_MS,
@@ -59,15 +59,15 @@ const DAT_RIGHT_TAPS_TIME_MS : [f32; 7] = [
     121.0  / DAT_SAMPLES_PER_MS,
 ];
 
-const DAT_LFO_FREQS_HZ : [f32; 4] = [ 0.1, 0.15, 0.12, 0.18 ];
+const DAT_LFO_FREQS_HZ : [f64; 4] = [ 0.1, 0.15, 0.12, 0.18 ];
 
-const DAT_INPUT_DIFFUSION1 : f32 = 0.75;
-const DAT_INPUT_DIFFUSION2 : f32 = 0.625;
-const DAT_PLATE_DIFFUSION1 : f32 = 0.7;
-const DAT_PLATE_DIFFUSION2 : f32 = 0.5;
+const DAT_INPUT_DIFFUSION1 : f64 = 0.75;
+const DAT_INPUT_DIFFUSION2 : f64 = 0.625;
+const DAT_PLATE_DIFFUSION1 : f64 = 0.7;
+const DAT_PLATE_DIFFUSION2 : f64 = 0.5;
 
-const DAT_LFO_EXCURSION_MS : f32 = 16.0 / DAT_SAMPLES_PER_MS;
-const DAT_LFO_EXCURSION_MOD_MAX : f32 = 16.0;
+const DAT_LFO_EXCURSION_MS : f64 = 16.0 / DAT_SAMPLES_PER_MS;
+const DAT_LFO_EXCURSION_MOD_MAX : f64 = 16.0;
 
 use crate::dsp::helpers::{
     AllPass,
@@ -80,28 +80,28 @@ use crate::dsp::helpers::{
 
 #[derive(Debug, Clone)]
 pub struct DattorroReverb {
-    last_scale: f32,
+    last_scale: f64,
 
-    inp_dc_block:   [DCBlockFilter; 2],
-    out_dc_block:   [DCBlockFilter; 2],
+    inp_dc_block:   [DCBlockFilter<f64>; 2],
+    out_dc_block:   [DCBlockFilter<f64>; 2],
 
-    lfos: [TriSawLFO; 4],
+    lfos: [TriSawLFO<f64>; 4],
 
-    input_hpf: OnePoleHPF,
-    input_lpf: OnePoleLPF,
+    input_hpf: OnePoleHPF<f64>,
+    input_lpf: OnePoleLPF<f64>,
 
-    pre_delay:  DelayBuffer,
-    input_apfs: [(AllPass, f32, f32); 4],
+    pre_delay:  DelayBuffer<f64>,
+    input_apfs: [(AllPass<f64>, f64, f64); 4],
 
-    apf1:   [(AllPass, f32, f32); 2],
-    hpf:    [OnePoleHPF; 2],
-    lpf:    [OnePoleLPF; 2],
-    apf2:   [(AllPass, f32, f32); 2],
-    delay1: [(DelayBuffer, f32); 2],
-    delay2: [(DelayBuffer, f32); 2],
+    apf1:   [(AllPass<f64>, f64, f64); 2],
+    hpf:    [OnePoleHPF<f64>; 2],
+    lpf:    [OnePoleLPF<f64>; 2],
+    apf2:   [(AllPass<f64>, f64, f64); 2],
+    delay1: [(DelayBuffer<f64>, f64); 2],
+    delay2: [(DelayBuffer<f64>, f64); 2],
 
-    left_sum:  f32,
-    right_sum: f32,
+    left_sum:  f64,
+    right_sum: f64,
 
     dbg_count: usize,
 }
@@ -109,30 +109,30 @@ pub struct DattorroReverb {
 pub trait DattorroReverbParams {
     /// Time for the pre-delay of the reverb. Any sensible `ms` that fits
     /// into a delay buffer of 5 seconds.
-    fn pre_delay_time_ms(&self) -> f32;
+    fn pre_delay_time_ms(&self) -> f64;
     /// The size of the reverb, values go from 0.0 to 1.0.
-    fn time_scale(&self) -> f32;
+    fn time_scale(&self) -> f64;
     /// High-pass input filter cutoff freq in Hz, range: 0.0 to 22000.0
-    fn input_high_cutoff_hz(&self) -> f32;
+    fn input_high_cutoff_hz(&self) -> f64;
     /// Low-pass input filter cutoff freq in Hz, range: 0.0 to 22000.0
-    fn input_low_cutoff_hz(&self) -> f32;
+    fn input_low_cutoff_hz(&self) -> f64;
     /// High-pass reverb filter cutoff freq in Hz, range: 0.0 to 22000.0
-    fn reverb_high_cutoff_hz(&self) -> f32;
+    fn reverb_high_cutoff_hz(&self) -> f64;
     /// Low-pass reverb filter cutoff freq in Hz, range: 0.0 to 22000.0
-    fn reverb_low_cutoff_hz(&self) -> f32;
+    fn reverb_low_cutoff_hz(&self) -> f64;
     /// Modulation speed factor, range: 0.0 to 1.0
-    fn mod_speed(&self) -> f32;
+    fn mod_speed(&self) -> f64;
     /// Modulation depth from the LFOs, range: 0.0 to 1.0
-    fn mod_depth(&self) -> f32;
+    fn mod_depth(&self) -> f64;
     /// Modulation shape (from saw to tri to saw), range: 0.0 to 1.0
-    fn mod_shape(&self) -> f32;
+    fn mod_shape(&self) -> f64;
     /// The mix between output from the pre-delay and the input diffusion.
     /// range: 0.0 to 1.0. Default should be 1.0
-    fn input_diffusion_mix(&self) -> f32;
+    fn input_diffusion_mix(&self) -> f64;
     /// The amount of plate diffusion going on, range: 0.0 to 1.0
-    fn diffusion(&self) -> f32;
+    fn diffusion(&self) -> f64;
     /// Internal tank decay time, range: 0.0 to 1.0
-    fn decay(&self) -> f32;
+    fn decay(&self) -> f64;
 }
 
 impl DattorroReverb {
@@ -236,8 +236,8 @@ impl DattorroReverb {
     }
 
     #[inline]
-    pub fn set_time_scale(&mut self, scale: f32) {
-        if (self.last_scale - scale).abs() > std::f32::EPSILON {
+    pub fn set_time_scale(&mut self, scale: f64) {
+        if (self.last_scale - scale).abs() > std::f64::EPSILON {
             let scale = scale.max(0.0001);
             self.last_scale = scale;
 
@@ -253,7 +253,7 @@ impl DattorroReverb {
         }
     }
 
-    pub fn set_sample_rate(&mut self, srate: f32) {
+    pub fn set_sample_rate(&mut self, srate: f64) {
         self.inp_dc_block[0].set_sample_rate(srate);
         self.inp_dc_block[1].set_sample_rate(srate);
         self.out_dc_block[0].set_sample_rate(srate);
@@ -292,29 +292,29 @@ impl DattorroReverb {
 
     #[inline]
     fn calc_apf_delay_times(&mut self, params: &mut dyn DattorroReverbParams)
-        -> (f32, f32, f32, f32)
+        -> (f64, f64, f64, f64)
     {
         let left_apf1_delay_ms =
             self.apf1[0].1
-            + (self.lfos[0].next_unipolar() as f32
+            + (self.lfos[0].next_unipolar() as f64
                * DAT_LFO_EXCURSION_MS
                * DAT_LFO_EXCURSION_MOD_MAX
                * params.mod_depth());
         let right_apf1_delay_ms =
             self.apf1[1].1
-            + (self.lfos[1].next_unipolar() as f32
+            + (self.lfos[1].next_unipolar() as f64
                * DAT_LFO_EXCURSION_MS
                * DAT_LFO_EXCURSION_MOD_MAX
                * params.mod_depth());
         let left_apf2_delay_ms =
             self.apf2[0].1
-            + (self.lfos[2].next_unipolar() as f32
+            + (self.lfos[2].next_unipolar() as f64
                * DAT_LFO_EXCURSION_MS
                * DAT_LFO_EXCURSION_MOD_MAX
                * params.mod_depth());
         let right_apf2_delay_ms =
             self.apf2[1].1
-            + (self.lfos[3].next_unipolar() as f32
+            + (self.lfos[3].next_unipolar() as f64
                * DAT_LFO_EXCURSION_MS
                * DAT_LFO_EXCURSION_MOD_MAX
                * params.mod_depth());
@@ -326,8 +326,8 @@ impl DattorroReverb {
     pub fn process(
         &mut self,
         params: &mut dyn DattorroReverbParams,
-        input_l: f32, input_r: f32
-    ) -> (f32, f32)
+        input_l: f64, input_r: f64
+    ) -> (f64, f64)
     {
         // Some parameter setup...
         let timescale = 0.0025 + (4.0 - 0.0025) * params.time_scale();
@@ -373,9 +373,9 @@ impl DattorroReverb {
         let out_hpf = self.input_hpf.process(out_lpf);
 
         // HPF => Pre-Delay
-        let out_pre_delay =
-            self.pre_delay.cubic_interpolate_at(params.pre_delay_time_ms());
-        self.pre_delay.feed(out_hpf);
+        let out_pre_delay = out_hpf;
+//            self.pre_delay.cubic_interpolate_at(params.pre_delay_time_ms());
+//        self.pre_delay.feed(out_hpf);
 
         // Pre-Delay => 4 All-Pass filters
         let mut diffused = out_pre_delay;
@@ -384,8 +384,8 @@ impl DattorroReverb {
         }
 
         // Mix between diffused and pre-delayed intput for further processing
-        let tank_feed =
-            crossfade(out_pre_delay, diffused, params.input_diffusion_mix());
+        let tank_feed = out_pre_delay;
+//            crossfade(out_pre_delay, diffused, params.input_diffusion_mix());
 
         // First tap for the output
         self.left_sum  += tank_feed;
