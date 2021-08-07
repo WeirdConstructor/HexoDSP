@@ -55,6 +55,7 @@ const DAT_PLATE_DIFFUSION1 : f32 = 0.7;
 const DAT_PLATE_DIFFUSION2 : f32 = 0.5;
 
 const DAT_LFO_EXCURSION_MS : f32 = 16.0 / DAT_SAMPLES_PER_MS;
+const DAT_LFO_EXCURSION_MOD_MAX : f32 = 16.0;
 
 use crate::dsp::helpers::{
     AllPass,
@@ -88,9 +89,27 @@ pub struct DattorroReverb {
 }
 
 pub trait DattorroReverbParams {
-    /// Time for the pre-delay of the reverb.
-    fn pre_delay_time_s(&self) -> f32;
-    fn time_scale(&self) -> f32;
+    /// Time for the pre-delay of the reverb. Any sensible `ms` that fits
+    /// into a delay buffer of 5 seconds.
+    fn pre_delay_time_ms(&self) -> f32;
+    /// The size of the reverb, values go from 0.0025 to 4.0
+    fn time_scale(&self)        -> f32;
+    /// High-pass input filter cutoff freq in Hz, range: 0.0 to 22000.0
+    fn input_high_cutoff_hz(&self) -> f32;
+    /// Low-pass input filter cutoff freq in Hz, range: 0.0 to 22000.0
+    fn input_low_cutoff_hz(&self) -> f32;
+    /// High-pass reverb filter cutoff freq in Hz, range: 0.0 to 22000.0
+    fn reverb_high_cutoff_hz(&self) -> f32;
+    /// Low-pass reverb filter cutoff freq in Hz, range: 0.0 to 22000.0
+    fn reverb_low_cutoff_hz(&self) -> f32;
+    /// Modulation speed factor, range: 0.0 to 1.0
+    fn mod_speed(&self) -> f32;
+    /// Modulation depth from the LFOs, range: 0.0 to 1.0
+    fn mod_depth(&self) -> f32;
+    /// Modulation shape (from saw to tri to saw), range: 0.0 to 1.0
+    fn mod_shape(&self) -> f32;
+    /// The amount of diffusion going on, range: 0.0 to 1.0
+    fn diffusion(&self) -> f32;
 }
 
 impl DattorroReverb {
@@ -175,6 +194,13 @@ impl DattorroReverb {
         self.lfos[3].set_phase_offs(0.75);
         self.lfos[3].reset();
 
+        self.inp_dc_block[0].reset();
+        self.inp_dc_block[1].reset();
+        self.out_dc_block[0].reset();
+        self.out_dc_block[1].reset();
+
+        self.pre_delay.reset();
+
         self.set_time_scale(1.0);
     }
 
@@ -188,10 +214,82 @@ impl DattorroReverb {
             self.apf1[1].1 = DAT_RIGHT_APF1_TIME_MS * scale;
             self.apf2[0].1 = DAT_LEFT_APF2_TIME_MS  * scale;
             self.apf2[1].1 = DAT_RIGHT_APF2_TIME_MS * scale;
+
+            self.delay1[0].1 = DAT_LEFT_DELAY1_TIME_MS  * scale;
+            self.delay1[1].1 = DAT_RIGHT_DELAY1_TIME_MS * scale;
+            self.delay2[0].1 = DAT_LEFT_DELAY2_TIME_MS  * scale;
+            self.delay2[1].1 = DAT_RIGHT_DELAY2_TIME_MS * scale;
         }
     }
 
     pub fn set_sample_rate(&mut self, srate: f32) {
+        self.inp_dc_block[0].set_sample_rate(srate);
+        self.inp_dc_block[1].set_sample_rate(srate);
+        self.out_dc_block[0].set_sample_rate(srate);
+        self.out_dc_block[1].set_sample_rate(srate);
+
+        self.lfos[0].set_sample_rate(srate);
+        self.lfos[1].set_sample_rate(srate);
+        self.lfos[2].set_sample_rate(srate);
+        self.lfos[3].set_sample_rate(srate);
+
+        self.input_hpf.set_sample_rate(srate);
+        self.input_lpf.set_sample_rate(srate);
+
+        self.pre_delay.set_sample_rate(srate);
+
+        self.input_apfs[0].0.set_sample_rate(srate);
+        self.input_apfs[1].0.set_sample_rate(srate);
+        self.input_apfs[2].0.set_sample_rate(srate);
+        self.input_apfs[3].0.set_sample_rate(srate);
+
+        self.apf1[0].0.set_sample_rate(srate);
+        self.apf1[1].0.set_sample_rate(srate);
+        self.apf2[0].0.set_sample_rate(srate);
+        self.apf2[1].0.set_sample_rate(srate);
+
+        self.hpf[0].set_sample_rate(srate);
+        self.hpf[1].set_sample_rate(srate);
+        self.lpf[0].set_sample_rate(srate);
+        self.lpf[1].set_sample_rate(srate);
+
+        self.delay1[0].0.set_sample_rate(srate);
+        self.delay1[1].0.set_sample_rate(srate);
+        self.delay2[0].0.set_sample_rate(srate);
+        self.delay2[1].0.set_sample_rate(srate);
+    }
+
+    #[inline]
+    fn calc_apf_delay_times(&mut self, params: &mut dyn DattorroReverbParams)
+        -> (f32, f32, f32, f32)
+    {
+        let left_apf1_delay_ms =
+            self.apf1[0].1
+            + (self.lfos[0].next_unipolar() as f32
+               * DAT_LFO_EXCURSION_MS
+               * DAT_LFO_EXCURSION_MOD_MAX
+               * params.mod_depth());
+        let right_apf1_delay_ms =
+            self.apf1[1].1
+            + (self.lfos[1].next_unipolar() as f32
+               * DAT_LFO_EXCURSION_MS
+               * DAT_LFO_EXCURSION_MOD_MAX
+               * params.mod_depth());
+        let left_apf2_delay_ms =
+            self.apf2[0].1
+            + (self.lfos[2].next_unipolar() as f32
+               * DAT_LFO_EXCURSION_MS
+               * DAT_LFO_EXCURSION_MOD_MAX
+               * params.mod_depth());
+        let right_apf2_delay_ms =
+            self.apf2[1].1
+            + (self.lfos[3].next_unipolar() as f32
+               * DAT_LFO_EXCURSION_MS
+               * DAT_LFO_EXCURSION_MOD_MAX
+               * params.mod_depth());
+
+        (left_apf1_delay_ms, right_apf1_delay_ms,
+         left_apf2_delay_ms, right_apf2_delay_ms)
     }
 
     pub fn process(
@@ -201,6 +299,29 @@ impl DattorroReverb {
     ) -> (f32, f32)
     {
         self.set_time_scale(params.time_scale());
+
+        self.hpf[0].set_freq(params.reverb_high_cutoff_hz());
+        self.hpf[1].set_freq(params.reverb_high_cutoff_hz());
+        self.lpf[0].set_freq(params.reverb_low_cutoff_hz());
+        self.lpf[1].set_freq(params.reverb_low_cutoff_hz());
+
+        self.lfos[0].set(
+            DAT_LFO_FREQS_HZ[0] * params.mod_speed(), params.mod_shape());
+        self.lfos[1].set(
+            DAT_LFO_FREQS_HZ[1] * params.mod_speed(), params.mod_shape());
+        self.lfos[2].set(
+            DAT_LFO_FREQS_HZ[2] * params.mod_speed(), params.mod_shape());
+        self.lfos[3].set(
+            DAT_LFO_FREQS_HZ[3] * params.mod_speed(), params.mod_shape());
+
+        self.apf1[0].2 = -DAT_PLATE_DIFFUSION1 * params.diffusion();
+        self.apf1[1].2 = -DAT_PLATE_DIFFUSION1 * params.diffusion();
+        self.apf2[0].2 =  DAT_PLATE_DIFFUSION2 * params.diffusion();
+        self.apf2[1].2 =  DAT_PLATE_DIFFUSION2 * params.diffusion();
+
+        let (left_apf1_delay_ms, right_apf1_delay_ms,
+             left_apf2_delay_ms, right_apf2_delay_ms)
+            = self.calc_apf_delay_times(params);
 
         (0.0, 0.0)
     }
