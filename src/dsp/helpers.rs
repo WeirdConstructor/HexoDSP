@@ -751,8 +751,38 @@ impl DelayBuffer {
 
     /// Shorthand for [DelayBuffer::cubic_interpolate_at].
     #[inline]
-    pub fn tap(&self, delay_time_ms: f32) -> f32 {
+    pub fn tap_c(&self, delay_time_ms: f32) -> f32 {
         self.cubic_interpolate_at(delay_time_ms)
+    }
+
+    /// Shorthand for [DelayBuffer::cubic_interpolate_at].
+    #[inline]
+    pub fn tap_n(&self, delay_time_ms: f32) -> f32 {
+        self.nearest_at(delay_time_ms)
+    }
+
+    /// Shorthand for [DelayBuffer::cubic_interpolate_at].
+    #[inline]
+    pub fn tap_l(&self, delay_time_ms: f32) -> f32 {
+        self.linear_interpolate_at(delay_time_ms)
+    }
+
+    /// Fetch a sample from the delay buffer at the given time.
+    ///
+    /// * `delay_time_ms` - Delay time in milliseconds.
+    pub fn linear_interpolate_at(&self, delay_time_ms: f32) -> f32 {
+        let data   = &self.data[..];
+        let len    = data.len();
+        let s_offs = (delay_time_ms * self.srate) / 1000.0;
+        let offs   = s_offs.floor() as usize % len;
+        let fract  = s_offs.fract();
+
+        let i = (self.wr + len) - offs;
+        let x0  = data[i       % len];
+        let x1  = data[(i + 1) % len];
+
+        let fract = fract as f32;
+        x0 * (1.0 - fract) + x1 * fract
     }
 
     /// Fetch a sample from the delay buffer at the given time.
@@ -830,15 +860,16 @@ impl AllPass {
     }
 
     #[inline]
-    pub fn delay_tap(&self, time: f32) -> f32 {
-        self.delay.cubic_interpolate_at(time)
+    pub fn delay_tap_n(&self, time: f32) -> f32 {
+        self.delay.tap_n(time)
     }
 
     #[inline]
     pub fn next(&mut self, time: f32, g: f32, v: f32) -> f32 {
         let s = self.delay.cubic_interpolate_at(time);
-        self.delay.feed(v + s * g);
-        s + -1.0 * g * v
+        let input = v + -g * s;
+        self.delay.feed(input);
+        input * g + s
     }
 }
 
@@ -863,8 +894,13 @@ impl Comb {
     }
 
     #[inline]
-    pub fn delay_tap(&self, time: f32) -> f32 {
-        self.delay.cubic_interpolate_at(time)
+    pub fn delay_tap_c(&self, time: f32) -> f32 {
+        self.delay.tap_c(time)
+    }
+
+    #[inline]
+    pub fn delay_tap_n(&self, time: f32) -> f32 {
+        self.delay.tap_n(time)
     }
 
     #[inline]
@@ -877,8 +913,7 @@ impl Comb {
 
     #[inline]
     pub fn next_feedforward(&mut self, time: f32, g: f32, v: f32) -> f32 {
-        let s = self.delay.cubic_interpolate_at(time);
-        self.delay.feed(v);
+        let s = self.delay.next_cubic(time, v);
         v + s * g
     }
 }

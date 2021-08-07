@@ -419,26 +419,27 @@ impl DattorroReverb {
         self.left_sum  = right * decay;
 
         let mut left_accum = left_apf_tap;
-        left_accum += self.delay1[0].0.tap(    DAT_LEFT_TAPS_TIME_MS[0]);
-        left_accum += self.delay1[0].0.tap(    DAT_LEFT_TAPS_TIME_MS[1]);
-        left_accum -= self.apf2[0].0.delay_tap(DAT_LEFT_TAPS_TIME_MS[2]);
-        left_accum += self.delay2[0].0.tap(    DAT_LEFT_TAPS_TIME_MS[3]);
-        left_accum -= self.delay1[1].0.tap(    DAT_LEFT_TAPS_TIME_MS[4]);
-        left_accum -= self.apf2[1].0.delay_tap(DAT_LEFT_TAPS_TIME_MS[5]);
-        left_accum -= self.delay2[1].0.tap(    DAT_LEFT_TAPS_TIME_MS[6]);
+        left_accum += self.delay1[0].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[0]);
+        left_accum += self.delay1[0].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[1]);
+        left_accum -= self.apf2[0].0.delay_tap_n(DAT_LEFT_TAPS_TIME_MS[2]);
+        left_accum += self.delay2[0].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[3]);
+        left_accum -= self.delay1[1].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[4]);
+        left_accum -= self.apf2[1].0.delay_tap_n(DAT_LEFT_TAPS_TIME_MS[5]);
+        left_accum -= self.delay2[1].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[6]);
 
         let mut right_accum = right_apf_tap;
-        right_accum += self.delay1[1].0.tap(    DAT_RIGHT_TAPS_TIME_MS[0]);
-        right_accum += self.delay1[1].0.tap(    DAT_RIGHT_TAPS_TIME_MS[1]);
-        right_accum -= self.apf2[1].0.delay_tap(DAT_RIGHT_TAPS_TIME_MS[2]);
-        right_accum += self.delay2[1].0.tap(    DAT_RIGHT_TAPS_TIME_MS[3]);
-        right_accum -= self.delay1[0].0.tap(    DAT_RIGHT_TAPS_TIME_MS[4]);
-        right_accum -= self.apf2[0].0.delay_tap(DAT_RIGHT_TAPS_TIME_MS[5]);
-        right_accum -= self.delay2[0].0.tap(    DAT_RIGHT_TAPS_TIME_MS[6]);
+        right_accum += self.delay1[1].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[0]);
+        right_accum += self.delay1[1].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[1]);
+        right_accum -= self.apf2[1].0.delay_tap_n(DAT_RIGHT_TAPS_TIME_MS[2]);
+        right_accum += self.delay2[1].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[3]);
+        right_accum -= self.delay1[0].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[4]);
+        right_accum -= self.apf2[0].0.delay_tap_n(DAT_RIGHT_TAPS_TIME_MS[5]);
+        right_accum -= self.delay2[0].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[6]);
 
         let left_out  = self.out_dc_block[0].next(left_accum);
         let right_out = self.out_dc_block[1].next(right_accum);
 
+//        (left_out * 0.5, right_out * 0.5)
         (left_out * 0.5, right_out * 0.5)
     }
 }

@@ -40,24 +40,24 @@ fn check_node_allp() {
 
     // now signal on ch1 from the allpass:
     // starts with original signal * -0.7
-    let mut v = vec![-0.7; (2.0 * 44.1_f32).ceil() as usize];
+    let mut v = vec![0.7; (2.0 * 44.1_f32).ceil() as usize];
     // silence for 1ms, which is the internal delay of the allpass
     v.append(&mut vec![0.0; (1.0 * 44.1_f32).floor() as usize - 3]);
 
     // allpass feedback of the original signal for 2ms:
     // XXX: the smearing before and after the allpass is due to the
     // cubic interpolation!
-    v.append(&mut vec![-0.03150302, 0.25802, 1.0735]);
-    v.append(&mut vec![1.0; (2.0 * 44.1_f32).ceil() as usize - 3]);
-    v.append(&mut vec![1.0315, 0.7419, -0.0735]);
+    v.append(&mut vec![-0.01606654, 0.13159, 0.54748535]);
+    v.append(&mut vec![0.51; (2.0 * 44.1_f32).ceil() as usize - 3]);
+    v.append(&mut vec![0.52606, 0.37840945, -0.037485]);
     // 1ms allpass silence like before:
     v.append(&mut vec![0.0; (1.0 * 44.1_f32).floor() as usize - 6]);
 
     // 2ms the previous 1.0 * 0.7 fed back into the filter,
     // including even more smearing due to cubic interpolation:
-    v.append(&mut vec![0.0006, -0.0120, 0.0106, 0.3444, 0.7801, 0.6962]);
-    v.append(&mut vec![0.7; (2.0 * 44.1_f32).floor() as usize - 5]);
-    v.append(&mut vec![0.6993, 0.712, 0.6893, 0.3555, -0.0801, 0.0037]);
+    v.append(&mut vec![-0.000354, 0.00615, -0.005424, -0.17565, -0.39786, -0.3550714]);
+    v.append(&mut vec![-0.357; (2.0 * 44.1_f32).floor() as usize - 5]);
+    v.append(&mut vec![-0.3566457, -0.363158, -0.35157552, -0.18134634, 0.040867306, -0.0019286368]);
 
     //d// println!("res={:?}", res.1);
     assert_vec_feq!(res.0, v);
