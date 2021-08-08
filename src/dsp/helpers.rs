@@ -898,9 +898,9 @@ impl<F: Flt> AllPass<F> {
     #[inline]
     pub fn next(&mut self, time_ms: F, g: F, v: F) -> F {
         let s = self.delay.linear_interpolate_at(time_ms);
-        let input = v + g * s;
+        let input = v + -g * s;
         self.delay.feed(input);
-        input * -g + s
+        input * g + s
     }
 }
 

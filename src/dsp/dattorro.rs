@@ -50,13 +50,6 @@ const DAT_LEFT_TAPS_TIME_MS : [f64; 7] = [
 ];
 
 const DAT_RIGHT_TAPS_TIME_MS : [f64; 7] = [
-//    266.0  / DAT_SAMPLES_PER_MS,
-//    2974.0 / DAT_SAMPLES_PER_MS,
-//    1913.0 / DAT_SAMPLES_PER_MS,
-//    1996.0 / DAT_SAMPLES_PER_MS,
-//    1990.0 / DAT_SAMPLES_PER_MS,
-//    187.0  / DAT_SAMPLES_PER_MS,
-//    1066.0 / DAT_SAMPLES_PER_MS,
     353.0  / DAT_SAMPLES_PER_MS,
     3627.0 / DAT_SAMPLES_PER_MS,
     1228.0 / DAT_SAMPLES_PER_MS,
@@ -380,7 +373,6 @@ impl DattorroReverb {
         let out_hpf = self.input_hpf.process(out_lpf);
 
         // HPF => Pre-Delay
-//        let out_pre_delay = out_hpf;
         let out_pre_delay =
             self.pre_delay.next_cubic(params.pre_delay_time_ms(), out_hpf);
 

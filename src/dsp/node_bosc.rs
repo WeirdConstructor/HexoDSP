@@ -140,7 +140,7 @@ impl DspNode for BOsc {
                     let pw = denorm::BOsc::pw(pw, frame);
                     out.write(
                         frame,
-                        self.osc.next_pulse(freq, israte, pw));
+                        self.osc.next_pulse_no_dc(freq, israte, pw));
                 }
             }
         }
