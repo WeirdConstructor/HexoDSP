@@ -777,6 +777,14 @@ impl<F: Flt> DelayBuffer<F> {
         res
     }
 
+    /// Combines [DelayBuffer::nearest_at] and [DelayBuffer::feed]
+    /// into one convenient function.
+    #[inline]
+    pub fn next_nearest(&mut self, delay_time_ms: F, input: F) -> F {
+        let res = self.nearest_at(delay_time_ms);
+        self.feed(input);
+        res
+    }
 
     /// Shorthand for [DelayBuffer::cubic_interpolate_at].
     #[inline]
@@ -807,8 +815,8 @@ impl<F: Flt> DelayBuffer<F> {
         let fract  = s_offs.fract();
 
         let i = (self.wr + len) - offs;
-        let x0  = data[i       % len];
-        let x1  = data[(i + 1) % len];
+        let x0 = data[i       % len];
+        let x1 = data[(i - 1) % len];
 
         x0 + fract * (x1 - x0)
     }
@@ -833,10 +841,10 @@ impl<F: Flt> DelayBuffer<F> {
         //
         // For the interpolation code:
         // MIT License, Copyright (c) 2021 Eric Wood
-        let xm1 = data[(i - 1) % len];
+        let xm1 = data[(i + 1) % len];
         let x0  = data[i       % len];
-        let x1  = data[(i + 1) % len];
-        let x2  = data[(i + 2) % len];
+        let x1  = data[(i - 1) % len];
+        let x2  = data[(i - 2) % len];
 
         let c     = (x1 - xm1) * f(0.5);
         let v     = x0 - x1;
@@ -897,7 +905,7 @@ impl<F: Flt> AllPass<F> {
 
     #[inline]
     pub fn next(&mut self, time_ms: F, g: F, v: F) -> F {
-        let s = self.delay.linear_interpolate_at(time_ms);
+        let s = self.delay.cubic_interpolate_at(time_ms);
         let input = v + -g * s;
         self.delay.feed(input);
         input * g + s

@@ -399,12 +399,12 @@ impl DattorroReverb {
         let left = self.left_sum;
         let left = self.apf1[0].0.next(left_apf1_delay_ms, self.apf1[0].2, left);
         let left_apf_tap = left;
-        let left = self.delay1[0].0.next_cubic(self.delay1[0].1, left);
+        let left = self.delay1[0].0.next_nearest(self.delay1[0].1, left);
         let left = self.lpf[0].process(left);
         let left = self.hpf[0].process(left);
         let left = left * decay;
         let left = self.apf2[0].0.next(left_apf2_delay_ms, self.apf2[0].2, left);
-        let left = self.delay2[0].0.next_cubic(self.delay2[0].1, left);
+        let left = self.delay2[0].0.next_nearest(self.delay2[0].1, left);
 
 //        if self.dbg_count % 48 == 0 {
 //            println!("APFS dcy={:8.6}; {:8.6} {:8.6} {:8.6} {:8.6} | {:8.6} {:8.6} {:8.6} {:8.6}",
@@ -428,12 +428,12 @@ impl DattorroReverb {
         let right = self.right_sum;
         let right = self.apf1[1].0.next(right_apf1_delay_ms, self.apf1[1].2, right);
         let right_apf_tap = right;
-        let right = self.delay1[1].0.next_cubic(self.delay1[1].1, right);
+        let right = self.delay1[1].0.next_nearest(self.delay1[1].1, right);
         let right = self.lpf[1].process(right);
         let right = self.hpf[1].process(right);
         let right = right * decay;
         let right = self.apf2[1].0.next(right_apf2_delay_ms, self.apf2[1].2, right);
-        let right = self.delay2[1].0.next_cubic(self.delay2[1].1, right);
+        let right = self.delay2[1].0.next_nearest(self.delay2[1].1, right);
 
         self.right_sum = left * decay;
         self.left_sum  = right * decay;
