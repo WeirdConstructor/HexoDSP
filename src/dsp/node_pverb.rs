@@ -4,9 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{
-    NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals,
-    GraphAtomData, GraphFun, NodeContext,
-    denorm
+    NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext, denorm
 };
 use super::helpers::crossfade;
 use super::dattorro::{
@@ -161,7 +159,7 @@ impl DspNode for PVerb {
         _atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, inp, out_idx};
+        use crate::dsp::{inp, out_idx};
 
         let in_l   = inp::PVerb::in_l(inputs);
         let in_r   = inp::PVerb::in_r(inputs);

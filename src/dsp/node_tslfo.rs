@@ -73,7 +73,7 @@ impl DspNode for TsLfo {
         atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, inp, denorm, at};
+        use crate::dsp::{out, inp, denorm};
 
         let time = inp::TsLfo::time(inputs);
         let trig = inp::TsLfo::trig(inputs);

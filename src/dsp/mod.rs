@@ -1845,7 +1845,7 @@ mod tests {
 
     #[test]
     fn check_node_size_staying_small() {
-        assert_eq!(std::mem::size_of::<Node>(),     48);
+        assert_eq!(std::mem::size_of::<Node>(),     56);
         assert_eq!(std::mem::size_of::<NodeId>(),   2);
         assert_eq!(std::mem::size_of::<ParamId>(),  24);
     }
