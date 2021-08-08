@@ -50,20 +50,20 @@ const DAT_LEFT_TAPS_TIME_MS : [f64; 7] = [
 ];
 
 const DAT_RIGHT_TAPS_TIME_MS : [f64; 7] = [
-    266.0  / DAT_SAMPLES_PER_MS,
-    2974.0 / DAT_SAMPLES_PER_MS,
-    1913.0 / DAT_SAMPLES_PER_MS,
-    1996.0 / DAT_SAMPLES_PER_MS,
-    1990.0 / DAT_SAMPLES_PER_MS,
-    187.0  / DAT_SAMPLES_PER_MS,
-    1066.0 / DAT_SAMPLES_PER_MS,
-//    353.0  / DAT_SAMPLES_PER_MS,
-//    3627.0 / DAT_SAMPLES_PER_MS,
-//    1228.0 / DAT_SAMPLES_PER_MS,
-//    2673.0 / DAT_SAMPLES_PER_MS,
-//    2111.0 / DAT_SAMPLES_PER_MS,
-//    335.0  / DAT_SAMPLES_PER_MS,
-//    121.0  / DAT_SAMPLES_PER_MS,
+//    266.0  / DAT_SAMPLES_PER_MS,
+//    2974.0 / DAT_SAMPLES_PER_MS,
+//    1913.0 / DAT_SAMPLES_PER_MS,
+//    1996.0 / DAT_SAMPLES_PER_MS,
+//    1990.0 / DAT_SAMPLES_PER_MS,
+//    187.0  / DAT_SAMPLES_PER_MS,
+//    1066.0 / DAT_SAMPLES_PER_MS,
+    353.0  / DAT_SAMPLES_PER_MS,
+    3627.0 / DAT_SAMPLES_PER_MS,
+    1228.0 / DAT_SAMPLES_PER_MS,
+    2673.0 / DAT_SAMPLES_PER_MS,
+    2111.0 / DAT_SAMPLES_PER_MS,
+    335.0  / DAT_SAMPLES_PER_MS,
+    121.0  / DAT_SAMPLES_PER_MS,
 ];
 
 const DAT_LFO_FREQS_HZ : [f64; 4] = [ 0.1, 0.15, 0.12, 0.18 ];
@@ -414,21 +414,21 @@ impl DattorroReverb {
         let left = self.apf2[0].0.next(left_apf2_delay_ms, self.apf2[0].2, left);
         let left = self.delay2[0].0.next_cubic(self.delay2[0].1, left);
 
-        if self.dbg_count % 48 == 0 {
-            println!("APFS dcy={:8.6}; {:8.6} {:8.6} {:8.6} {:8.6} | {:8.6} {:8.6} {:8.6} {:8.6}",
-                decay,
-                self.apf1[0].2,
-                self.apf1[1].2,
-                self.apf2[0].2,
-                self.apf2[1].2,
-                left_apf1_delay_ms, right_apf1_delay_ms,
-                left_apf2_delay_ms, right_apf2_delay_ms);
-            println!("DELY1/2 {:8.6} / {:8.6} | {:8.6} / {:8.6}",
-                self.delay1[0].1,
-                self.delay2[0].1,
-                self.delay1[1].1,
-                self.delay2[1].1);
-        }
+//        if self.dbg_count % 48 == 0 {
+//            println!("APFS dcy={:8.6}; {:8.6} {:8.6} {:8.6} {:8.6} | {:8.6} {:8.6} {:8.6} {:8.6}",
+//                decay,
+//                self.apf1[0].2,
+//                self.apf1[1].2,
+//                self.apf2[0].2,
+//                self.apf2[1].2,
+//                left_apf1_delay_ms, right_apf1_delay_ms,
+//                left_apf2_delay_ms, right_apf2_delay_ms);
+//            println!("DELY1/2 {:8.6} / {:8.6} | {:8.6} / {:8.6}",
+//                self.delay1[0].1,
+//                self.delay2[0].1,
+//                self.delay1[1].1,
+//                self.delay2[1].1);
+//        }
 
 
         // Right Sum => APF1 => Delay1 => LPF => HPF => APF2 => Delay2

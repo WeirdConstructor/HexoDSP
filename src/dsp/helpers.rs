@@ -810,8 +810,7 @@ impl<F: Flt> DelayBuffer<F> {
         let x0  = data[i       % len];
         let x1  = data[(i + 1) % len];
 
-        let fract = fract as F;
-        x0 * (f::<F>(1.0) - fract) + x1 * fract
+        x0 + fract * (x1 - x0)
     }
 
     /// Fetch a sample from the delay buffer at the given time.
