@@ -50,13 +50,20 @@ const DAT_LEFT_TAPS_TIME_MS : [f64; 7] = [
 ];
 
 const DAT_RIGHT_TAPS_TIME_MS : [f64; 7] = [
-    353.0  / DAT_SAMPLES_PER_MS,
-    3627.0 / DAT_SAMPLES_PER_MS,
-    1228.0 / DAT_SAMPLES_PER_MS,
-    2673.0 / DAT_SAMPLES_PER_MS,
-    2111.0 / DAT_SAMPLES_PER_MS,
-    335.0  / DAT_SAMPLES_PER_MS,
-    121.0  / DAT_SAMPLES_PER_MS,
+    266.0  / DAT_SAMPLES_PER_MS,
+    2974.0 / DAT_SAMPLES_PER_MS,
+    1913.0 / DAT_SAMPLES_PER_MS,
+    1996.0 / DAT_SAMPLES_PER_MS,
+    1990.0 / DAT_SAMPLES_PER_MS,
+    187.0  / DAT_SAMPLES_PER_MS,
+    1066.0 / DAT_SAMPLES_PER_MS,
+//    353.0  / DAT_SAMPLES_PER_MS,
+//    3627.0 / DAT_SAMPLES_PER_MS,
+//    1228.0 / DAT_SAMPLES_PER_MS,
+//    2673.0 / DAT_SAMPLES_PER_MS,
+//    2111.0 / DAT_SAMPLES_PER_MS,
+//    335.0  / DAT_SAMPLES_PER_MS,
+//    121.0  / DAT_SAMPLES_PER_MS,
 ];
 
 const DAT_LFO_FREQS_HZ : [f64; 4] = [ 0.1, 0.15, 0.12, 0.18 ];
@@ -296,25 +303,25 @@ impl DattorroReverb {
     {
         let left_apf1_delay_ms =
             self.apf1[0].1
-            + (self.lfos[0].next_unipolar() as f64
+            + (self.lfos[0].next_bipolar() as f64
                * DAT_LFO_EXCURSION_MS
                * DAT_LFO_EXCURSION_MOD_MAX
                * params.mod_depth());
         let right_apf1_delay_ms =
             self.apf1[1].1
-            + (self.lfos[1].next_unipolar() as f64
+            + (self.lfos[1].next_bipolar() as f64
                * DAT_LFO_EXCURSION_MS
                * DAT_LFO_EXCURSION_MOD_MAX
                * params.mod_depth());
         let left_apf2_delay_ms =
             self.apf2[0].1
-            + (self.lfos[2].next_unipolar() as f64
+            + (self.lfos[2].next_bipolar() as f64
                * DAT_LFO_EXCURSION_MS
                * DAT_LFO_EXCURSION_MOD_MAX
                * params.mod_depth());
         let right_apf2_delay_ms =
             self.apf2[1].1
-            + (self.lfos[3].next_unipolar() as f64
+            + (self.lfos[3].next_bipolar() as f64
                * DAT_LFO_EXCURSION_MS
                * DAT_LFO_EXCURSION_MOD_MAX
                * params.mod_depth());
@@ -373,9 +380,9 @@ impl DattorroReverb {
         let out_hpf = self.input_hpf.process(out_lpf);
 
         // HPF => Pre-Delay
-        let out_pre_delay = out_hpf;
-//            self.pre_delay.cubic_interpolate_at(params.pre_delay_time_ms());
-//        self.pre_delay.feed(out_hpf);
+//        let out_pre_delay = out_hpf;
+        let out_pre_delay =
+            self.pre_delay.next_cubic(params.pre_delay_time_ms(), out_hpf);
 
         // Pre-Delay => 4 All-Pass filters
         let mut diffused = out_pre_delay;
@@ -384,8 +391,8 @@ impl DattorroReverb {
         }
 
         // Mix between diffused and pre-delayed intput for further processing
-        let tank_feed = out_pre_delay;
-//            crossfade(out_pre_delay, diffused, params.input_diffusion_mix());
+        let tank_feed =
+            crossfade(out_pre_delay, diffused, params.input_diffusion_mix());
 
         // First tap for the output
         self.left_sum  += tank_feed;
@@ -408,8 +415,12 @@ impl DattorroReverb {
         let left = self.delay2[0].0.next_cubic(self.delay2[0].1, left);
 
         if self.dbg_count % 48 == 0 {
-            println!("APFS dcy={:8.6}; {:8.6} {:8.6} {:8.6} {:8.6}",
+            println!("APFS dcy={:8.6}; {:8.6} {:8.6} {:8.6} {:8.6} | {:8.6} {:8.6} {:8.6} {:8.6}",
                 decay,
+                self.apf1[0].2,
+                self.apf1[1].2,
+                self.apf2[0].2,
+                self.apf2[1].2,
                 left_apf1_delay_ms, right_apf1_delay_ms,
                 left_apf2_delay_ms, right_apf2_delay_ms);
             println!("DELY1/2 {:8.6} / {:8.6} | {:8.6} / {:8.6}",
@@ -458,7 +469,6 @@ impl DattorroReverb {
 
         self.dbg_count += 1;
 
-//        (left_out * 0.5, right_out * 0.5)
         (left_out * 0.5, right_out * 0.5)
     }
 }

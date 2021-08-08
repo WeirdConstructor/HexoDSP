@@ -265,8 +265,8 @@ impl SplitMix64 {
 /// * `v2` - signal 2, range -1.0 to 1.0
 /// * `mix` - mix position, range 0.0 to 1.0, mid is at 0.5
 #[inline]
-pub fn crossfade(v1: f32, v2: f32, mix: f32) -> f32 {
-    v1 * (1.0 - mix) + v2 * mix
+pub fn crossfade<F: Flt>(v1: F, v2: F, mix: F) -> F {
+    v1 * (f::<F>(1.0) - mix) + v2 * mix
 }
 
 /// Constant power crossfade.
@@ -768,6 +768,16 @@ impl<F: Flt> DelayBuffer<F> {
         res
     }
 
+    /// Combines [DelayBuffer::linear_interpolate_at] and [DelayBuffer::feed]
+    /// into one convenient function.
+    #[inline]
+    pub fn next_linear(&mut self, delay_time_ms: F, input: F) -> F {
+        let res = self.linear_interpolate_at(delay_time_ms);
+        self.feed(input);
+        res
+    }
+
+
     /// Shorthand for [DelayBuffer::cubic_interpolate_at].
     #[inline]
     pub fn tap_c(&self, delay_time_ms: F) -> F {
@@ -888,10 +898,10 @@ impl<F: Flt> AllPass<F> {
 
     #[inline]
     pub fn next(&mut self, time_ms: F, g: F, v: F) -> F {
-        let s = self.delay.nearest_at(time_ms);
-        let input = v + -g * s;
+        let s = self.delay.linear_interpolate_at(time_ms);
+        let input = v + g * s;
         self.delay.feed(input);
-        input * g + s
+        input * -g + s
     }
 }
 

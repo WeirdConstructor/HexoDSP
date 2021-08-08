@@ -19,7 +19,7 @@ pub struct DatParams {
     dcy:    ProcBuf,
     ilpf:   ProcBuf,
     ihpf:   ProcBuf,
-    idif:   ProcBuf,
+    dif:    ProcBuf,
     dmix:   ProcBuf,
     mspeed: ProcBuf,
     mshp:   ProcBuf,
@@ -50,7 +50,7 @@ impl DattorroReverbParams for DatParams {
         denorm::PVerb::ihpf(&self.ihpf, self.frame) as f64
     }
     fn diffusion(&self) -> f64 {
-        denorm::PVerb::idif(&self.idif, self.frame) as f64
+        denorm::PVerb::dif(&self.dif, self.frame) as f64
     }
     fn input_diffusion_mix(&self) -> f64 {
         denorm::PVerb::dmix(&self.dmix, self.frame) as f64
@@ -102,8 +102,8 @@ impl PVerb {
         "PVerb ilpf\n\nRange: (0..1)";
     pub const ihpf : &'static str =
         "PVerb ihpf\n\nRange: (0..1)";
-    pub const idif : &'static str =
-        "PVerb idif\n\nRange: (0..1)";
+    pub const dif : &'static str =
+        "PVerb dif\n\nRange: (0..1)";
     pub const dmix : &'static str =
         "PVerb dmix\n\nRange: (0..1)";
     pub const mspeed : &'static str =
@@ -171,7 +171,7 @@ impl DspNode for PVerb {
             dcy:    *inp::PVerb::dcy(inputs),
             ilpf:   *inp::PVerb::ilpf(inputs),
             ihpf:   *inp::PVerb::ihpf(inputs),
-            idif:   *inp::PVerb::idif(inputs),
+            dif:    *inp::PVerb::dif(inputs),
             dmix:   *inp::PVerb::dmix(inputs),
             mspeed: *inp::PVerb::mspeed(inputs),
             mshp:   *inp::PVerb::mshp(inputs),

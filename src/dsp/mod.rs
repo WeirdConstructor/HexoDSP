@@ -781,7 +781,7 @@ macro_rules! node_list {
                ( 4 dcy    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.25)
                ( 5 ilpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 22050.0)
                ( 6 ihpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 0.0)
-               ( 7 idif   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
+               ( 7 dif    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
                ( 8 dmix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
                ( 9 mspeed n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
                (10 mshp   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
