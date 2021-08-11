@@ -72,23 +72,41 @@ fn check_node_bosc_1() {
     assert_eq!(fft[9].0, 1540);
     assert_eq!(fft[10].0, 1981);
 
-    pset_n(&mut matrix, bosc, "pw", 1.0);  // Pulse width no mod
+    pset_n(&mut matrix, bosc, "pw", 1.0);  // Pulse width mod
     run_for_ms(&mut node_exec, 10.0);
     let fft = run_and_get_fft4096_now(&mut node_exec, 120);
-    assert_eq!(fft[0].0, 215);
-    assert_eq!(fft[1].0, 226);
-    assert_eq!(fft[2].0, 431);
-    assert_eq!(fft[3].0, 441);
-    assert_eq!(fft[4].0, 452);
-    assert_eq!(fft[5].0, 657);
-    assert_eq!(fft[6].0, 668);
-    assert_eq!(fft[7].0, 872);
-    assert_eq!(fft[8].0, 883);
-    assert_eq!(fft[9].0, 1098);
-    assert_eq!(fft[10].0, 1109);
-    assert_eq!(fft[11].0, 1314);
-    assert_eq!(fft[12].0, 1324);
-    assert_eq!(fft[13].0, 1540);
+    assert_eq!(fft[0].0, 0);  // DC component from short pulse
+    assert_eq!(fft[1].0, 11); // but full amplitude!
+    assert_eq!(fft[2].0, 215);
+    assert_eq!(fft[3].0, 226);
+    assert_eq!(fft[4].0, 431);
+    assert_eq!(fft[5].0, 441);
+    assert_eq!(fft[6].0, 452);
+    assert_eq!(fft[7].0, 657);
+    assert_eq!(fft[8].0, 668);
+    assert_eq!(fft[9].0, 872);
+    assert_eq!(fft[10].0, 883);
+    assert_eq!(fft[11].0, 1098);
+    assert_eq!(fft[12].0, 1109);
+    assert_eq!(fft[13].0, 1314);
+    assert_eq!(fft[14].0, 1324);
+    assert_eq!(fft[15].0, 1540);
+
+// Old test code that worked with the pulse width DC compensation:
+//    assert_eq!(fft[0].0, 215);
+//    assert_eq!(fft[1].0, 226);
+//    assert_eq!(fft[2].0, 431);
+//    assert_eq!(fft[3].0, 441);
+//    assert_eq!(fft[4].0, 452);
+//    assert_eq!(fft[5].0, 657);
+//    assert_eq!(fft[6].0, 668);
+//    assert_eq!(fft[7].0, 872);
+//    assert_eq!(fft[8].0, 883);
+//    assert_eq!(fft[9].0, 1098);
+//    assert_eq!(fft[10].0, 1109);
+//    assert_eq!(fft[11].0, 1314);
+//    assert_eq!(fft[12].0, 1324);
+//    assert_eq!(fft[13].0, 1540);
 }
 
 #[test]
