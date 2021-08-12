@@ -531,6 +531,33 @@ pub fn run_and_get_fft4096_now(
     fft_thres_at_ms(&mut out_l[..], FFT::F4096, thres, 0.0)
 }
 
+/// Takes about 1 second of audio to average 10 ffts
+#[allow(unused)]
+pub fn run_and_get_avg_fft4096_now(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    thres: u32) -> Vec<(u16, u32)>
+{
+    let min_samples_for_fft = 4096.0 * 1.5; // 1.5 for some extra margin
+    let run_len_s = min_samples_for_fft / SAMPLE_RATE;
+
+    let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+    let mut data = fft_thres_at_ms(&mut out_l[..], FFT::F4096, 0, 0.0);
+
+    for _ in 0..9 {
+        let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+        let out = fft_thres_at_ms(&mut out_l[..], FFT::F4096, 0, 0.0);
+        for (x, d) in out.iter().zip(data.iter_mut()) {
+            d.1 += x.1;
+        }
+    }
+
+    for d in data.iter_mut() {
+        d.1 /= 10;
+    }
+
+    data.iter().filter(|d| d.1 >= thres).copied().collect()
+}
+
 #[allow(unused)]
 pub enum FFT {
     F16,
