@@ -44,6 +44,8 @@ mod node_comb;
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_pverb;
+#[allow(non_upper_case_globals)]
+mod node_rndwlk;
 
 pub mod biquad;
 pub mod tracker;
@@ -104,6 +106,7 @@ use node_biqfilt::BiqFilt;
 use node_comb::Comb;
 use node_tslfo::TsLfo;
 use node_pverb::PVerb;
+use node_rndwlk::RndWlk;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -413,6 +416,21 @@ macro_rules! r_fms { ($x: expr, $coarse: expr) => {
     }
 } }
 
+/// The rounding function for milliseconds knobs that also have a 0.0 setting
+macro_rules! r_fmz { ($x: expr, $coarse: expr) => {
+    if $coarse {
+        if d_ftmz!($x) > 1000.0 {
+            n_ftmz!((d_ftmz!($x) / 100.0).round() * 100.0)
+        } else if d_ftmz!($x) > 100.0 {
+            n_ftmz!((d_ftmz!($x) / 10.0).round() * 10.0)
+        } else {
+            n_ftmz!((d_ftmz!($x)).round())
+        }
+    } else {
+        n_ftmz!((d_ftmz!($x) * 10.0).round() / 10.0)
+    }
+} }
+
 /// The rounding function for freq knobs (n_pit / d_pit)
 macro_rules! r_fq { ($x: expr, $coarse: expr) => {
     if $coarse {
@@ -592,6 +610,7 @@ define_exp!{n_env d_env 0.0, 1000.0}
 define_exp6!{n_lfot d_lfot 0.1,300000.0}
 define_exp!{n_time d_time 0.5,  5000.0}
 define_exp!{n_ftme d_ftme 0.1,  1000.0}
+define_exp!{n_ftmz d_ftmz 0.0,  1000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
@@ -734,6 +753,14 @@ macro_rules! node_list {
                 (0 time  n_lfot   d_lfot r_lfot f_lfot stp_f 0.0, 1.0, 1000.0)
                 (1 trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                 (2 rev   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+                [0 sig],
+            rndwlk => RndWlk UIType::Generic UICategory::Mod
+                (0 trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+                (1 step  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+                (2 offs  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+                (3 min   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
+                (4 max   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
+                (5 slewt n_ftmz   d_ftmz r_fmz  f_ms  stp_m  0.0, 1.0, 10.0)
                 [0 sig],
             delay => Delay UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)

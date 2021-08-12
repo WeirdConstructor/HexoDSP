@@ -17,7 +17,7 @@ macro_rules! fa_noise_mode { ($formatter: expr, $v: expr, $denorm_v: expr) => { 
         write!($formatter, "{}", s)
 } } }
 
-/// A simple amplifier
+/// A simple noise generator
 #[derive(Debug, Clone)]
 pub struct Noise {
     seed:   u64,
