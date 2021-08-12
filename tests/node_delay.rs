@@ -37,15 +37,15 @@ fn check_node_delay_1() {
         // 10ms smoothing time
         0.0,
         // burst of sine for 100ms:
-        0.018363932, -0.124816686, 0.21992423, -0.19471036, 0.00002711302,
-        0.27546832, -0.35064548, 0.25555965, -0.0991776, 0.000008648983,
+        0.018362517, -0.12481441, 0.2199288, -0.19472688, 0.00005349703,
+        0.27544498, -0.3506383, 0.2555645, -0.09918582, 0.000012852717,
         // 150ms silence:
         0.0, 0.0, 0.0, 0.0, 0.0,
         0.0, 0.0, 0.0, 0.0, 0.0,
         0.0, 0.0, 0.0, 0.0, 0.0,
         // delayed burst of sine for 100ms:
-        0.015279313, -0.119179465, 0.22757527, -0.22698581, 0.05398392,
-        0.22569486, -0.3332433, 0.26348564, -0.11514694, 0.008539479,
+        0.018362517, -0.12481441, 0.2199288, -0.19472688, 0.00005349703,
+        0.27544498, -0.3506383, 0.2555645, -0.09918582, 0.000012852717,
         // silence afterwards:
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     ]);
@@ -76,7 +76,7 @@ fn check_node_delay_2() {
         // 30ms delaytime just mixing the 0.5:
         0.5, 0.5, 0.5,
         // the delayed smoothing ramp (10ms):
-        0.9513,
+        0.951113,
         // the delay + input signal:
         1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
     ]);
@@ -126,15 +126,15 @@ fn check_node_delay_time_mod() {
     let fft = run_and_get_fft4096_now(&mut node_exec, 110);
     // Expect a sine sweep over a
     // range of low frequencies:
-    assert_eq!(fft[0],  (86,  112));
-    assert_eq!(fft[5],  (237, 112));
-    assert_eq!(fft[10], (517, 111));
+    assert_eq!(fft[0],  (86,  111));
+    assert_eq!(fft[5],  (237, 114));
+    assert_eq!(fft[10], (517, 110));
 
     // Sweep upwards:
     run_for_ms(&mut node_exec, 300.0);
     let fft = run_and_get_fft4096_now(&mut node_exec, 122);
-    assert_eq!(fft[0], (2509, 123));
-    assert_eq!(fft[7], (2821, 123));
+    assert_eq!(fft[0], (2498, 122));
+    assert_eq!(fft[7], (2681, 122));
 
     // Sweep at mostly highest point:
     run_for_ms(&mut node_exec, 700.0);
@@ -229,7 +229,7 @@ fn check_node_delay_fb() {
     let idxs_big = collect_signal_changes(&res.0[..], 50);
 
     // We expect the signal to be delayed by 20ms:
-    assert_eq!(idxs_big, vec![(220, 106), (440, 53)]);
+    assert_eq!(idxs_big, vec![(221, 106), (442, 53)]);
 }
 
 #[test]
