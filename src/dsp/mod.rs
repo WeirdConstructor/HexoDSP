@@ -104,7 +104,7 @@ use node_bosc::BOsc;
 use node_vosc::VOsc;
 use node_biqfilt::BiqFilt;
 use node_comb::Comb;
-use node_tslfo::TsLfo;
+use node_tslfo::TsLFO;
 use node_pverb::PVerb;
 use node_rndwk::RndWk;
 
@@ -749,7 +749,7 @@ macro_rules! node_list {
                {6 0 mult setting(0) fa_ad_mult  0 2}
                [0 sig]
                [1 eoet],
-            tslfo => TsLfo UIType::Generic UICategory::Mod
+            tslfo => TsLFO UIType::Generic UICategory::Mod
                 (0 time  n_lfot   d_lfot r_lfot f_lfot stp_f 0.0, 1.0, 1000.0)
                 (1 trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                 (2 rev   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
