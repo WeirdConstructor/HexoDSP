@@ -417,17 +417,17 @@ macro_rules! r_fms { ($x: expr, $coarse: expr) => {
 } }
 
 /// The rounding function for milliseconds knobs that also have a 0.0 setting
-macro_rules! r_fmz { ($x: expr, $coarse: expr) => {
+macro_rules! r_tmz { ($x: expr, $coarse: expr) => {
     if $coarse {
-        if d_ftmz!($x) > 1000.0 {
-            n_ftmz!((d_ftmz!($x) / 100.0).round() * 100.0)
-        } else if d_ftmz!($x) > 100.0 {
-            n_ftmz!((d_ftmz!($x) / 10.0).round() * 10.0)
+        if d_timz!($x) > 1000.0 {
+            n_timz!((d_timz!($x) / 100.0).round() * 100.0)
+        } else if d_timz!($x) > 100.0 {
+            n_timz!((d_timz!($x) / 10.0).round() * 10.0)
         } else {
-            n_ftmz!((d_ftmz!($x)).round())
+            n_timz!((d_timz!($x)).round())
         }
     } else {
-        n_ftmz!((d_ftmz!($x) * 10.0).round() / 10.0)
+        n_timz!((d_timz!($x) * 10.0).round() / 10.0)
     }
 } }
 
@@ -610,7 +610,7 @@ define_exp!{n_env d_env 0.0, 1000.0}
 define_exp6!{n_lfot d_lfot 0.1,300000.0}
 define_exp!{n_time d_time 0.5,  5000.0}
 define_exp!{n_ftme d_ftme 0.1,  1000.0}
-define_exp!{n_ftmz d_ftmz 0.0,  5000.0}
+define_exp!{n_timz d_timz 0.0,  5000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
@@ -760,7 +760,7 @@ macro_rules! node_list {
                 (2 offs  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                 (3 min   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
                 (4 max   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
-                (5 slew  n_ftmz   d_ftmz r_fmz  f_ms  stp_m  0.0, 1.0, 75.0)
+                (5 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 75.0)
                 [0 sig],
             delay => Delay UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
@@ -803,7 +803,7 @@ macro_rules! node_list {
             pverb => PVerb UIType::Generic UICategory::Signal
                ( 0 in_l   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                ( 1 in_r   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               ( 2 predly n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 0.0)
+               ( 2 predly n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
                ( 3 size   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                ( 4 dcy    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.25)
                ( 5 ilpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 22050.0)
@@ -811,8 +811,8 @@ macro_rules! node_list {
                ( 7 dif    n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
                ( 8 dmix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
                ( 9 mspeed n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
-               (10 mshp   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
-               (11 mdepth n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
+               (10 mshp   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               (11 mdepth n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.2)
                (12 rlpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 22050.0)
                (13 rhpf  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 0.0)
                (14 mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
