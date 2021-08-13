@@ -152,14 +152,15 @@ fn check_node_rndwk_max() {
     pset_n(&mut matrix, rwk, "trig", 1.0);
     run_for_ms(&mut node_exec, 7.0); // wait for trigger...
 
-    let (out_l, _) = run_for_ms(&mut node_exec, 20.0);
-    assert_decimated_feq!(out_l, 60, vec![
+    let (out_l, _) = run_for_ms(&mut node_exec, 50.0);
+    assert_decimated_feq!(out_l, 200, vec![
         0.0, // start value
         // slew ramp:
-        0.011791383, 0.029931974, 0.04807256, 0.06621315,
+        0.054119427, 0.11458806, 0.1750567, 0.23552532, 0.29599395,
+        0.3564626, 0.4169312,
         // end value
-        // which is 0.5 - 0.56891763
-        0.06891763, 0.06891763,
+        // which is (0.5 - 0.43108237) == 0.06891763
+        0.43108237, 0.43108237, 0.43108237, 0.43108237
     ]);
 }
 

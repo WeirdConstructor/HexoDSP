@@ -128,11 +128,19 @@ impl DspNode for RndWk {
                 let step = denorm::RndWk::step(step, frame).clamp(-1.0, 1.0);
                 let offs = denorm::RndWk::offs(offs, frame).clamp(-1.0, 1.0);
 
-                let target =
+                let mut target =
                     self.slew_val.value() as f32
                     + ((self.rng.next() * 2.0 * step) - step)
                     + offs;
-                self.target = (((target - min) % delta).abs() + min) as f64;
+
+                // println!("{:8.6} {:8.6} {:8.6}", min, max, target);
+                // clamp target into a range we can reflect
+                target = target.clamp(min - (delta * 0.99), max + (delta * 0.99));
+                // reflect back the overshoots:
+                if target > max { target = max - (max - target).abs(); }
+                if target < min { target = min + (min - target).abs(); }
+
+                self.target = target as f64;
             }
 
             let slew_time_ms = denorm::RndWk::slew(slew, frame);
