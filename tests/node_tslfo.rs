@@ -10,7 +10,7 @@ fn check_node_tslfo_1() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
-    let tsl = NodeId::TsLfo(0);
+    let tsl = NodeId::TsLFO(0);
     let out = NodeId::Out(0);
     matrix.place(0, 0, Cell::empty(tsl)
                        .out(None, None, tsl.out("sig")));
@@ -62,7 +62,7 @@ fn check_node_tslfo_trig_slopes() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
-    let tsl = NodeId::TsLfo(0);
+    let tsl = NodeId::TsLFO(0);
     let out = NodeId::Out(0);
     matrix.place(0, 0, Cell::empty(tsl)
                        .out(None, None, tsl.out("sig")));

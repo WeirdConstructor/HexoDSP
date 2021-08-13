@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::helpers::{Rng, Trigger};
+use crate::dsp::helpers::{Rng, Trigger, SlewValue};
 use crate::dsp::{
     NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext,
     GraphAtomData, GraphFun,
@@ -12,12 +12,8 @@ use crate::dsp::{
 /// A triggered random walker
 #[derive(Debug, Clone)]
 pub struct RndWk {
-    sr_ms:      f32,
     rng:        Rng,
-    target:     f32,
-    target_inc: f32,
-    slew_count: u64,
-    current:    f32,
+    slew_val:   SlewValue<f32>,
     trig:       Trigger,
 }
 
@@ -30,34 +26,59 @@ impl RndWk {
 
         Self {
             rng,
-            sr_ms:      44100.0 / 1000.0,
-            target:     0.0,
-            target_inc: 0.0,
-            slew_count: 0,
-            current:    0.0,
-            trig:       Trigger::new(),
+            trig:     Trigger::new(),
+            slew_val: SlewValue::new(),
         }
     }
 
     pub const trig : &'static str =
-        "RndWk trig\n\n\nRange: (-1..1)";
+        "RndWk trig\nThis trigger generates a new random number within \
+        the current 'min'/'max' range.\nRange: (-1..1)";
     pub const step : &'static str =
-        "RndWk step\n\nRange: (-1..1)";
+        "RndWk step\nThis is the maximum possible step size of the \
+        random number drawn upon 'trig'. Setting this to 0.0 will disable \
+        the randomness.\nThe minimum step size can be defined \
+        by the 'offs' parameter.\nRange: (0..1)";
     pub const offs : &'static str =
-        "RndWk offs\n\nRange: (-1..1)";
+        "RndWk offs\nThe minimum step size and direction that is done on each 'trig'.\
+        Depending on the size of the 'offs' and the 'min'/'max' range, \
+        this might result in the output value being close to the limits \
+        of that range.\nRange: (-1..1)";
     pub const min : &'static str =
-        "RndWk min\n\nRange: (0..1)";
+        "RndWk min\nThe minimum of the new target value. If a value is drawn \
+        that is outside of this range, it will be reflected back into it.\
+        \nRange: (0..1)";
     pub const max : &'static str =
-        "RndWk max\n\nRange: (0..1)";
+        "RndWk max\nThe maximum of the new target value. If a value is drawn \
+        that is outside of this range, it will be reflected back into it.\
+        \nRange: (0..1)";
     pub const slewt : &'static str =
-        "RndWk slewt\n\nRange: (0..1)";
+        "RndWk slewt\nThe slew time, the time it takes to reach the \
+        new target value. This can be used to smooth off rough transitions and \
+        clicky noises.\nRange: (0..1)";
     pub const sig : &'static str =
         "RndWk sig\nOscillator output\nRange: (-1..1)\n";
     pub const DESC : &'static str =
 r#"Random Walker
+
+This modulator generates a random number by walking a pre defined maximum random 'step' width. For smoother transitions a slew time is integrated.
 "#;
     pub const HELP : &'static str =
 r#"RndWk - Random Walker
+
+This modulator generates a random number by walking a pre defined
+maximum random 'step' width. The newly generated target value will always
+be folded within the defined 'min'/'max' range. The 'offs' parameter defines a
+minimal step width each 'trig' has to change the target value.
+
+For smoother transitions, if you want to modulate an audio signal with this,
+a slew time ('slewt') is integrated.
+
+You can disable all randomness by setting 'step' to 0.0.
+
+Tip: Interesting and smooth results can be achieved if you set 'slewt'
+to a longer time than the interval in that you trigger 'trig'. It will smooth
+off the step widths and the overall motion even more.
 "#;
 
 }
@@ -66,14 +87,11 @@ impl DspNode for RndWk {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.sr_ms = srate / 1000.0;
+        self.slew_val.set_sample_rate(srate);
     }
 
     fn reset(&mut self) {
-        self.target     = 0.0;
-        self.current    = 0.0;
-        self.target_inc = 0.0;
-        self.slew_count = 0;
+        self.slew_val.reset();
         self.trig.reset();
     }
 
@@ -81,7 +99,7 @@ impl DspNode for RndWk {
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        atoms: &[SAtom], inputs: &[ProcBuf],
+        _atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{out, inp, denorm, denorm_offs, at};
@@ -106,34 +124,18 @@ impl DspNode for RndWk {
                 let step = denorm::RndWk::step(step, frame).clamp(-1.0, 1.0);
                 let offs = denorm::RndWk::offs(offs, frame).clamp(-1.0, 1.0);
 
-                self.target =
-                    self.current
+                let target =
+                    self.slew_val.value()
                     + ((self.rng.next() * 2.0 * step) - step)
                     + offs;
-                self.target = ((self.target - min) % delta).abs() + min;
+                let target = ((target - min) % delta).abs() + min;
 
                 let slew_time_ms = denorm::RndWk::slewt(slewt, frame);
 
-                if slew_time_ms < 0.01 {
-                    self.current    = self.target;
-                    self.slew_count = 0;
-
-                } else {
-                    let slew_samples = slew_time_ms * self.sr_ms;
-                    self.slew_count = slew_samples as u64;
-                    self.target_inc = (self.target - self.current) / slew_samples;
-                }
+                self.slew_val.set_target(target, slew_time_ms);
             }
 
-            if self.slew_count > 0 {
-                self.current += self.target_inc;
-                self.slew_count -= 1;
-            } else {
-                self.target_inc = 0.0;
-                self.current    = self.target;
-            }
-
-            out.write(frame, self.current);
+            out.write(frame, self.slew_val.next());
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));

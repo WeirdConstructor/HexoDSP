@@ -705,6 +705,69 @@ impl TriggerSampleClock {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct SlewValue<F: Flt> {
+    slew_count: u64,
+    current:    F,
+    target:     F,
+    inc:        F,
+    sr_ms:      F,
+}
+
+impl<F: Flt> SlewValue<F> {
+    pub fn new() -> Self {
+        Self {
+            slew_count: 0,
+            current:    f(0.0),
+            target:     f(0.0),
+            inc:        f(0.0),
+            sr_ms:      f(44100.0 / 1000.0),
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.slew_count = 0;
+        self.current    = f(0.0);
+        self.target     = f(0.0);
+        self.inc        = f(0.0);
+    }
+
+    pub fn set_sample_rate(&mut self, srate: F) {
+        self.sr_ms = srate / f(1000.0);
+    }
+
+    #[inline]
+    pub fn set_target(&mut self, target: F, slew_time_ms: F) {
+        self.target = target;
+
+        // 0.02ms, thats a fraction of a sample at 44.1kHz
+        if slew_time_ms < f(0.02) {
+            self.current    = self.target;
+            self.slew_count = 0;
+
+        } else {
+            let slew_samples = slew_time_ms * self.sr_ms;
+            self.slew_count = slew_samples.to_u64().unwrap_or(0);
+            self.inc = (self.target - self.current) / slew_samples;
+        }
+    }
+
+    #[inline]
+    pub fn value(&self) -> F { self.current }
+
+    #[inline]
+    pub fn next(&mut self) -> F {
+        if self.slew_count > 0 {
+            self.current = self.current + self.inc;
+            self.slew_count -= 1;
+        } else {
+            self.current = self.target;
+        }
+
+        self.current
+    }
+}
+
 /// Default size of the delay buffer: 5 seconds at 8 times 48kHz
 const DEFAULT_DELAY_BUFFER_SAMPLES : usize = 8 * 48000 * 5;
 
