@@ -705,8 +705,55 @@ impl TriggerSampleClock {
     }
 }
 
+/// A slew rate limiter, with a configurable time per 1.0 increase.
 #[derive(Debug, Clone, Copy)]
 pub struct SlewValue<F: Flt> {
+    current:        F,
+    slew_per_ms:    F,
+}
+
+impl<F: Flt> SlewValue<F> {
+    pub fn new() -> Self {
+        Self {
+            current:     f(0.0),
+            slew_per_ms: f(1000.0 / 44100.0),
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.current    = f(0.0);
+    }
+
+    pub fn set_sample_rate(&mut self, srate: F) {
+        self.slew_per_ms = f::<F>(1000.0) / srate;
+    }
+
+    #[inline]
+    pub fn value(&self) -> F { self.current }
+
+    /// * `slew_ms_per_1` - The time (in milliseconds) it should take
+    /// to get to 1.0 from 0.0.
+    #[inline]
+    pub fn next(&mut self, target: F, slew_ms_per_1: F) -> F {
+        // at 0.11ms, there are barely enough samples for proper slew.
+        if slew_ms_per_1 < f(0.11) {
+            self.current = target;
+
+        } else {
+            let max_delta = self.slew_per_ms / slew_ms_per_1;
+            self.current =
+                target
+                    .min(self.current + max_delta)
+                    .max(self.current - max_delta);
+        }
+
+        self.current
+    }
+}
+
+/// A ramped value changer, with a configurable time to reach the target value.
+#[derive(Debug, Clone, Copy)]
+pub struct RampValue<F: Flt> {
     slew_count: u64,
     current:    F,
     target:     F,
@@ -714,7 +761,7 @@ pub struct SlewValue<F: Flt> {
     sr_ms:      F,
 }
 
-impl<F: Flt> SlewValue<F> {
+impl<F: Flt> RampValue<F> {
     pub fn new() -> Self {
         Self {
             slew_count: 0,

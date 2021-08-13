@@ -13,8 +13,9 @@ use crate::dsp::{
 #[derive(Debug, Clone)]
 pub struct RndWk {
     rng:        Rng,
-    slew_val:   SlewValue<f32>,
+    slew_val:   SlewValue<f64>,
     trig:       Trigger,
+    target:     f64,
 }
 
 impl RndWk {
@@ -26,8 +27,9 @@ impl RndWk {
 
         Self {
             rng,
-            trig:     Trigger::new(),
-            slew_val: SlewValue::new(),
+            trig:       Trigger::new(),
+            slew_val:   SlewValue::new(),
+            target:     0.0,
         }
     }
 
@@ -52,16 +54,17 @@ impl RndWk {
         "RndWk max\nThe maximum of the new target value. If a value is drawn \
         that is outside of this range, it will be reflected back into it.\
         \nRange: (0..1)";
-    pub const slewt : &'static str =
-        "RndWk slewt\nThe slew time, the time it takes to reach the \
-        new target value. This can be used to smooth off rough transitions and \
-        clicky noises.\nRange: (0..1)";
+    pub const slew : &'static str =
+        "RndWk slew\nThe slew rate limiting time. Thats the time it takes to \
+        get to 1.0 from 0.0. Useful for smoothing modulation of audio signals. \
+        The higher the time, the smoother/slower the transition to new \
+        target values will be.\nRange: (0..1)";
     pub const sig : &'static str =
         "RndWk sig\nOscillator output\nRange: (-1..1)\n";
     pub const DESC : &'static str =
 r#"Random Walker
 
-This modulator generates a random number by walking a pre defined maximum random 'step' width. For smoother transitions a slew time is integrated.
+This modulator generates a random number by walking a pre defined maximum random 'step' width. For smoother transitions a slew rate limiter is integrated.
 "#;
     pub const HELP : &'static str =
 r#"RndWk - Random Walker
@@ -72,12 +75,12 @@ be folded within the defined 'min'/'max' range. The 'offs' parameter defines a
 minimal step width each 'trig' has to change the target value.
 
 For smoother transitions, if you want to modulate an audio signal with this,
-a slew time ('slewt') is integrated.
+a slew rate limiter ('slew') is integrated.
 
 You can disable all randomness by setting 'step' to 0.0.
 
-Tip: Interesting and smooth results can be achieved if you set 'slewt'
-to a longer time than the interval in that you trigger 'trig'. It will smooth
+Tip: Interesting and smooth results can be achieved if you set 'slew'
+to a (way) longer time than the 'trig' interval. It will smooth
 off the step widths and the overall motion even more.
 "#;
 
@@ -87,12 +90,13 @@ impl DspNode for RndWk {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.slew_val.set_sample_rate(srate);
+        self.slew_val.set_sample_rate(srate as f64);
     }
 
     fn reset(&mut self) {
         self.slew_val.reset();
         self.trig.reset();
+        self.target = 0.0;
     }
 
     #[inline]
@@ -109,7 +113,7 @@ impl DspNode for RndWk {
         let offs    = inp::RndWk::offs(inputs);
         let min     = inp::RndWk::min(inputs);
         let max     = inp::RndWk::max(inputs);
-        let slewt   = inp::RndWk::slewt(inputs);
+        let slew    = inp::RndWk::slew(inputs);
         let out     = out::RndWk::sig(outputs);
 
         for frame in 0..ctx.nframes() {
@@ -125,17 +129,19 @@ impl DspNode for RndWk {
                 let offs = denorm::RndWk::offs(offs, frame).clamp(-1.0, 1.0);
 
                 let target =
-                    self.slew_val.value()
+                    self.slew_val.value() as f32
                     + ((self.rng.next() * 2.0 * step) - step)
                     + offs;
-                let target = ((target - min) % delta).abs() + min;
-
-                let slew_time_ms = denorm::RndWk::slewt(slewt, frame);
-
-                self.slew_val.set_target(target, slew_time_ms);
+                self.target = (((target - min) % delta).abs() + min) as f64;
             }
 
-            out.write(frame, self.slew_val.next());
+            let slew_time_ms = denorm::RndWk::slew(slew, frame);
+
+            out.write(
+                frame,
+                self.slew_val.next(
+                    self.target,
+                    slew_time_ms as f64) as f32);
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));

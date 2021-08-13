@@ -610,7 +610,7 @@ define_exp!{n_env d_env 0.0, 1000.0}
 define_exp6!{n_lfot d_lfot 0.1,300000.0}
 define_exp!{n_time d_time 0.5,  5000.0}
 define_exp!{n_ftme d_ftme 0.1,  1000.0}
-define_exp!{n_ftmz d_ftmz 0.0,  1000.0}
+define_exp!{n_ftmz d_ftmz 0.0,  5000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
@@ -760,7 +760,7 @@ macro_rules! node_list {
                 (2 offs  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                 (3 min   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
                 (4 max   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
-                (5 slewt n_ftmz   d_ftmz r_fmz  f_ms  stp_m  0.0, 1.0, 10.0)
+                (5 slew  n_ftmz   d_ftmz r_fmz  f_ms  stp_m  0.0, 1.0, 75.0)
                 [0 sig],
             delay => Delay UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
