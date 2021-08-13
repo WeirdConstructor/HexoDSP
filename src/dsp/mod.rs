@@ -45,7 +45,7 @@ mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_pverb;
 #[allow(non_upper_case_globals)]
-mod node_rndwlk;
+mod node_rndwk;
 
 pub mod biquad;
 pub mod tracker;
@@ -106,7 +106,7 @@ use node_biqfilt::BiqFilt;
 use node_comb::Comb;
 use node_tslfo::TsLfo;
 use node_pverb::PVerb;
-use node_rndwlk::RndWlk;
+use node_rndwk::RndWk;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -754,12 +754,12 @@ macro_rules! node_list {
                 (1 trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                 (2 rev   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                 [0 sig],
-            rndwlk => RndWlk UIType::Generic UICategory::Mod
+            rndwk => RndWk UIType::Generic UICategory::Mod
                 (0 trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-                (1 step  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+                (1 step  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.2)
                 (2 offs  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                 (3 min   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
-                (4 max   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.0)
+                (4 max   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 1.0)
                 (5 slewt n_ftmz   d_ftmz r_fmz  f_ms  stp_m  0.0, 1.0, 10.0)
                 [0 sig],
             delay => Delay UIType::Generic UICategory::Signal

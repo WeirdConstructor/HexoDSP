@@ -811,7 +811,7 @@ impl<F: Flt> DelayBuffer<F> {
         let data   = &self.data[..];
         let len    = data.len();
         let s_offs = (delay_time_ms * self.srate) / f(1000.0);
-        let offs   = s_offs.floor().to_usize().unwrap() % len;
+        let offs   = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract  = s_offs.fract();
 
         let i = (self.wr + len) - offs;
@@ -829,7 +829,7 @@ impl<F: Flt> DelayBuffer<F> {
         let data   = &self.data[..];
         let len    = data.len();
         let s_offs = (delay_time_ms * self.srate) / f(1000.0);
-        let offs   = s_offs.floor().to_usize().unwrap() % len;
+        let offs   = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract  = s_offs.fract();
 
         let i = (self.wr + len) - offs;
@@ -862,7 +862,7 @@ impl<F: Flt> DelayBuffer<F> {
         let offs =
             ((delay_time_ms * self.srate)
              / f(1000.0))
-            .floor().to_usize().unwrap() % len;
+            .floor().to_usize().unwrap_or(0) % len;
         let idx  = ((self.wr + len) - offs) % len;
         self.data[idx]
     }
