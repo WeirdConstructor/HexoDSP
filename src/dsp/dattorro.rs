@@ -238,7 +238,7 @@ impl DattorroReverb {
     #[inline]
     pub fn set_time_scale(&mut self, scale: f64) {
         if (self.last_scale - scale).abs() > std::f64::EPSILON {
-            let scale = scale.max(0.0001);
+            let scale = scale.max(0.1);
             self.last_scale = scale;
 
             self.apf1[0].1 = DAT_LEFT_APF1_TIME_MS  * scale;
@@ -330,7 +330,7 @@ impl DattorroReverb {
     ) -> (f64, f64)
     {
         // Some parameter setup...
-        let timescale = 0.0025 + (4.0 - 0.0025) * params.time_scale();
+        let timescale = 0.1 + (4.0 - 0.1) * params.time_scale();
         self.set_time_scale(timescale);
 
         self.hpf[0].set_freq(params.reverb_high_cutoff_hz());
