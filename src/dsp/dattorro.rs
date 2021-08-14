@@ -374,7 +374,12 @@ impl DattorroReverb {
 
         // HPF => Pre-Delay
         let out_pre_delay =
-            self.pre_delay.next_cubic(params.pre_delay_time_ms(), out_hpf);
+            if params.pre_delay_time_ms() < 0.1 {
+                out_hpf
+            } else {
+                self.pre_delay.next_cubic(
+                    params.pre_delay_time_ms(), out_hpf)
+            };
 
         // Pre-Delay => 4 All-Pass filters
         let mut diffused = out_pre_delay;
