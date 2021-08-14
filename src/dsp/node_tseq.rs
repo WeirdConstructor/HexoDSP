@@ -223,6 +223,7 @@ impl DspNode for TSeq {
                 denorm::TSeq::trig(trig, frame))
             {
                 time.clock.sync();
+                println!("CLOCK SYNC");
             }
 
             let phase =
@@ -234,8 +235,6 @@ impl DspNode for TSeq {
 
             phase_out[frame] = phase as f32;
         }
-
-//        println!("PHASE {}", phase_out[0]);
 
         let mut col_out : [f32; MAX_BLOCK_SIZE] =
             [0.0; MAX_BLOCK_SIZE];

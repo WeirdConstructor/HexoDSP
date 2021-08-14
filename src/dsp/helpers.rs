@@ -527,7 +527,14 @@ pub fn sqrt4_to_pow4(x: f32, v: f32) -> f32 {
 }
 
 /// A-100 Eurorack states, that a trigger is usually 2-10 milliseconds.
-const TRIG_SIGNAL_LENGTH_MS : f32 = 2.0;
+pub const TRIG_SIGNAL_LENGTH_MS : f32 = 2.0;
+
+/// The lower threshold for the schmidt trigger to reset.
+pub const TRIG_LOW_THRES  : f32 = 0.25;
+/// The threshold, once reached, will cause a trigger event and signals
+/// a logical '1'. Anything below this is a logical '0'.
+pub const TRIG_HIGH_THRES : f32 = 0.5;
+
 
 #[derive(Debug, Clone, Copy)]
 pub struct TrigSignal {
@@ -590,13 +597,13 @@ impl Trigger {
     #[inline]
     pub fn check_trigger(&mut self, input: f32) -> bool {
         if self.triggered {
-            if input <= 0.25 {
+            if input <= TRIG_LOW_THRES {
                 self.triggered = false;
             }
 
             false
 
-        } else if input > 0.75 {
+        } else if input > TRIG_HIGH_THRES {
             self.triggered = true;
             true
 
@@ -640,11 +647,11 @@ impl TriggerPhaseClock {
     #[inline]
     pub fn next_phase(&mut self, clock_limit: f64, trigger_in: f32) -> f64 {
         if self.prev_trigger {
-            if trigger_in <= 0.25 {
+            if trigger_in <= TRIG_LOW_THRES {
                 self.prev_trigger = false;
             }
 
-        } else if trigger_in > 0.75 {
+        } else if trigger_in > TRIG_HIGH_THRES {
             self.prev_trigger = true;
 
             if self.clock_samples > 0 {
@@ -689,11 +696,11 @@ impl TriggerSampleClock {
     #[inline]
     pub fn next(&mut self, trigger_in: f32) -> u32 {
         if self.prev_trigger {
-            if trigger_in <= 0.25 {
+            if trigger_in <= TRIG_LOW_THRES {
                 self.prev_trigger = false;
             }
 
-        } else if trigger_in > 0.75 {
+        } else if trigger_in > TRIG_HIGH_THRES {
             self.prev_trigger  = true;
             self.clock_samples = self.counter;
             self.counter       = 0;

@@ -19,14 +19,14 @@ fn check_node_rndwk_def_trig() {
     matrix.sync().unwrap();
 
     pset_n(&mut matrix, rwk, "trig", 1.0);
-    run_for_ms(&mut node_exec, 7.0); // wait for trigger...
+    run_for_ms(&mut node_exec, 4.2); // wait for trigger...
 
     let (out_l, _) = run_for_ms(&mut node_exec, 20.0);
     assert_decimated_feq!(out_l, 40, vec![
         0.0, // start value
         // slew ramp:
-        0.00574452, 0.017838247, 0.029931974, 0.0420257, 0.054119427,
-        0.06621315, 0.078306876, 0.09040061, 0.10249433,
+        0.001814059, 0.0139077855, 0.026001511, 0.03809524, 0.050188966,
+        0.062282693, 0.07437642, 0.08647014, 0.09856387, 0.110657595,
         // end value:
         0.11378352, 0.11378352, 0.11378352, 0.11378352, 0.11378352,
     ]);
@@ -34,12 +34,12 @@ fn check_node_rndwk_def_trig() {
     pset_n(&mut matrix, rwk, "trig", 0.0);
     pset_d_wait(&mut matrix, &mut node_exec, rwk, "slew", 10.0);
     pset_n(&mut matrix, rwk, "trig", 1.0);
-    run_for_ms(&mut node_exec, 7.0); // wait for trigger...
+    run_for_ms(&mut node_exec, 4.0); // wait for trigger...
 
     let (out_l, _) = run_for_ms(&mut node_exec, 20.0);
     assert_decimated_feq!(out_l, 15, vec![
-        0.11378352, 0.11378352, // last value
-        0.13419169, 0.16820529, 0.20221889, 0.2362325,
+        0.11378352, 0.11378352, 0.11378352, // last value
+        0.11831867, 0.15233228, 0.18634588, 0.22035949, 0.2543731,
         0.26017055, 0.26017055, // end value
     ]);
 }
@@ -59,7 +59,7 @@ fn check_node_rndwk_step() {
     matrix.sync().unwrap();
 
     pset_n(&mut matrix, rwk, "trig", 1.0);
-    run_for_ms(&mut node_exec, 7.0); // wait for trigger...
+    run_for_ms(&mut node_exec, 4.51); // wait for trigger...
 
     let (out_l, _) = run_for_ms(&mut node_exec, 50.0);
     assert_decimated_feq!(out_l, 200, vec![
@@ -90,7 +90,7 @@ fn check_node_rndwk_offs() {
     matrix.sync().unwrap();
 
     pset_n(&mut matrix, rwk, "trig", 1.0);
-    run_for_ms(&mut node_exec, 7.0); // wait for trigger...
+    run_for_ms(&mut node_exec, 4.51); // wait for trigger...
 
     let (out_l, _) = run_for_ms(&mut node_exec, 20.0);
     assert_decimated_feq!(out_l, 60, vec![
@@ -121,7 +121,7 @@ fn check_node_rndwk_offs_neg() {
     matrix.sync().unwrap();
 
     pset_n(&mut matrix, rwk, "trig", 1.0);
-    run_for_ms(&mut node_exec, 7.0); // wait for trigger...
+    run_for_ms(&mut node_exec, 4.51); // wait for trigger...
 
     let (out_l, _) = run_for_ms(&mut node_exec, 20.0);
     assert_decimated_feq!(out_l, 60, vec![
@@ -150,7 +150,7 @@ fn check_node_rndwk_max() {
     matrix.sync().unwrap();
 
     pset_n(&mut matrix, rwk, "trig", 1.0);
-    run_for_ms(&mut node_exec, 7.0); // wait for trigger...
+    run_for_ms(&mut node_exec, 4.51); // wait for trigger...
 
     let (out_l, _) = run_for_ms(&mut node_exec, 50.0);
     assert_decimated_feq!(out_l, 200, vec![
@@ -181,7 +181,7 @@ fn check_node_rndwk_min() {
     matrix.sync().unwrap();
 
     pset_n(&mut matrix, rwk, "trig", 1.0);
-    run_for_ms(&mut node_exec, 7.0); // wait for trigger...
+    run_for_ms(&mut node_exec, 4.51); // wait for trigger...
 
     let (out_l, _) = run_for_ms(&mut node_exec, 100.0); // 75ms slew time default
     assert_decimated_feq!(out_l, 400, vec![

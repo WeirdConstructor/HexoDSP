@@ -249,6 +249,50 @@ pub fn collect_signal_changes(inp: &[f32], thres: i64) -> Vec<(usize, i64)> {
     return idxs_big;
 }
 
+#[allow(dead_code)]
+pub fn collect_non_zero(inp: &[f32]) -> Vec<(usize, usize)> {
+    let mut idxs = vec![];
+    let mut start_idx = 0;
+    let mut length = 0;
+    for i in 0..inp.len() {
+        if inp[i].abs() > 0.00001 {
+            if length == 0 {
+                start_idx = i;
+            }
+            length += 1;
+        } else {
+            if length > 0 {
+                idxs.push((start_idx, length));
+                length = 0;
+            }
+        }
+    }
+
+    return idxs;
+}
+
+#[allow(dead_code)]
+pub fn collect_gates(inp: &[f32]) -> Vec<(usize, usize)> {
+    let mut idxs = vec![];
+    let mut start_idx = 0;
+    let mut length = 0;
+    for i in 0..inp.len() {
+        if inp[i].abs() > 0.1 {
+            if length == 0 {
+                start_idx = i;
+            }
+            length += 1;
+        } else {
+            if length > 0 {
+                idxs.push((start_idx, length));
+                length = 0;
+            }
+        }
+    }
+
+    return idxs;
+}
+
 #[macro_export]
 macro_rules! assert_rmsmima {
     ($rms:expr, $b:expr) => {

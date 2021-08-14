@@ -772,22 +772,19 @@ fn check_matrix_tseq() {
     // Take some real samples:
     let samples = run_and_undersample(&mut node_exec, 2000.0, 10);
 
-    assert_float_eq!(samples[0], 0.3157);
-    assert_float_eq!(samples[1], 0.209);
-    assert_float_eq!(samples[2], 0.1024);
-    assert_float_eq!(samples[3], 0.0648);
-    assert_float_eq!(samples[4], 0.95566);
-    assert_float_eq!(samples[5], 0.84899);
-    assert_float_eq!(samples[6], 0.74231);
-    assert_float_eq!(samples[7], 0.6356);
-    assert_float_eq!(samples[8], 0.5289);
-    assert_float_eq!(samples[9], 0.42228);
+    assert_vec_feq!(samples, vec![
+        0.5322106, 0.4255343, 0.318858, 0.21218172, 0.105505496, 0.017571526,
+        // then start at the beginning:
+        0.958819, 0.8521427, 0.7454664, 0.63879013
+    ]);
 
     // switch to row trigger:
     pset_s(&mut matrix, tsq, "cmode", 0);
     let samples = run_and_undersample(&mut node_exec, 2000.0, 5);
 
-    assert_vec_feq!(samples, vec![0.70411, 0.90413, 0.99306, 0.97972, 0.966387]);
+    assert_vec_feq!(samples, vec![
+        0.5011433, 0.7011613, 0.9011793, 0.9932535, 0.97991896
+    ]);
 
     // set to phase mode:
     pset_s(&mut matrix, tsq, "cmode", 2);
@@ -840,31 +837,22 @@ fn check_matrix_tseq_trig() {
     // Take some real samples:
     let samples = run_and_undersample(&mut node_exec, 2000.0, 10);
 
-    assert_float_eq!(samples[0], 0.3157);
-    assert_float_eq!(samples[1], 0.209);
-    assert_float_eq!(samples[2], 0.1024);
-    assert_float_eq!(samples[3], 0.0648);
-    assert_float_eq!(samples[4], 0.95566);
-    assert_float_eq!(samples[5], 0.84899);
-    assert_float_eq!(samples[6], 0.74231);
-    assert_float_eq!(samples[7], 0.6356);
-    assert_float_eq!(samples[8], 0.5289);
-    assert_float_eq!(samples[9], 0.42228);
+    assert_vec_feq!(samples, vec![
+        0.5322106, 0.4255343, 0.318858, 0.21218172, 0.105505496,
+        0.017571526, 0.958819, 0.8521427, 0.7454664, 0.63879013
+    ]);
 
     pset_n(&mut matrix, tsq, "trig", 1.0);
 
     // Take some real samples:
     let samples = run_and_undersample(&mut node_exec, 2000.0, 10);
 
-    assert_float_eq!(samples[0], 0.3157);
-    // trigger hits:
-    assert_float_eq!(samples[1], 0.9639);
-    assert_float_eq!(samples[2], 0.8572);
-    assert_float_eq!(samples[3], 0.7506);
-    assert_float_eq!(samples[4], 0.6439);
-    assert_float_eq!(samples[5], 0.5372);
-    assert_float_eq!(samples[6], 0.4305);
-    assert_float_eq!(samples[7], 0.3239);
+    assert_vec_feq!(samples, vec![
+        0.5321138,
+        // Then trigger happens:
+        0.96263915, 0.8559629, 0.74928665, 0.6426103, 0.53593403, 0.42925775,
+        0.32258147, 0.21590519, 0.109228894
+    ]);
 }
 
 #[test]
@@ -920,26 +908,13 @@ fn check_matrix_tseq_gate() {
 
     // Take some real samples:
     let samples = run_and_undersample(&mut node_exec, 2000.0, 2000);
+    let changes = collect_gates(&samples[..]);
 
-    assert_float_eq!(samples[117], 0.0);
-    for i in 118..243 {
-        assert_float_eq!(samples[i], 1.0);
-    }
-    assert_float_eq!(samples[243], 0.0);
-
-    assert_float_eq!(samples[367], 0.0);
-    for i in 368..376 {
-        assert_float_eq!(samples[i], 1.0);
-    }
-    assert_float_eq!(samples[376], 0.0);
-
-    assert_float_eq!(samples[680], 0.0);
-    assert_float_eq!(samples[681], 1.0);
-    assert_float_eq!(samples[682], 0.0);
-
-    assert_float_eq!(samples[688], 0.0);
-    assert_float_eq!(samples[689], 1.0);
-    assert_float_eq!(samples[690], 0.0);
+    assert_eq!(changes, vec![
+        (524, 126), (775, 8),
+        (1033, 1), (1041, 1), (1049, 1), (1080, 1),
+        (1088, 1), (1119, 1), (1127, 1), (1135, 1)
+    ]);
 }
 
 

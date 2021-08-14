@@ -336,13 +336,13 @@ fn check_node_sampl_trigger_reset_phase() {
 
     matrix.set_param(trig_p, (1.0).into());
     let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 100.0);
-    assert_minmax_of_rms!(rmsvec[0], (0.0,      0.092496));
-    assert_minmax_of_rms!(rmsvec[2], (0.19252,  0.29250));
+    assert_minmax_of_rms!(rmsvec[0], (0.0,      0.09499));
+    assert_minmax_of_rms!(rmsvec[2], (0.1950,   0.2949));
 
     // lower trigger level, for retrigger later
     matrix.set_param(trig_p, (0.0).into());
     let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 10.0);
-    assert_minmax_of_rms!(rmsvec[2], (0.31252, 0.32250));
+    assert_minmax_of_rms!(rmsvec[2], (0.3150, 0.32499));
 
     // retrigger the phase sample
     matrix.set_param(trig_p, (1.0).into());
@@ -354,8 +354,8 @@ fn check_node_sampl_trigger_reset_phase() {
     // this is the last value of the previous triggering
     assert_float_eq!(max, 0.32998);
 
-    assert_minmax_of_rms!(rmsvec[1], (0.09251, 0.19249));
-    assert_minmax_of_rms!(rmsvec[2], (0.19252, 0.29250));
+    assert_minmax_of_rms!(rmsvec[1], (0.0950, 0.19499));
+    assert_minmax_of_rms!(rmsvec[2], (0.1950, 0.29499));
 }
 
 #[test]
@@ -386,8 +386,8 @@ fn check_node_sampl_trigger_loop_reset_phase() {
 
     matrix.set_param(trig_p, (1.0).into());
     let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 100.0);
-    assert_minmax_of_rms!(rmsvec[0], (0.0,      0.3074));
-    assert_minmax_of_rms!(rmsvec[2], (0.1925,   0.2925));
+    assert_minmax_of_rms!(rmsvec[0], (0.0,      0.3050));
+    assert_minmax_of_rms!(rmsvec[2], (0.1950,   0.2949));
 }
 
 #[test]
@@ -453,7 +453,7 @@ fn check_node_sampl_offs_len_zero_crash() {
 
     matrix.set_param(trig_p, (1.0).into());
     let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 50.0);
-    assert_minmax_of_rms!(rmsvec[0], (0.0, 0.9979));
+    assert_minmax_of_rms!(rmsvec[0], (0.0, 0.9981));
 
     // Select part 0.5 to 0.75 of the sample:
     matrix.set_param(offs_p, SAtom::param(0.9));
@@ -525,7 +525,7 @@ fn check_node_sampl_declick() {
     matrix.set_param(dcms_p,   SAtom::param(dcms_p.norm(3.14)));
     matrix.set_param(trig_p, (1.0).into());
 
-    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 5.0);
+    let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 3.0);
 
     assert_minmax_of_rms!(rmsvec[0], (0.0, 0.0));
     assert_minmax_of_rms!(rmsvec[1], (0.0, 1.0));
@@ -538,7 +538,7 @@ fn check_node_sampl_declick() {
     matrix.set_param(dclick_p, SAtom::setting(1));
     matrix.set_param(trig_p, (1.0).into());
     // let the trigger appear in the sampler:
-    run_for_ms(&mut node_exec, 7.5);
+    run_for_ms(&mut node_exec, 5.0);
     // now the de-click should run:
     let rmsvec = run_and_get_each_rms_mimax(&mut node_exec, 1.0);
 
@@ -579,15 +579,16 @@ fn check_node_sampl_declick_offs_len() {
     matrix.set_param(len_p,  SAtom::param(0.008));
 
     // trigger:
-    run_for_ms(&mut node_exec, 7.5);
+    run_for_ms(&mut node_exec, 5.0);
 
     let res = run_for_ms(&mut node_exec, 12.0);
 
     assert_decimated_feq!(res.0, 15, vec![
-        0.0, 0.10955164, 0.21910328, 0.32865492, 0.43820655, 0.54775816, 0.65730983,
-        0.76686144, 0.8764131, 0.97491217,
+        0.0,
+        0.11080169, 0.22160338, 0.33240506, 0.44320676, 0.5540084, 0.6648101,
+        0.7756118, 0.8864135, 0.98414195,
         1.0, 1.0, 1.0, 1.0, 1.0,
-        0.92436117, 0.8160376, 0.707714, 0.59939045, 0.49106687, 0.3827433,
+        0.9331123, 0.82376325, 0.7144141, 0.59939045, 0.49106687, 0.3827433,
         0.27441972, 0.16609615, 0.057772573,
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     ]);
