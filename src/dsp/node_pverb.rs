@@ -85,39 +85,56 @@ impl PVerb {
     }
 
     pub const in_l : &'static str =
-        "PVerb in_l\n\nRange: (-1..1)\n";
+        "PVerb in_l\nLeft input channel, will be summed with the right \
+        channel. So you can just feed in a mono signal \
+        without harm.\nRange: (-1..1)\n";
     pub const in_r : &'static str =
-        "PVerb in_r\n\nRange: (-1..1)\n";
+        "PVerb in_r\nRight input channel, will be summed with the \
+        left channel.\nRange: (-1..1)\n";
     pub const sig_l : &'static str =
-        "PVerb sig_l\n\nRange: (0..1)";
+        "PVerb sig_l\nThe left channel of the output signal.\nRange: (0..1)";
     pub const sig_r : &'static str =
-        "PVerb sig_r\n\nRange: (0..1)";
+        "PVerb sig_r\nThe right channel of the output signal.\nRange: (0..1)";
     pub const predly : &'static str =
-        "PVerb predly\n\nRange: (0..1)";
+        "PVerb predly\nThe pre-delay length for the first reflection.\nRange: (0..1)";
     pub const size : &'static str =
-        "PVerb size\n\nRange: (0..1)";
+        "PVerb size\nThe size of the simulated room. Goes from a small \
+        chamber to a huge hall.\nRange: (0..1)";
     pub const dcy : &'static str =
-        "PVerb dcy\n\nRange: (0..1)";
+        "PVerb dcy\nThe decay of the sound. If you set this to '1.0' the
+        sound will infinitively be sustained. Just be careful feeding in more \
+        sound with that.\nRange: (0..1)";
     pub const ilpf : &'static str =
-        "PVerb ilpf\n\nRange: (0..1)";
+        "PVerb ilpf\nInput low-pass filter cutoff frequency, for filtering \
+        the input before it's fed into the pre-delay.\nRange: (0..1)";
     pub const ihpf : &'static str =
-        "PVerb ihpf\n\nRange: (0..1)";
+        "PVerb ihpf\nInput high-pass filter cutoff frequency, for filtering \
+        the input before it's fed into the pre-delay.\nRange: (0..1)";
     pub const dif : &'static str =
-        "PVerb dif\n\nRange: (0..1)";
+        "PVerb dif\nThe amount of diffusion inside the reverb tank. \
+        Setting this to 0 will disable any kind of diffusion and the reverb \
+        will become a more or less simple echo effect.\nRange: (0..1)";
     pub const dmix : &'static str =
-        "PVerb dmix\n\nRange: (0..1)";
+        "PVerb dmix\nThe mix between input diffusion and clean output of the \
+        pre-delay. Setting this to 0 will not diffuse any input.\nRange: (0..1)";
     pub const mspeed : &'static str =
-        "PVerb mspeed\n\nRange: (0..1)";
+        "PVerb mspeed\nThe internal LFO speed, that modulates the internal \
+        diffusion inside the reverb tank. Keeping this low (< 0.2) will sound \
+        a bit more natural than a fast LFO.\nRange: (0..1)";
     pub const mshp : &'static str =
-        "PVerb mshp\n\nRange: (0..1)";
+        "PVerb mshp\nThe shape of the LFO. 0.0 is a down ramp, 1.0 is an up \
+        ramp and 0.0 is a triangle. Setting this to 0.5 is a good choise. The \
+        extreme values of 0.0 and 1.0 can lead to audible artifacts.\nRange: (0..1)";
     pub const mdepth : &'static str =
-        "PVerb mdepth\n\nRange: (0..1)";
+        "PVerb mdepth\nThe depth of the LFO change that is applied to the \
+        diffusion inside the reverb tank. More extreme values (above 0.2) will \
+        lead to more detuned sounds reverbing inside the tank.\nRange: (0..1)";
     pub const rlpf : &'static str =
-        "PVerb rlpf\n\nRange: (0..1)";
+        "PVerb rlpf\nReverb tank low-pass filter cutoff frequency.\nRange: (0..1)";
     pub const rhpf : &'static str =
-        "PVerb rhpf\n\nRange: (0..1)";
+        "PVerb rhpf\nReverb tank high-pass filter cutoff frequency.\nRange: (0..1)";
     pub const mix : &'static str =
-        "PVerb mix\n\nRange: (0..1)";
+        "PVerb mix\nDry/Wet mix between the input and the diffused output.\nRange: (0..1)";
     pub const DESC : &'static str =
 r#"Plate Reverb
 
@@ -137,6 +154,34 @@ and another set of them for the internal reverberation tank to control
 the bandwidth of the reverbs.
 
 Internal modulation keeps the sound alive and spreads it even more.
+
+Structure of the reverb is:
+
+    Left       Right
+      |         |
+      \----+----/
+           v
+         'ilpf'           'ihpf'         'predly'
+    Input Low-Pass -> Input High-Pass -> Pre-Delay
+                                                 |
+         o------------------o--------------\     |
+         +------\           +----------\   |     |
+         v      |           v          |   |  v--o----> All-Pass Diffusor
+   [Left Channel]     [Right Channel]  |   \--x 'dmix'     |
+  /> Diffusor 1 |'size' Diffusor 1 <-\ |      ^------------/
+  |    Delay 1  |'size'   Delay 1    | |
+  |   LPF/HPF   |        LPF/HPF   'rlpf'/'rhpf'
+  |  [x Decay]  |'dcy'  [x Decay]    | |               'mspeed'
+  o> Diffusor 2 |'size' Diffusor 2 <-o----o-x-----LFO  'mshp'
+  |    Delay 2  |'size'   Delay 2      |  | 'mdepth'
+  |      |      |            |         |  |
+  |      x 'dcy'|            x         |  |
+  |      |      \-[feedback]-/         |  |
+  |      \--------[feedback]-----------/  |
+  \--------------------------------------/
+
+    Multiple Taps into Left/Right Diffusors 1/2 and Delays 1/2
+    are then fed to the left and right output channels.
 "#;
 
 }
