@@ -19,6 +19,7 @@ use std::sync::Arc;
 
 use core::arch::x86_64::{
     _MM_FLUSH_ZERO_ON,
+//    _MM_FLUSH_ZERO_OFF,
     _MM_SET_FLUSH_ZERO_MODE,
 //    _MM_GET_FLUSH_ZERO_MODE
 };

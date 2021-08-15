@@ -14,6 +14,16 @@ pub const SAMPLE_RATE : f32 = 44100.0;
 pub const SAMPLE_RATE_US : usize = 44100;
 
 #[macro_export]
+macro_rules! init_test {
+    ($matrix: ident, $node_exec: ident, $size: expr) => {
+        let (node_conf, mut node_exec) = new_node_engine();
+        let mut matrix = Matrix::new(node_conf, $size, $size);
+        let $matrix    = &mut matrix;
+        let $node_exec = &mut node_exec;
+    }
+}
+
+#[macro_export]
 macro_rules! assert_float_eq {
     ($a:expr, $b:expr) => {
         if ($a - $b).abs() > 0.0001 {
@@ -228,6 +238,13 @@ assertion failed: `(left[{}] == right[{}])`
     }
 }
 
+#[macro_export]
+macro_rules! dump_table {
+    ($vec:expr) => {
+    for (i, s) in $vec.iter().enumerate() { println!("{:2} {:?}", i, s); }
+    }
+}
+
 #[allow(dead_code)]
 pub fn collect_signal_changes(inp: &[f32], thres: i64) -> Vec<(usize, i64)> {
     let mut idxs = vec![];
@@ -428,6 +445,21 @@ pub fn run_and_get_each_rms_mimax(
     calc_rms_mimax_each_ms(&out_l[..], len_ms)
 }
 
+/// Get the rms of a specified amount of time 'len_ms' and take samples
+/// of RMS, Min and Max each 'sample_ms' (of the same length).
+///
+/// * 'len_ms' - complete runtime
+/// * 'sample_ms' - length of each rms sample
+#[allow(dead_code)]
+pub fn run_and_get_rms_mimax(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    len_ms: f32,
+    sample_ms: f32) -> Vec<(f32, f32, f32)>
+{
+    let (out_l, _out_r) = run_no_input(node_exec, len_ms / 1000.0);
+    calc_rms_mimax_each_ms(&out_l[..], sample_ms)
+}
+
 #[allow(dead_code)]
 pub fn run_and_get_first_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
@@ -509,6 +541,27 @@ pub fn run_and_get_fft4096_2(
     let run_len_s = min_len_samples / SAMPLE_RATE;
     let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
     fft(&mut out_l[..], FFT::F4096, thres)
+}
+
+/// Minimal 'each_ms' is 47ms, because each spectrum takes that time.
+#[allow(unused)]
+pub fn run_fft_spectrum_each_47ms(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    thres: u32, count: usize)
+    -> Vec<Vec<(u16, u32)>>
+{
+    let mut out = vec![];
+
+    for _ in 0..count {
+        let min_samples_for_fft = 1024.0;
+        let min_len_samples = 2.0 * min_samples_for_fft;
+        let run_len_s = min_len_samples / SAMPLE_RATE;
+        let offs_ms = (run_len_s * 1000.0);
+        let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+        out.push(fft(&mut out_l[..], FFT::F1024, thres));
+    }
+
+    out
 }
 
 #[allow(unused)]

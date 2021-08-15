@@ -673,7 +673,7 @@ macro_rules! node_list {
                (6 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
                {7 0 clip setting(0) fa_map_clip 0  1}
                [0 sig],
-            tseq => TSeq UIType::Generic UICategory::CV
+            tseq => TSeq UIType::Generic UICategory::Mod
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 trig  n_id       n_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                {2 0 cmode setting(1) fa_tseq_cmode 0  2}
