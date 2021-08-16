@@ -513,8 +513,6 @@ macro_rules! r_lfot { ($x: expr, $coarse: expr) => {
             n_lfot!((denv / 500.0).round() * 500.0)
         };
 
-        println!("ROUND C {} => {}", d_lfot!($x), d_lfot!(o));
-
         o
     }
 } }
@@ -1889,7 +1887,7 @@ mod tests {
         for i in 1..999 {
             let x = (((i as f32) / 1000.0) - 0.5) * 2.0;
             let r = d_pit!(x);
-            println!("x={:8.5} => {:8.5}", x, r);
+            //d// println!("x={:8.5} => {:8.5}", x, r);
             assert_eq!(
                 (n_pit!(r) * 10000.0).round() as i32,
                 (x * 10000.0).round() as i32);

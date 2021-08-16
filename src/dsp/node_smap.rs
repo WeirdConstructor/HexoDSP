@@ -58,14 +58,14 @@ impl SMap {
     pub const sig : &'static str =
         "SMap sig\nMapped signal output\nRange: (-1..1)\n";
     pub const DESC : &'static str =
-r#"Simple Signal Range Mapper
+r#"Simple Range Mapper
 
 This node allows to map an unipolar (0..1) or bipolar signal (-1..1) to a defined 'min'/'max' signal range.
 
 See also the 'Map' node for a more sophisticated version of this.
 "#;
     pub const HELP : &'static str =
-r#"SMap - Simple Signal Range Mapper
+r#"SMap - Simple Range Mapper
 
 This node allows to map an unipolar (0..1) or bipolar signal (-1..1)
 to a defined 'min'/'max' signal range.

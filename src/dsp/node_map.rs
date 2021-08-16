@@ -50,7 +50,7 @@ impl Map {
     pub const sig : &'static str =
         "Map sig\nMapped signal output\nRange: (-1..1)\n";
     pub const DESC : &'static str =
-r#"Signal Range Mapper
+r#"Range Mapper
 
 This node allows to map an input signal range to a precise output signal range.
 It's mostly useful to map control signals to modulate inputs.
@@ -58,7 +58,7 @@ It's mostly useful to map control signals to modulate inputs.
 See also the 'SMap' node, which is a simplified version of this node.
 "#;
     pub const HELP : &'static str =
-r#"Map - Signal Range Mapper
+r#"Map - Range Mapper
 
 This node allows to map an input signal range to a precise output signal
 range. It's main use is for precise control of an input of another node.
