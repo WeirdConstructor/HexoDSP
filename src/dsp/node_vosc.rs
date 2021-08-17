@@ -131,7 +131,7 @@ impl DspNode for VOsc {
         let dist       = dist.i() as u8;
         let oversample = ovrsmpl.i() == 1;
 
-        let mut osc = &mut self.osc;
+        let osc = &mut self.osc;
 
         if oversample {
             for frame in 0..ctx.nframes() {

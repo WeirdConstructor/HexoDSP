@@ -829,9 +829,16 @@ macro_rules! fc {
     ($F: ident, $e: expr) => { F::from_f64($e).unwrap() }
 }
 
+#[allow(dead_code)]
 #[inline]
 fn f<F: Flt>(x: f64) -> F { F::from_f64(x).unwrap() }
+
+#[allow(dead_code)]
+#[inline]
 fn fclamp<F: Flt>(x: F, mi: F, mx: F) -> F { x.max(mi).min(mx) }
+
+#[allow(dead_code)]
+#[inline]
 fn fclampc<F: Flt>(x: F, mi: f64, mx: f64) -> F { x.max(f(mi)).min(f(mx)) }
 
 #[derive(Debug, Clone, Default)]

@@ -44,7 +44,6 @@ fn setup_pverb(matrix: &mut Matrix) {
 fn check_node_pverb_dcy_1() {
     init_test!(matrix, node_exec, 3);
 
-    let ad_1    = NodeId::Ad(0);
     let pverb_1 = NodeId::PVerb(0);
 
     setup_pverb(matrix);

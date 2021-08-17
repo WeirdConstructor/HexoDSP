@@ -6,7 +6,6 @@ use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::helpers::{Rng, Trigger, SlewValue};
 use crate::dsp::{
     NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext,
-    GraphAtomData, GraphFun,
 };
 
 /// A triggered random walker
@@ -106,7 +105,7 @@ impl DspNode for RndWk {
         _atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{out, inp, denorm, denorm_offs, at};
+        use crate::dsp::{out, inp, denorm};
 
         let trig    = inp::RndWk::trig(inputs);
         let step    = inp::RndWk::step(inputs);

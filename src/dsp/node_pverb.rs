@@ -233,7 +233,7 @@ impl DspNode for PVerb {
         let out_l = &mut out_l[0];
         let out_r = &mut out_r[0];
 
-        let mut verb = &mut *self.verb;
+        let verb = &mut *self.verb;
 
         for frame in 0..ctx.nframes() {
             let (i_l, i_r) = (in_l.read(frame), in_r.read(frame));

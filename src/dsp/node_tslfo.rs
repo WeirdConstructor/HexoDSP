@@ -70,7 +70,7 @@ impl DspNode for TsLFO {
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        atoms: &[SAtom], inputs: &[ProcBuf],
+        _atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{out, inp, denorm};
@@ -80,7 +80,7 @@ impl DspNode for TsLFO {
         let rev  = inp::TsLFO::rev(inputs);
         let out  = out::TsLFO::sig(outputs);
 
-        let mut lfo = &mut *self.lfo;
+        let lfo = &mut *self.lfo;
 
         for frame in 0..ctx.nframes() {
             if self.trig.check_trigger(denorm::TsLFO::trig(trig, frame)) {
@@ -103,7 +103,7 @@ impl DspNode for TsLFO {
         let mut lfo = TriSawLFO::new();
         lfo.set_sample_rate(160.0);
 
-        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, xn: f32| -> f32 {
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
             if init {
                 lfo.reset();
                 let time_idx = NodeId::TsLFO(0).inp_param("time").unwrap().inp();
