@@ -176,20 +176,49 @@ pub trait DspNode {
 }
 
 /// A processing buffer with the exact right maximum size.
+/// This is an unsafe abstraction, and should be used with a lot of care.
+/// You will have to manually free the buffer, and take care if you
+/// make copies of these.
+///
+/// This is an abstraction for the inner most DSP processing, where I
+/// don't want to spend a nanosecond too much on accessing buffers.
+///
+/// The main user is [crate::nodes::NodeProg], which takes extra care
+/// of allocating and managing the [ProcBuf] instances.
+///
+///```
+/// let mut buf = hexodsp::dsp::ProcBuf::new();
+///
+/// buf.write(0, 0.42);
+/// buf.write(1, 0.13);
+/// buf.write(2, 0.37);
+///
+/// assert_eq!(((buf.read(0) * 100.0).floor()), 42.0);
+/// assert_eq!(((buf.read(1) * 100.0).floor()), 13.0);
+/// assert_eq!(((buf.read(2) * 100.0).floor()), 37.0);
+///
+/// buf.free(); // YOU MUST DO THIS!
+///```
 #[derive(Clone, Copy)]
 pub struct ProcBuf(*mut [f32; MAX_BLOCK_SIZE]);
 
 impl ProcBuf {
+    /// Creates a new ProcBuf with the size of [MAX_BLOCK_SIZE].
     pub fn new() -> Self {
         ProcBuf(Box::into_raw(Box::new([0.0; MAX_BLOCK_SIZE])))
     }
 
+    /// Create a new null ProcBuf, that can't be used.
     pub fn null() -> Self {
         ProcBuf(std::ptr::null_mut())
     }
 }
 
 impl crate::monitor::MonitorSource for &ProcBuf {
+    /// Copies the contents of this [ProcBuf] to the given `slice`.
+    ///
+    /// * `len` - the number of samples to copy from this [ProcBuf].
+    /// * `slice` - the slice to copy to.
     fn copy_to(&self, len: usize, slice: &mut [f32]) {
         unsafe { slice.copy_from_slice(&(*self.0)[0..len]) }
     }
@@ -199,6 +228,7 @@ unsafe impl Send for ProcBuf {}
 //unsafe impl Sync for HexoSynthShared {}
 
 impl ProcBuf {
+    /// Writes the sample `v` at `idx`.
     #[inline]
     pub fn write(&mut self, idx: usize, v: f32) {
         unsafe {
@@ -206,6 +236,9 @@ impl ProcBuf {
         }
     }
 
+    /// Writes the samples from `slice` to this [ProcBuf].
+    /// Be careful, the `slice` must not exceed [MAX_BLOCK_SIZE], or else
+    /// you will get UB.
     #[inline]
     pub fn write_from(&mut self, slice: &[f32]) {
         unsafe {
@@ -213,9 +246,12 @@ impl ProcBuf {
         }
     }
 
+    /// Reads a sample at `idx`. Be careful to not let the `idx`
+    /// land outside of [MAX_BLOCK_SIZE].
     #[inline]
     pub fn read(&self, idx: usize) -> f32 { unsafe { (*self.0)[idx] } }
 
+    /// Fills the [ProcBuf] with the sample `v`.
     #[inline]
     pub fn fill(&mut self, v: f32) {
         unsafe {
@@ -223,9 +259,13 @@ impl ProcBuf {
         }
     }
 
+    /// Checks if this is a [ProcBuf::null].
     #[inline]
     pub fn is_null(&self) -> bool { self.0.is_null() }
 
+    /// Deallocates the [ProcBuf]. If you still keep around
+    /// other copies of this [ProcBuf], you will most likely land in
+    /// UB land.
     pub fn free(&self) {
         if !self.0.is_null() {
             drop(unsafe { Box::from_raw(self.0) });
