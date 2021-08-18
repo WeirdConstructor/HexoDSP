@@ -450,7 +450,7 @@ impl NodeConfigurator {
                 .iter()
                 .map(|(param_id, value)|
                     (*param_id,
-                     *value,
+                     param_id.denorm(*value),
                      self.param_modamt
                         .get(param_id)
                         .copied()
@@ -471,10 +471,14 @@ impl NodeConfigurator {
     pub fn load_dumped_param_values(
         &mut self,
         params: &[(ParamId, f32, Option<f32>)],
-        atoms: &[(ParamId, SAtom)])
+        atoms: &[(ParamId, SAtom)],
+        normalize_params: bool)
     {
         for (param_id, val, modamt) in params.iter() {
-            self.set_param(*param_id, (*val).into());
+            let val =
+                if normalize_params { param_id.norm(*val) }
+                else { *val };
+            self.set_param(*param_id, val.into());
             self.set_param_modamt(*param_id, *modamt);
         }
 

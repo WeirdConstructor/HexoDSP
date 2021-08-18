@@ -195,6 +195,7 @@ pub struct MatrixRepr {
     pub atoms:      Vec<(ParamId, SAtom)>,
     pub patterns:   Vec<Option<PatternRepr>>,
     pub properties: Vec<(String, SAtom)>,
+    pub version:    i64,
 }
 
 #[derive(Debug, Clone)]
@@ -293,6 +294,7 @@ impl MatrixRepr {
             atoms,
             patterns,
             properties,
+            version: 2,
         }
     }
 
@@ -339,15 +341,17 @@ impl MatrixRepr {
     pub fn deserialize(s: &str) -> Result<MatrixRepr, MatrixDeserError> {
         let v : Value = serde_json::from_str(s)?;
 
+        let mut m = MatrixRepr::empty();
+
         if let Some(version) = v.get("VERSION") {
             let version : i64 = version.as_i64().unwrap_or(0);
 
-            if version != 1 {
+            if version > 2 {
                 return Err(MatrixDeserError::BadVersion);
             }
-        }
 
-        let mut m = MatrixRepr::empty();
+            m.version = version;
+        }
 
         let cells = &v["cells"];
         if let Value::Array(cells) = cells {
@@ -413,7 +417,7 @@ impl MatrixRepr {
 
     pub fn serialize(&mut self) -> String {
         let mut v = json!({
-            "VERSION": 1,
+            "VERSION": self.version,
         });
 
         self.properties.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
@@ -518,7 +522,7 @@ mod tests {
         let s = matrix_repr.serialize();
 
         assert_eq!(s,
-            "{\"VERSION\":1,\"atoms\":[],\"cells\":[],\"params\":[],\"patterns\":[],\"props\":[]}");
+            "{\"VERSION\":2,\"atoms\":[],\"cells\":[],\"params\":[],\"patterns\":[],\"props\":[]}");
         assert!(MatrixRepr::deserialize(&s).is_ok());
     }
 
@@ -548,7 +552,7 @@ mod tests {
         let s = mr.serialize();
 
         assert_eq!(s,
-            "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
+            "{\"VERSION\":2,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",440.0],[\"sin\",1,\"freq\",440.0],[\"sin\",2,\"freq\",220.0],[\"out\",0,\"gain\",1.0]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
         let mut mr2 = MatrixRepr::deserialize(&s).unwrap();
 
         let s2 = mr2.serialize();
@@ -723,6 +727,62 @@ mod tests {
                 assert_eq!(pat.get_edit_step(), 5);
                 assert_eq!(pat.rows(), 133);
             }
+        }
+    }
+
+    #[test]
+    fn check_matrix_repr_version_1_load() {
+        use crate::nodes::new_node_engine;
+
+        let s =
+            "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}";
+
+        {
+            let (node_conf, mut _node_exec) = new_node_engine();
+            let mut matrix = Matrix::new(node_conf, 3, 3);
+
+            let mr = MatrixRepr::deserialize(&s).unwrap();
+            matrix.from_repr(&mr).unwrap();
+
+            let mut v = std::collections::HashMap::new();
+            matrix.for_each_atom(|unique_idx, param_id, atom, modamt| {
+                v.insert(
+                    format!("{}_{}", unique_idx, param_id.name().to_string()),
+                    param_id.denorm(atom.f()));
+            });
+
+            assert_eq!(*v.get("0_freq").unwrap(), 440.0);
+            assert_eq!(*v.get("1_freq").unwrap(), 440.0);
+            assert_eq!(*v.get("2_freq").unwrap(), 220.0);
+            assert_eq!(*v.get("0_det").unwrap(), 0.0);
+        }
+    }
+
+    #[test]
+    fn check_matrix_repr_version_2_load() {
+        use crate::nodes::new_node_engine;
+
+        let s =
+            "{\"VERSION\":2,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",440.0],[\"sin\",1,\"freq\",441.0],[\"sin\",2,\"freq\",220.0],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}";
+
+        {
+            let (node_conf, mut _node_exec) = new_node_engine();
+            let mut matrix = Matrix::new(node_conf, 3, 3);
+
+            let mr = MatrixRepr::deserialize(&s).unwrap();
+            matrix.from_repr(&mr).unwrap();
+
+            let mut v = std::collections::HashMap::new();
+            matrix.for_each_atom(|unique_idx, param_id, atom, modamt| {
+                v.insert(
+                    format!("{}_{}", unique_idx, param_id.name().to_string()),
+                    param_id.denorm(atom.f()));
+            });
+
+            assert_eq!(*v.get("0_freq").unwrap(), 440.0);
+            assert_eq!(*v.get("1_freq").unwrap(), 441.0);
+            assert_eq!(*v.get("2_freq").unwrap(), 220.0);
+            assert_eq!(*v.get("0_det").unwrap(), 0.0);
         }
     }
 

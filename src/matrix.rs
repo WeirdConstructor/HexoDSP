@@ -728,6 +728,7 @@ impl Matrix {
             atoms,
             patterns,
             properties,
+            version: 2,
         }
     }
 
@@ -739,9 +740,12 @@ impl Matrix {
     pub fn from_repr(&mut self, repr: &MatrixRepr) -> Result<(), MatrixError> {
         self.clear();
 
+        let normalize_params = repr.version > 1;
+
         self.config.load_dumped_param_values(
             &repr.params[..],
-            &repr.atoms[..]);
+            &repr.atoms[..],
+            normalize_params);
 
         for (key, val) in repr.properties.iter() {
             self.set_prop(key, val.clone());
