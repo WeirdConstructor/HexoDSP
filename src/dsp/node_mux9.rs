@@ -43,36 +43,52 @@ impl Mux9 {
         }
     }
     pub const slct : &'static str =
-        "Mux9 slct\n\nRange: (0..1)\n";
+        "Mux9 slct\nSelects the input that is routed to the output 'sig'.\
+        But only if this input is actually connected. If there is no \
+        connection, the 't_rst', 't_up' and 't_down' inputs are used to \
+        control the current routing. The maximum routed input is determined \
+        by the 'in_cnt' setting.\nRange: (0..1)";
     pub const t_rst : &'static str =
-        "Mux9 t_rst\n\nRange: (-1..1)\n";
+        "Mux9 t_rst\nResets the internal routing to the first input 'in_1'.\
+        Keep in mind: This input is only used if 'slct' is not connected.\
+        \nRange: (-1..1)\n";
     pub const t_up : &'static str =
-        "Mux9 t_up\n\nRange: (-1..1)\n";
+        "Mux9 t_up\nIncreases the internal routing to the next input port.\
+        If the last input (depending on the 'in_cnt' setting) was selected\
+        if will wrap around to 'in_1'.\
+        Keep in mind: This input is only used if 'slct' is not connected.\
+        \nRange: (-1..1)\n";
     pub const t_down : &'static str =
-        "Mux9 t_down\n\nRange: (-1..1)\n";
+        "Mux9 t_down\nDecreases the internal routing to the previous input \
+        port (eg. 'in_3' => 'in_2'). If 'in_1' as selected, then it will \
+        wrap around to the highest possible input port (depending on the \
+        'in_cnt' setting).\
+        Keep in mind: This input is only used if 'slct' is not connected.\
+        \nRange: (-1..1)\n";
     pub const in_1 : &'static str =
-        "Mux9 in_1\n\nRange: (-1..1)\n";
+        "Mux9 in_1\nInput port 1.\nRange: (-1..1)\n";
     pub const in_2 : &'static str =
-        "Mux9 in_2\n\nRange: (-1..1)\n";
+        "Mux9 in_2\nInput port 2.\nRange: (-1..1)\n";
     pub const in_3 : &'static str =
-        "Mux9 in_3\n\nRange: (-1..1)\n";
+        "Mux9 in_3\nInput port 3.\nRange: (-1..1)\n";
     pub const in_4 : &'static str =
-        "Mux9 in_4\n\nRange: (-1..1)\n";
+        "Mux9 in_4\nInput port 4.\nRange: (-1..1)\n";
     pub const in_5 : &'static str =
-        "Mux9 in_5\n\nRange: (-1..1)\n";
+        "Mux9 in_5\nInput port 5.\nRange: (-1..1)\n";
     pub const in_6 : &'static str =
-        "Mux9 in_6\n\nRange: (-1..1)\n";
+        "Mux9 in_6\nInput port 6.\nRange: (-1..1)\n";
     pub const in_7 : &'static str =
-        "Mux9 in_7\n\nRange: (-1..1)\n";
+        "Mux9 in_7\nInput port 7.\nRange: (-1..1)\n";
     pub const in_8 : &'static str =
-        "Mux9 in_8\n\nRange: (-1..1)\n";
+        "Mux9 in_8\nInput port 8.\nRange: (-1..1)\n";
     pub const in_9 : &'static str =
-        "Mux9 in_9\n\nRange: (-1..1)\n";
+        "Mux9 in_9\nInput port 9.\nRange: (-1..1)\n";
     pub const in_cnt : &'static str =
         "Mux9 in_cnt\nThe number of inputs that are routed to the output. \
         This will limit the number of maximally used inputs.\n";
     pub const sig : &'static str =
-        "Mux9 sig\n\nRange: (-1..1)\n";
+        "Mux9 sig\nThe currently selected input port will be presented on \
+        this output port.\nRange: (-1..1)\n";
     pub const DESC : &'static str =
 r#"9 Ch. Multiplexer
 
@@ -95,6 +111,16 @@ The 'in_cnt' parameter allows selecting the number of routed input channels.
 
 The opposite of this node is the 'Demux9', which demultiplexes or routes
 the one input signal to one of the 9 outputs.
+
+Tip:
+    An interesting use case for this node is to use it as (up to) 9 step
+    control signal sequencer. Leave the 'in_1' to 'in_9' ports unconnected
+    and dial in the desired value via the parameter knobs. This can lead to
+    interesting results. Even more interesting it can become if you stack
+    multiple 'Demux9' in series and connect just some of the input ports
+    for slightly changing sequences. Attach a slew limiter node (eg. 'LSlew'
+    or 'ESlew') if less harsh transitions between the input routings is
+    desired.
 "#;
 
 }
