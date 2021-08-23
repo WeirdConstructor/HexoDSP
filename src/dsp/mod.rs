@@ -738,7 +738,7 @@ macro_rules! node_list {
             quant => Quant UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 oct   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               {2 0 keys micro(&[0.0; 12]) fa_quant 0 1}
+               {2 0 keys setting(0) fa_quant 0 0}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::Mod
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
