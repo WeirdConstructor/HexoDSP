@@ -46,6 +46,8 @@ mod node_tslfo;
 mod node_pverb;
 #[allow(non_upper_case_globals)]
 mod node_rndwk;
+#[allow(non_upper_case_globals)]
+mod node_mux9;
 
 pub mod biquad;
 pub mod tracker;
@@ -83,6 +85,7 @@ use crate::fa_biqfilt_ord;
 use crate::fa_vosc_ovrsmpl;
 use crate::fa_distort;
 use crate::fa_comb_mode;
+use crate::fa_mux9_in_cnt;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -107,6 +110,7 @@ use node_comb::Comb;
 use node_tslfo::TsLFO;
 use node_pverb::PVerb;
 use node_rndwk::RndWk;
+use node_mux9::Mux9;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -693,6 +697,22 @@ macro_rules! node_list {
                (4 gain2 n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
                (5 gain3 n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
                (6 ogain n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               [0 sig],
+            mux9 => Mux9 UIType::Generic UICategory::NtoM
+               ( 0 slct    n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
+               ( 1 t_rst   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               ( 2 t_up    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               ( 3 t_down  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               ( 4 in_1    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               ( 5 in_2    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               ( 6 in_3    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               ( 7 in_4    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               ( 8 in_5    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               ( 9 in_6    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (10 in_7    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (11 in_8    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (12 in_9    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               {13 0 in_cnt setting(3) fa_mux9_in_cnt 0 8}
                [0 sig],
             smap => SMap UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)

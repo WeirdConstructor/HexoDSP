@@ -5,7 +5,7 @@
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
 
-/// A simple amplifier
+/// A 3 channel signal mixer
 #[derive(Debug, Clone)]
 pub struct Mix3 {
 }
@@ -16,11 +16,11 @@ impl Mix3 {
         }
     }
     pub const ch1 : &'static str =
-        "Mix3 inp\nChannel 1 Signal input\nRange: (-1..1)\n";
+        "Mix3 ch1\nChannel 1 Signal input\nRange: (-1..1)\n";
     pub const ch2 : &'static str =
-        "Mix3 inp2\nChannel 2 Signal input\nRange: (-1..1)\n";
+        "Mix3 ch2\nChannel 2 Signal input\nRange: (-1..1)\n";
     pub const ch3 : &'static str =
-        "Mix3 inp3\nChannel 3 Signal input\nRange: (-1..1)\n";
+        "Mix3 ch3\nChannel 3 Signal input\nRange: (-1..1)\n";
     pub const gain1 : &'static str =
         "Mix3 gain1\nChannel 1 gain\nRange: (0..1)";
     pub const gain2 : &'static str =
