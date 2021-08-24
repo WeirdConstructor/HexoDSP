@@ -89,6 +89,8 @@ use crate::fa_distort;
 use crate::fa_comb_mode;
 use crate::fa_mux9_in_cnt;
 use crate::fa_quant;
+use crate::fa_quant_omin;
+use crate::fa_quant_omax;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -736,9 +738,11 @@ macro_rules! node_list {
                {7 0 clip setting(0) fa_map_clip 0  1}
                [0 sig],
             quant => Quant UIType::Generic UICategory::CV
-               (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (0 inp   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 oct   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               {2 0 keys setting(0) fa_quant 0 0}
+               {2 0 keys setting(0) fa_quant      0 0}
+               {3 1 omin setting(0) fa_quant_omin 0 4}
+               {4 2 omax setting(0) fa_quant_omax 0 4}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::Mod
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
