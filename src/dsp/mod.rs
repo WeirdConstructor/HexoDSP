@@ -739,7 +739,7 @@ macro_rules! node_list {
                [0 sig],
             quant => Quant UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
-               (1 oct   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
                {2 0 keys setting(0) fa_quant      0 0}
                {3 1 omin setting(0) fa_quant_omin 0 4}
                {4 2 omax setting(0) fa_quant_omax 0 4}

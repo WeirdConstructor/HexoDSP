@@ -2134,6 +2134,111 @@ impl<F: Flt> TriSawLFO<F> {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Quantizer {
+    /// All keys, containing the min/max octave!
+    keys: Vec<f32>,
+    /// Only the used keys with their pitches from the UI
+    used_keys: [f32; 12],
+    /// A value combination of the arguments to `update_keys`.
+    input_params: u64,
+    /// The number of used keys from the mask.
+    mask_key_count: u16,
+    /// The last key for the pitch that was returned by `process`.
+    last_key: u8,
+}
+
+const QUANT_TUNE_TO_A4 : f32 = (9.0 / 12.0) * 0.1;
+
+impl Quantizer {
+    pub fn new() -> Self {
+        Self {
+            keys:           vec![0.0; 12 * 10],
+            used_keys:      [0.0; 12],
+            mask_key_count: 0,
+            input_params:   0,
+            last_key:       0,
+        }
+    }
+
+    #[inline]
+    pub fn last_key_pitch(&self) -> f32 {
+        self.used_keys[
+            self.last_key as usize
+            % (self.mask_key_count as usize)]
+        + QUANT_TUNE_TO_A4
+    }
+
+    #[inline]
+    pub fn has_no_keys(&self) -> bool {
+        self.keys.is_empty()
+    }
+
+    #[inline]
+    pub fn update_keys(&mut self, mask: i64, min_oct: i64, max_oct: i64) {
+        let inp_params =
+              (mask as u64)
+            | ((min_oct as u64) << 8)
+            | ((max_oct as u64) << 16);
+
+        if self.input_params == inp_params {
+            return;
+        }
+
+        self.input_params = inp_params;
+
+        let mut mask_count = 0;
+
+        for i in 0..9 {
+            if mask & (0x1 << i) > 0 {
+                self.used_keys[mask_count] = ((i as f32 / 12.0) * 0.1) - QUANT_TUNE_TO_A4;
+                mask_count += 1;
+            }
+        }
+
+        for i in 9..12 {
+            let key_pitch_idx = (i + 9 + 12) % 12;
+            if mask & (0x1 << i) > 0 {
+                self.used_keys[mask_count] = (i as f32 / 12.0) * 0.1 - QUANT_TUNE_TO_A4;
+                mask_count += 1;
+            }
+        }
+
+        self.keys.clear();
+
+        let min_oct = min_oct as usize;
+        for o in 0..min_oct {
+            let o = min_oct - o;
+
+            for i in 0..mask_count {
+                self.keys.push(self.used_keys[i] - (o as f32) * 0.1);
+            }
+        }
+
+        for i in 0..mask_count {
+            self.keys.push(self.used_keys[i]);
+        }
+
+        let max_oct = max_oct as usize;
+        for o in 1..=max_oct {
+            for i in 0..mask_count {
+                self.keys.push(self.used_keys[i] + (o as f32) * 0.1);
+            }
+        }
+
+        self.mask_key_count = mask_count as u16;
+    }
+
+    #[inline]
+    pub fn signal_to_pitch(&mut self, inp: f32) -> f32 {
+        let len = self.keys.len();
+        let key = (inp.clamp(0.0, 0.9999) * (len as f32)).floor();
+        let key = key as usize % len;
+        self.last_key = key as u8;
+        self.keys[key]
+    }
+}
+
 #[macro_export]
 macro_rules! fa_distort { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
