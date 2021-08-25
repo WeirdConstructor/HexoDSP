@@ -4,15 +4,15 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
-use crate::dsp::helpers::Quantizer;
+use crate::dsp::helpers::CtrlPitchQuantizer;
 
 #[macro_export]
-macro_rules! fa_quant { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+macro_rules! fa_cqnt { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     write!($formatter, "?")
 } } }
 
 #[macro_export]
-macro_rules! fa_quant_omin { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+macro_rules! fa_cqnt_omin { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
         match ($v.round() as usize) {
             0  => "-0",
@@ -26,7 +26,7 @@ macro_rules! fa_quant_omin { ($formatter: expr, $v: expr, $denorm_v: expr) => { 
 } } }
 
 #[macro_export]
-macro_rules! fa_quant_omax { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
+macro_rules! fa_cqnt_omax { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     let s =
         match ($v.round() as usize) {
             0  => "+0",
@@ -41,39 +41,43 @@ macro_rules! fa_quant_omax { ($formatter: expr, $v: expr, $denorm_v: expr) => { 
 
 /// A 9 channel signal multiplexer
 #[derive(Debug, Clone)]
-pub struct Quant {
-    quant: Quantizer,
+pub struct CQnt {
+    quant: Box<CtrlPitchQuantizer>,
 }
 
-impl Quant {
+impl CQnt {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
-            quant: Quantizer::new(),
+            quant: Box::new(CtrlPitchQuantizer::new()),
         }
     }
     pub const inp : &'static str =
-        "Quant inp\n\nRange: (0..1)";
+        "CQnt inp\n\nRange: (0..1)";
     pub const oct : &'static str =
-        "Quant oct\n\nRange: (-1..1)";
+        "CQnt oct\n\nRange: (-1..1)";
     pub const omin : &'static str =
-        "Quant omin\n\nRange: (-1..1)";
+        "CQnt omin\n\nRange: (-1..1)";
     pub const omax : &'static str =
-        "Quant omax\n\nRange: (-1..1)";
+        "CQnt omax\n\nRange: (-1..1)";
     pub const sig : &'static str =
-        "Quant sig\n\nRange: (-1..1)";
+        "CQnt sig\n\nRange: (-1..1)";
     pub const keys : &'static str =
-        "Quant keys\n";
+        "CQnt keys\n";
     pub const DESC : &'static str =
-r#"Pitch/Note Quantizer
+r#"Control Pitch Quantizer
 
+This special quantizer maps the 0..1 input range on 'inp' evenly to the selected keys and octaves.
 "#;
     pub const HELP : &'static str =
-r#"Quant - A pitch quantizer
+r#"CQnt - A control signal to pitch quantizer
 
+This is a specialized quantizer to generate a pitch/frequency from a signal
+within the 0..1 range. It does not quantize a typical -1..1 frequency signal
+like the 'Quant' node.
 "#;
 }
 
-impl DspNode for Quant {
+impl DspNode for CQnt {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, _srate: f32) { }
@@ -88,12 +92,12 @@ impl DspNode for Quant {
     {
         use crate::dsp::{at, out, inp, denorm};
 
-        let inp = inp::Quant::inp(inputs);
-        let oct = inp::Quant::oct(inputs);
-        let out = out::Quant::sig(outputs);
-        let keys = at::Quant::keys(atoms);
-        let omin = at::Quant::omin(atoms);
-        let omax = at::Quant::omax(atoms);
+        let inp = inp::CQnt::inp(inputs);
+        let oct = inp::CQnt::oct(inputs);
+        let out = out::CQnt::sig(outputs);
+        let keys = at::CQnt::keys(atoms);
+        let omin = at::CQnt::omin(atoms);
+        let omax = at::CQnt::omax(atoms);
 
         self.quant.update_keys(keys.i(), omin.i(), omax.i());
 
@@ -101,8 +105,8 @@ impl DspNode for Quant {
             for frame in 0..ctx.nframes() {
                 out.write(
                     frame,
-                    denorm::Quant::inp(inp, frame)
-                    + denorm::Quant::oct(oct, frame));
+                    denorm::CQnt::inp(inp, frame)
+                    + denorm::CQnt::oct(oct, frame));
             }
 
             ctx_vals[1].set(100.0); // some unreachable value for Keys widget
@@ -114,8 +118,8 @@ impl DspNode for Quant {
             for frame in 0..ctx.nframes() {
                 let pitch =
                     self.quant.signal_to_pitch(
-                        denorm::Quant::inp(inp, frame));
-                out.write(frame, pitch + denorm::Quant::oct(oct, frame));
+                        denorm::CQnt::inp(inp, frame));
+                out.write(frame, pitch + denorm::CQnt::oct(oct, frame));
             }
 
             let last_pitch = self.quant.last_key_pitch();

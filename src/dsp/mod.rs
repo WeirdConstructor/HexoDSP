@@ -49,7 +49,7 @@ mod node_rndwk;
 #[allow(non_upper_case_globals)]
 mod node_mux9;
 #[allow(non_upper_case_globals)]
-mod node_quant;
+mod node_cqnt;
 
 pub mod biquad;
 pub mod tracker;
@@ -88,9 +88,9 @@ use crate::fa_vosc_ovrsmpl;
 use crate::fa_distort;
 use crate::fa_comb_mode;
 use crate::fa_mux9_in_cnt;
-use crate::fa_quant;
-use crate::fa_quant_omin;
-use crate::fa_quant_omax;
+use crate::fa_cqnt;
+use crate::fa_cqnt_omin;
+use crate::fa_cqnt_omax;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -116,7 +116,7 @@ use node_tslfo::TsLFO;
 use node_pverb::PVerb;
 use node_rndwk::RndWk;
 use node_mux9::Mux9;
-use node_quant::Quant;
+use node_cqnt::CQnt;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -383,7 +383,7 @@ macro_rules! define_exp6 {
 
 
 macro_rules! n_pit { ($x: expr) => {
-    ((($x as f32).max(0.01) / 440.0).log2() / 10.0)
+    0.1 * (($x as f32).max(0.01) / 440.0).log2()
 } }
 
 macro_rules! d_pit { ($x: expr) => {
@@ -737,12 +737,12 @@ macro_rules! node_list {
                (6 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
                {7 0 clip setting(0) fa_map_clip 0  1}
                [0 sig],
-            quant => Quant UIType::Generic UICategory::CV
+            cqnt => CQnt UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
-               {2 0 keys setting(0) fa_quant      0 0}
-               {3 1 omin setting(0) fa_quant_omin 0 4}
-               {4 2 omax setting(0) fa_quant_omax 0 4}
+               {2 0 keys setting(0) fa_cqnt      0 0}
+               {3 1 omin setting(0) fa_cqnt_omin 0 4}
+               {4 2 omax setting(0) fa_cqnt_omax 0 4}
                [0 sig],
             tseq => TSeq UIType::Generic UICategory::Mod
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)

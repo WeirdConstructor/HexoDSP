@@ -2135,7 +2135,7 @@ impl<F: Flt> TriSawLFO<F> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Quantizer {
+pub struct CtrlPitchQuantizer {
     /// All keys, containing the min/max octave!
     keys: Vec<f32>,
     /// Only the used keys with their pitches from the UI
@@ -2150,7 +2150,7 @@ pub struct Quantizer {
 
 const QUANT_TUNE_TO_A4 : f32 = (9.0 / 12.0) * 0.1;
 
-impl Quantizer {
+impl CtrlPitchQuantizer {
     pub fn new() -> Self {
         Self {
             keys:           vec![0.0; 12 * 10],
