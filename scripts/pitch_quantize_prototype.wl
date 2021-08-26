@@ -35,35 +35,80 @@ std:displayln :pitch2note "      "~ pitch2note f;
 std:displayln :note2f "      "~ note2f ~ pitch2note f;
 std:displayln :p2f "         "~ p2f f;
 
-# gets the index in the 24 half semitone array
-!get_note_idx = {
-    std:num:floor ~ (_ % 0.1 + 0.1) * 240.0
+!eucDiv = {
+    !a = int _;
+    !b = int _1;
+    !div = a / b;
+    !mod = a % b;
+    if mod < 0 { .div -= 1; };
+    div
 };
 
-std:displayln :for674_12 ~ note2f (67.4 - 12.0);
-std:displayln :for674_12 ~ get_note_idx ~ note2f (67.4 - 12.0);
+# gets the index in the 24 half semitone array
+!get_note_idx = {
+    !num = _ * 240.0; # twice the resolution, for quater notes and a more even quantization
+    !r  = int ~ std:num:floor num;
+    !o  = eucDiv r 24;
+    .r -= o * 24;
+    std:displayln ~ $F "       in={:8.5} r={:2} o={:2}" _ r o;
+    r
+};
 
-std:displayln :for675_12 ~ note2f (67.5 - 12.0);
-std:displayln :for675_12 ~ get_note_idx ~ note2f (67.5 - 12.0);
+# std:displayln :for674_12 ~ note2f (67.4 - 12.0);
+# std:displayln :for674_12 ~ get_note_idx ~ note2f (67.4 - 12.0);
+# 
+# std:displayln :for675_12 ~ note2f (67.5 - 12.0);
+# std:displayln :for675_12 ~ get_note_idx ~ note2f (67.5 - 12.0);
+# 
+# std:displayln :for68 "   " ~ note2f (68.0 - 12.0);
+# std:displayln :for68 "   " ~ get_note_idx ~ note2f (68.0 - 12.0);
+# 
+# std:displayln :for679 "  " ~ note2f (67.9 - 0.0);
+# std:displayln :for679 "  " ~ get_note_idx ~ note2f (67.9 - 0.0);
+# 
+# std:displayln :for69_115 ~ note2f (69.0 - 11.5);
+# std:displayln :for69_115 ~ get_note_idx ~ note2f (69.0 - 11.5);
+# 
+# std:displayln :for69_12 "" ~ note2f (69.0 - 11.5);
+# std:displayln :for69_12 "" ~ get_note_idx ~ note2f (69.0 - 11.5);
+# 
+# std:displayln :for69 "   " ~ note2f (69.0 - 0.0);
+# std:displayln :for69 "   " ~ get_note_idx ~ note2f (69.0 - 0.0);
+# 
+# std:displayln :for69+114 ~ note2f (69.0 + 11.4);
+# std:displayln :for69+114 ~ get_note_idx ~ note2f (69.0 + 11.4);
 
-std:displayln :for68 "   " ~ note2f (68.0 - 12.0);
-std:displayln :for68 "   " ~ get_note_idx ~ note2f (68.0 - 12.0);
-
-std:displayln :for679 "  " ~ note2f (67.9 - 0.0);
-std:displayln :for679 "  " ~ get_note_idx ~ note2f (67.9 - 0.0);
-
-std:displayln :for69_115 ~ note2f (69.0 - 11.5);
-std:displayln :for69_115 ~ get_note_idx ~ note2f (69.0 - 11.5);
-
-std:displayln :for69_12 "" ~ note2f (69.0 - 11.5);
-std:displayln :for69_12 "" ~ get_note_idx ~ note2f (69.0 - 11.5);
-
-std:displayln :for69 "   " ~ note2f (69.0 - 0.0);
-std:displayln :for69 "   " ~ get_note_idx ~ note2f (69.0 - 0.0);
-
-std:displayln :for69+114 ~ note2f (69.0 + 11.4);
-std:displayln :for69+114 ~ get_note_idx ~ note2f (69.0 + 11.4);
-
+iter f $[
+    $[10, 0, 0],
+    $[-10, 0, 0],
+    $[0, 1, -11],
+    $[0, 1,  6],
+    $[0, 1,  0],
+    $[0,  -11,  -5],
+    $[0, -1,  0],
+#    $[0, -1, 0],
+#    $[0, -1, -1],
+#    $[0, -1, 1],
+#    $[-1, -1, 0],
+#    $[-1, 1, 0],
+#    $[1, -1, 0],
+#    $[1, 1, 0],
+#    $[2, -1, 1],
+#    $[2, 1, 1],
+    $[2, -11, 0],
+    $[2, 11, 0],
+    $[-9, -1, 0],
+] {
+    !num =
+          float[f.0] * 0.1
+        + (float[f.1] / 120.0)
+        + (float[f.2] / 1200.0);
+    #-0.2, -0.3, -0.4, -0.5, 0.2, 0.3, 0.4, 0.5, -1.0, 1.0] {
+    std:displayln ~
+        $F "o={:2} n={:2} c={:2} | {:6.3} => {:3}"
+            f.0 f.1 f.2 num (get_note_idx num);
+    std:displayln[];
+};
 
 # Taken from VCV Rack Fundamental Modules Quantizer.cpp
 # Under GPL-3.0-or-later
@@ -74,9 +119,9 @@ std:displayln :for69+114 ~ get_note_idx ~ note2f (69.0 + 11.4);
 #
 #		for (int c = 0; c < channels; c++) {
 #			float pitch = inputs[PITCH_INPUT].getVoltage(c);
-#			int range = std::floor(pitch * 24);
-#			int octave = eucDiv(range, 24);
-#			range -= octave * 24;
+#			int range = std::floor(pitch * 24); // 1.1 => 26
+#			int octave = eucDiv(range, 24);     // 26 => 1
+#			range -= octave * 24;               // 26 => 2
 #			int note = ranges[range] + octave * 12;
 #			playingNotes[eucMod(note, 12)] = true;
 #			pitch = float(note) / 12;
