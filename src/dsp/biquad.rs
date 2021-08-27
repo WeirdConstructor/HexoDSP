@@ -234,7 +234,7 @@ impl<const N: usize> Oversampling<N> {
         let filters_len = self.filters.len();
 
         for (i, filt) in self.filters.iter_mut().enumerate() {
-            let q = BiquadCoefs::calc_cascaded_butter_q(4, filters_len - i);
+            let q = BiquadCoefs::calc_cascaded_butter_q(2 * 4, filters_len - i);
 
             filt.set_coefs(BiquadCoefs::lowpass(ovr_srate, q, cutoff));
         }
