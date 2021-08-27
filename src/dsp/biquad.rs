@@ -39,6 +39,42 @@ impl BiquadCoefs {
         BiquadCoefs { a1, a2, b0, b1, b2 }
     }
 
+    /// Returns the Q for cascading a butterworth filter:
+    fn calc_cascaded_butter_q(order: usize, casc_idx: usize) -> f32 {
+        let order    = order as f32;
+        let casc_idx = casc_idx as f32;
+
+        let b =
+            -2.0 * ((2.0 * casc_idx + order - 1.0) * PI / (2.0 * order))
+                   .cos();
+
+        1.0 / b
+    }
+
+    /// Returns settings for a lowpass filter with a specific q
+    #[inline]
+    pub fn lowpass(sample_rate: f32, q: f32, cutoff: f32) -> BiquadCoefs {
+        let f   = (cutoff * PI / sample_rate).tan();
+        let a0r = 1.0 / (1.0 + f / q + f * f);
+
+        /*
+        float norm = 1.f / (1.f + K / Q + K * K);
+        this->b[0] = K * K * norm;
+        this->b[1] = 2.f * this->b[0];
+        this->b[2] = this->b[0];
+        this->a[1] = 2.f * (K * K - 1.f) * norm;
+        this->a[2] = (1.f - K / Q + K * K) * norm;
+        */
+
+        let b0  = f * f * a0r;
+        let b1  = 2.0 * b0;
+        let b2  = b0;
+        let a1  = 2.0 * (f * f - 1.0) * a0r;
+        let a2  = (1.0 - f / q + f * f) * a0r;
+
+        BiquadCoefs { a1, a2, b0, b1, b2 }
+    }
+
     /// Returns settings for a constant-gain bandpass resonator.
     /// The center frequency is given in Hz.
     /// Bandwidth is the difference in Hz between -3 dB points of the filter response.
@@ -194,10 +230,13 @@ impl<const N: usize> Oversampling<N> {
     pub fn set_sample_rate(&mut self, srate: f32) {
         let cutoff = 0.98 * (0.5 * srate);
 
-        let ovr_srate = (N as f32) * srate;
+        let ovr_srate   = (N as f32) * srate;
+        let filters_len = self.filters.len();
 
-        for filt in &mut self.filters {
-            filt.set_coefs(BiquadCoefs::butter_lowpass(ovr_srate, cutoff));
+        for (i, filt) in self.filters.iter_mut().enumerate() {
+            let q = BiquadCoefs::calc_cascaded_butter_q(4, filters_len - i);
+
+            filt.set_coefs(BiquadCoefs::lowpass(ovr_srate, q, cutoff));
         }
     }
 
