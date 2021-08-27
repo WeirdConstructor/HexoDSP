@@ -35,6 +35,14 @@ std:displayln :pitch2note "      "~ pitch2note f;
 std:displayln :note2f "      "~ note2f ~ pitch2note f;
 std:displayln :p2f "         "~ p2f f;
 
+!eucMod = {
+    !a = int _;
+    !b = int _1;
+    !q = a % b;
+    if q < 0 { return ~ if b > 0 { q + b } { q - b } };
+    q
+};
+
 !eucDiv = {
     !a = int _;
     !b = int _1;
@@ -50,33 +58,9 @@ std:displayln :p2f "         "~ p2f f;
     !r  = int ~ std:num:floor num;
     !o  = eucDiv r 24;
     .r -= o * 24;
-    std:displayln ~ $F "       in={:8.5} r={:2} o={:2}" _ r o;
+#    std:displayln ~ $F "       in={:8.5} r={:2} o={:2}" _ r o;
     r
 };
-
-# std:displayln :for674_12 ~ note2f (67.4 - 12.0);
-# std:displayln :for674_12 ~ get_note_idx ~ note2f (67.4 - 12.0);
-# 
-# std:displayln :for675_12 ~ note2f (67.5 - 12.0);
-# std:displayln :for675_12 ~ get_note_idx ~ note2f (67.5 - 12.0);
-# 
-# std:displayln :for68 "   " ~ note2f (68.0 - 12.0);
-# std:displayln :for68 "   " ~ get_note_idx ~ note2f (68.0 - 12.0);
-# 
-# std:displayln :for679 "  " ~ note2f (67.9 - 0.0);
-# std:displayln :for679 "  " ~ get_note_idx ~ note2f (67.9 - 0.0);
-# 
-# std:displayln :for69_115 ~ note2f (69.0 - 11.5);
-# std:displayln :for69_115 ~ get_note_idx ~ note2f (69.0 - 11.5);
-# 
-# std:displayln :for69_12 "" ~ note2f (69.0 - 11.5);
-# std:displayln :for69_12 "" ~ get_note_idx ~ note2f (69.0 - 11.5);
-# 
-# std:displayln :for69 "   " ~ note2f (69.0 - 0.0);
-# std:displayln :for69 "   " ~ get_note_idx ~ note2f (69.0 - 0.0);
-# 
-# std:displayln :for69+114 ~ note2f (69.0 + 11.4);
-# std:displayln :for69+114 ~ get_note_idx ~ note2f (69.0 + 11.4);
 
 iter f $[
     $[10, 0, 0],
@@ -108,6 +92,12 @@ iter f $[
         $F "o={:2} n={:2} c={:2} | {:6.3} => {:3}"
             f.0 f.1 f.2 num (get_note_idx num);
     std:displayln[];
+};
+
+!n = 1000;
+iter f 0 => n {
+    !x = (float[f] / float[n]) - 0.5;
+    std:displayln ~ $F "[{:5.3}] => {}" x get_note_idx[x];
 };
 
 # Taken from VCV Rack Fundamental Modules Quantizer.cpp
@@ -163,5 +153,50 @@ iter f $[
 #		}
 #	}
 
+!mk_pitch_lookup_table = {!enabled = _;
+    !any = $f;
+    iter n enabled { if n { .any = $t } };
 
+    !tbl = $[];
+
+    iter i 0 => 24 {
+        !minDistNote = 0;
+        !minDist = 10000000000;
+
+        iter note -12 => 25 {
+            !dist = std:num:abs[ (i + 1) / 2 - note ];
+
+            !idx = eucMod note 12;
+            if any &and not[enabled.(idx)] {
+                next[];
+            };
+            std:displayln "DIST" (i + 1) / 2 note idx "=>" dist;
+            if dist < minDist {
+                .minDistNote = idx;
+                .minDist = dist;
+            } { break[] };
+        };
+
+        tbl.(i) = minDistNote;
+    };
+
+    tbl
+};
+
+!lkup = mk_pitch_lookup_table $[
+    $t, $f, $f, $f, $f, $t,
+    $t, $f, $f, $f, $f, $t,
+];
+
+std:displayln ~ eucMod -1 12;
+std:displayln lkup;
+!k = ${};
+!i = 0;
+while i < 24 {
+    std:displayln (i / 2) + 1 " => " lkup.(i) lkup.(i + 1);
+    k.(lkup.(i)) = k.(lkup.(i)) + 1;
+    k.(lkup.(i + 1)) = k.(lkup.(i + 1)) + 1;
+    .i += 2;
+};
+std:displayln k;
 #std:displayln ~ get_note_offs ~ note2f (0.1 + (4.0 / 12.0) / 10.0);
