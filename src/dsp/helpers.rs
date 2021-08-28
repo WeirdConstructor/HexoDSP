@@ -2138,7 +2138,7 @@ impl<F: Flt> TriSawLFO<F> {
 pub struct Quantizer {
     old_mask:   i64,
     keys:       [f32; 12],
-    lkup_tbl:   [u8; 24],
+    lkup_tbl:   [(i8, i8); 24],
 }
 
 impl Quantizer {
@@ -2146,7 +2146,7 @@ impl Quantizer {
         Self {
             old_mask:   0xFFFF_FFFF,
             keys:       [0.0; 12],
-            lkup_tbl:   [0; 24]
+            lkup_tbl:   [(0, 0); 24]
         }
     }
 
@@ -2216,16 +2216,30 @@ impl Quantizer {
                     continue;
                 }
 
+                println!("I={:3} NOTE={:3} (IDX={:3} => bitset {}) DIST={:3}",
+                    i, note, note_idx,
+                    if (mask & (0x1 << ((note_idx + 9) % 12))) > 0x0 { 1 } else { 0 },
+                    dist);
+
                 if dist < min_dist {
-                    min_d_note_idx = note_idx;
+//                    min_d_note_idx = note_idx;
+                    min_d_note_idx = note;
                     min_dist       = dist;
                 } else {
                     break;
                 }
             }
 
-            self.lkup_tbl[i as usize] = min_d_note_idx as u8;
+            self.lkup_tbl[i as usize] = (
+                if min_d_note_idx < 0 { -1 }
+                else if min_d_note_idx > 11 { 1 }
+                else { 0 },
+                min_d_note_idx.rem_euclid(12) as i8
+            );
         }
+
+        println!("KEYS: {:?}", self.keys);
+        println!("TBL: {:?}", self.lkup_tbl);
     }
 
 //#			float pitch = inputs[PITCH_INPUT].getVoltage(c);
@@ -2244,15 +2258,17 @@ impl Quantizer {
         let octave   = note_num.div_euclid(24);
         let note_idx = note_num - octave * 24;
 
-        println!(
-            "INP {:7.4} => octave={:3}, note_idx={:3} note_num={:3} inp={:9.6}",
-            inp, octave, note_idx, note_num, inp * 240.0);
+//        println!(
+//            "INP {:7.4} => octave={:3}, note_idx={:3} note_num={:3} inp={:9.6}",
+//            inp, octave, note_idx, note_num, inp * 240.0);
         //d// println!("KEYS: {:?}", self.keys);
+        //d// println!("TBL: {:?}", self.lkup_tbl);
 
-        let note_idx = self.lkup_tbl[note_idx as usize % 24];
-        let pitch    = self.keys[note_idx as usize];
+        let (oct_offs, note_idx) =
+            self.lkup_tbl[note_idx as usize % 24];
+        let pitch = self.keys[note_idx as usize];
 
-        pitch + octave as f32 * 0.1
+        pitch + (oct_offs as i64 + octave) as f32 * 0.1
     }
 }
 
