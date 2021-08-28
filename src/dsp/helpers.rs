@@ -2158,36 +2158,6 @@ impl Quantizer {
         self.setup_lookup_table();
     }
 
-// mk_pitch_lookup_table = {!enabled = _;
-//    !any = $f;
-//    iter n enabled { if n { .any = $t } };
-//
-//    !tbl = $[];
-//
-//    iter i 0 => 24 {
-//        !minDistNote = 0;
-//        !minDist = 10000000000;
-//
-//        iter note -12 => 25 {
-//            !dist = std:num:abs[ (i + 1) / 2 - note ];
-//
-//            !idx = eucMod note 12;
-//            if any &and not[enabled.(idx)] {
-//                next[];
-//            };
-//            std:displayln "DIST" (i + 1) / 2 note idx "=>" dist;
-//            if dist < minDist {
-//                .minDistNote = idx;
-//                .minDist = dist;
-//            } { break[] };
-//        };
-//
-//        tbl.(i) = minDistNote;
-//    };
-//
-//    tbl
-//};
-//
     #[inline]
     fn setup_lookup_table(&mut self) {
         let mask        = self.old_mask;
@@ -2210,10 +2180,10 @@ impl Quantizer {
                     continue;
                 }
 
-                println!("I={:3} NOTE={:3} (IDX={:3} => bitset {}) DIST={:3}",
-                    i, note, note_idx,
-                    if (mask & (0x1 << ((note_idx + 9) % 12))) > 0x0 { 1 } else { 0 },
-                    dist);
+                //d// println!("I={:3} NOTE={:3} (IDX={:3} => bitset {}) DIST={:3}",
+                //d//     i, note, note_idx,
+                //d//     if (mask & (0x1 << ((note_idx + 9) % 12))) > 0x0 { 1 } else { 0 },
+                //d//     dist);
 
                 if dist < min_dist {
                     min_d_note_idx = note;
@@ -2231,16 +2201,6 @@ impl Quantizer {
         }
         //d// println!("TBL: {:?}", self.lkup_tbl);
     }
-
-//#			float pitch = inputs[PITCH_INPUT].getVoltage(c);
-//#			int range = std::floor(pitch * 24); // 1.1 => 26
-//#			int octave = eucDiv(range, 24);     // 26 => 1
-//#			range -= octave * 24;               // 26 => 2
-
-//#			int note = ranges[range] + octave * 12;
-//#			playingNotes[eucMod(note, 12)] = true;
-//#			pitch = float(note) / 12;
-//#			outputs[PITCH_OUTPUT].setVoltage(pitch, c);
 
     #[inline]
     pub fn process(&self, inp: f32) -> f32 {

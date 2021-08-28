@@ -50,6 +50,8 @@ mod node_rndwk;
 mod node_mux9;
 #[allow(non_upper_case_globals)]
 mod node_cqnt;
+#[allow(non_upper_case_globals)]
+mod node_quant;
 
 pub mod biquad;
 pub mod tracker;
@@ -91,6 +93,7 @@ use crate::fa_mux9_in_cnt;
 use crate::fa_cqnt;
 use crate::fa_cqnt_omin;
 use crate::fa_cqnt_omax;
+use crate::fa_quant;
 
 use node_amp::Amp;
 use node_sin::Sin;
@@ -117,6 +120,7 @@ use node_pverb::PVerb;
 use node_rndwk::RndWk;
 use node_mux9::Mux9;
 use node_cqnt::CQnt;
+use node_quant::Quant;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -738,6 +742,11 @@ macro_rules! node_list {
                (5 min   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, -1.0)
                (6 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
                {7 0 clip setting(0) fa_map_clip 0  1}
+               [0 sig],
+            quant => Quant UIType::Generic UICategory::CV
+               (0 freq  n_pit      d_pit r_fq   f_freq stp_d -1.0, 0.5647131, 440.0)
+               (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
+               {2 0 keys setting(0) fa_quant     0 0}
                [0 sig],
             cqnt => CQnt UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)

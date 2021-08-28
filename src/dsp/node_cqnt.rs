@@ -39,7 +39,7 @@ macro_rules! fa_cqnt_omax { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
     write!($formatter, "{}", s)
 } } }
 
-/// A 9 channel signal multiplexer
+/// A control signal to pitch quantizer/converter
 #[derive(Debug, Clone)]
 pub struct CQnt {
     quant: Box<CtrlPitchQuantizer>,
