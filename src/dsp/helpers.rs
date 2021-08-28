@@ -2158,8 +2158,7 @@ impl Quantizer {
         self.old_mask = keys_mask;
 
         for i in 0..12 {
-            self.keys[i] =
-                ((i as f32 / 12.0) * 0.1) - QUANT_TUNE_TO_A4;
+            self.keys[i] = (i as f32 / 12.0) * 0.1;
         }
 
         self.setup_lookup_table();
@@ -2201,26 +2200,31 @@ impl Quantizer {
         let any_enabled = mask > 0x0;
 
         for i in 0..24 {
-            let mut min_dist_note = 0;
-            let mut min_dist      = 1000000000;
+            let mut min_d_note_idx = 0;
+            let mut min_dist       = 1000000000;
 
             for note in -12..=24 {
-                let dist = ((i + 1_i64) / 2 - note).abs();
-
+                let dist     = ((i + 1_i64) / 2 - note).abs();
                 let note_idx = note.rem_euclid(12);
-                if any_enabled && (mask & (0x1 << note_idx)) == 0x0 {
+
+                // XXX: We add 9 here for the mask lookup,
+                // to shift the keyboard, which starts at C!
+                // And first bit in the mask is the C note. 10th is the A note.
+                if any_enabled
+                   && (mask & (0x1 << ((note_idx + 9) % 12))) == 0x0
+                {
                     continue;
                 }
 
                 if dist < min_dist {
-                    min_dist_note = note_idx;
-                    min_dist      = dist;
+                    min_d_note_idx = note_idx;
+                    min_dist       = dist;
                 } else {
                     break;
                 }
             }
 
-            self.lkup_tbl[i as usize] = min_dist_note as u8;
+            self.lkup_tbl[i as usize] = min_d_note_idx as u8;
         }
     }
 
@@ -2236,17 +2240,19 @@ impl Quantizer {
 
     #[inline]
     pub fn process(&self, inp: f32) -> f32 {
-        let note_num = (inp * 240.0).floor() as i64;
-        let octave   = note_num.div_euclid(240);
-        let note_idx = note_num - octave * 240;
+        let note_num = (inp * 240.0).round() as i64;
+        let octave   = note_num.div_euclid(24);
+        let note_idx = note_num - octave * 24;
 
-        println!("INP {:6.4} => octave={:2}, note_idx={:2}", inp, octave, note_idx);
-        println!("KEYS: {:?}", self.keys);
+        println!(
+            "INP {:7.4} => octave={:3}, note_idx={:3} note_num={:3} inp={:9.6}",
+            inp, octave, note_idx, note_num, inp * 240.0);
+        //d// println!("KEYS: {:?}", self.keys);
 
-        let note_idx = self.lkup_tbl[note_idx as usize % 24]; // + octave * 12;
+        let note_idx = self.lkup_tbl[note_idx as usize % 24];
         let pitch    = self.keys[note_idx as usize];
 
-        pitch
+        pitch + octave as f32 * 0.1
     }
 }
 
