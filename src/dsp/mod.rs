@@ -382,10 +382,12 @@ macro_rules! define_exp6 {
 }
 
 
+#[macro_export]
 macro_rules! n_pit { ($x: expr) => {
     0.1 * (($x as f32).max(0.01) / 440.0).log2()
 } }
 
+#[macro_export]
 macro_rules! d_pit { ($x: expr) => {
     {
         let note : f32 = ($x as f32) * 10.0;

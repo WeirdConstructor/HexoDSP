@@ -2135,6 +2135,122 @@ impl<F: Flt> TriSawLFO<F> {
 }
 
 #[derive(Debug, Clone)]
+pub struct Quantizer {
+    old_mask:   i64,
+    keys:       [f32; 12],
+    lkup_tbl:   [u8; 24],
+}
+
+impl Quantizer {
+    pub fn new() -> Self {
+        Self {
+            old_mask:   0xFFFF_FFFF,
+            keys:       [0.0; 12],
+            lkup_tbl:   [0; 24]
+        }
+    }
+
+    #[inline]
+    pub fn set_keys(&mut self, keys_mask: i64) {
+        if keys_mask == self.old_mask {
+            return;
+        }
+        self.old_mask = keys_mask;
+
+        for i in 0..12 {
+            self.keys[i] =
+                ((i as f32 / 12.0) * 0.1) - QUANT_TUNE_TO_A4;
+        }
+
+        self.setup_lookup_table();
+    }
+
+// mk_pitch_lookup_table = {!enabled = _;
+//    !any = $f;
+//    iter n enabled { if n { .any = $t } };
+//
+//    !tbl = $[];
+//
+//    iter i 0 => 24 {
+//        !minDistNote = 0;
+//        !minDist = 10000000000;
+//
+//        iter note -12 => 25 {
+//            !dist = std:num:abs[ (i + 1) / 2 - note ];
+//
+//            !idx = eucMod note 12;
+//            if any &and not[enabled.(idx)] {
+//                next[];
+//            };
+//            std:displayln "DIST" (i + 1) / 2 note idx "=>" dist;
+//            if dist < minDist {
+//                .minDistNote = idx;
+//                .minDist = dist;
+//            } { break[] };
+//        };
+//
+//        tbl.(i) = minDistNote;
+//    };
+//
+//    tbl
+//};
+//
+    #[inline]
+    fn setup_lookup_table(&mut self) {
+        let mask        = self.old_mask;
+        let any_enabled = mask > 0x0;
+
+        for i in 0..24 {
+            let mut min_dist_note = 0;
+            let mut min_dist      = 1000000000;
+
+            for note in -12..=24 {
+                let dist = ((i + 1_i64) / 2 - note).abs();
+
+                let note_idx = note.rem_euclid(12);
+                if any_enabled && (mask & (0x1 << note_idx)) == 0x0 {
+                    continue;
+                }
+
+                if dist < min_dist {
+                    min_dist_note = note_idx;
+                    min_dist      = dist;
+                } else {
+                    break;
+                }
+            }
+
+            self.lkup_tbl[i as usize] = min_dist_note as u8;
+        }
+    }
+
+//#			float pitch = inputs[PITCH_INPUT].getVoltage(c);
+//#			int range = std::floor(pitch * 24); // 1.1 => 26
+//#			int octave = eucDiv(range, 24);     // 26 => 1
+//#			range -= octave * 24;               // 26 => 2
+
+//#			int note = ranges[range] + octave * 12;
+//#			playingNotes[eucMod(note, 12)] = true;
+//#			pitch = float(note) / 12;
+//#			outputs[PITCH_OUTPUT].setVoltage(pitch, c);
+
+    #[inline]
+    pub fn process(&self, inp: f32) -> f32 {
+        let note_num = (inp * 240.0).floor() as i64;
+        let octave   = note_num.div_euclid(240);
+        let note_idx = note_num - octave * 240;
+
+        println!("INP {:6.4} => octave={:2}, note_idx={:2}", inp, octave, note_idx);
+        println!("KEYS: {:?}", self.keys);
+
+        let note_idx = self.lkup_tbl[note_idx as usize % 24]; // + octave * 12;
+        let pitch    = self.keys[note_idx as usize];
+
+        pitch
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct CtrlPitchQuantizer {
     /// All keys, containing the min/max octave!
     keys: Vec<f32>,
@@ -2189,15 +2305,7 @@ impl CtrlPitchQuantizer {
 
         let mut mask_count = 0;
 
-        for i in 0..9 {
-            if mask & (0x1 << i) > 0 {
-                self.used_keys[mask_count] = ((i as f32 / 12.0) * 0.1) - QUANT_TUNE_TO_A4;
-                mask_count += 1;
-            }
-        }
-
-        for i in 9..12 {
-            let key_pitch_idx = (i + 9 + 12) % 12;
+        for i in 0..12 {
             if mask & (0x1 << i) > 0 {
                 self.used_keys[mask_count] = (i as f32 / 12.0) * 0.1 - QUANT_TUNE_TO_A4;
                 mask_count += 1;

@@ -184,8 +184,8 @@ iter f 0 => n {
 };
 
 !lkup = mk_pitch_lookup_table $[
-    $t, $f, $f, $f, $f, $t,
-    $t, $f, $f, $f, $f, $t,
+    $f, $f, $f, $f, $f, $f,
+    $f, $f, $f, $t, $t, $t,
 ];
 
 std:displayln ~ eucMod -1 12;
