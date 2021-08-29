@@ -101,30 +101,17 @@ impl DspNode for CQnt {
 
         self.quant.update_keys(keys.i(), omin.i(), omax.i());
 
-        if self.quant.has_no_keys() {
-            for frame in 0..ctx.nframes() {
-                out.write(
-                    frame,
-                    denorm::CQnt::inp(inp, frame)
-                    + denorm::CQnt::oct(oct, frame));
-            }
+        let mut last_key = 0;
 
-            ctx_vals[1].set(100.0); // some unreachable value for Keys widget
-            ctx_vals[0].set(out.read(ctx.nframes() - 1));
-
-        } else {
-            let mut last_key = 0;
-
-            for frame in 0..ctx.nframes() {
-                let pitch =
-                    self.quant.signal_to_pitch(
-                        denorm::CQnt::inp(inp, frame));
-                out.write(frame, pitch + denorm::CQnt::oct(oct, frame));
-            }
-
-            let last_pitch = self.quant.last_key_pitch();
-            ctx_vals[1].set(last_pitch * 10.0 + 0.0001);
-            ctx_vals[0].set((last_pitch * 10.0 - 0.5) * 2.0);
+        for frame in 0..ctx.nframes() {
+            let pitch =
+                self.quant.signal_to_pitch(
+                    denorm::CQnt::inp(inp, frame));
+            out.write(frame, pitch + denorm::CQnt::oct(oct, frame));
         }
+
+        let last_pitch = self.quant.last_key_pitch();
+        ctx_vals[1].set(last_pitch * 10.0 + 0.0001);
+        ctx_vals[0].set((last_pitch * 10.0 - 0.5) * 2.0);
     }
 }

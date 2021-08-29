@@ -2137,14 +2137,16 @@ impl<F: Flt> TriSawLFO<F> {
 #[derive(Debug, Clone)]
 pub struct Quantizer {
     old_mask:   i64,
-    lkup_tbl:   [f32; 24],
+    lkup_tbl:   [(f32, f32); 24],
+    last_key:   f32,
 }
 
 impl Quantizer {
     pub fn new() -> Self {
         Self {
             old_mask:   0xFFFF_FFFF,
-            lkup_tbl:   [0.0; 24]
+            lkup_tbl:   [(0.0, 0.0); 24],
+            last_key:   0.0,
         }
     }
 
@@ -2193,17 +2195,24 @@ impl Quantizer {
                 }
             }
 
-            self.lkup_tbl[i as usize] =
+            self.lkup_tbl[i as usize] = (
+                (min_d_note_idx + 9).rem_euclid(12) as f32 * (0.1 / 12.0),
                 min_d_note_idx.rem_euclid(12) as f32 * (0.1 / 12.0)
                 + (     if min_d_note_idx < 0  { -0.1 }
                    else if min_d_note_idx > 11 {  0.1 }
-                   else                        {  0.0 });
+                   else                        {  0.0 })
+            );
         }
         //d// println!("TBL: {:?}", self.lkup_tbl);
     }
 
     #[inline]
-    pub fn process(&self, inp: f32) -> f32 {
+    pub fn last_key_pitch(&self) -> f32 {
+        self.last_key
+    }
+
+    #[inline]
+    pub fn process(&mut self, inp: f32) -> f32 {
         let note_num = (inp * 240.0).round() as i64;
         let octave   = note_num.div_euclid(24);
         let note_idx = note_num - octave * 24;
@@ -2213,7 +2222,9 @@ impl Quantizer {
 //            inp, octave, note_idx, note_num, inp * 240.0);
         //d// println!("TBL: {:?}", self.lkup_tbl);
 
-        let note_pitch = self.lkup_tbl[note_idx as usize % 24];
+        let (ui_key_pitch, note_pitch) =
+            self.lkup_tbl[note_idx as usize % 24];
+        self.last_key = ui_key_pitch;
         note_pitch + octave as f32 * 0.1
     }
 }
@@ -2240,7 +2251,7 @@ impl CtrlPitchQuantizer {
             keys:           vec![0.0; 12 * 10],
             used_keys:      [0.0; 12],
             mask_key_count: 0,
-            input_params:   0,
+            input_params:   0xFFFFFFFFFF,
             last_key:       0,
         }
     }
@@ -2254,12 +2265,7 @@ impl CtrlPitchQuantizer {
     }
 
     #[inline]
-    pub fn has_no_keys(&self) -> bool {
-        self.keys.is_empty()
-    }
-
-    #[inline]
-    pub fn update_keys(&mut self, mask: i64, min_oct: i64, max_oct: i64) {
+    pub fn update_keys(&mut self, mut mask: i64, min_oct: i64, max_oct: i64) {
         let inp_params =
               (mask as u64)
             | ((min_oct as u64) << 8)
@@ -2273,9 +2279,13 @@ impl CtrlPitchQuantizer {
 
         let mut mask_count = 0;
 
+        // set all keys, if none are set!
+        if mask == 0x0 { mask = 0xFFFF; }
+
         for i in 0..12 {
             if mask & (0x1 << i) > 0 {
-                self.used_keys[mask_count] = (i as f32 / 12.0) * 0.1 - QUANT_TUNE_TO_A4;
+                self.used_keys[mask_count] =
+                    (i as f32 / 12.0) * 0.1 - QUANT_TUNE_TO_A4;
                 mask_count += 1;
             }
         }

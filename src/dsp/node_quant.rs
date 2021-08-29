@@ -71,15 +71,13 @@ impl DspNode for Quant {
 
         self.quant.set_keys(keys.i());
 
-//        let mut last_key = 0;
-
         for frame in 0..ctx.nframes() {
             let pitch = self.quant.process(freq.read(frame));
             out.write(frame, pitch + denorm::Quant::oct(oct, frame));
         }
 
-//        let last_pitch = self.quant.last_key_pitch();
-//        ctx_vals[1].set(last_pitch * 10.0 + 0.0001);
-//        ctx_vals[0].set((last_pitch * 10.0 - 0.5) * 2.0);
+        let last_pitch = self.quant.last_key_pitch();
+        ctx_vals[1].set(last_pitch * 10.0 + 0.0001);
+        ctx_vals[0].set((last_pitch * 10.0 - 0.5) * 2.0);
     }
 }
