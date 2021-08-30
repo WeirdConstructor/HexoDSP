@@ -4,7 +4,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
-use crate::dsp::helpers::CtrlPitchQuantizer;
+use crate::dsp::helpers::{CtrlPitchQuantizer, ChangeTrig};
 
 #[macro_export]
 macro_rules! fa_cqnt { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -42,13 +42,15 @@ macro_rules! fa_cqnt_omax { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
 /// A control signal to pitch quantizer/converter
 #[derive(Debug, Clone)]
 pub struct CQnt {
-    quant: Box<CtrlPitchQuantizer>,
+    quant:       Box<CtrlPitchQuantizer>,
+    change_trig: ChangeTrig,
 }
 
 impl CQnt {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
-            quant: Box::new(CtrlPitchQuantizer::new()),
+            quant:       Box::new(CtrlPitchQuantizer::new()),
+            change_trig: ChangeTrig::new(),
         }
     }
     pub const inp : &'static str =
@@ -61,6 +63,10 @@ impl CQnt {
         "CQnt omax\n\nRange: (-1..1)";
     pub const sig : &'static str =
         "CQnt sig\n\nRange: (-1..1)";
+    pub const t : &'static str =
+        "CQnt t\nEverytime the quantizer snaps to a new pitch, it will \
+        emit a short trigger on this signal output. This is useful \
+        to trigger for example an envelope.";
     pub const keys : &'static str =
         "CQnt keys\n";
     pub const DESC : &'static str =
@@ -80,8 +86,14 @@ like the 'Quant' node.
 impl DspNode for CQnt {
     fn outputs() -> usize { 1 }
 
-    fn set_sample_rate(&mut self, _srate: f32) { }
-    fn reset(&mut self) { }
+    fn set_sample_rate(&mut self, srate: f32) {
+        self.change_trig.set_sample_rate(srate);
+    }
+
+    fn reset(&mut self) {
+        self.change_trig.reset();
+    }
+
 
     #[inline]
     fn process<T: NodeAudioContext>(
@@ -90,11 +102,12 @@ impl DspNode for CQnt {
         atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
-        use crate::dsp::{at, out, inp, denorm};
+        use crate::dsp::{at, out_buf, inp, denorm};
 
         let inp = inp::CQnt::inp(inputs);
         let oct = inp::CQnt::oct(inputs);
-        let out = out::CQnt::sig(outputs);
+        let mut out = out_buf::CQnt::sig(outputs);
+        let mut t   = out_buf::CQnt::t(outputs);
         let keys = at::CQnt::keys(atoms);
         let omin = at::CQnt::omin(atoms);
         let omax = at::CQnt::omax(atoms);
@@ -107,6 +120,8 @@ impl DspNode for CQnt {
             let pitch =
                 self.quant.signal_to_pitch(
                     denorm::CQnt::inp(inp, frame));
+
+            t.write(frame, self.change_trig.next(pitch));
             out.write(frame, pitch + denorm::CQnt::oct(oct, frame));
         }
 

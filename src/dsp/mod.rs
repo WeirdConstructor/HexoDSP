@@ -747,14 +747,16 @@ macro_rules! node_list {
                (0 freq  n_pit      d_pit  r_id  f_freq stp_d -1.0, 0.5647131, 440.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
                {2 0 keys setting(0) fa_quant     0 0}
-               [0 sig],
+               [0 sig]
+               [1 t],
             cqnt => CQnt UIType::Generic UICategory::CV
                (0 inp   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
                {2 0 keys setting(0) fa_cqnt      0 0}
                {3 1 omin setting(0) fa_cqnt_omin 0 4}
                {4 2 omax setting(0) fa_cqnt_omax 0 4}
-               [0 sig],
+               [0 sig]
+               [1 t],
             tseq => TSeq UIType::Generic UICategory::Mod
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 trig  n_id       n_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)

@@ -578,6 +578,44 @@ impl Default for TrigSignal {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub struct ChangeTrig {
+    ts:     TrigSignal,
+    last:   f32,
+}
+
+impl ChangeTrig {
+    pub fn new() -> Self {
+        Self {
+            ts:     TrigSignal::new(),
+            last:   -100.0, // some random value :-)
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.ts.reset();
+        self.last = -100.0;
+    }
+
+    pub fn set_sample_rate(&mut self, srate: f32) {
+        self.ts.set_sample_rate(srate);
+    }
+
+    #[inline]
+    pub fn next(&mut self, inp: f32) -> f32 {
+        if (inp - self.last).abs() > std::f32::EPSILON {
+            self.ts.trigger();
+            self.last = inp;
+        }
+
+        self.ts.next()
+    }
+}
+
+impl Default for ChangeTrig {
+    fn default() -> Self { Self::new() }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Trigger {
     triggered:  bool,
 }
