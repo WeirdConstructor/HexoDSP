@@ -116,7 +116,7 @@ It can be used for purposes like:
 * Adding ambient samples to your patches.
 * Using drum samples (set 'pmode' to 'OneShot').
 * Having an oscillator with a custom waveform (set 'pmode' to 'Loop').
-* As custom CV source for very long or very custom envelopes.
+* As custom control signal source for very long or very custom envelopes.
 
 Only a single audio sample can be loaded into this player. In HexoSynth
 the sample selection can be done by the file browser in the right panel

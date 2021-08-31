@@ -96,7 +96,7 @@ impl TSeq {
         "Tracker (based) Sequencer\n\n\
         This node implements a sequencer that can be programmed \
         using the tracker interface in HexoSynth on the right.\n\
-        It provides 6 CV signal and 6 gate outputs.";
+        It provides 6 control signals and 6 gate outputs.";
     pub const HELP : &'static str =
 r#"Tracker (based) Sequencer
 
@@ -117,13 +117,13 @@ This tracker provides 6 columns that each can have one of the following
 types:
 
 - Note column: for specifying pitches.
-- Step column: for specifying non interpolated CV signals.
-- Value column: for specifying linearly interpolated CV signals.
+- Step column: for specifying non interpolated control signals.
+- Value column: for specifying linearly interpolated control signals.
 - Gate column: for specifying gates, with probability and ratcheting.
 
 Step, value and gate cells can be set to 4096 (0xFFF) different values
 or contain nothing at all. For step and value columns these values
-are mapped to the 0.0-1.0 CV signal range, with 0xFFF being 1.0
+are mapped to the 0.0-1.0 control signal range, with 0xFFF being 1.0
 and 0x000 being 0.0.
 
 Value examples:     1.0   0.9  0.75   0.5  0.25   0.1

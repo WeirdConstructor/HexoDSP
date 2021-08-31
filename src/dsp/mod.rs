@@ -332,7 +332,7 @@ pub enum UICategory {
     Mod,
     NtoM,
     Signal,
-    CV,
+    Ctrl,
     IOUtil,
 }
 
@@ -726,14 +726,14 @@ macro_rules! node_list {
                (12 in_9    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                {13 0 in_cnt setting(3) fa_mux9_in_cnt 0 8}
                [0 sig],
-            smap => SMap UIType::Generic UICategory::CV
+            smap => SMap UIType::Generic UICategory::Ctrl
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 min   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, -1.0)
                (2 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
                {3 1 mode setting(0) fa_smap_mode 0  3}
                {4 0 clip setting(0) fa_smap_clip 0  1}
                [0 sig],
-            map => Map UIType::Generic UICategory::CV
+            map => Map UIType::Generic UICategory::Ctrl
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 atv   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 1.0)
                (2 offs  n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
@@ -743,13 +743,13 @@ macro_rules! node_list {
                (6 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
                {7 0 clip setting(0) fa_map_clip 0  1}
                [0 sig],
-            quant => Quant UIType::Generic UICategory::CV
+            quant => Quant UIType::Generic UICategory::Ctrl
                (0 freq  n_pit      d_pit  r_id  f_freq stp_d -1.0, 0.5647131, 440.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
                {2 0 keys setting(0) fa_quant     0 0}
                [0 sig]
                [1 t],
-            cqnt => CQnt UIType::Generic UICategory::CV
+            cqnt => CQnt UIType::Generic UICategory::Ctrl
                (0 inp   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
                {2 0 keys setting(0) fa_cqnt      0 0}
@@ -1901,11 +1901,11 @@ impl Node {
     /// There is usually no reason to use these, because any parameter can be
     /// overridden by assigning an output port to the corresponding input.
     /// This is provided for the rare case that you still want to use the
-    /// value the user set in the interface, and not the input CV signal.
+    /// value the user set in the interface, and not the input Ctrl signal.
     /// * `inputs`: For each `params` parameter there is a input port.
     /// This slice will contain either a buffer from `params` or some output
     /// buffer from some other (previously executed) [Node]s output.
-    /// * `outputs`: The output buffers this node will write it's signal/CV
+    /// * `outputs`: The output buffers this node will write it's signal/Ctrl
     /// results to.
     /// * `led`: Contains the feedback [LedPhaseVals], which are used
     /// to communicate the current value (set once per `process()` call, usually at the end)
