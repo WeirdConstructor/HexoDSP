@@ -336,6 +336,20 @@ pub enum UICategory {
     IOUtil,
 }
 
+impl UICategory {
+    pub fn default_color_idx(&self) -> u8 {
+        match self {
+            UICategory::None   => 17,
+            UICategory::Osc    => 0,
+            UICategory::Mod    => 7,
+            UICategory::NtoM   => 4,
+            UICategory::Signal => 2,
+            UICategory::Ctrl   => 12,
+            UICategory::IOUtil => 10,
+        }
+    }
+}
+
 // The following macros define normalize/denormalize functions:
 macro_rules! n_id { ($x: expr) => { $x } }
 macro_rules! d_id { ($x: expr) => { $x } }
