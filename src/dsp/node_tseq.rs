@@ -93,7 +93,7 @@ impl TSeq {
         "TSeq gat6\nTrack 6 gate output\nRange: (-1..1)\n";
 
     pub const DESC : &'static str =
-        "Tracker (based) Sequencer\n\n\
+        "Tracker Sequencer\n\n\
         This node implements a sequencer that can be programmed \
         using the tracker interface in HexoSynth on the right.\n\
         It provides 6 control signals and 6 gate outputs.";
