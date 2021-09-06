@@ -54,32 +54,38 @@ impl CQnt {
         }
     }
     pub const inp : &'static str =
-        "CQnt inp\n\nRange: (0..1)";
+        "CQnt inp\nThe unipolar input signal that is to be mapped to the \
+        selected pitch range.\nRange: (0..1)";
     pub const oct : &'static str =
-        "CQnt oct\n\nRange: (-1..1)";
+        "CQnt oct\nThe octave offset from A4.\nRange: (-1..1)";
     pub const omin : &'static str =
-        "CQnt omin\n\nRange: (-1..1)";
+        "CQnt omin\nThe minimum octave of the range. If 0 it will be 'oct'.\nRange: (-1..1)";
     pub const omax : &'static str =
-        "CQnt omax\n\nRange: (-1..1)";
+        "CQnt omax\nThe maximum octave of the range. If 0 it will be 'oct'.\nRange: (-1..1)";
     pub const sig : &'static str =
-        "CQnt sig\n\nRange: (-1..1)";
+        "CQnt sig\nThe output pitch signal.\nRange: (-1..1)";
     pub const t : &'static str =
         "CQnt t\nEverytime the quantizer snaps to a new pitch, it will \
         emit a short trigger on this signal output. This is useful \
         to trigger for example an envelope.";
     pub const keys : &'static str =
-        "CQnt keys\n";
+        "CQnt keys\nHere you can select the individual notes of the range. \
+        If no note is selected, it's the same as if all notes were selected.";
     pub const DESC : &'static str =
-r#"Control Pitch Quantizer
+r#"Ctrl Pitch Quantizer
 
-This special quantizer maps the 0..1 input range on 'inp' evenly to the selected keys and octaves.
+This special quantizer maps the unipolar 0..1 control signal input range on 'inp' evenly to the selected keys and octaves.
 "#;
     pub const HELP : &'static str =
 r#"CQnt - A control signal to pitch quantizer
 
-This is a specialized quantizer to generate a pitch/frequency from a signal
-within the 0..1 range. It does not quantize a typical -1..1 frequency signal
-like the 'Quant' node.
+This is a specialized control signal quantizer to generate a pitch/frequency
+from a signal within the 0..1 range. It does not quantize a typical -1..1
+frequency signal like the 'Quant' node.
+
+In contrast to 'Quant', this quantizer maps the incoming signal evenly
+to the available note range. It will result in more evenly played notes
+if you sweep accross the input signal range.
 "#;
 }
 
