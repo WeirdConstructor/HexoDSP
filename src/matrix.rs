@@ -652,7 +652,7 @@ impl Matrix {
     }
 
     /// Iterates through all atoms. This is useful for reading
-    /// the atoms after a [MatrixRepr] has been loaded with [Matrix::from_repr].
+    /// all the atoms after a [MatrixRepr] has been loaded with [Matrix::from_repr].
     pub fn for_each_atom<F: FnMut(usize, ParamId, &SAtom, Option<f32>)>(&self, f: F) {
         self.config.for_each_param(f);
     }
@@ -664,11 +664,7 @@ impl Matrix {
     /// should update their knowledge of the nodes in the DSP
     /// graph. Such as parameter values.
     ///
-    /// HexoSynth for instance updates the UI parameters
-    /// by tracking this value and calling [Matrix::for_each_atom]
-    /// to retrieve the most current set of parameter values.
-    /// In case new nodes were created and their default
-    /// parameter/atom values were added.
+    /// HexoSynth for instance updates the UI by tracking this value.
     pub fn get_generation(&self) -> usize { self.gen_counter }
 
     /// Returns a serializable representation of the matrix.
@@ -790,6 +786,7 @@ impl Matrix {
     /// assert_eq!(matrix2.get_prop("test").unwrap().i(), 31337);
     ///```
     pub fn set_prop(&mut self, key: &str, val: SAtom) {
+        self.gen_counter += 1;
         self.properties.insert(key.to_string(), val);
     }
 
@@ -848,9 +845,20 @@ impl Matrix {
         self.config.pop_error()
     }
 
+    /// Retrieve [SAtom] values for input parameters and atoms.
+    pub fn get_param(&self, param: &ParamId) -> Option<SAtom> {
+        self.config.get_param(param)
+    }
+
     /// Assign [SAtom] values to input parameters and atoms.
     pub fn set_param(&mut self, param: ParamId, at: SAtom) {
         self.config.set_param(param, at);
+        self.gen_counter += 1;
+    }
+
+    /// Retrieve the modulation amount of the input parameter.
+    pub fn get_param_modamt(&self, param: &ParamId) -> Option<f32> {
+        self.config.get_param_modamt(param)
     }
 
     /// Assign or remove modulation of an input parameter.
@@ -858,8 +866,10 @@ impl Matrix {
         -> Result<(), MatrixError>
     {
         if self.config.set_param_modamt(param, modamt) {
+            // XXX: sync implicitly increases gen_counter!
             self.sync()
         } else {
+            self.gen_counter += 1;
             Ok(())
         }
     }
@@ -1547,5 +1557,41 @@ mod tests {
         assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2|0) at=(0-0) mod=(0-1))");
         assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
         assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3|0) in=(4-6|1) at=(0-0) mod=(3-3) cpy=(o1 => i4))");
+    }
+
+    #[test]
+    fn check_matrix_set_get() {
+        use crate::nodes::new_node_engine;
+
+        let (node_conf, mut node_exec) = new_node_engine();
+        let mut matrix = Matrix::new(node_conf, 3, 3);
+
+        let pa1 = NodeId::Sin(1).param_by_idx(0).unwrap();
+        let pa2 = NodeId::Sin(1).param_by_idx(1).unwrap();
+        let pb1 = NodeId::Sin(2).param_by_idx(0).unwrap();
+        let pb2 = NodeId::Sin(2).param_by_idx(1).unwrap();
+        let px1 = NodeId::BOsc(1).param_by_idx(0).unwrap();
+        let px2 = NodeId::BOsc(1).param_by_idx(1).unwrap();
+
+        let gen1 = matrix.get_generation();
+        matrix.set_param(pa1, (0.75).into());
+        matrix.set_param(pa2, (0.50).into());
+        matrix.set_param(pb1, (0.25).into());
+        matrix.set_param(pb2, (0.20).into());
+        matrix.set_param(px1, (0.10).into());
+        matrix.set_param(px2, (0.13).into());
+
+        assert_eq!(matrix.get_generation(), gen1 + 6);
+
+        assert_eq!(matrix.get_param(&pa1), Some((0.75).into()));
+
+        let _ = matrix.set_param_modamt(pa2, Some(0.4));
+        let _ = matrix.set_param_modamt(pa1, Some(0.4));
+        let _ = matrix.set_param_modamt(pa1, None);
+
+        assert_eq!(matrix.get_generation(), gen1 + 9);
+
+        assert_eq!(matrix.get_param_modamt(&pa2), Some(0.4));
+        assert_eq!(matrix.get_param_modamt(&pa1), None);
     }
 }

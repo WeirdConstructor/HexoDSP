@@ -339,6 +339,13 @@ impl NodeConfigurator {
         self.nodes.get_mut(idx)
     }
 
+    /// Returns the current modulation amount of the given parameter.
+    /// Returns `None` if no modulation amount if set and thus no
+    /// implicit attenuverter is set.
+    pub fn get_param_modamt(&self, param: &ParamId) -> Option<f32> {
+        self.param_modamt.get(&param).copied().flatten()
+    }
+
     /// Set the modulation amount of a parameter.
     /// Returns true if a new [NodeProg] needs to be created, which can be
     /// necessary if there was no modulation amount assigned to this parameter
@@ -383,6 +390,15 @@ impl NodeConfigurator {
         } else {
             self.param_modamt.insert(param, v);
             true
+        }
+    }
+
+    /// Retrieve [SAtom] values for input parameters and atoms.
+    pub fn get_param(&self, param: &ParamId) -> Option<SAtom> {
+        if param.is_atom() {
+            self.atom_values.get(param).cloned()
+        } else {
+            self.param_values.get(param).map(|v| (*v).into())
         }
     }
 
