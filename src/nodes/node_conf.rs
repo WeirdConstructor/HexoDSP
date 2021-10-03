@@ -266,7 +266,7 @@ impl SharedNodeConf {
 impl NodeConfigurator {
     pub(crate) fn new() -> (Self, SharedNodeExec) {
         let mut nodes = Vec::new();
-        nodes.resize_with(MAX_ALLOCATED_NODES, || (NodeInfo::Nop, None));
+        nodes.resize_with(MAX_ALLOCATED_NODES, || (NodeInfo::from_node_id(NodeId::Nop), None));
 
         let (shared, shared_exec) = SharedNodeConf::new();
 
@@ -696,7 +696,7 @@ impl NodeConfigurator {
 
     pub fn delete_nodes(&mut self) {
         self.node2idx.clear();
-        self.nodes.fill_with(|| (NodeInfo::Nop, None));
+        self.nodes.fill_with(|| (NodeInfo::from_node_id(NodeId::Nop), None));
         self.params      .clear();
         self.param_values.clear();
         self.param_modamt.clear();
@@ -720,7 +720,7 @@ impl NodeConfigurator {
             }
 
             for i in 0..self.nodes.len() {
-                if let NodeInfo::Nop = self.nodes[i].0 {
+                if let NodeId::Nop = self.nodes[i].0.to_id() {
                     index = Some(i);
                     break;
 
@@ -749,7 +749,7 @@ impl NodeConfigurator {
 
                 self.nodes.resize_with(
                     (self.nodes.len() + 1) * 2,
-                    || (NodeInfo::Nop, None));
+                    || (NodeInfo::from_node_id(NodeId::Nop), None));
                 self.nodes[index] = (info, None);
 
                 let _ =

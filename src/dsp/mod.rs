@@ -1008,6 +1008,36 @@ pub fn get_rand_node_id(count: usize, sel: RandNodeSelector) -> Vec<NodeId> {
     out
 }
 
+/// Holds information about the node type that was allocated.
+/// It stores the names of inputs, output and atoms for uniform
+/// access.
+///
+/// The [crate::NodeConfigurator] allocates and holds instances
+/// of this type for access by [NodeId].
+/// See also [crate::NodeConfigurator::node_by_id] and
+/// [crate::Matrix::info_for].
+#[derive(Clone)]
+pub struct NodeInfo {
+    node_id:        NodeId,
+    inputs:         Vec<&'static str>,
+    atoms:          Vec<&'static str>,
+    outputs:        Vec<&'static str>,
+    input_help:     Vec<&'static str>,
+    output_help:    Vec<&'static str>,
+    node_help:      &'static str,
+    node_desc:      &'static str,
+    node_name:      &'static str,
+    norm_v:         std::rc::Rc<dyn Fn(usize, f32) -> f32>,
+    denorm_v:       std::rc::Rc<dyn Fn(usize, f32) -> f32>,
+}
+
+impl std::fmt::Debug for NodeInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.debug_struct("NodeInfo")
+         .field("node_id", &self.node_id)
+         .finish()
+    }
+}
 
 macro_rules! make_node_info_enum {
     ($s1: ident => $v1: ident,
@@ -1023,29 +1053,28 @@ macro_rules! make_node_info_enum {
             $([$out_idx: literal $out: ident])*
             ,)+
     ) => {
-        /// Holds information about the node type that was allocated.
-        /// It stores the names of inputs, output and atoms for uniform
-        /// access.
-        ///
-        /// The [crate::NodeConfigurator] allocates and holds instances
-        /// of this type for access by [NodeId].
-        /// See also [crate::NodeConfigurator::node_by_id] and
-        /// [crate::Matrix::info_for].
-        #[derive(Debug, Clone)]
-        pub enum NodeInfo {
-            $v1,
-            $($variant((NodeId, crate::dsp::ni::$variant))),+
-        }
-
         impl NodeInfo {
             /// Allocates a new [NodeInfo] from a [NodeId].
             /// Usually you access [NodeInfo] in the UI thread via
             /// [crate::NodeConfigurator::node_by_id]
             /// or [crate::Matrix::info_for].
-            pub fn from_node_id(nid: NodeId) -> NodeInfo {
+            pub fn from_node_id(nid: NodeId) -> Self {
                 match nid {
-                    NodeId::$v1           => NodeInfo::$v1,
-                    $(NodeId::$variant(_) => NodeInfo::$variant((nid, crate::dsp::ni::$variant::new()))),+
+                    NodeId::$v1 => NodeInfo {
+                        node_id:     crate::dsp::NodeId::Nop,
+                        inputs:      vec![],
+                        atoms:       vec![],
+                        outputs:     vec![],
+                        input_help:  vec![],
+                        output_help: vec![],
+                        node_help: "Nop Help",
+                        node_desc: "Nop Desc",
+                        node_name: "Nop",
+
+                        norm_v:   std::rc::Rc::new(|i, x| x),
+                        denorm_v: std::rc::Rc::new(|i, x| x),
+                    },
+                    $(NodeId::$variant(_) => crate::dsp::ni::$variant(nid)),+
                 }
             }
         }
@@ -1277,12 +1306,7 @@ macro_rules! make_node_info_enum {
                 }
             }
 
-            pub fn from_node_info(ni: &NodeInfo) -> NodeId {
-                match ni {
-                    NodeInfo::$v1           => NodeId::$v1,
-                    $(NodeInfo::$variant(_) => NodeId::$variant(0)),+
-                }
-            }
+            pub fn from_node_info(ni: &NodeInfo) -> NodeId { ni.to_id() }
 
             pub fn label(&self) -> &'static str {
                 match self {
@@ -1603,143 +1627,90 @@ macro_rules! make_node_info_enum {
 
         mod ni {
             $(
-                #[derive(Debug, Clone)]
-                pub struct $variant {
-                    inputs:         Vec<&'static str>,
-                    atoms:          Vec<&'static str>,
-                    outputs:        Vec<&'static str>,
-                    input_help:     Vec<&'static str>,
-                    output_help:    Vec<&'static str>,
-                    node_help:      &'static str,
-                    node_desc:      &'static str,
-                }
+                pub fn $variant(node_id: crate::dsp::NodeId) -> crate::dsp::NodeInfo {
+                    let mut input_help = vec![$(crate::dsp::$variant::$para,)*];
+                    $(input_help.push(crate::dsp::$variant::$atom);)*
 
-                impl $variant {
-                    #[allow(unused_mut)]
-                    pub fn new() -> Self {
-                        let mut input_help = vec![$(crate::dsp::$variant::$para,)*];
-                        $(input_help.push(crate::dsp::$variant::$atom);)*
+                    crate::dsp::NodeInfo {
+                        node_id,
+                        inputs:  vec![$(stringify!($para),)*],
+                        atoms:   vec![$(stringify!($atom),)*],
+                        outputs: vec![$(stringify!($out),)*],
 
-                        Self {
-                            inputs:  vec![$(stringify!($para),)*],
-                            atoms:   vec![$(stringify!($atom),)*],
-                            outputs: vec![$(stringify!($out),)*],
+                        input_help,
+                        output_help: vec![$(crate::dsp::$variant::$out,)*],
+                        node_help:   crate::dsp::$variant::HELP,
+                        node_desc:   crate::dsp::$variant::DESC,
+                        node_name:   stringify!($variant),
 
-                            input_help,
-                            output_help: vec![$(crate::dsp::$variant::$out,)*],
-                            node_help:   crate::dsp::$variant::HELP,
-                            node_desc:   crate::dsp::$variant::DESC,
-                        }
+                        norm_v:
+                            std::rc::Rc::new(|i, x|
+                                match i {
+                                    $($in_idx => crate::dsp::norm_v::$variant::$para(x),)+
+                                    _ => x,
+                                }),
+                        denorm_v:
+                            std::rc::Rc::new(|i, x|
+                                match i {
+                                    $($in_idx => crate::dsp::denorm_v::$variant::$para(x),)+
+                                    _ => x,
+                                }),
                     }
-
-                    pub fn in_name(&self, in_idx: usize) -> Option<&'static str> {
-                        if let Some(s) = self.inputs.get(in_idx) {
-                            Some(*s)
-                        } else {
-                            Some(*(self.atoms.get(in_idx)?))
-                        }
-                    }
-
-                    pub fn at_name(&self, in_idx: usize) -> Option<&'static str> {
-                        Some(*(self.atoms.get(in_idx)?))
-                    }
-
-                    pub fn out_name(&self, out_idx: usize) -> Option<&'static str> {
-                        Some(*(self.outputs.get(out_idx)?))
-                    }
-
-                    pub fn in_help(&self, in_idx: usize) -> Option<&'static str> {
-                        Some(*self.input_help.get(in_idx)?)
-                    }
-
-                    pub fn out_help(&self, out_idx: usize) -> Option<&'static str> {
-                        Some(*(self.output_help.get(out_idx)?))
-                    }
-
-                    pub fn norm(&self, in_idx: usize, x: f32) -> f32 {
-                        match in_idx {
-                            $($in_idx => crate::dsp::norm_v::$variant::$para(x),)+
-                            _         => x,
-                        }
-                    }
-
-                    pub fn denorm(&self, in_idx: usize, x: f32) -> f32 {
-                        match in_idx {
-                            $($in_idx => crate::dsp::denorm_v::$variant::$para(x),)+
-                            _         => x,
-                        }
-                    }
-
-                    pub fn desc(&self) -> &'static str { self.node_desc }
-                    pub fn help(&self) -> &'static str { self.node_help }
-
-                    pub fn out_count(&self) -> usize { self.outputs.len() }
-                    pub fn in_count(&self)  -> usize { self.inputs.len() }
-                    pub fn at_count(&self)  -> usize { self.atoms.len() }
                 }
             )+
+
         }
 
         impl NodeInfo {
             pub fn from(s: &str) -> Self {
                 match s {
-                    stringify!($s1)    => NodeInfo::$v1,
-                    $(stringify!($str) =>
-                        NodeInfo::$variant(
-                            (NodeId::$variant(0),
-                             crate::dsp::ni::$variant::new()))),+,
-                    _                  => NodeInfo::Nop,
+                    $(stringify!($str) => crate::dsp::ni::$variant(NodeId::$variant(0)),)+
+                    _                  => NodeInfo::from_node_id(NodeId::Nop),
                 }
             }
 
-            pub fn in_name(&self, idx: usize) -> Option<&'static str> {
-                match self {
-                    NodeInfo::$v1                 => None,
-                    $(NodeInfo::$variant((_, ni)) => ni.in_name(idx)),+
+            pub fn name(&self) -> &'static str { self.node_name }
+
+            pub fn in_name(&self, in_idx: usize) -> Option<&'static str> {
+                if let Some(s) = self.inputs.get(in_idx) {
+                    Some(*s)
+                } else {
+                    Some(*(self.atoms.get(in_idx)?))
                 }
             }
 
-            pub fn out_name(&self, idx: usize) -> Option<&'static str> {
-                match self {
-                    NodeInfo::$v1                 => None,
-                    $(NodeInfo::$variant((_, ni)) => ni.out_name(idx)),+
-                }
+            pub fn at_name(&self, in_idx: usize) -> Option<&'static str> {
+                Some(*(self.atoms.get(in_idx)?))
             }
 
-            pub fn in_help(&self, idx: usize) -> Option<&'static str> {
-                match self {
-                    NodeInfo::$v1                 => None,
-                    $(NodeInfo::$variant((_, ni)) => ni.in_help(idx)),+
-                }
+            pub fn out_name(&self, out_idx: usize) -> Option<&'static str> {
+                Some(*(self.outputs.get(out_idx)?))
             }
 
-            pub fn out_help(&self, idx: usize) -> Option<&'static str> {
-                match self {
-                    NodeInfo::$v1                 => None,
-                    $(NodeInfo::$variant((_, ni)) => ni.out_help(idx)),+
-                }
+            pub fn in_help(&self, in_idx: usize) -> Option<&'static str> {
+                Some(*self.input_help.get(in_idx)?)
             }
 
-            pub fn to_id(&self) -> NodeId {
-                match self {
-                    NodeInfo::$v1                 => NodeId::$v1,
-                    $(NodeInfo::$variant((id, _)) => *id),+
-                }
+            pub fn out_help(&self, out_idx: usize) -> Option<&'static str> {
+                Some(*(self.output_help.get(out_idx)?))
             }
 
-            pub fn at_count(&self) -> usize {
-                match self {
-                    NodeInfo::$v1           => 0,
-                    $(NodeInfo::$variant(n) => n.1.at_count()),+
-                }
+            pub fn norm(&self, in_idx: usize, x: f32) -> f32 {
+                (*self.norm_v)(in_idx, x)
             }
 
-            pub fn in_count(&self) -> usize {
-                match self {
-                    NodeInfo::$v1           => 0,
-                    $(NodeInfo::$variant(n) => n.1.in_count()),+
-                }
+            pub fn denorm(&self, in_idx: usize, x: f32) -> f32 {
+                (*self.denorm_v)(in_idx, x)
             }
+
+            pub fn desc(&self) -> &'static str { self.node_desc }
+            pub fn help(&self) -> &'static str { self.node_help }
+
+            pub fn out_count(&self) -> usize { self.outputs.len() }
+            pub fn in_count(&self)  -> usize { self.inputs.len() }
+            pub fn at_count(&self)  -> usize { self.atoms.len() }
+
+            pub fn to_id(&self) -> NodeId { self.node_id }
 
             pub fn default_output(&self) -> Option<u8> {
                 if self.out_count() > 0 {
@@ -1754,27 +1725,6 @@ macro_rules! make_node_info_enum {
                     Some(0)
                 } else {
                     None
-                }
-            }
-
-            pub fn out_count(&self) -> usize {
-                match self {
-                    NodeInfo::$v1           => 0,
-                    $(NodeInfo::$variant(n) => n.1.out_count()),+
-                }
-            }
-
-            pub fn desc(&self) -> &'static str {
-                match self {
-                    NodeInfo::$v1           => "",
-                    $(NodeInfo::$variant(n) => n.1.desc()),+
-                }
-            }
-
-            pub fn help(&self) -> &'static str {
-                match self {
-                    NodeInfo::$v1           => "",
-                    $(NodeInfo::$variant(n) => n.1.help()),+
                 }
             }
         }
