@@ -384,6 +384,32 @@ struct Edge {
     to_input:  u8,
 }
 
+/// This trait can be passed into [Matrix] as trait object
+/// to get feedback when things change.
+pub trait MatrixObserver {
+    /// Called when a property is changing eg. via [Matrix::set_prop]
+    /// or some other yet unknown method.
+    /// Not called, when [MatrixObserver::update_all] tells you that
+    /// everything has changed.
+    fn update_prop(&self, key: &str);
+    /// Called when a new cell is monitored via [MatrixObserver::monitor_cell].
+    /// Not called, when [MatrixObserver::update_all] tells you that
+    /// everything has changed.
+    fn update_monitor(&self, cell: &Cell);
+    /// Called when a parameter or it's modulation amount is changing.
+    /// Not called, when [MatrixObserver::update_all] tells you that
+    /// everything has changed.
+    fn update_param(&self, ParamId: &ParamId);
+    /// Called when the matrix graph was changed, usually called
+    /// when [Matrix::sync] is called.
+    /// Usually also called when [MatrixObserver::update_all] was called.
+    fn update_matrix(&self);
+    /// Called when the complete matrix has been changing.
+    /// The called then needs up update all it's internal state it knows
+    /// about [Matrix].
+    fn update_all(&self);
+}
+
 pub struct Matrix {
     /// The node configurator to control the backend.
     config:      NodeConfigurator,
@@ -429,6 +455,9 @@ pub struct Matrix {
     /// by other components of the application to detect changes in
     /// the matrix to resync their own data.
     gen_counter: usize,
+
+    /// A trait object that tracks changed on the [Matrix].
+    observer: Option<Arc<dyn MatrixObserver>>,
 }
 
 unsafe impl Send for Matrix {}
@@ -446,11 +475,17 @@ impl Matrix {
             edges:           Vec::with_capacity(MAX_ALLOCATED_NODES * 2),
             assigned_inputs: HashSet::new(),
             properties:      HashMap::new(),
+            observer:        None,
             config,
             w,
             h,
             matrix,
         }
+    }
+
+    /// Assigns the [MatrixObserver] to observe changes on the [Matrix].
+    pub fn set_observer(&mut self, obs: Arc<dyn MatrixObserver>) {
+        self.observer = Some(obs);
     }
 
     pub fn size(&self) -> (usize, usize) { (self.w, self.h) }
@@ -649,6 +684,8 @@ impl Matrix {
         self.config.delete_nodes();
         self.monitor_cell(Cell::empty(NodeId::Nop));
         let _ = self.sync();
+
+        if let Some(obs) = &self.observer { obs.update_all(); }
     }
 
     /// Iterates through all atoms. This is useful for reading
@@ -744,7 +781,7 @@ impl Matrix {
             normalize_params);
 
         for (key, val) in repr.properties.iter() {
-            self.set_prop(key, val.clone());
+            self.properties.insert(key.to_string(), val.clone());
         }
 
         for cell_repr in repr.cells.iter() {
@@ -760,7 +797,11 @@ impl Matrix {
             }
         }
 
-        self.sync()
+        let ret = self.sync();
+
+        if let Some(obs) = &self.observer { obs.update_all(); }
+
+        ret
     }
 
     /// Saves a property in the matrix, these can be retrieved
@@ -788,6 +829,7 @@ impl Matrix {
     pub fn set_prop(&mut self, key: &str, val: SAtom) {
         self.gen_counter += 1;
         self.properties.insert(key.to_string(), val);
+        if let Some(obs) = &self.observer { obs.update_prop(key); }
     }
 
     /// Retrieves a matrix property. See also [Matrix::set_prop] for an
@@ -826,6 +868,8 @@ impl Matrix {
         ];
 
         self.config.monitor(&cell.node_id, &inputs, &outputs);
+
+        if let Some(obs) = &self.observer { obs.update_monitor(&self.monitored_cell); }
     }
 
     /// Is called by [Matrix::sync] to refresh the monitored cell.
@@ -852,8 +896,9 @@ impl Matrix {
 
     /// Assign [SAtom] values to input parameters and atoms.
     pub fn set_param(&mut self, param: ParamId, at: SAtom) {
-        self.config.set_param(param, at);
+        self.config.set_param(param.clone(), at);
         self.gen_counter += 1;
+        if let Some(obs) = &self.observer { obs.update_param(&param); }
     }
 
     /// Retrieve the modulation amount of the input parameter.
@@ -865,7 +910,9 @@ impl Matrix {
     pub fn set_param_modamt(&mut self, param: ParamId, modamt: Option<f32>)
         -> Result<(), MatrixError>
     {
-        if self.config.set_param_modamt(param, modamt) {
+        if self.config.set_param_modamt(param.clone(), modamt) {
+            if let Some(obs) = &self.observer { obs.update_param(&param); }
+
             // XXX: sync implicitly increases gen_counter!
             self.sync()
         } else {
@@ -1240,6 +1287,8 @@ impl Matrix {
         // Refresh the input/outputs of the monitored cell,
         // just in case something has changed with that monitored cell.
         self.remonitor_cell();
+
+        if let Some(obs) = &self.observer { obs.update_matrix(); }
 
         Ok(())
     }
