@@ -399,7 +399,7 @@ pub trait MatrixObserver {
     /// Called when a parameter or it's modulation amount is changing.
     /// Not called, when [MatrixObserver::update_all] tells you that
     /// everything has changed.
-    fn update_param(&self, ParamId: &ParamId);
+    fn update_param(&self, param_id: &ParamId);
     /// Called when the matrix graph was changed, usually called
     /// when [Matrix::sync] is called.
     /// Usually also called when [MatrixObserver::update_all] was called.

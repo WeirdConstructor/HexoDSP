@@ -62,6 +62,16 @@ impl SAtom {
             _                                => None,
         }
     }
+
+    pub fn type_str(&self) -> &str {
+        match self {
+            SAtom::Str(_)         => "str",
+            SAtom::MicroSample(_) => "micro_sample",
+            SAtom::AudioSample(_) => "audio_sample",
+            SAtom::Setting(_)     => "setting",
+            SAtom::Param(_)       => "param",
+        }
+    }
 }
 
 impl From<f32> for SAtom {
