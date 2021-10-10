@@ -47,6 +47,13 @@ impl SAtom {
         }
     }
 
+    pub fn s(&self) -> String {
+        match self {
+            SAtom::Str(s) => s.clone(),
+            _             => "".to_string(),
+        }
+    }
+
     pub fn f(&self) -> f32 {
         match self {
             SAtom::Setting(i) => *i as f32,
