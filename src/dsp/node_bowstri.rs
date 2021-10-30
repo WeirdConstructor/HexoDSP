@@ -78,11 +78,6 @@ impl BowedString {
         freq: f32, bow_velocity: f32, bow_force: f32, pos: f32
     ) -> f32
     {
-//  baseDelay_ = Stk::sampleRate() / frequency - 4.0;
-//  if ( baseDelay_ <= 0.0 ) baseDelay_ = 0.3;
-//  bridgeDelay_.setDelay( baseDelay_ * betaRatio_ ); 	     // bow to bridge length
-//  neckDelay_.setDelay( baseDelay_ * (1.0 - betaRatio_) );  // bow to nut (finger) length
-
         let total_l      = self.srate / freq.max(20.0);
         let total_l      = if total_l <= 0.0 { 0.3 } else { total_l };
         let bow_position = ((pos + 1.0) / 2.0).clamp(0.01, 0.99);
@@ -115,45 +110,7 @@ impl BowedString {
     }
 }
 
-//  maxVelocity_ = 0.25;
-//
-//  StkFloat bowVelocity      = maxVelocity_ * adsr_.tick();
-//  StkFloat bridgeReflection = -stringFilter_.tick( bridgeDelay_.lastOut() );
-//  StkFloat nutReflection    = -neckDelay_.lastOut();
-//  StkFloat stringVelocity   = bridgeReflection + nutReflection;
-//  StkFloat deltaV           = bowVelocity - stringVelocity; // Differential velocity
-//
-//  StkFloat newVelocity = 0.0;
-//  if ( bowDown_ )
-//    newVelocity = deltaV * bowTable_.tick( deltaV ); // Non-Linear bow function
-//    | // The input represents differential string vs. bow velocity.
-//    |
-//    |   StkFloat sample  = deltaV + 0.001;  // add bias to input
-//    |   sample *= 3.0;                      // then scale it
-//    |   lastFrame_[0] = fabs( (double) sample ) +  0.75;
-//    |   lastFrame_[0] = pow( lastFrame_[0], (StkFloat) -4.0 );
-//    | 
-//    |   // Set minimum threshold
-//    |   if ( lastFrame_[0] < minOutput_ ) lastFrame_[0] = minOutput_;
-//    | 
-//    |   // Set maximum threshold
-//    |   if ( lastFrame_[0] > maxOutput_ ) lastFrame_[0] = maxOutput_;
-//    | 
-//    |   return lastFrame_[0];
-//
-//  neckDelay_.tick(  bridgeReflection + newVelocity);  // Do string propagations
-//  bridgeDelay_.tick(nutReflection    + newVelocity);
-//
-//  lastFrame_[0] = 0.1248
-//    * bodyFilters_[5].tick(
-//        bodyFilters_[4].tick(
-//            bodyFilters_[3].tick(
-//                bodyFilters_[2].tick(
-//                    bodyFilters_[1].tick(
-//                        bodyFilters_[0].tick(
-//                            bridgeDelay_.lastOut()))))));
-
-/// A sine oscillator
+/// A bowed string simulation oscillator
 #[derive(Debug, Clone)]
 pub struct BowStri {
     bstr: Box<BowedString>,
@@ -192,7 +149,7 @@ This is an oscillator that simulates a bowed string.
 "#;
 
     pub const HELP : &'static str =
-r#"BowStri - A Bowed String Oscillator
+r#"BowStri - A Bowed String Simulation Oscillator
 
 This is an oscillator that simulates a bowed string.
 It's a bit wonky, so play around with the parameters and see what
