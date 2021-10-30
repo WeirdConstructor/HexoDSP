@@ -269,6 +269,31 @@ pub fn crossfade<F: Flt>(v1: F, v2: F, mix: F) -> F {
     v1 * (f::<F>(1.0) - mix) + v2 * mix
 }
 
+/// Linear crossfade with clipping the `v2` result.
+///
+/// This crossfade actually does clip the `v2` signal to the -1.0 to 1.0
+/// range. This is useful for Dry/Wet of plugins that might go beyond the
+/// normal signal range.
+///
+/// * `v1` - signal 1, range -1.0 to 1.0
+/// * `v2` - signal 2, range -1.0 to 1.0
+/// * `mix` - mix position, range 0.0 to 1.0, mid is at 0.5
+#[inline]
+pub fn crossfade_clip<F: Flt>(v1: F, v2: F, mix: F) -> F {
+    v1 * (f::<F>(1.0) - mix) + (v2 * mix).min(f::<F>(1.0)).max(f::<F>(-1.0))
+}
+
+
+/// Linear (f32) crossfade with driving the `v2` result through a tanh().
+///
+/// * `v1` - signal 1, range -1.0 to 1.0
+/// * `v2` - signal 2, range -1.0 to 1.0
+/// * `mix` - mix position, range 0.0 to 1.0, mid is at 0.5
+#[inline]
+pub fn crossfade_drive_tanh(v1: f32, v2: f32, mix: f32) -> f32 {
+    v1 * (1.0 - mix) + tanh_approx_drive(v2 * mix * 0.111, 0.95) * 0.9999
+}
+
 /// Constant power crossfade.
 ///
 /// * `v1` - signal 1, range -1.0 to 1.0
@@ -477,6 +502,26 @@ pub fn quick_tanh(v: f32) -> f32 {
           * (v + 0.814642734961073 * v * abs_v).abs();
 
     num / den
+}
+
+// Taken from ValleyAudio
+// Copyright Dale Johnson
+// https://github.dev/ValleyAudio/ValleyRackFree/tree/v2.0
+// Under GPLv3 license
+pub fn tanh_approx_drive(v: f32, drive: f32) -> f32 {
+    let x = v * drive;
+
+    if x < -1.25 {
+        -1.0
+    } else if x < -0.75 {
+        1.0 - (x * (-2.5 - x) - 0.5625) - 1.0
+    } else if x > 1.25 {
+        1.0
+    } else if x > 0.75 {
+        x * (2.5 - x) - 0.5625
+    } else {
+        x
+    }
 }
 
 /// A helper function for exponential envelopes.

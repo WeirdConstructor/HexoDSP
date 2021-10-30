@@ -104,7 +104,7 @@ impl DspNode for CQnt {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        nctx: &NodeContext,
+        _nctx: &NodeContext,
         atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {

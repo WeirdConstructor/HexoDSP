@@ -200,14 +200,24 @@ impl DspNode for PVerb {
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
-        _nctx: &NodeContext,
+        nctx: &NodeContext,
         _atoms: &[SAtom], inputs: &[ProcBuf],
         outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
     {
         use crate::dsp::{inp, out_idx};
 
-        let in_l   = inp::PVerb::in_l(inputs);
-        let in_r   = inp::PVerb::in_r(inputs);
+        let mut in_l   = inp::PVerb::in_l(inputs);
+        let mut in_r   = inp::PVerb::in_r(inputs);
+
+        if (nctx.in_connected & 0x03) != 0x03 {
+            if nctx.in_connected & 0x01 == 0x01 {
+                println!("ONLY L");
+                in_r = in_l;
+            } else if nctx.in_connected & 0x02 == 0x02 {
+                println!("ONLY R");
+                in_l = in_r;
+            }
+        }
 
         let mut params = DatParams {
             frame: 0,
@@ -226,8 +236,6 @@ impl DspNode for PVerb {
         };
 
         let mix    = inp::PVerb::mix(inputs);
-//        let out_l  = out::PVerb::sig_l(outputs);
-//        let out_r  = out::PVerb::sig_r(outputs);
         let out_i  = out_idx::PVerb::sig_r();
         let (out_l, out_r) = outputs.split_at_mut(out_i);
         let out_l = &mut out_l[0];
