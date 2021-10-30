@@ -60,7 +60,7 @@ impl BowedString {
         self.string_filter =
             FixedOnePole::new(
                 0.75 - (0.2 * (22050.0 / sample_rate)),
-                0.95);
+                0.9);
     }
 
     pub fn reset(&mut self) {
@@ -78,25 +78,33 @@ impl BowedString {
         freq: f32, bow_velocity: f32, bow_force: f32, pos: f32
     ) -> f32
     {
+//  baseDelay_ = Stk::sampleRate() / frequency - 4.0;
+//  if ( baseDelay_ <= 0.0 ) baseDelay_ = 0.3;
+//  bridgeDelay_.setDelay( baseDelay_ * betaRatio_ ); 	     // bow to bridge length
+//  neckDelay_.setDelay( baseDelay_ * (1.0 - betaRatio_) );  // bow to nut (finger) length
+
         let total_l      = self.srate / freq.max(20.0);
+        let total_l      = if total_l <= 0.0 { 0.3 } else { total_l };
         let bow_position = ((pos + 1.0) / 2.0).clamp(0.01, 0.99);
 
         let bow_nut_l    = total_l * (1.0 - bow_position);
         let bow_bridge_l = total_l * bow_position;
 
-        let nut    = -self.nut_to_bow.linear_interpolate_at_s(bow_nut_l);
-        let brid   = self.bow_to_bridge.linear_interpolate_at_s(bow_bridge_l);
+        let nut    = -self.nut_to_bow.cubic_interpolate_at_s(bow_nut_l);
+        let brid   = self.bow_to_bridge.cubic_interpolate_at_s(bow_bridge_l);
         let bridge = -self.string_filter.process(brid);
 
-        let dv = bow_velocity - (nut + bridge);
+        let dv = 0.25 * bow_velocity - (nut + bridge);
 
         let phat =
            ((dv + 0.001) * bow_force + 0.75)
+           .abs()
            .powf(-4.0)
-           .clamp(0.0, 0.98);
+           .clamp(0.01, 0.98);
+        let phat = phat * dv;
 
-        self.bow_to_bridge.feed(nut + phat*dv);
-        self.nut_to_bow.feed(bridge + phat*dv);
+        self.bow_to_bridge.feed(nut + phat);
+        self.nut_to_bow.feed(bridge + phat);
 
         let mut output = bridge;
         for f in self.body_filters.iter_mut() {
@@ -106,6 +114,44 @@ impl BowedString {
         output
     }
 }
+
+//  maxVelocity_ = 0.25;
+//
+//  StkFloat bowVelocity      = maxVelocity_ * adsr_.tick();
+//  StkFloat bridgeReflection = -stringFilter_.tick( bridgeDelay_.lastOut() );
+//  StkFloat nutReflection    = -neckDelay_.lastOut();
+//  StkFloat stringVelocity   = bridgeReflection + nutReflection;
+//  StkFloat deltaV           = bowVelocity - stringVelocity; // Differential velocity
+//
+//  StkFloat newVelocity = 0.0;
+//  if ( bowDown_ )
+//    newVelocity = deltaV * bowTable_.tick( deltaV ); // Non-Linear bow function
+//    | // The input represents differential string vs. bow velocity.
+//    |
+//    |   StkFloat sample  = deltaV + 0.001;  // add bias to input
+//    |   sample *= 3.0;                      // then scale it
+//    |   lastFrame_[0] = fabs( (double) sample ) +  0.75;
+//    |   lastFrame_[0] = pow( lastFrame_[0], (StkFloat) -4.0 );
+//    | 
+//    |   // Set minimum threshold
+//    |   if ( lastFrame_[0] < minOutput_ ) lastFrame_[0] = minOutput_;
+//    | 
+//    |   // Set maximum threshold
+//    |   if ( lastFrame_[0] > maxOutput_ ) lastFrame_[0] = maxOutput_;
+//    | 
+//    |   return lastFrame_[0];
+//
+//  neckDelay_.tick(  bridgeReflection + newVelocity);  // Do string propagations
+//  bridgeDelay_.tick(nutReflection    + newVelocity);
+//
+//  lastFrame_[0] = 0.1248
+//    * bodyFilters_[5].tick(
+//        bodyFilters_[4].tick(
+//            bodyFilters_[3].tick(
+//                bodyFilters_[2].tick(
+//                    bodyFilters_[1].tick(
+//                        bodyFilters_[0].tick(
+//                            bridgeDelay_.lastOut()))))));
 
 /// A sine oscillator
 #[derive(Debug, Clone)]
@@ -148,6 +194,13 @@ This is an oscillator that simulates a bowed string.
     pub const HELP : &'static str =
 r#"BowStri - A Bowed String Oscillator
 
+This is an oscillator that simulates a bowed string.
+It's a bit wonky, so play around with the parameters and see what
+works and what doesn't. It plays find in the area from ~55Hz up to
+~1760Hz, beyond that it might not produce a sound.
+
+I can recommend to apply an envelope to the 'vel' parameter,
+which is basically the bow's velocity.
 "#;
 }
 
@@ -178,7 +231,20 @@ impl DspNode for BowStri {
 
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {
-            let freq = denorm_offs::BowStri::freq(freq, det.read(frame), frame);
+            // The BowStri oscillator is usually off by ~30 cent per octave,
+            // that makes it off by 1 semitone at about 1760Hz and off by ~30
+            // at 440 Hz.
+            // Calculate some tune correction here based on the
+            // normalized value (-0.2 is 110Hz, 0.0 is 440Hz, ...):
+            let tune_correction =
+                (freq.read(frame).clamp(-0.2, 1.0) + 0.2)
+                * 10.0 * 0.0012;
+
+            let freq =
+                denorm_offs::BowStri::freq(
+                    freq,
+                    tune_correction + det.read(frame),
+                    frame);
 
             let out =
                 self.bstr.process(
