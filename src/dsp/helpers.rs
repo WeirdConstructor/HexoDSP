@@ -969,10 +969,18 @@ impl<F: Flt> DelayBuffer<F> {
     /// Fetch a sample from the delay buffer at the given time.
     ///
     /// * `delay_time_ms` - Delay time in milliseconds.
+    #[inline]
     pub fn linear_interpolate_at(&self, delay_time_ms: F) -> F {
+        self.linear_interpolate_at_s((delay_time_ms * self.srate) / f(1000.0))
+    }
+
+    /// Fetch a sample from the delay buffer at the given offset.
+    ///
+    /// * `s_offs` - Sample offset in samples.
+    #[inline]
+    pub fn linear_interpolate_at_s(&self, s_offs: F) -> F {
         let data   = &self.data[..];
         let len    = data.len();
-        let s_offs = (delay_time_ms * self.srate) / f(1000.0);
         let offs   = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract  = s_offs.fract();
 
@@ -988,9 +996,16 @@ impl<F: Flt> DelayBuffer<F> {
     /// * `delay_time_ms` - Delay time in milliseconds.
     #[inline]
     pub fn cubic_interpolate_at(&self, delay_time_ms: F) -> F {
+        self.cubic_interpolate_at_s((delay_time_ms * self.srate) / f(1000.0))
+    }
+
+    /// Fetch a sample from the delay buffer at the given offset.
+    ///
+    /// * `s_offs` - Sample offset in samples.
+    #[inline]
+    pub fn cubic_interpolate_at_s(&self, s_offs: F) -> F {
         let data   = &self.data[..];
         let len    = data.len();
-        let s_offs = (delay_time_ms * self.srate) / f(1000.0);
         let offs   = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract  = s_offs.fract();
 
@@ -1198,6 +1213,47 @@ impl<F: Flt> OnePoleLPF<F> {
     pub fn process(&mut self, input: F) -> F {
         self.z = self.a * input + self.z * self.b;
         self.z
+    }
+}
+
+// Fixed one pole with setable pole and gain.
+// Implementation taken from tubonitaub / alec-deason
+// from https://github.com/alec-deason/virtual_modular/blob/4025f1ef343c2eb9cd74eac07b5350c1e7ec9c09/src/simd_graph.rs#L4292
+// under MIT License
+#[derive(Debug, Copy, Clone, Default)]
+pub struct FixedOnePole {
+    b0:   f32,
+    a1:   f32,
+    y1:   f32,
+    gain: f32,
+}
+
+impl FixedOnePole {
+    pub fn new(pole: f32, gain: f32) -> Self {
+        let b0 =
+            if pole > 0.0 { 1.0 - pole }
+            else { 1.0 + pole };
+
+        Self {
+            b0,
+            a1: -pole,
+            y1: 0.0,
+            gain
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.y1 = 0.0;
+    }
+
+    pub fn set_gain(&mut self, gain: f32) { self.gain = gain; }
+
+    pub fn process(&mut self, input: f32) -> f32 {
+        let output =
+              self.b0 * self.gain * input
+            - self.a1 * self.y1;
+        self.y1 = output;
+        output
     }
 }
 

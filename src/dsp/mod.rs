@@ -52,6 +52,8 @@ mod node_mux9;
 mod node_cqnt;
 #[allow(non_upper_case_globals)]
 mod node_quant;
+#[allow(non_upper_case_globals)]
+mod node_bowstri;
 
 pub mod biquad;
 pub mod tracker;
@@ -121,6 +123,7 @@ use node_rndwk::RndWk;
 use node_mux9::Mux9;
 use node_cqnt::CQnt;
 use node_quant::Quant;
+use node_bowstri::BowStri;
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -821,6 +824,13 @@ macro_rules! node_list {
                (5 damt  n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.0)
                {6 0 dist     setting(0) fa_distort 0 3}
                {7 1 ovrsmpl  setting(1) fa_vosc_ovrsmpl 0 1}
+               [0 sig],
+            bowstri => BowStri UIType::Generic UICategory::Osc
+               (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
+               (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2, 0.0)
+               (2 vel   n_id       n_id  r_id  f_def   stp_d  0.0, 1.0, 0.5)
+               (3 force n_id       n_id  r_id  f_def   stp_d  0.0, 1.0, 0.5)
+               (4 pos   n_id       n_id  r_id  f_def   stp_d  0.0, 1.0, 0.5)
                [0 sig],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)

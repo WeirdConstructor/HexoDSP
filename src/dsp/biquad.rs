@@ -25,6 +25,11 @@ pub struct BiquadCoefs {
 // https://github.com/VCVRack/Befaco/blob/v1/src/ChowDSP.hpp#L339
 // more coeffs from there ^^^^^^^^^^^^^ ?
 impl BiquadCoefs {
+    #[inline]
+    pub fn new(b0: f32, b1: f32, b2: f32, a1: f32, a2: f32) -> Self {
+        Self { b0, b1, b2, a1, a2 }
+    }
+
     /// Returns settings for a Butterworth lowpass filter.
     /// Cutoff is the -3 dB point of the filter in Hz.
     #[inline]
@@ -111,6 +116,13 @@ pub struct Biquad {
 impl Biquad {
     pub fn new() -> Self {
         Default::default()
+    }
+
+    #[inline]
+    pub fn new_with(b0: f32, b1: f32, b2: f32, a1: f32, a2: f32) -> Self {
+        let mut s = Self::new();
+        s.set_coefs(BiquadCoefs::new(b0, b1, b2, a1, a2));
+        s
     }
 
     #[inline]
