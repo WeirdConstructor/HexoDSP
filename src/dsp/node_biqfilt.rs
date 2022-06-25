@@ -152,10 +152,10 @@ impl DspNode for BiqFilt {
         }
 
         for frame in 0..ctx.nframes() {
-            let freq  = denorm::BiqFilt::freq(freq, frame);
+//            let freq  = denorm::BiqFilt::freq(freq, frame);
 //            let freq  = freq.clamp($minfreq, $maxfreq);
-            let q     = denorm::BiqFilt::q(q, frame);
-            let gain  = denorm::BiqFilt::gain(gain, frame);
+//            let q     = denorm::BiqFilt::q(q, frame);
+//            let gain  = denorm::BiqFilt::gain(gain, frame);
 
             let mut s = inp.read(frame);
             for i in 0..=order {

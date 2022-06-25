@@ -120,8 +120,6 @@ impl DspNode for CQnt {
 
         self.quant.update_keys(keys.i(), omin.i(), omax.i());
 
-        let mut last_key = 0;
-
         for frame in 0..ctx.nframes() {
             let pitch =
                 self.quant.signal_to_pitch(

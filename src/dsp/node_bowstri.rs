@@ -8,7 +8,7 @@ use crate::dsp::{
     out, inp, DspNode, LedPhaseVals, NodeContext
 };
 use crate::dsp::helpers::{FixedOnePole, DelayBuffer};
-use crate::dsp::biquad::{Biquad, BiquadCoefs};
+use crate::dsp::biquad::Biquad;
 
 // Bowed String instrument oscillator
 // Bowed string model, a la Smith (1986),
@@ -189,7 +189,7 @@ impl DspNode for BowStri {
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {
             // The BowStri oscillator is usually off by ~30 cent per octave,
-            // that makes it off by 1 semitone at about 1760Hz and off by ~30
+            // that makes it off by 1 semitone at about 1760Hz and off by ~30c
             // at 440 Hz.
             // Calculate some tune correction here based on the
             // normalized value (-0.2 is 110Hz, 0.0 is 440Hz, ...):

@@ -211,10 +211,8 @@ impl DspNode for PVerb {
 
         if (nctx.in_connected & 0x03) != 0x03 {
             if nctx.in_connected & 0x01 == 0x01 {
-                println!("ONLY L");
                 in_r = in_l;
             } else if nctx.in_connected & 0x02 == 0x02 {
-                println!("ONLY R");
                 in_l = in_r;
             }
         }

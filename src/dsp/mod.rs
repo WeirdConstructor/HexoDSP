@@ -1081,8 +1081,8 @@ macro_rules! make_node_info_enum {
                         node_desc: "Nop Desc",
                         node_name: "Nop",
 
-                        norm_v:   std::rc::Rc::new(|i, x| x),
-                        denorm_v: std::rc::Rc::new(|i, x| x),
+                        norm_v:   std::rc::Rc::new(|_i, x| x),
+                        denorm_v: std::rc::Rc::new(|_i, x| x),
                     },
                     $(NodeId::$variant(_) => crate::dsp::ni::$variant(nid)),+
                 }
