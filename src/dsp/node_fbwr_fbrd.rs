@@ -21,7 +21,7 @@ impl FbWr {
         "FbWr inp\nSignal input\nRange: (-1..1)\n";
 
     pub const DESC : &'static str =
-"Feedback Delay Writer\n\
+"Feedback Delay Writer\n\n\
 HexoSynth does not allow direct feedback cycles in it's graph.\n\
 To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.\n\
 This node allows you to write a signal into the corresponsing signal delay buffer.\n\
@@ -91,12 +91,12 @@ impl FbRd {
         "FbRd sig\nFeedback signal output.\nRange: (-1..1)\n";
 
     pub const DESC : &'static str =
-        "Feedback Delay Reader\n\
-        HexoSynth does not allow direct feedback cycles in it's graph.\n\
-        To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.\n\
-        This node allows you to tap into the corresponsing 'FbWr' signal delay \
-        for feedback.\n\
-        The delay is 3.14ms.";
+"Feedback Delay Reader\n\n\
+HexoSynth does not allow direct feedback cycles in it's graph.\n\
+To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.\n\
+This node allows you to tap into the corresponsing 'FbWr' signal delay \
+for feedback.\n\
+The delay is 3.14ms.";
     pub const HELP : &'static str =
 r#"Feedback Delay Reader
 

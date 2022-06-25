@@ -75,6 +75,7 @@ impl VOsc {
         "VOsc sig\nOscillator output\nRange: (-1..1)\n";
     pub const DESC : &'static str =
 r#"V Oscillator
+
 A vector phase shaping oscillator, to create interesting waveforms and ways to manipulate them. It has two parameters ('v' and 'd') to shape the phase of the sinusoid wave, and a 'vs' parameter to add extra spice. Distortion can beef up the oscillator output and you can apply oversampling.
 "#;
     pub const HELP : &'static str =
