@@ -216,6 +216,10 @@ impl NodeExecutor {
         }
     }
 
+    pub fn no_logging(&mut self) {
+        self.dsp_log_init = true;
+    }
+
     #[inline]
     pub fn process_graph_updates(&mut self) {
         while let Some(upd) = self.shared.graph_update_con.pop() {

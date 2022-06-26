@@ -242,6 +242,7 @@ impl crate::monitor::MonitorSource for &ProcBuf {
 }
 
 unsafe impl Send for ProcBuf {}
+unsafe impl Sync for ProcBuf {}
 //unsafe impl Sync for HexoSynthShared {}
 
 impl ProcBuf {
