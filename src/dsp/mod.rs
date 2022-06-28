@@ -717,7 +717,7 @@ macro_rules! node_list {
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 gain  n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
                (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
-               {3 0 neg_att setting(1) fa_amp_neg_att 0  1}
+               {3 0 neg_att setting(1) mode fa_amp_neg_att 0  1}
                [0 sig],
             mix3 => Mix3 UIType::Generic UICategory::NtoM
                (0 ch1   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
@@ -742,14 +742,14 @@ macro_rules! node_list {
                (10 in_7    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (11 in_8    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (12 in_9    n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               {13 0 in_cnt setting(3) fa_mux9_in_cnt 0 8}
+               {13 0 in_cnt setting(3) mode fa_mux9_in_cnt 0 8}
                [0 sig],
             smap => SMap UIType::Generic UICategory::Ctrl
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 min   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, -1.0)
                (2 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
-               {3 1 mode setting(0) fa_smap_mode 0  3}
-               {4 0 clip setting(0) fa_smap_clip 0  1}
+               {3 1 mode setting(0) mode fa_smap_mode 0  3}
+               {4 0 clip setting(0) mode fa_smap_clip 0  1}
                [0 sig],
             map => Map UIType::Generic UICategory::Ctrl
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
@@ -759,26 +759,26 @@ macro_rules! node_list {
                (4 imax  n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
                (5 min   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, -1.0)
                (6 max   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 1.0)
-               {7 0 clip setting(0) fa_map_clip 0  1}
+               {7 0 clip setting(0) mode fa_map_clip 0  1}
                [0 sig],
             quant => Quant UIType::Generic UICategory::Ctrl
                (0 freq  n_pit      d_pit  r_id  f_freq stp_d -1.0, 0.5647131, 440.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
-               {2 0 keys setting(0) fa_quant     0 0}
+               {2 0 keys setting(0) mode fa_quant     0 0}
                [0 sig]
                [1 t],
             cqnt => CQnt UIType::Generic UICategory::Ctrl
                (0 inp   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
-               {2 0 keys setting(0) fa_cqnt      0 0}
-               {3 1 omin setting(0) fa_cqnt_omin 0 4}
-               {4 2 omax setting(0) fa_cqnt_omax 0 4}
+               {2 0 keys setting(0) mode fa_cqnt      0 0}
+               {3 1 omin setting(0) mode fa_cqnt_omin 0 4}
+               {4 2 omax setting(0) mode fa_cqnt_omax 0 4}
                [0 sig]
                [1 t],
             tseq => TSeq UIType::Generic UICategory::Mod
                (0 clock n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 trig  n_id       n_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               {2 0 cmode setting(1) fa_tseq_cmode 0  2}
+               {2 0 cmode setting(1) mode fa_tseq_cmode 0  2}
                [0 trk1]
                [1 trk2]
                [2 trk3]
@@ -798,10 +798,10 @@ macro_rules! node_list {
                (3 len   n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
                (4 dcms  n_declick  d_declick r_dc_ms f_ms   stp_m  0.0, 1.0, 3.0)
                (5 det   n_det      d_det  r_det f_det    stp_f -0.2, 0.2, 0.0)
-               {6 0 sample  audio_unloaded("")   f_def 0 0}
-               {7 1 pmode   setting(0)           fa_sampl_pmode   0 1}
-               {8 2 dclick  setting(0)           fa_sampl_dclick  0 1}
-               {9 3 dir     setting(0)           fa_sampl_dir     0 1}
+               {6 0 sample  audio_unloaded("")   sample f_def 0 0}
+               {7 1 pmode   setting(0)           mode   fa_sampl_pmode   0 1}
+               {8 2 dclick  setting(0)           mode   fa_sampl_dclick  0 1}
+               {9 3 dir     setting(0)           mode   fa_sampl_dir     0 1}
                [0 sig],
              // node_param_idx
              //   name             denorm round format steps norm norm denorm
@@ -814,7 +814,7 @@ macro_rules! node_list {
                (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
                (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
                (2 pw    n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
-               {3 0 wtype setting(0) fa_bosc_wtype 0 3}
+               {3 0 wtype setting(0) mode fa_bosc_wtype 0 3}
                [0 sig],
             vosc => VOsc UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
@@ -823,8 +823,8 @@ macro_rules! node_list {
                (3 v     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (4 vs    n_vps     d_vps r_vps f_defvlp stp_d  0.0, 1.0,   0.0)
                (5 damt  n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.0)
-               {6 0 dist     setting(0) fa_distort 0 3}
-               {7 1 ovrsmpl  setting(1) fa_vosc_ovrsmpl 0 1}
+               {6 0 dist     setting(0) mode fa_distort 0 3}
+               {7 1 ovrsmpl  setting(1) mode fa_vosc_ovrsmpl 0 1}
                [0 sig],
             bowstri => BowStri UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
@@ -837,12 +837,12 @@ macro_rules! node_list {
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
                (1  ch2   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
                (2  gain  n_ogin    d_ogin r_id  f_def  stp_d  0.0, 1.0, 1.0)
-             // node_param_idx
-             // | atom_idx          format fun
-             // | | name constructor|           min max
-             // | | |    |       def|ult_value  |  /
-             // | | |    |       |  |           |  |
-               {3 0 mono setting(0) fa_out_mono 0  1},
+             // node_param_idx      UI widget type (mode, knob, sample)
+             // | atom_idx          |     format fun
+             // | | name constructor|     |     min max
+             // | | |    |       def|ult_v|lue  |  /
+             // | | |    |       |  |     |     |  |
+               {3 0 mono setting(0) mode fa_out_mono 0  1},
             fbwr => FbWr UIType::Generic UICategory::IOUtil
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
             fbrd => FbRd UIType::Generic UICategory::IOUtil
@@ -855,7 +855,7 @@ macro_rules! node_list {
                (3  dcy   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 10.0)
                (4  ashp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                (5  dshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
-               {6 0 mult setting(0) fa_ad_mult  0 2}
+               {6 0 mult setting(0) mode fa_ad_mult  0 2}
                [0 sig]
                [1 eoet],
             tslfo => TsLFO UIType::Generic UICategory::Mod
@@ -877,7 +877,7 @@ macro_rules! node_list {
                (2  time  n_time   d_time r_tms  f_ms  stp_m  0.0, 1.0, 250.0)
                (3  fb    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (4  mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
-               {5 0 mode setting(0) fa_delay_mode 0 1}
+               {5 0 mode setting(0) mode fa_delay_mode 0 1}
                [0 sig],
             allp  => AllP UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
@@ -888,26 +888,26 @@ macro_rules! node_list {
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  time  n_ftme   d_ftme r_fms  f_ms  stp_m  0.0, 1.0, 25.0)
                (2  g     n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.7)
-               {3 0 mode setting(0) fa_comb_mode 0 1}
+               {3 0 mode setting(0) mode fa_comb_mode 0 1}
                [0 sig],
             noise => Noise UIType::Generic UICategory::Osc
                (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.5)
                (1  offs  n_id      d_id  r_s    f_def stp_d -1.0, 1.0, 0.0)
-               {2 0 mode setting(0) fa_noise_mode 0 1}
+               {2 0 mode setting(0) mode fa_noise_mode 0 1}
                [0 sig],
             sfilter => SFilter UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
                (2  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
-               {3 0 ftype setting(8) fa_sfilter_type 0 13}
+               {3 0 ftype setting(8) mode fa_sfilter_type 0 13}
                [0 sig],
             biqfilt => BiqFilt UIType::Generic UICategory::Signal
                (0 inp    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1 freq   n_pit     d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 1000.0)
                (2 q      n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
                (3 gain   n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
-               {4 0 ftype setting(0) fa_biqfilt_type 0 1}
-               {5 1 order setting(0) fa_biqfilt_ord  0 3}
+               {4 0 ftype setting(0) mode fa_biqfilt_type 0 1}
+               {5 1 order setting(0) mode fa_biqfilt_ord  0 3}
                [0 sig],
             pverb => PVerb UIType::Generic UICategory::Signal
                ( 0 in_l   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
@@ -929,8 +929,8 @@ macro_rules! node_list {
                [1 sig_r],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
-               {1 0 p     param(0.0) fa_test_s 0  10}
-               {2 1 trig  param(0.0) fa_test_s 0  0}
+               {1 0 p     param(0.0) knob fa_test_s 0  10}
+               {2 1 trig  param(0.0) knob fa_test_s 0  0}
                [0 sig]
                [1 tsig]
                [2 out2]
@@ -953,7 +953,7 @@ impl UICategory {
                        $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                        $steps: ident $min: expr, $max: expr, $def: expr))*
                     $({$in_at_idx: literal $at_idx: literal $atom: ident
-                       $at_fun: ident ($at_init: expr) $fa_fun: ident
+                       $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
                        $amin: literal $amax: literal})*
                     $([$out_idx: literal $out: ident])*
                     ,)+
@@ -1059,7 +1059,7 @@ macro_rules! make_node_info_enum {
                $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                $steps: ident $min: expr, $max: expr, $def: expr))*
             $({$in_at_idx: literal $at_idx: literal $atom: ident
-               $at_fun: ident ($at_init: expr) $fa_fun: ident
+               $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
                $amin: literal $amax: literal})*
             $([$out_idx: literal $out: ident])*
             ,)+
@@ -1152,6 +1152,18 @@ macro_rules! make_node_info_enum {
                             $($in_idx    => false,)*
                             $($in_at_idx => true,)*
                             _            => false,
+                        }
+                    }),+
+                }
+            }
+
+            pub fn atom_ui(&self) -> Option<&'static str> {
+                match self.node {
+                    NodeId::$v1           => None,
+                    $(NodeId::$variant(_) => {
+                        match self.idx {
+                            $($in_at_idx => Some(stringify!($at_ui)),)*
+                            _            => None,
                         }
                     }),+
                 }
@@ -1751,7 +1763,7 @@ macro_rules! make_node_enum {
                $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                $steps: ident $min: expr, $max: expr, $def: expr))*
             $({$in_at_idx: literal $at_idx: literal $atom: ident
-               $at_fun: ident ($at_init: expr) $fa_fun: ident
+               $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
                $amin: literal $amax: literal})*
             $([$out_idx: literal $out: ident])*
             ,)+
@@ -1838,7 +1850,7 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
                    $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                    $steps: ident $min: expr, $max: expr, $def: expr))*
                 $({$in_at_idx: literal $at_idx: literal $atom: ident
-                   $at_fun: ident ($at_init: expr) $fa_fun: ident
+                   $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
                    $amin: literal $amax: literal})*
                 $([$out_idx: literal $out: ident])*
             ,)+
@@ -1906,7 +1918,7 @@ impl Node {
                        $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
                        $steps: ident $min: expr, $max: expr, $def: expr))*
                     $({$in_at_idx: literal $at_idx: literal $atom: ident
-                       $at_fun: ident ($at_init: expr) $fa_fun: ident
+                       $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
                        $amin: literal $amax: literal})*
                     $([$out_idx: literal $out: ident])*
                 ,)+
