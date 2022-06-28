@@ -913,8 +913,13 @@ impl Matrix {
         if self.config.set_param_modamt(param.clone(), modamt) {
             if let Some(obs) = &self.observer { obs.update_param(&param); }
 
+            // XXX: Remove the observer from the matrix, so the sync() does not
+            //      generate a matrix graph update! There is no structural change!
+            let obs = self.observer.take();
             // XXX: sync implicitly increases gen_counter!
-            self.sync()
+            let ret = self.sync();
+            self.observer = obs;
+            ret
         } else {
             self.gen_counter += 1;
             Ok(())
