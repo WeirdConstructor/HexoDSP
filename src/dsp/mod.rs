@@ -764,13 +764,13 @@ macro_rules! node_list {
             quant => Quant UIType::Generic UICategory::Ctrl
                (0 freq  n_pit      d_pit  r_id  f_freq stp_d -1.0, 0.5647131, 440.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
-               {2 0 keys setting(0) mode fa_quant     0 0}
+               {2 0 keys setting(0) keys fa_quant     0 0}
                [0 sig]
                [1 t],
             cqnt => CQnt UIType::Generic UICategory::Ctrl
                (0 inp   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
                (1 oct   n_id       d_id   r_s   f_def  stp_d -1.0, 1.0, 0.0)
-               {2 0 keys setting(0) mode fa_cqnt      0 0}
+               {2 0 keys setting(0) keys fa_cqnt      0 0}
                {3 1 omin setting(0) mode fa_cqnt_omin 0 4}
                {4 2 omax setting(0) mode fa_cqnt_omax 0 4}
                [0 sig]
