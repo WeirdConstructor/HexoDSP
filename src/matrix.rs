@@ -726,7 +726,7 @@ impl Matrix {
     /// let mut serialized = matrix.to_repr().serialize().to_string();
     ///
     /// assert!(serialized.find("\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]").is_some());
-    /// assert!(serialized.find("\"freq\",-0.100").is_some());
+    /// assert!(serialized.find("\"freq\",220.0").is_some());
     ///```
     ///
     /// See also [MatrixRepr::serialize].
