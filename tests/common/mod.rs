@@ -357,6 +357,19 @@ pub fn pset_d_wait(matrix: &mut Matrix, ne: &mut NodeExecutor, nid: NodeId, parm
     run_for_ms(ne, 15.0);
 }
 
+#[allow(unused)]
+pub fn pset_mod(matrix: &mut Matrix, nid: NodeId, parm: &str, modamt: f32) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param_modamt(p, Some(modamt));
+}
+
+#[allow(unused)]
+pub fn pset_mod_wait(matrix: &mut Matrix, ne: &mut NodeExecutor, nid: NodeId, parm: &str, modamt: f32) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param_modamt(p, Some(modamt));
+    run_for_ms(ne, 15.0);
+}
+
 #[allow(dead_code)]
 pub fn save_wav(name: &str, buf: &[f32]) {
     let spec = hound::WavSpec {

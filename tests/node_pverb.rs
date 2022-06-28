@@ -38,6 +38,8 @@ fn setup_pverb(matrix: &mut Matrix) {
     pset_d(matrix, ad_1, "atk", 6.0);
     pset_d(matrix, ad_1, "dcy", 100.0);
     pset_n(matrix, pverb_1, "mix", 1.000);
+    // quiet down input by 50%, since in_l is doubled in volume effectively:
+    pset_mod(matrix, pverb_1, "in_l", 0.5);
 }
 
 #[test]
@@ -71,9 +73,9 @@ fn check_node_pverb_dcy_1() {
     //d// for s in &spec { println!("{:?}", s); }
 
     // We see the sine decaying with the AD envelope:
-    assert_eq!(spec[0], vec![(345, 6), (388, 85), (431, 240), (474, 164), (517, 13)]);
-    assert_eq!(spec[1], vec![(388, 65), (431, 185), (474, 126), (517, 10)]);
-    assert_eq!(spec[2], vec![(345, 11), (388, 24), (431, 32),  (474, 29), (517, 16), (560, 6)]);
+    assert_eq!(spec[0], vec![(388, 42), (431, 120), (474, 82), (517, 6)]);
+    assert_eq!(spec[1], vec![(388, 32), (431, 92), (474, 63), (517, 5)]);
+    assert_eq!(spec[2], vec![(345, 5), (388, 12), (431, 16),  (474, 14), (517, 8)]);
     assert_eq!(spec[3], vec![]);
 
     // Wet mix & clear out the reset in the tank:
