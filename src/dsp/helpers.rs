@@ -2407,8 +2407,8 @@ impl CtrlPitchQuantizer {
     pub fn update_keys(&mut self, mut mask: i64, min_oct: i64, max_oct: i64) {
         let inp_params =
               (mask as u64)
-            | ((min_oct as u64) << 8)
-            | ((max_oct as u64) << 16);
+            | ((min_oct as u64) << 12)
+            | ((max_oct as u64) << 20);
 
         if self.input_params == inp_params {
             return;
