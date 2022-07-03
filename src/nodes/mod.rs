@@ -34,6 +34,7 @@ use crate::monitor::MON_SIG_CNT;
 use crate::dsp::{Node, SAtom};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) enum DropMsg {
     Node { node: Node },
     Prog { prog: NodeProg },

@@ -252,7 +252,7 @@ projects and authors, I can't relicense it.
 */
 
 pub mod nodes;
-#[allow(unused_macros)]
+#[allow(unused_macros, non_snake_case)]
 pub mod dsp;
 pub mod matrix;
 pub mod cell_dir;

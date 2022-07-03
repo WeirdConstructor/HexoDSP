@@ -1648,6 +1648,7 @@ macro_rules! make_node_info_enum {
             })+
         }
 
+        #[allow(unused_mut)]
         mod ni {
             $(
                 pub fn $variant(node_id: crate::dsp::NodeId) -> crate::dsp::NodeInfo {

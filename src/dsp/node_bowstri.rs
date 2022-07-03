@@ -116,8 +116,6 @@ pub struct BowStri {
     bstr: Box<BowedString>,
 }
 
-const TWOPI : f32 = 2.0 * std::f32::consts::PI;
-
 impl BowStri {
     pub fn new(_nid: &NodeId) -> Self {
         Self {

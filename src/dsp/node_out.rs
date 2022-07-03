@@ -22,6 +22,7 @@ macro_rules! fa_out_mono { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
 pub struct Out {
     /// - 0: signal channel 1
     /// - 1: signal channel 2
+    #[allow(dead_code)]
     input:  [f32; 2],
 }
 

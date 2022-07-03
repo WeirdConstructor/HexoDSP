@@ -171,6 +171,7 @@ pub struct ButterLowpass {
     cutoff: f32,
 }
 
+#[allow(dead_code)]
 impl ButterLowpass {
     pub fn new(sample_rate: f32, cutoff: f32) -> Self {
         let mut this = ButterLowpass {
