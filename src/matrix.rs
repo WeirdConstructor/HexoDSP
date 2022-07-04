@@ -1617,7 +1617,7 @@ mod tests {
     fn check_matrix_set_get() {
         use crate::nodes::new_node_engine;
 
-        let (node_conf, mut node_exec) = new_node_engine();
+        let (node_conf, _node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
         let pa1 = NodeId::Sin(1).param_by_idx(0).unwrap();

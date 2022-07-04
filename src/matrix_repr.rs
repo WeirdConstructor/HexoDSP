@@ -745,7 +745,7 @@ mod tests {
             matrix.from_repr(&mr).unwrap();
 
             let mut v = std::collections::HashMap::new();
-            matrix.for_each_atom(|unique_idx, param_id, atom, modamt| {
+            matrix.for_each_atom(|unique_idx, param_id, atom, _modamt| {
                 v.insert(
                     format!("{}_{}", unique_idx, param_id.name().to_string()),
                     param_id.denorm(atom.f()));
@@ -773,7 +773,7 @@ mod tests {
             matrix.from_repr(&mr).unwrap();
 
             let mut v = std::collections::HashMap::new();
-            matrix.for_each_atom(|unique_idx, param_id, atom, modamt| {
+            matrix.for_each_atom(|unique_idx, param_id, atom, _modamt| {
                 v.insert(
                     format!("{}_{}", unique_idx, param_id.name().to_string()),
                     param_id.denorm(atom.f()));
