@@ -121,16 +121,11 @@ I have a pretty detailed TODO list in my private notebook.
 
 ## Running the Jack Example:
 
-You need nightly rust:
-
-```text
-    rustup toolchain install nightly
-```
 
 To run the example:
 
 ```text
-    cargo +nightly run --release --example jack_demo
+    cargo run --release --example jack_demo_node_api
 ```
 
 You might need following dependencies (Ubuntu Linux):
