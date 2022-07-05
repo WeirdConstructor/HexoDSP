@@ -242,4 +242,4 @@ parts of the project I wrote. If the project contains GPL code from other
 projects and authors, I can't relicense it.
 
 
-License: AGPL-3.0-or-later
+License: GPL-3.0-or-later
