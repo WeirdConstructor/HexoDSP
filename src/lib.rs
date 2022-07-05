@@ -166,7 +166,7 @@ I might merge pull requests if I find the time and think that the contributions
 are in line with my vision.
 
 Please bear in mind, that I can only accept contributions under the License
-of this project (AGPLv3 or later).
+of this project (GPLv3 or later).
 
 ## Contact the Author
 
@@ -185,7 +185,7 @@ You can support me (and the development of this project) via Liberapay:
 This project is licensed under the GNU Affero General Public License Version 3 or
 later.
 
-### Why (A)GPL?
+### Why GPL?
 
 The obivious reason is that this project copied and translated code from many
 other free software / open source synthesis projects. The sources
@@ -215,8 +215,8 @@ _why I publish the code_, when I could as well keep it to myself:
 - To exchange knowledge and help other developers.
 - And it's a nice change to put some more polish on my private projects.
 
-Most of those reasons don't yet justify (A)GPL. The main point of the (A)GPL, as far
-as I understand: The (A)GPL makes sure the software stays free software until
+Most of those reasons don't yet justify GPL. The main point of the GPL, as far
+as I understand: The GPL makes sure the software stays free software until
 eternity. That the _end user_ of the software always stays in control. That the users
 have the means to adapt the software to new platforms or use cases.
 Even if the original authors don't maintain the software anymore.
@@ -229,7 +229,7 @@ value. If I give away my work without _any_ strings attached, I effectively
 work for free. This compromises the price I (and potentially other developers)
 can demand for the skill, workforce and time.
 
-This makes two reasons for me to choose the (A)GPL:
+This makes two reasons for me to choose the GPL:
 
 1. I do not want to support vendor lock in scenarios for free.
    I want to prevent those when I have a choice, when I invest my private
