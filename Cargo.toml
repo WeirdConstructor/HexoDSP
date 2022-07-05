@@ -2,7 +2,7 @@
 name        = "hexodsp"
 version     = "0.2.0"
 authors     = ["Weird Constructor <weirdconstructor@m8geil.de>"]
-license     = "AGPL-3.0-or-later"
+license     = "GPL-3.0-or-later"
 edition     = "2021"
 description = "Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth."
 keywords    = ["audio", "music", "real-time", "synthesis", "synthesizer", "dsp", "sound"]
