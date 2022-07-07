@@ -17,6 +17,7 @@ pub struct PatternData {
     rows:       usize,
     edit_step:  usize,
     dirty_col:  [bool; MAX_COLS],
+    generation: usize,
 }
 
 impl PatternData {
@@ -29,6 +30,7 @@ impl PatternData {
             cursor:     (2, 2),
             edit_step:  4,
             dirty_col:  [true; MAX_COLS],
+            generation: 0,
             rows,
         }
     }
@@ -104,6 +106,7 @@ impl PatternData {
         self.rows      = repr.rows;
         self.edit_step = repr.edit_step;
         self.cursor    = repr.cursor;
+        self.generation += 1;
     }
 
     pub fn get_out_data(&self) -> &[[(f32, u8); MAX_PATTERN_LEN]] {
@@ -125,8 +128,6 @@ impl PatternData {
             false
         }
     }
-
-
 
     pub fn col_type(&self, col: usize) -> PatternColType {
         self.col_types.get(col).copied().unwrap_or(PatternColType::Step)
@@ -271,6 +272,8 @@ pub trait UIPatternModel: std::fmt::Debug {
     fn get_cursor(&self) -> (usize, usize);
     fn set_edit_step(&mut self, es: usize);
     fn get_edit_step(&mut self) -> usize;
+
+    fn get_generation(&self) -> usize;
 }
 
 impl UIPatternModel for PatternData {
@@ -296,6 +299,7 @@ impl UIPatternModel for PatternData {
         self.data[row][col]    = None;
         self.strings[row][col] = None;
         self.modified_col(col);
+        self.generation += 1;
     }
 
     fn get_cell_value(&mut self, row: usize, col: usize) -> u16 {
@@ -312,6 +316,7 @@ impl UIPatternModel for PatternData {
         self.data[row][col]    = Some(val);
         self.strings[row][col] = None;
         self.modified_col(col);
+        self.generation += 1;
     }
 
     fn is_col_note(&self, col: usize) -> bool {
@@ -345,38 +350,49 @@ impl UIPatternModel for PatternData {
     fn set_rows(&mut self, rows: usize) {
         self.rows = rows.min(self.data.len());
         self.modified_col(0); // modify any col, so we send an update.
+        self.generation += 1;
     }
 
     fn set_col_note_type(&mut self, col: usize) {
         if col >= self.col_types.len() { return; }
         self.col_types[col] = PatternColType::Note;
         self.modified_col(col);
+        self.generation += 1;
     }
 
     fn set_col_step_type(&mut self, col: usize) {
         if col >= self.col_types.len() { return; }
         self.col_types[col] = PatternColType::Step;
         self.modified_col(col);
+        self.generation += 1;
     }
 
     fn set_col_value_type(&mut self, col: usize) {
         if col >= self.col_types.len() { return; }
         self.col_types[col] = PatternColType::Value;
         self.modified_col(col);
+        self.generation += 1;
     }
 
     fn set_col_gate_type(&mut self, col: usize) {
         if col >= self.col_types.len() { return; }
         self.col_types[col] = PatternColType::Gate;
         self.modified_col(col);
+        self.generation += 1;
     }
 
     fn set_cursor(&mut self, row: usize, col: usize) {
         self.cursor = (row, col);
+        self.generation += 1;
     }
     fn get_cursor(&self) -> (usize, usize) { self.cursor }
-    fn set_edit_step(&mut self, es: usize) { self.edit_step = es; }
+    fn set_edit_step(&mut self, es: usize) {
+        self.edit_step = es;
+        self.generation += 1;
+    }
     fn get_edit_step(&mut self) -> usize { self.edit_step }
+
+    fn get_generation(&self) -> usize { self.generation }
 }
 
 
