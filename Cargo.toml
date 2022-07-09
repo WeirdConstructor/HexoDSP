@@ -24,6 +24,8 @@ num-traits    = "0.2.14"
 num-complex = "0.2"
 jack        = "0.6.6"
 rustfft     = "6.0.0"
+cpal        = "0.13.5"
+anyhow      = "1.0.58"
 
 [lib]
 path       = "src/lib.rs"
