@@ -21,8 +21,8 @@ macro_rules! fa_goertzel_type { ($formatter: expr, $v: expr, $denorm_v: expr) =>
 //WRITME: all of this stuff
 /// A simple amplifier
 #[derive(Debug, Clone)]
-pub struct BiqFilt {
-    cascade: Vec<Biquad>,
+pub struct GzFilt {
+    computer: Goertzel,
     srate:   f32,
     ofreq:   f32,
     oq:      f32,
@@ -30,10 +30,10 @@ pub struct BiqFilt {
     otype:   u8,
 }
 
-impl BiqFilt {
+impl GzFilt {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
-            cascade: vec![Biquad::new(); 4],
+            cascade: Goertzel::new(),
             srate: 1.0 / 44100.0,
             otype: 99,   // value that can't be set by the user
             ofreq: -2.0, // value that can't be set by the user
@@ -42,45 +42,33 @@ impl BiqFilt {
         }
     }
     pub const inp : &'static str =
-        "BiqFilt inp\nSignal input\nRange: (-1..1)\n";
+        "GzFilt inp\nSignal input\nRange: (-1..1)\n";
     pub const freq : &'static str =
-        "BiqFilt freq\nFilter cutoff frequency.\nRange: (-1..1)\n";
-    pub const q : &'static str =
-        "BiqFilt q\nFilter Q factor.\nRange: (0..1)\n";
+        "GzFilt freq\nFrequency to extract.\nRange: (20..20000)\n";
     pub const gain : &'static str =
-        "BiqFilt gain\nFilter gain.\nRange: (0..1)\n";
-    pub const ftype : &'static str =
-        "BiqFilt ftype\n'BtW LP' Butterworth Low-Pass, 'Res' Resonator";
-    pub const order : &'static str =
-        "BiqFilt order\n";
+        "GzFilt gain\nFilter gain.\nRange: (0..1)\n";
     pub const sig : &'static str =
-        "BiqFilt sig\nFiltered signal output.\nRange: (-1..1)\n";
+        "GzFilt sig\nFiltered signal output.\nRange: (-1..1)\n";
     pub const DESC : &'static str =
-r#"Biquad Filter
+r#"Goertzel Algorithm
 
-This is the implementation of a biquad filter cascade.
-It is not meant for fast automation. Please use other nodes
-like eg. SFilter for that.
+This is the implementation of a goertzel algorithm for extraction of a particular frequency. It is basically a fine bandpass around a specific frequency.
 "#;
     pub const HELP : &'static str =
-r#"BiqFilt - Biquad Filter (Cascade)
+r#"GzFilt - Goertzel Filter (Fine Bandpass)
 
-This is the implementation of a biquad filter cascade.
-It is not meant for fast automation and might blow up if you
-treat it too rough. Please use other nodes like eg. SFilter for that.
+This is the implementation of a goertzel algorithm for extraction of a particular frequency. It is basically a fine bandpass around a specific frequency.
 "#;
 }
 
-impl DspNode for BiqFilt {
+impl DspNode for GzFilt {
     fn outputs() -> usize { 1 }
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate = srate;
         self.otype = 99; // cause recalculation of the filter
 
-        for b in &mut self.cascade {
-            b.reset();
-        }
+        self.reset();
     }
 
     fn reset(&mut self) {
@@ -98,19 +86,19 @@ impl DspNode for BiqFilt {
     {
         use crate::dsp::{out, inp, denorm, at};
 
-        let inp   = inp::BiqFilt::inp(inputs);
-        let freq  = inp::BiqFilt::freq(inputs);
-        let q     = inp::BiqFilt::q(inputs);
-        let gain  = inp::BiqFilt::gain(inputs);
-        let ftype = at::BiqFilt::ftype(atoms);
-        let order = at::BiqFilt::order(atoms);
-        let out   = out::BiqFilt::sig(outputs);
+        let inp   = inp::GzFilt::inp(inputs);
+        let freq  = inp::GzFilt::freq(inputs);
+        let q     = inp::GzFilt::q(inputs);
+        let gain  = inp::GzFilt::gain(inputs);
+        let ftype = at::GzFilt::ftype(atoms);
+        let order = at::GzFilt::order(atoms);
+        let out   = out::GzFilt::sig(outputs);
 
         let ftype = ftype.i() as u8;
-        let cfreq = denorm::BiqFilt::freq(freq, 0);
+        let cfreq = denorm::GzFilt::freq(freq, 0);
         let cfreq = cfreq.clamp(0.0, 22000.0);
-        let cq    = denorm::BiqFilt::q(q, 0);
-        let cgain = denorm::BiqFilt::gain(gain, 0);
+        let cq    = denorm::GzFilt::q(q, 0);
+        let cgain = denorm::GzFilt::gain(gain, 0);
 
         if    ftype != self.otype
            || (cfreq - self.ofreq).abs() > 0.0001
@@ -118,40 +106,23 @@ impl DspNode for BiqFilt {
            || (cgain - self.ogain).abs() > 0.0001
         {
             // recalculate coeffs of all in the cascade
-            let coefs =
-                match ftype {
-                    1 => BiquadCoefs::resonator(self.srate, cfreq, cq),
-                    _ => BiquadCoefs::butter_lowpass(self.srate, cfreq),
-                };
-
-            for o in &mut self.cascade {
-                o.set_coefs(coefs);
-                o.reset();
-            }
+            self.computer.target_freq = cfreq;
+            self.computer.reset();
 
             self.otype = ftype;
             self.ofreq = cfreq;
             self.oq    = cq;
-            self.ogain = cgain;
-        }
-
-        let mut order = order.i() as u8;
-        if ftype == 1 { // The resonator just blows up with higher orders.
-            order = 0;
+            self.ogain = cgain; 
         }
 
         for frame in 0..ctx.nframes() {
-//            let freq  = denorm::BiqFilt::freq(freq, frame);
-//            let freq  = freq.clamp($minfreq, $maxfreq);
-//            let q     = denorm::BiqFilt::q(q, frame);
-//            let gain  = denorm::BiqFilt::gain(gain, frame);
+            let gain  = denorm::GzFilt::gain(gain, frame);
 
             let mut s = inp.read(frame);
-            for i in 0..=order {
-                s = self.cascade[i as usize].tick(s);
-            }
+            s = self.computer.tick(s);
+            
 
-            out.write(frame, s);
+            out.write(frame, s * gain);
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
