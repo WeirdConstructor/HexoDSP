@@ -5,7 +5,7 @@
 
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
-use crate::dsp::biquad::*;
+use crate::dsp::goertzel::*;
 
 #[macro_export]
 macro_rules! fa_goertzel_type { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
@@ -25,7 +25,6 @@ pub struct GzFilt {
     computer: Goertzel,
     srate:   f32,
     ofreq:   f32,
-    oq:      f32,
     ogain:   f32,
     otype:   u8,
 }
@@ -33,11 +32,10 @@ pub struct GzFilt {
 impl GzFilt {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
-            cascade: Goertzel::new(),
+            computer: Goertzel::new(),
             srate: 1.0 / 44100.0,
             otype: 99,   // value that can't be set by the user
             ofreq: -2.0, // value that can't be set by the user
-            oq:    -2.0, // value that can't be set by the user
             ogain: -2.0, // value that can't be set by the user
         }
     }
@@ -72,9 +70,7 @@ impl DspNode for GzFilt {
     }
 
     fn reset(&mut self) {
-        for b in &mut self.cascade {
-            b.reset();
-        }
+        self.computer.reset();
     }
 
     #[inline]
@@ -88,30 +84,21 @@ impl DspNode for GzFilt {
 
         let inp   = inp::GzFilt::inp(inputs);
         let freq  = inp::GzFilt::freq(inputs);
-        let q     = inp::GzFilt::q(inputs);
         let gain  = inp::GzFilt::gain(inputs);
-        let ftype = at::GzFilt::ftype(atoms);
-        let order = at::GzFilt::order(atoms);
         let out   = out::GzFilt::sig(outputs);
 
-        let ftype = ftype.i() as u8;
         let cfreq = denorm::GzFilt::freq(freq, 0);
         let cfreq = cfreq.clamp(0.0, 22000.0);
-        let cq    = denorm::GzFilt::q(q, 0);
         let cgain = denorm::GzFilt::gain(gain, 0);
 
-        if    ftype != self.otype
-           || (cfreq - self.ofreq).abs() > 0.0001
-           || (cq - self.oq).abs()       > 0.0001
+        if  (cfreq - self.ofreq).abs() > 0.0001
            || (cgain - self.ogain).abs() > 0.0001
         {
             // recalculate coeffs of all in the cascade
             self.computer.target_freq = cfreq;
             self.computer.reset();
 
-            self.otype = ftype;
             self.ofreq = cfreq;
-            self.oq    = cq;
             self.ogain = cgain; 
         }
 

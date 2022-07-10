@@ -54,6 +54,9 @@ mod node_cqnt;
 mod node_quant;
 #[allow(non_upper_case_globals)]
 mod node_bowstri;
+#[allow(non_upper_case_globals)]
+mod node_goertzel;
+pub mod goertzel;
 
 pub mod biquad;
 pub mod tracker;
@@ -124,6 +127,8 @@ use node_mux9::Mux9;
 use node_cqnt::CQnt;
 use node_quant::Quant;
 use node_bowstri::BowStri;
+use node_goertzel::GzFilt;
+
 
 pub const MIDI_MAX_FREQ : f32 = 13289.75;
 
@@ -927,6 +932,13 @@ macro_rules! node_list {
                (14 mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                [0 sig_l]
                [1 sig_r],
+               
+            goertzel => GzFilt UIType::Generic UICategory::Signal
+            (0 inp n_id d_id r_id f_def stp_d -1.0, 1.0, 0.0)
+            (1 freq   n_pit     d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 1000.0)
+            (2 gain   n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
+            [0 sig],
+
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
                {1 0 p     param(0.0) knob fa_test_s 0  10}
