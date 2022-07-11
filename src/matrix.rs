@@ -70,10 +70,16 @@ impl Cell {
     ///     .out(None, Some(0), Some(0));
     ///```
     pub fn empty(node_id: NodeId) -> Self {
+        Self::empty_at(node_id, 0, 0)
+    }
+
+    /// This is an alternative constructor, in case you know the position of the
+    /// cell before you got it from the Matrix.
+    pub fn empty_at(node_id: NodeId, x: u8, y: u8) -> Self {
         Self {
             node_id,
-            x: 0,
-            y: 0,
+            x,
+            y,
             out1: None,
             out2: None,
             out3: None,
