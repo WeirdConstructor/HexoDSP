@@ -14,7 +14,12 @@ pub struct Goertzel{
 // implementation with notes taken from https://www.embedded.com/the-goertzel-algorithm/
 impl Goertzel{
     pub fn new() -> Self {
-        Default::default()
+        let mut s:Goertzel = Default::default();
+        s.target_freq = 880.0;
+        s.reference_tuning = 440.0;
+        s.ideal_buffsize = (2.0 * 44100.0 / s.reference_tuning).floor() as usize;
+        s.buff = VecDeque::with_capacity(s.ideal_buffsize);
+        s
     }
 
     #[inline]
