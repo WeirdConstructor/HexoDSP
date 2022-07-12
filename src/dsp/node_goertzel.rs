@@ -64,6 +64,7 @@ impl DspNode for GzFilt {
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate = srate;
+        self.computer.srate = srate;
         self.otype = 99; // cause recalculation of the filter
 
         self.reset();
@@ -107,7 +108,6 @@ impl DspNode for GzFilt {
 
             let mut s = inp.read(frame);
             s = self.computer.tick(s);
-            
 
             out.write(frame, s * gain);
         }

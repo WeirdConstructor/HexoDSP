@@ -5,6 +5,7 @@ const PI:f32 = std::f32::consts::PI;
 #[derive(Debug, Clone, Default)]
 pub struct Goertzel{
     pub target_freq: f32,
+    pub srate: f32,
     reference_tuning: f32, // assumed that target freqs will be int multiples of ref tuning
     ideal_buffsize: usize, // calculated with respect to target freq and ref tuning
     buff: VecDeque<f32>
@@ -15,26 +16,30 @@ pub struct Goertzel{
 impl Goertzel{
     pub fn new() -> Self {
         let mut s:Goertzel = Default::default();
+        s.srate = 1.0/44100.0;
         s.target_freq = 880.0;
         s.reference_tuning = 440.0;
-        s.ideal_buffsize = (2.0 * 44100.0 / s.reference_tuning).floor() as usize;
+        s.ideal_buffsize = (2.0 * (1/s.srate) / s.reference_tuning).floor() as usize;
         s.buff = VecDeque::with_capacity(s.ideal_buffsize);
         s
     }
 
     #[inline]
-    pub fn new_with(tfreq:f32, reftune:f32) -> Self{
+    pub fn new_with(tfreq:f32, reftune:f32, srate:f32) -> Self{
         let mut s = Self::new();
         s.target_freq = tfreq;
         s.reference_tuning = reftune;
         //you want the target frequencies to be integer multiples of sample_rate/N
-        s.ideal_buffsize = (2.0 * 44100.0 / reftune).floor() as usize;
+        s.ideal_buffsize = (2.0 * (1.0/srate) / reftune).floor() as usize;
         s.buff = VecDeque::with_capacity(s.ideal_buffsize);
         s
     }
 
     pub fn reset(&mut self){
         self.buff.clear();
+        self.ideal_buffsize = (2.0 * (1.0/self.srate) / self.reference_tuning).floor() as usize;
+        self.buff.reserve_exact(self.ideal_buffsize);
+
     }
 
     #[inline]
