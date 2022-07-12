@@ -13,14 +13,20 @@ fn setup_gnode_matrix() -> (Matrix, NodeExecutor) {
     let goertzel = NodeId::GzFilt(0);
     let sin    = NodeId::Sin(0);
     let out   = NodeId::Out(0);
-    //FIXME: link properly sin880 -> goertzel tuned to 880 -> out
+    
     matrix.place(0, 0, Cell::empty(sin)
-                       .input(None, None, None)
-                       .out(None, None, sf.out("sig")));
-    matrix.place(1, 1, Cell::empty(goertzel)
-                       .out(goertzel.out("sig"), None, None);
-    matrix.place(1, 2, Cell::empty(out)
-                       .input(out.inp("sig"), None, None));
+                        //    Top   TopLeft BottomLeft
+                       .input(None, None,   None)
+                       // TopRight  BottomRight     Bottom
+                       .out(None,   sin.out("sig"), None));
+
+    matrix.place(1, 0, Cell::empty(goertzel)
+                       .input(None, goertzel.inp("inp"), None)
+                       .out(None, goertzel.out("sig"), None));
+
+    matrix.place(2, 1, Cell::empty(out)
+                       .input(None, out.inp("ch1"), None));
+
     matrix.sync().unwrap();
 
     (matrix, node_exec)
@@ -29,10 +35,17 @@ fn setup_gnode_matrix() -> (Matrix, NodeExecutor) {
 //WRITEME: expect signal to be > 0.2 for 880, change goertzel param to 600 target -> expect it to be < 0.2
 #[test]
 fn check_node_goertzel() {
-    let (matrix, node_exec) = setup_gnode_matrix();
+    let (matrix, mut node_exec) = setup_gnode_matrix();
 
-    let (out_l, _) = run_for_ms(&mut node_exec, 300.0);
-    let rms_mimax = calc_rms_mimax_each_ms(&out_l[..], 25.0);
+    let fft = run_and_get_fft4096_now(&mut node_exec, 500);
+    // nice formatted debug printing, execute with:
+    //    cargo test goert -- --nocapture
+    eprintln!("FFT: {:#?}", fft);
+    assert!(fft[0].0 == 0); // it should be a const value so a dom frequency should be 0
+
+    let (out_l, _) = run_for_ms(&mut node_exec, 25.0);
+    let rms_minmax = calc_rms_mimax_each_ms(&out_l[..], 10.0);
+    eprintln!("RMS: {:?}", rms_minmax);
+    assert!(rms_minmax[1].2 - rms_minmax[1].1 < 0.01); // the output should be const for const freq input
 
 }
-

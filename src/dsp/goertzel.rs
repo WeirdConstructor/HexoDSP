@@ -65,6 +65,6 @@ impl Goertzel{
         }
         let mag_squared = (Q1.powf(2.0) + (Q2.powf(2.0)) - (Q1*Q2*coeff)) as f32;
 
-        f32::sqrt(mag_squared)
+        f32::sqrt(mag_squared) / 100.0
     }
 }
