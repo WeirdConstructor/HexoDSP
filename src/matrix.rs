@@ -656,6 +656,9 @@ impl Matrix {
     /// does not have cycles, otherwise an upload to the DSP thread via
     /// [Matrix::sync] will fail.
     ///
+    /// If you try to place a cell outside the grid, it will not be placed
+    /// and just silently ignored.
+    ///
     /// You can safely check the DSP topology of changes using
     /// the convenience function [Matrix::change_matrix]
     /// or alternatively: [Matrix::save_matrix], [Matrix::restore_matrix]
@@ -665,6 +668,11 @@ impl Matrix {
     pub fn place(&mut self, x: usize, y: usize, mut cell: Cell) {
         cell.x = x as u8;
         cell.y = y as u8;
+
+        if x >= self.w || y >= self.h {
+            return;
+        }
+
         self.matrix[x * self.h + y] = cell;
     }
 
