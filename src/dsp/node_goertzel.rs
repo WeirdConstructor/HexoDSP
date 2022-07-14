@@ -147,22 +147,22 @@ impl DspNode for Gz3Filt {
         self.g3.setCoeff(cfreq3, ctx.nframes(), self.srate);
 
         // latency winds up rounding to int multiple of buffer size because thats simpler
-        if self.frames_processed as f32 > self.olatency {
-            self.g1.reset();
-            self.g2.reset();
-            self.g3.reset();
-        }
-
+        
+        let mut s:f32;
         for frame in 0..ctx.nframes() {
-            let gain = denorm::Gz3Filt::gain(gain, frame);
-
-            let mut s = inp.read(frame);
+            s = inp.read(frame);
             s = self.g1.tick(s) + self.g2.tick(s) + self.g3.tick(s);
+            self.frames_processed+=1;
+            if self.frames_processed as f32 > self.olatency {
+                self.frames_processed = 0;
+                self.g1.reset();
+                self.g2.reset();
+                self.g3.reset();
 
-            out.write(frame, s * gain);
+                let gain = denorm::Gz3Filt::gain(gain, frame);
+                out.write(frame, s * gain); 
+            }
         }
-
-        self.frames_processed += ctx.nframes();
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
     }
