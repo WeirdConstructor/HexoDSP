@@ -20,6 +20,8 @@ pub struct Gz3Filt {
     olatency: f32, // how many samples before recomputing goertzel on new window
     frames_processed: usize,
 
+    temp_out:f32,
+
     ogain: f32,
 }
 
@@ -36,6 +38,8 @@ impl Gz3Filt {
 
             olatency: 2048.0,
             frames_processed: 0,
+
+            temp_out: 0.0,
 
             srate: 44100.0,
             ogain: -2.0, // value that can't be set by the user
@@ -70,11 +74,11 @@ impl DspNode for Gz3Filt {
         self.g1.setCoeff(self.ofreq1, DEFAULT_BUFFSIZE, srate);
         self.g2.setCoeff(self.ofreq2, DEFAULT_BUFFSIZE, srate);
         self.g3.setCoeff(self.ofreq3, DEFAULT_BUFFSIZE, srate);
-
         self.reset();
     }
 
     fn reset(&mut self) {
+        self.temp_out = 0.0;
         self.g1.reset();
         self.g2.reset();
         self.g3.reset();
@@ -154,14 +158,14 @@ impl DspNode for Gz3Filt {
             s = self.g1.tick(s) + self.g2.tick(s) + self.g3.tick(s);
             self.frames_processed+=1;
             if self.frames_processed as f32 > self.olatency {
+                self.temp_out = s; //only updates after a calculation on a new window
                 self.frames_processed = 0;
                 self.g1.reset();
                 self.g2.reset();
                 self.g3.reset();
-
-                let gain = denorm::Gz3Filt::gain(gain, frame);
-                out.write(frame, s * gain); 
             }
+            let gain = denorm::Gz3Filt::gain(gain, frame);
+            out.write(frame, self.temp_out * gain); 
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
