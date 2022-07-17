@@ -2,12 +2,11 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{
-    NodeId, SAtom, ProcBuf, denorm_offs,
-    out, inp, DspNode, LedPhaseVals, NodeContext
-};
 use crate::dsp::helpers::fast_sin;
+use crate::dsp::{
+    denorm_offs, inp, out, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+};
+use crate::nodes::{NodeAudioContext, NodeExecContext};
 
 /// A sine oscillator
 #[derive(Debug, Clone)]
@@ -20,38 +19,29 @@ pub struct Sin {
     init_phase: f32,
 }
 
-const TWOPI : f32 = 2.0 * std::f32::consts::PI;
+const TWOPI: f32 = 2.0 * std::f32::consts::PI;
 
 impl Sin {
     pub fn new(nid: &NodeId) -> Self {
         let init_phase = nid.init_phase();
 
-        Self {
-            srate: 44100.0,
-            phase: init_phase,
-            init_phase,
-        }
+        Self { srate: 44100.0, phase: init_phase, init_phase }
     }
-    pub const freq : &'static str =
-        "Sin freq\nFrequency of the oscillator.\n\nRange: (-1..1)\n";
-    pub const det : &'static str =
-        "Sin det\nDetune the oscillator in semitones and cents. \
+    pub const freq: &'static str = "Sin freq\nFrequency of the oscillator.\n\nRange: (-1..1)\n";
+    pub const det: &'static str = "Sin det\nDetune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
          A signal sent to this port is not rounded.\n\
          Note: The signal input allows detune +-10 octaves.\
          \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
-    pub const sig : &'static str =
-        "Sin sig\nOscillator signal output.\n\nRange: (-1..1)\n";
+    pub const sig: &'static str = "Sin sig\nOscillator signal output.\n\nRange: (-1..1)\n";
 
-    pub const DESC : &'static str =
-r#"Sine Oscillator
+    pub const DESC: &'static str = r#"Sine Oscillator
 
 This is a very simple oscillator that generates a sine wave.
 "#;
 
-    pub const HELP : &'static str =
-r#"Sin - A Sine Oscillator
+    pub const HELP: &'static str = r#"Sin - A Sine Oscillator
 
 This is a very simple oscillator that generates a sine wave.
 The 'freq' paramter specifies the frequency, and the 'det' parameter
@@ -68,7 +58,9 @@ nodes available.
 }
 
 impl DspNode for Sin {
-    fn outputs() -> usize { 1 }
+    fn outputs() -> usize {
+        1
+    }
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate = srate;
@@ -80,15 +72,19 @@ impl DspNode for Sin {
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
+        &mut self,
+        ctx: &mut T,
+        _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        _atoms: &[SAtom], inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
-    {
-        let o    = out::Sin::sig(outputs);
+        _atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf],
+        ctx_vals: LedPhaseVals,
+    ) {
+        let o = out::Sin::sig(outputs);
         let freq = inp::Sin::freq(inputs);
-        let det  = inp::Sin::det(inputs);
-        let isr  = 1.0 / self.srate;
+        let det = inp::Sin::det(inputs);
+        let isr = 1.0 / self.srate;
 
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {

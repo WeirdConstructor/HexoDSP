@@ -3,25 +3,24 @@
 // See README.md and COPYING for details.
 
 use super::{
-    GraphMessage, QuickMessage, DropMsg, NodeProg,
-    UNUSED_MONITOR_IDX, MAX_ALLOCATED_NODES, MAX_SMOOTHERS,
-    MAX_FB_DELAY_SIZE, FB_DELAY_TIME_US
+    DropMsg, GraphMessage, NodeProg, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES,
+    MAX_FB_DELAY_SIZE, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
-use crate::dsp::{NodeId, Node, NodeContext, MAX_BLOCK_SIZE};
-use crate::util::{Smoother, AtomicFloat};
+use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
+use crate::util::{AtomicFloat, Smoother};
 
-use std::io::Write;
 use crate::log;
+use std::io::Write;
 
-use ringbuf::{Producer, Consumer};
+use ringbuf::{Consumer, Producer};
 use std::sync::Arc;
 
 use core::arch::x86_64::{
     _MM_FLUSH_ZERO_ON,
-//    _MM_FLUSH_ZERO_OFF,
+    //    _MM_FLUSH_ZERO_OFF,
     _MM_SET_FLUSH_ZERO_MODE,
-//    _MM_GET_FLUSH_ZERO_MODE
+    //    _MM_GET_FLUSH_ZERO_MODE
 };
 
 /// Holds the complete allocation of nodes and
@@ -77,13 +76,11 @@ pub(crate) struct SharedNodeExec {
     /// phase might be used to display an envelope's play position.
     pub(crate) node_ctx_values: Vec<Arc<AtomicFloat>>,
     /// For receiving Node and NodeProg updates
-    pub(crate) graph_update_con:  Consumer<GraphMessage>,
-    /// For quick updates like UI paramter changes.
-    pub(crate) quick_update_con:  Consumer<QuickMessage>,
+    pub(crate) graph_update_con: Consumer<GraphMessage>,
     /// For receiving deleted/overwritten nodes from the backend thread.
-    pub(crate) graph_drop_prod:   Producer<DropMsg>,
+    pub(crate) graph_drop_prod: Producer<DropMsg>,
     /// For sending feedback to the frontend thread.
-    pub(crate) monitor_backend:   MonitorBackend,
+    pub(crate) monitor_backend: MonitorBackend,
 }
 
 /// Contains audio driver context informations. Such as the number
@@ -104,20 +101,20 @@ pub trait NodeAudioContext {
 /// See also `sample_count` field.
 pub struct FeedbackBuffer {
     /// The feedback buffer that holds the samples of the previous period.
-    buffer:         [f32; MAX_FB_DELAY_SIZE],
+    buffer: [f32; MAX_FB_DELAY_SIZE],
     /// The write pointer.
-    write_ptr:      usize,
+    write_ptr: usize,
     /// Read pointer, is always behind write_ptr by an initial amount
-    read_ptr:       usize,
+    read_ptr: usize,
 }
 
 impl FeedbackBuffer {
     pub fn new() -> Self {
         let delay_sample_count = (44100.0 as usize * FB_DELAY_TIME_US) / 1000000;
         Self {
-            buffer:         [0.0; MAX_FB_DELAY_SIZE],
-            write_ptr:      delay_sample_count % MAX_FB_DELAY_SIZE,
-            read_ptr:       0,
+            buffer: [0.0; MAX_FB_DELAY_SIZE],
+            write_ptr: delay_sample_count % MAX_FB_DELAY_SIZE,
+            read_ptr: 0,
         }
     }
 
@@ -126,7 +123,7 @@ impl FeedbackBuffer {
     }
 
     pub fn set_sample_rate(&mut self, sr: f32) {
-        self.buffer            = [0.0; MAX_FB_DELAY_SIZE];
+        self.buffer = [0.0; MAX_FB_DELAY_SIZE];
         // The delay sample count maximum is defined by MAX_FB_DELAY_SRATE,
         // after that the feedback delays become shorter than they should be
         // and things won't sound the same at sample rate
@@ -140,8 +137,8 @@ impl FeedbackBuffer {
         // be used before FbWr or after FbRd.
 
         let delay_sample_count = (sr as usize * FB_DELAY_TIME_US) / 1000000;
-        self.write_ptr         = delay_sample_count % MAX_FB_DELAY_SIZE;
-        self.read_ptr          = 0;
+        self.write_ptr = delay_sample_count % MAX_FB_DELAY_SIZE;
+        self.read_ptr = 0;
     }
 
     #[inline]
@@ -162,22 +159,22 @@ impl FeedbackBuffer {
 }
 
 impl Default for FeedbackBuffer {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Contains global state that all nodes can access.
 /// This is used for instance to implement the feedbackd delay nodes.
 pub struct NodeExecContext {
-    pub feedback_delay_buffers:     Vec<FeedbackBuffer>,
+    pub feedback_delay_buffers: Vec<FeedbackBuffer>,
 }
 
 impl NodeExecContext {
     fn new() -> Self {
         let mut fbdb = vec![];
         fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
-        Self {
-            feedback_delay_buffers: fbdb,
-        }
+        Self { feedback_delay_buffers: fbdb }
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
@@ -207,11 +204,11 @@ impl NodeExecutor {
             nodes,
             smoothers,
             target_refresh,
-            sample_rate:       44100.0,
-            prog:              NodeProg::empty(),
+            sample_rate: 44100.0,
+            prog: NodeProg::empty(),
             monitor_signal_cur_inp_indices: [UNUSED_MONITOR_IDX; MON_SIG_CNT],
-            exec_ctx:          NodeExecContext::new(),
-            dsp_log_init:      false,
+            exec_ctx: NodeExecContext::new(),
+            dsp_log_init: false,
             shared,
         }
     }
@@ -226,51 +223,42 @@ impl NodeExecutor {
             match upd {
                 GraphMessage::NewNode { index, mut node } => {
                     node.set_sample_rate(self.sample_rate);
-                    let prev_node =
-                        std::mem::replace(
-                            &mut self.nodes[index as usize],
-                            node);
+                    let prev_node = std::mem::replace(&mut self.nodes[index as usize], node);
 
                     log(|w| {
-                        let _ = write!(w, "[dbg] Create node index={}", index); });
+                        let _ = write!(w, "[dbg] Create node index={}", index);
+                    });
 
-                    let _ =
-                        self.shared.graph_drop_prod.push(
-                            DropMsg::Node { node: prev_node });
-                },
+                    let _ = self.shared.graph_drop_prod.push(DropMsg::Node { node: prev_node });
+                }
                 GraphMessage::Clear { prog } => {
                     for n in self.nodes.iter_mut() {
                         if n.to_id(0) != NodeId::Nop {
                             let prev_node = std::mem::replace(n, Node::Nop);
                             let _ =
-                                self.shared.graph_drop_prod.push(
-                                    DropMsg::Node { node: prev_node });
+                                self.shared.graph_drop_prod.push(DropMsg::Node { node: prev_node });
                         }
                     }
 
                     self.exec_ctx.clear();
 
-                    self.monitor_signal_cur_inp_indices =
-                        [UNUSED_MONITOR_IDX; MON_SIG_CNT];
+                    self.monitor_signal_cur_inp_indices = [UNUSED_MONITOR_IDX; MON_SIG_CNT];
 
                     log(|w| {
-                        let _ = write!(w,
-                            "[dbg] Cleared graph ({} nodes)",
-                            self.prog.prog.len()); });
+                        let _ = write!(w, "[dbg] Cleared graph ({} nodes)", self.prog.prog.len());
+                    });
 
                     let prev_prog = std::mem::replace(&mut self.prog, prog);
-                    let _ =
-                        self.shared.graph_drop_prod.push(
-                            DropMsg::Prog { prog: prev_prog });
-
-                },
+                    let _ = self.shared.graph_drop_prod.push(DropMsg::Prog { prog: prev_prog });
+                }
                 GraphMessage::NewProg { prog, copy_old_out } => {
                     let mut prev_prog = std::mem::replace(&mut self.prog, prog);
 
-                    unsafe { _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON); }
+                    unsafe {
+                        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+                    }
 
-                    self.monitor_signal_cur_inp_indices =
-                        [UNUSED_MONITOR_IDX; MON_SIG_CNT];
+                    self.monitor_signal_cur_inp_indices = [UNUSED_MONITOR_IDX; MON_SIG_CNT];
 
                     // XXX: Copying from the old vector works, because we only
                     //      append nodes to the _end_ of the node instance vector.
@@ -278,14 +266,14 @@ impl NodeExecutor {
                     //
                     // XXX: Also, we need to initialize the input parameter
                     //      vector, because we don't know if they are updated from
-                    //      the new program outputs anymore. So we need to 
+                    //      the new program outputs anymore. So we need to
                     //      copy the old paramters to the inputs.
                     //
                     //      => This does not apply to atom data, because that
                     //         is always sent with the new program and "should"
                     //         be up to date, even if we have a slight possible race
                     //         condition between GraphMessage::NewProg
-                    //         and QuickMessage::AtomUpdate.
+                    //         and GraphMessage::AtomUpdate.
 
                     // First overwrite by the current input parameters,
                     // to make sure _all_ inputs have a proper value
@@ -322,15 +310,31 @@ impl NodeExecutor {
 
                     self.prog.assign_outputs();
 
-                    let _ =
-                        self.shared.graph_drop_prod.push(
-                            DropMsg::Prog { prog: prev_prog });
+                    let _ = self.shared.graph_drop_prod.push(DropMsg::Prog { prog: prev_prog });
 
-                    log(|w| { let _ =
-                        write!(w,
+                    log(|w| {
+                        let _ = write!(
+                            w,
                             "[dbg] Created new graph (node count={})",
-                            self.prog.prog.len()); });
-                },
+                            self.prog.prog.len()
+                        );
+                    });
+                }
+                GraphMessage::AtomUpdate { at_idx, value } => {
+                    let prog = &mut self.prog;
+                    let garbage = std::mem::replace(&mut prog.atoms[at_idx], value);
+
+                    let _ = self.shared.graph_drop_prod.push(DropMsg::Atom { atom: garbage });
+                }
+                GraphMessage::ParamUpdate { input_idx, value } => {
+                    self.set_param(input_idx, value);
+                }
+                GraphMessage::ModamtUpdate { mod_idx, modamt } => {
+                    self.set_modamt(mod_idx, modamt);
+                }
+                GraphMessage::SetMonitor { bufs } => {
+                    self.monitor_signal_cur_inp_indices = bufs;
+                }
             }
         }
     }
@@ -348,10 +352,14 @@ impl NodeExecutor {
     }
 
     #[inline]
-    pub fn get_nodes(&self) -> &Vec<Node> { &self.nodes }
+    pub fn get_nodes(&self) -> &Vec<Node> {
+        &self.nodes
+    }
 
     #[inline]
-    pub fn get_prog(&self) -> &NodeProg { &self.prog }
+    pub fn get_prog(&self) -> &NodeProg {
+        &self.prog
+    }
 
     #[inline]
     fn set_modamt(&mut self, mod_idx: usize, modamt: f32) {
@@ -369,11 +377,7 @@ impl NodeExecutor {
         }
 
         // First check if we already have a running smoother for this param:
-        for (sm_inp_idx, smoother) in
-            self.smoothers
-                .iter_mut()
-                .filter(|s| !s.1.is_done())
-        {
+        for (sm_inp_idx, smoother) in self.smoothers.iter_mut().filter(|s| !s.1.is_done()) {
             if *sm_inp_idx == input_idx {
                 smoother.set(prog.params[input_idx], value);
                 //d// println!("RE-SET SMOOTHER {} {:6.3} (old = {:6.3})",
@@ -393,20 +397,14 @@ impl NodeExecutor {
 
     #[inline]
     fn process_smoothers(&mut self, nframes: usize) {
-        let prog  = &mut self.prog;
+        let prog = &mut self.prog;
 
         while let Some((idx, v)) = self.target_refresh.pop() {
             prog.inp[idx].fill(v);
         }
 
-        for (idx, smoother) in
-            self.smoothers
-                .iter_mut()
-                .filter(|s|
-                    !s.1.is_done())
-        {
-
-            let inp        = &mut prog.inp[*idx];
+        for (idx, smoother) in self.smoothers.iter_mut().filter(|s| !s.1.is_done()) {
+            let inp = &mut prog.inp[*idx];
             let mut last_v = 0.0;
 
             for frame in 0..nframes {
@@ -419,56 +417,24 @@ impl NodeExecutor {
             prog.params[*idx] = last_v;
             self.target_refresh.push((*idx, last_v));
         }
-
-    }
-
-    #[inline]
-    pub fn process_param_updates(&mut self, nframes: usize) {
-        while let Some(upd) = self.shared.quick_update_con.pop() {
-            match upd {
-                QuickMessage::AtomUpdate { at_idx, value } => {
-                    let prog = &mut self.prog;
-                    let garbage =
-                        std::mem::replace(
-                            &mut prog.atoms[at_idx],
-                            value);
-
-                    let _ =
-                        self.shared.graph_drop_prod.push(
-                            DropMsg::Atom { atom: garbage });
-                },
-                QuickMessage::ParamUpdate { input_idx, value } => {
-                    self.set_param(input_idx, value);
-                },
-                QuickMessage::ModamtUpdate { mod_idx, modamt } => {
-                    self.set_modamt(mod_idx, modamt);
-                },
-                QuickMessage::SetMonitor { bufs } => {
-                    self.monitor_signal_cur_inp_indices = bufs;
-                },
-            }
-        }
-
-        self.process_smoothers(nframes);
     }
 
     #[inline]
     pub fn process<T: NodeAudioContext>(&mut self, ctx: &mut T) {
         // let tb = std::time::Instant::now();
 
-        if !self.dsp_log_init
-           && crate::log::init_thread_logger("dsp")
-        {
+        if !self.dsp_log_init && crate::log::init_thread_logger("dsp") {
             self.dsp_log_init = true;
             crate::log(|w| {
-                let _ = write!(w, "DSP thread logger initialized"); });
+                let _ = write!(w, "DSP thread logger initialized");
+            });
         }
 
-        self.process_param_updates(ctx.nframes());
+        self.process_smoothers(ctx.nframes());
 
-        let nodes    = &mut self.nodes;
+        let nodes = &mut self.nodes;
         let ctx_vals = &mut self.shared.node_ctx_values;
-        let prog     = &mut self.prog;
+        let prog = &mut self.prog;
         let exec_ctx = &mut self.exec_ctx;
 
         let prog_out_fb = prog.out_feedback.input_buffer();
@@ -476,35 +442,32 @@ impl NodeExecutor {
         let nframes = ctx.nframes();
 
         for op in prog.prog.iter() {
-            let out     = op.out_idxlen;
-            let inp     = op.in_idxlen;
-            let at      = op.at_idxlen;
-            let md      = op.mod_idxlen;
+            let out = op.out_idxlen;
+            let inp = op.in_idxlen;
+            let at = op.at_idxlen;
+            let md = op.mod_idxlen;
             let ctx_idx = op.idx as usize * 2;
 
             for modop in prog.modops[md.0..md.1].iter_mut() {
                 modop.process(nframes);
             }
 
-            nodes[op.idx as usize]
-                .process(
-                    ctx,
-                    exec_ctx,
-                    &NodeContext {
-                        out_connected: op.out_connected,
-                        in_connected:  op.in_connected,
-                        params:        &prog.inp[inp.0..inp.1],
-                    },
-                    &prog.atoms[at.0..at.1],
-                    &prog.cur_inp[inp.0..inp.1],
-                    &mut prog.out[out.0..out.1],
-                    &ctx_vals[ctx_idx..ctx_idx + 2]);
+            nodes[op.idx as usize].process(
+                ctx,
+                exec_ctx,
+                &NodeContext {
+                    out_connected: op.out_connected,
+                    in_connected: op.in_connected,
+                    params: &prog.inp[inp.0..inp.1],
+                },
+                &prog.atoms[at.0..at.1],
+                &prog.cur_inp[inp.0..inp.1],
+                &mut prog.out[out.0..out.1],
+                &ctx_vals[ctx_idx..ctx_idx + 2],
+            );
 
             let last_frame_idx = nframes - 1;
-            for (pb, out_buf_idx) in
-                prog.out[out.0..out.1].iter()
-                    .zip(out.0..out.1)
-            {
+            for (pb, out_buf_idx) in prog.out[out.0..out.1].iter().zip(out.0..out.1) {
                 prog_out_fb[out_buf_idx] = pb.read(last_frame_idx);
             }
         }
@@ -551,13 +514,13 @@ impl NodeExecutor {
     /// You can use it's source as reference for your own audio
     /// DSP thread processing function.
     pub fn test_run(&mut self, seconds: f32, realtime: bool) -> (Vec<f32>, Vec<f32>) {
-        const SAMPLE_RATE : f32 = 44100.0;
+        const SAMPLE_RATE: f32 = 44100.0;
         self.set_sample_rate(SAMPLE_RATE);
         self.process_graph_updates();
 
         let mut nframes = (seconds * SAMPLE_RATE) as usize;
 
-        let input        = vec![0.0; nframes];
+        let input = vec![0.0; nframes];
         let mut output_l = vec![0.0; nframes];
         let mut output_r = vec![0.0; nframes];
 
@@ -567,29 +530,23 @@ impl NodeExecutor {
         }
         let mut offs = 0;
         while nframes > 0 {
-            let cur_nframes =
-                if nframes >= MAX_BLOCK_SIZE {
-                    MAX_BLOCK_SIZE
-                } else {
-                    nframes
-                };
+            let cur_nframes = if nframes >= MAX_BLOCK_SIZE { MAX_BLOCK_SIZE } else { nframes };
             nframes -= cur_nframes;
 
             let mut context = crate::Context {
                 nframes: cur_nframes,
-                output:  &mut [&mut output_l[offs..(offs + cur_nframes)],
-                               &mut output_r[offs..(offs + cur_nframes)]],
-                input:   &[&input[offs..(offs + cur_nframes)]],
+                output: &mut [
+                    &mut output_l[offs..(offs + cur_nframes)],
+                    &mut output_r[offs..(offs + cur_nframes)],
+                ],
+                input: &[&input[offs..(offs + cur_nframes)]],
             };
 
             self.process(&mut context);
 
             if realtime {
-                let micros =
-                    ((MAX_BLOCK_SIZE as u64) * 1000000)
-                    / (SAMPLE_RATE as u64);
-                std::thread::sleep(
-                    std::time::Duration::from_micros(micros));
+                let micros = ((MAX_BLOCK_SIZE as u64) * 1000000) / (SAMPLE_RATE as u64);
+                std::thread::sleep(std::time::Duration::from_micros(micros));
             }
 
             offs += cur_nframes;
@@ -597,5 +554,4 @@ impl NodeExecutor {
 
         (output_l, output_r)
     }
-
 }

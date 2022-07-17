@@ -3,14 +3,19 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{ProcBuf, SAtom};
+use std::cell::RefCell;
 use triple_buffer::{Input, Output, TripleBuffer};
+
+thread_local! {
+    pub static NODE_PROG_ID_COUNTER: RefCell<usize> = RefCell::new(1);
+}
 
 #[derive(Debug, Clone)]
 pub struct ModOp {
-    amount:     f32,
-    modbuf:     ProcBuf,
-    outbuf:     ProcBuf,
-    inbuf:      ProcBuf,
+    amount: f32,
+    modbuf: ProcBuf,
+    outbuf: ProcBuf,
+    inbuf: ProcBuf,
 }
 
 impl Drop for ModOp {
@@ -25,7 +30,7 @@ impl ModOp {
             amount: 0.0,
             modbuf: ProcBuf::new(),
             outbuf: ProcBuf::null(),
-            inbuf:  ProcBuf::null(),
+            inbuf: ProcBuf::null(),
         }
     }
 
@@ -34,20 +39,20 @@ impl ModOp {
     }
 
     pub fn lock(&mut self, inbuf: ProcBuf, outbuf: ProcBuf) -> ProcBuf {
-        self.inbuf  = inbuf;
+        self.inbuf = inbuf;
         self.outbuf = outbuf;
         self.modbuf
     }
 
     pub fn unlock(&mut self) {
         self.outbuf = ProcBuf::null();
-        self.inbuf  = ProcBuf::null();
+        self.inbuf = ProcBuf::null();
     }
 
     #[inline]
     pub fn process(&mut self, nframes: usize) {
         let modbuf = &mut self.modbuf;
-        let inbuf  = &mut self.inbuf;
+        let inbuf = &mut self.inbuf;
         let outbuf = &mut self.outbuf;
 
         if inbuf.is_null() {
@@ -55,9 +60,7 @@ impl ModOp {
         }
 
         for frame in 0..nframes {
-            modbuf.write(frame,
-                inbuf.read(frame)
-                + (self.amount * outbuf.read(frame)));
+            modbuf.write(frame, inbuf.read(frame) + (self.amount * outbuf.read(frame)));
         }
     }
 }
@@ -67,7 +70,7 @@ impl ModOp {
 #[derive(Debug, Clone)]
 pub struct NodeOp {
     /// Stores the index of the node
-    pub idx:  u8,
+    pub idx: u8,
     /// Output index and length of the node:
     pub out_idxlen: (usize, usize),
     /// Input index and length of the node:
@@ -90,8 +93,7 @@ pub struct NodeOp {
 
 impl NodeOp {
     pub fn in_idx_belongs_to_nodeop(&self, idx: usize) -> bool {
-           idx >= self.in_idxlen.0
-        && idx <  self.in_idxlen.1
+        idx >= self.in_idxlen.0 && idx < self.in_idxlen.1
     }
 
     pub fn set_in_idx_connected_flag(&mut self, global_idx: usize) {
@@ -104,8 +106,7 @@ impl NodeOp {
     }
 
     pub fn out_idx_belongs_to_nodeop(&self, idx: usize) -> bool {
-           idx >= self.out_idxlen.0
-        && idx <  self.out_idxlen.1
+        idx >= self.out_idxlen.0 && idx < self.out_idxlen.1
     }
 
     pub fn set_out_idx_connected_flag(&mut self, global_idx: usize) {
@@ -120,18 +121,21 @@ impl NodeOp {
 
 impl std::fmt::Display for NodeOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Op(i={} out=({}-{}|{:x}) in=({}-{}|{:x}) at=({}-{}) mod=({}-{})",
-               self.idx,
-               self.out_idxlen.0,
-               self.out_idxlen.1,
-               self.out_connected,
-               self.in_idxlen.0,
-               self.in_idxlen.1,
-               self.in_connected,
-               self.at_idxlen.0,
-               self.at_idxlen.1,
-               self.mod_idxlen.0,
-               self.mod_idxlen.1)?;
+        write!(
+            f,
+            "Op(i={} out=({}-{}|{:x}) in=({}-{}|{:x}) at=({}-{}) mod=({}-{})",
+            self.idx,
+            self.out_idxlen.0,
+            self.out_idxlen.1,
+            self.out_connected,
+            self.in_idxlen.0,
+            self.in_idxlen.1,
+            self.in_connected,
+            self.at_idxlen.0,
+            self.at_idxlen.1,
+            self.mod_idxlen.0,
+            self.mod_idxlen.1
+        )?;
 
         for i in self.inputs.iter() {
             write!(f, " cpy=(o{} => i{})", i.0, i.1)?;
@@ -154,14 +158,14 @@ pub struct NodeProg {
     /// The input vector stores the smoothed values of the params.
     /// It is not used directly, but will be merged into the `cur_inp`
     /// field together with the assigned outputs.
-    pub inp:    Vec<ProcBuf>,
+    pub inp: Vec<ProcBuf>,
 
     /// The temporary input vector that is initialized from `inp`
     /// and is then merged with the associated outputs.
     pub cur_inp: Vec<ProcBuf>,
 
     /// The output vector, holding all the node outputs.
-    pub out:    Vec<ProcBuf>,
+    pub out: Vec<ProcBuf>,
 
     /// The param vector, holding all parameter inputs of the
     /// nodes, such as knob settings.
@@ -169,11 +173,11 @@ pub struct NodeProg {
 
     /// The atom vector, holding all non automatable parameter inputs
     /// of the nodes, such as samples or integer settings.
-    pub atoms:  Vec<SAtom>,
+    pub atoms: Vec<SAtom>,
 
     /// The node operations that are executed in the order they appear in this
     /// vector.
-    pub prog:   Vec<NodeOp>,
+    pub prog: Vec<NodeOp>,
 
     /// The modulators for the input parameters.
     pub modops: Vec<ModOp>,
@@ -190,6 +194,10 @@ pub struct NodeProg {
 
     /// Temporary hold for the producer for the `out_feedback`:
     pub out_fb_cons: Option<Output<Vec<f32>>>,
+
+    /// A unique ID assigned to the node prog. Mostly for debugging purposes.
+    /// You should only read this field.
+    pub unique_id: usize,
 }
 
 impl Drop for NodeProg {
@@ -204,22 +212,31 @@ impl Drop for NodeProg {
     }
 }
 
+fn new_node_prog_id() -> usize {
+    NODE_PROG_ID_COUNTER.with(|cnt| {
+        let unique_id = *cnt.borrow();
+        *cnt.borrow_mut() += 1;
+        unique_id
+    })
+}
+
 impl NodeProg {
     pub fn empty() -> Self {
         let out_fb = vec![];
         let tb = TripleBuffer::new(out_fb);
         let (input_fb, output_fb) = tb.split();
         Self {
-            out:     vec![],
-            inp:     vec![],
+            out: vec![],
+            inp: vec![],
             cur_inp: vec![],
-            params:  vec![],
-            atoms:   vec![],
-            prog:    vec![],
-            modops:  vec![],
-            out_feedback:   input_fb,
-            out_fb_cons:    Some(output_fb),
+            params: vec![],
+            atoms: vec![],
+            prog: vec![],
+            modops: vec![],
+            out_feedback: input_fb,
+            out_fb_cons: Some(output_fb),
             locked_buffers: false,
+            unique_id: new_node_prog_id(),
         }
     }
 
@@ -250,10 +267,11 @@ impl NodeProg {
             params,
             atoms,
             modops,
-            prog:           vec![],
-            out_feedback:   input_fb,
-            out_fb_cons:    Some(output_fb),
+            prog: vec![],
+            out_feedback: input_fb,
+            out_fb_cons: Some(output_fb),
             locked_buffers: false,
+            unique_id: new_node_prog_id(),
         }
     }
 
@@ -281,7 +299,7 @@ impl NodeProg {
         }
 
         node_op.out_connected = 0x0;
-        node_op.in_connected  = 0x0;
+        node_op.in_connected = 0x0;
         self.prog.push(node_op);
     }
 
@@ -290,8 +308,8 @@ impl NodeProg {
         node_op: NodeOp,
         inp_index: usize,
         out_index: usize,
-        mod_index: Option<usize>)
-    {
+        mod_index: Option<usize>,
+    ) {
         for n_op in self.prog.iter_mut() {
             if n_op.out_idx_belongs_to_nodeop(out_index) {
                 n_op.set_out_idx_connected_flag(out_index);
@@ -328,10 +346,7 @@ impl NodeProg {
 
         // XXX: Swapping is now safe, because the `cur_inp` field
         //      no longer references to the buffers in `inp` or `out`.
-        for (old_inp_pb, new_inp_pb) in
-            prev_prog.inp.iter_mut().zip(
-                self.inp.iter_mut())
-        {
+        for (old_inp_pb, new_inp_pb) in prev_prog.inp.iter_mut().zip(self.inp.iter_mut()) {
             std::mem::swap(old_inp_pb, new_inp_pb);
         }
     }
@@ -364,21 +379,19 @@ impl NodeProg {
             // This might lead to unexpected effects inside the process()
             // call of the nodes.
             let input_bufs = &mut self.cur_inp;
-            let out_bufs   = &mut self.out;
+            let out_bufs = &mut self.out;
 
             let inp = op.in_idxlen;
 
             // First step (refresh inputs):
-            input_bufs[inp.0..inp.1]
-                .copy_from_slice(&self.inp[inp.0..inp.1]);
+            input_bufs[inp.0..inp.1].copy_from_slice(&self.inp[inp.0..inp.1]);
 
             // Second step (assign outputs):
             for io in op.inputs.iter() {
                 input_bufs[io.1] = out_bufs[io.0];
 
                 if let Some(idx) = io.2 {
-                    input_bufs[io.1] =
-                        self.modops[idx].lock(self.inp[io.1], out_bufs[io.0]);
+                    input_bufs[io.1] = self.modops[idx].lock(self.inp[io.1], out_bufs[io.0]);
                 }
             }
         }
@@ -386,4 +399,3 @@ impl NodeProg {
         self.locked_buffers = true;
     }
 }
-

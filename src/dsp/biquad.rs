@@ -34,24 +34,22 @@ impl BiquadCoefs {
     /// Cutoff is the -3 dB point of the filter in Hz.
     #[inline]
     pub fn butter_lowpass(sample_rate: f32, cutoff: f32) -> BiquadCoefs {
-        let f   = (cutoff * PI / sample_rate).tan();
+        let f = (cutoff * PI / sample_rate).tan();
         let a0r = 1.0 / (1.0 + SQRT_2 * f + f * f);
-        let a1  = (2.0 * f * f - 2.0) * a0r;
-        let a2  = (1.0 - SQRT_2 * f + f * f) * a0r;
-        let b0  = f * f * a0r;
-        let b1  = 2.0 * b0;
-        let b2  = b0;
+        let a1 = (2.0 * f * f - 2.0) * a0r;
+        let a2 = (1.0 - SQRT_2 * f + f * f) * a0r;
+        let b0 = f * f * a0r;
+        let b1 = 2.0 * b0;
+        let b2 = b0;
         BiquadCoefs { a1, a2, b0, b1, b2 }
     }
 
     /// Returns the Q for cascading a butterworth filter:
     fn calc_cascaded_butter_q(order: usize, casc_idx: usize) -> f32 {
-        let order    = order as f32;
+        let order = order as f32;
         let casc_idx = casc_idx as f32;
 
-        let b =
-            -2.0 * ((2.0 * casc_idx + order - 1.0) * PI / (2.0 * order))
-                   .cos();
+        let b = -2.0 * ((2.0 * casc_idx + order - 1.0) * PI / (2.0 * order)).cos();
 
         1.0 / b
     }
@@ -59,7 +57,7 @@ impl BiquadCoefs {
     /// Returns settings for a lowpass filter with a specific q
     #[inline]
     pub fn lowpass(sample_rate: f32, q: f32, cutoff: f32) -> BiquadCoefs {
-        let f   = (cutoff * PI / sample_rate).tan();
+        let f = (cutoff * PI / sample_rate).tan();
         let a0r = 1.0 / (1.0 + f / q + f * f);
 
         /*
@@ -71,11 +69,11 @@ impl BiquadCoefs {
         this->a[2] = (1.f - K / Q + K * K) * norm;
         */
 
-        let b0  = f * f * a0r;
-        let b1  = 2.0 * b0;
-        let b2  = b0;
-        let a1  = 2.0 * (f * f - 1.0) * a0r;
-        let a2  = (1.0 - f / q + f * f) * a0r;
+        let b0 = f * f * a0r;
+        let b1 = 2.0 * b0;
+        let b2 = b0;
+        let a1 = 2.0 * (f * f - 1.0) * a0r;
+        let a2 = (1.0 - f / q + f * f) * a0r;
 
         BiquadCoefs { a1, a2, b0, b1, b2 }
     }
@@ -85,7 +83,7 @@ impl BiquadCoefs {
     /// Bandwidth is the difference in Hz between -3 dB points of the filter response.
     /// The overall gain of the filter is independent of bandwidth.
     pub fn resonator(sample_rate: f32, center: f32, bandwidth: f32) -> BiquadCoefs {
-        let r  = (-PI * bandwidth / sample_rate).exp();
+        let r = (-PI * bandwidth / sample_rate).exp();
         let a1 = -2.0 * r * (TAU * center / sample_rate).cos();
         let a2 = r * r;
         let b0 = (1.0 - r * r).sqrt() * 0.5;
@@ -94,13 +92,13 @@ impl BiquadCoefs {
         BiquadCoefs { a1, a2, b0, b1, b2 }
     }
 
-//    /// Frequency response at frequency `omega` expressed as fraction of sampling rate.
-//    pub fn response(&self, omega: f64) -> Complex64 {
-//        let z1 = Complex64::from_polar(1.0, -TAU * omega);
-//        let z2 = Complex64::from_polar(1.0, -2.0 * TAU * omega);
-//        (re(self.b0) + re(self.b1) * z1 + re(self.b2) * z2)
-//            / (re(1.0) + re(self.a1) * z1 + re(self.a2) * z2)
-//    }
+    //    /// Frequency response at frequency `omega` expressed as fraction of sampling rate.
+    //    pub fn response(&self, omega: f64) -> Complex64 {
+    //        let z1 = Complex64::from_polar(1.0, -TAU * omega);
+    //        let z2 = Complex64::from_polar(1.0, -2.0 * TAU * omega);
+    //        (re(self.b0) + re(self.b1) * z1 + re(self.b2) * z2)
+    //            / (re(1.0) + re(self.a1) * z1 + re(self.a2) * z2)
+    //    }
 }
 
 /// 2nd order IIR filter implemented in normalized Direct Form I.
@@ -145,10 +143,7 @@ impl Biquad {
     #[inline]
     pub fn tick(&mut self, input: f32) -> f32 {
         let x0 = input;
-        let y0 =
-              self.coefs.b0 * x0
-            + self.coefs.b1 * self.x1
-            + self.coefs.b2 * self.x2
+        let y0 = self.coefs.b0 * x0 + self.coefs.b1 * self.x1 + self.coefs.b2 * self.x2
             - self.coefs.a1 * self.y1
             - self.coefs.a2 * self.y2;
         self.x2 = self.x1;
@@ -174,18 +169,13 @@ pub struct ButterLowpass {
 #[allow(dead_code)]
 impl ButterLowpass {
     pub fn new(sample_rate: f32, cutoff: f32) -> Self {
-        let mut this = ButterLowpass {
-            biquad: Biquad::new(),
-            sample_rate,
-            cutoff: 0.0,
-        };
+        let mut this = ButterLowpass { biquad: Biquad::new(), sample_rate, cutoff: 0.0 };
         this.set_cutoff(cutoff);
         this
     }
 
     pub fn set_cutoff(&mut self, cutoff: f32) {
-        self.biquad
-            .set_coefs(BiquadCoefs::butter_lowpass(self.sample_rate, cutoff));
+        self.biquad.set_coefs(BiquadCoefs::butter_lowpass(self.sample_rate, cutoff));
         self.cutoff = cutoff;
     }
 
@@ -218,15 +208,12 @@ impl ButterLowpass {
 #[derive(Debug, Copy, Clone)]
 pub struct Oversampling<const N: usize> {
     filters: [Biquad; 4],
-    buffer:  [f32; N],
+    buffer: [f32; N],
 }
 
 impl<const N: usize> Oversampling<N> {
     pub fn new() -> Self {
-        let mut this = Self {
-            filters: [Biquad::new(); 4],
-            buffer: [0.0; N],
-        };
+        let mut this = Self { filters: [Biquad::new(); 4], buffer: [0.0; N] };
 
         this.set_sample_rate(44100.0);
 
@@ -243,7 +230,7 @@ impl<const N: usize> Oversampling<N> {
     pub fn set_sample_rate(&mut self, srate: f32) {
         let cutoff = 0.98 * (0.5 * srate);
 
-        let ovr_srate   = (N as f32) * srate;
+        let ovr_srate = (N as f32) * srate;
         let filters_len = self.filters.len();
 
         for (i, filt) in self.filters.iter_mut().enumerate() {
@@ -266,7 +253,9 @@ impl<const N: usize> Oversampling<N> {
     }
 
     #[inline]
-    pub fn resample_buffer(&mut self) -> &mut [f32; N] { &mut self.buffer }
+    pub fn resample_buffer(&mut self) -> &mut [f32; N] {
+        &mut self.buffer
+    }
 
     #[inline]
     pub fn downsample(&mut self) -> f32 {

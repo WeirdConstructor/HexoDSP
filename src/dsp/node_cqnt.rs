@@ -2,82 +2,78 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
+use crate::dsp::helpers::{ChangeTrig, CtrlPitchQuantizer};
+use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
-use crate::dsp::helpers::{CtrlPitchQuantizer, ChangeTrig};
 
 #[macro_export]
-macro_rules! fa_cqnt { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-    write!($formatter, "?")
-} } }
+macro_rules! fa_cqnt {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {{
+        write!($formatter, "?")
+    }};
+}
 
 #[macro_export]
-macro_rules! fa_cqnt_omin { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-    let s =
-        match ($v.round() as usize) {
-            0  => "-0",
-            1  => "-1",
-            2  => "-2",
-            3  => "-3",
-            4  => "-4",
-            _  => "?",
+macro_rules! fa_cqnt_omin {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {{
+        let s = match ($v.round() as usize) {
+            0 => "-0",
+            1 => "-1",
+            2 => "-2",
+            3 => "-3",
+            4 => "-4",
+            _ => "?",
         };
-    write!($formatter, "{}", s)
-} } }
+        write!($formatter, "{}", s)
+    }};
+}
 
 #[macro_export]
-macro_rules! fa_cqnt_omax { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-    let s =
-        match ($v.round() as usize) {
-            0  => "+0",
-            1  => "+1",
-            2  => "+2",
-            3  => "+3",
-            4  => "+4",
-            _  => "?",
+macro_rules! fa_cqnt_omax {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {{
+        let s = match ($v.round() as usize) {
+            0 => "+0",
+            1 => "+1",
+            2 => "+2",
+            3 => "+3",
+            4 => "+4",
+            _ => "?",
         };
-    write!($formatter, "{}", s)
-} } }
+        write!($formatter, "{}", s)
+    }};
+}
 
 /// A control signal to pitch quantizer/converter
 #[derive(Debug, Clone)]
 pub struct CQnt {
-    quant:       Box<CtrlPitchQuantizer>,
+    quant: Box<CtrlPitchQuantizer>,
     change_trig: ChangeTrig,
 }
 
 impl CQnt {
     pub fn new(_nid: &NodeId) -> Self {
-        Self {
-            quant:       Box::new(CtrlPitchQuantizer::new()),
-            change_trig: ChangeTrig::new(),
-        }
+        Self { quant: Box::new(CtrlPitchQuantizer::new()), change_trig: ChangeTrig::new() }
     }
-    pub const inp : &'static str =
+    pub const inp: &'static str =
         "CQnt inp\nThe unipolar input signal that is to be mapped to the \
         selected pitch range.\nRange: (0..1)";
-    pub const oct : &'static str =
-        "CQnt oct\nThe octave offset from A4.\nRange: (-1..1)";
-    pub const omin : &'static str =
+    pub const oct: &'static str = "CQnt oct\nThe octave offset from A4.\nRange: (-1..1)";
+    pub const omin: &'static str =
         "CQnt omin\nThe minimum octave of the range. If 0 it will be 'oct'.\nRange: (-1..1)";
-    pub const omax : &'static str =
+    pub const omax: &'static str =
         "CQnt omax\nThe maximum octave of the range. If 0 it will be 'oct'.\nRange: (-1..1)";
-    pub const sig : &'static str =
-        "CQnt sig\nThe output pitch signal.\nRange: (-1..1)";
-    pub const t : &'static str =
-        "CQnt t\nEverytime the quantizer snaps to a new pitch, it will \
+    pub const sig: &'static str = "CQnt sig\nThe output pitch signal.\nRange: (-1..1)";
+    pub const t: &'static str = "CQnt t\nEverytime the quantizer snaps to a new pitch, it will \
         emit a short trigger on this signal output. This is useful \
         to trigger for example an envelope.";
-    pub const keys : &'static str =
+    pub const keys: &'static str =
         "CQnt keys\nHere you can select the individual notes of the range. \
         If no note is selected, it's the same as if all notes were selected.";
-    pub const DESC : &'static str =
-r#"Ctrl Pitch Quantizer
+    pub const DESC: &'static str = r#"Ctrl Pitch Quantizer
 
 This special quantizer maps the unipolar 0..1 control signal input range on 'inp' evenly to the selected keys and octaves.
 "#;
-    pub const HELP : &'static str =
-r#"CQnt - A control signal to pitch quantizer
+    pub const HELP: &'static str = r#"CQnt - A control signal to pitch quantizer
 
 This is a specialized control signal quantizer to generate a pitch/frequency
 from a signal within the 0..1 range. It does not quantize a typical -1..1
@@ -90,7 +86,9 @@ if you sweep accross the input signal range.
 }
 
 impl DspNode for CQnt {
-    fn outputs() -> usize { 1 }
+    fn outputs() -> usize {
+        1
+    }
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.change_trig.set_sample_rate(srate);
@@ -100,20 +98,23 @@ impl DspNode for CQnt {
         self.change_trig.reset();
     }
 
-
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
+        &mut self,
+        ctx: &mut T,
+        _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        atoms: &[SAtom], inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
-    {
-        use crate::dsp::{at, out_buf, inp, denorm};
+        atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf],
+        ctx_vals: LedPhaseVals,
+    ) {
+        use crate::dsp::{at, denorm, inp, out_buf};
 
         let inp = inp::CQnt::inp(inputs);
         let oct = inp::CQnt::oct(inputs);
         let mut out = out_buf::CQnt::sig(outputs);
-        let mut t   = out_buf::CQnt::t(outputs);
+        let mut t = out_buf::CQnt::t(outputs);
         let keys = at::CQnt::keys(atoms);
         let omin = at::CQnt::omin(atoms);
         let omax = at::CQnt::omax(atoms);
@@ -121,9 +122,7 @@ impl DspNode for CQnt {
         self.quant.update_keys(keys.i(), omin.i(), omax.i());
 
         for frame in 0..ctx.nframes() {
-            let pitch =
-                self.quant.signal_to_pitch(
-                    denorm::CQnt::inp(inp, frame));
+            let pitch = self.quant.signal_to_pitch(denorm::CQnt::inp(inp, frame));
 
             t.write(frame, self.change_trig.next(pitch));
             out.write(frame, pitch + denorm::CQnt::oct(oct, frame));

@@ -2,32 +2,32 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::dsp::biquad::Oversampling;
-use crate::dsp::helpers::{VPSOscillator, apply_distortion};
+use crate::dsp::helpers::{apply_distortion, VPSOscillator};
 use crate::dsp::{
-    NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext,
-    GraphAtomData, GraphFun,
+    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
+use crate::nodes::{NodeAudioContext, NodeExecContext};
 
 #[macro_export]
-macro_rules! fa_vosc_ovrsmpl { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-    let s =
-        match ($v.round() as usize) {
-            0  => "Off",
-            1  => "On",
-            _  => "?",
+macro_rules! fa_vosc_ovrsmpl {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {{
+        let s = match ($v.round() as usize) {
+            0 => "Off",
+            1 => "On",
+            _ => "?",
         };
-    write!($formatter, "{}", s)
-} } }
+        write!($formatter, "{}", s)
+    }};
+}
 
-const OVERSAMPLING : usize = 4;
+const OVERSAMPLING: usize = 4;
 
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct VOsc {
     israte: f32,
-    osc:    VPSOscillator,
+    osc: VPSOscillator,
     oversampling: Box<Oversampling<OVERSAMPLING>>,
 }
 
@@ -36,61 +36,54 @@ impl VOsc {
         let init_phase = nid.init_phase();
 
         Self {
-            israte:       1.0 / 44100.0,
-            osc:          VPSOscillator::new(init_phase),
+            israte: 1.0 / 44100.0,
+            osc: VPSOscillator::new(init_phase),
             oversampling: Box::new(Oversampling::new()),
         }
     }
 
-    pub const freq : &'static str =
+    pub const freq: &'static str =
         "VOsc freq\nBase frequency of the oscillator.\n\nRange: (-1..1)\n";
-    pub const det : &'static str =
-        "VOsc det\nDetune the oscillator in semitones and cents. \
+    pub const det: &'static str = "VOsc det\nDetune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
          A signal sent to this port is not rounded.\n\
          Note: The signal input allows detune +-10 octaves.\
          \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
-    pub const d : &'static str =
-        "VOsc d\nThis is the horzontal bending point of the waveform. \
+    pub const d: &'static str = "VOsc d\nThis is the horzontal bending point of the waveform. \
         It has a similar effect that pulse width settings have on other \
         oscillators. Make sure to try modulating this parameter at audio rate!\
         \nRange: (0..1)\n";
-    pub const v : &'static str =
-        "VOsc v\nThis is the vertical bending point of the waveform. \
+    pub const v: &'static str = "VOsc v\nThis is the vertical bending point of the waveform. \
         You can adjust the effect that 'd' has on the waveform with this \
         parameter. Make sure to try to modulate this parameter at audio rate!\
         \nRange: (0..1)\n";
-    pub const vs : &'static str =
+    pub const vs: &'static str =
         "VOsc vs\nScaling factor for 'v'. If you increase this beyond 1.0, \
         you will hear formant like sounds from the oscillator. Try adjusting \
         'd' to move the formants around.\nRange: (0..1)\n";
-    pub const dist : &'static str =
+    pub const dist: &'static str =
         "VOsc dist\nA collection of waveshaper/distortions to choose from.";
-    pub const damt : &'static str =
-        "VOsc damt\nDistortion amount.\nRange: (0..1)\n";
-    pub const ovrsmpl : &'static str =
-        "VOsc ovrsmpl\nEnable/Disable oversampling.";
-    pub const sig : &'static str =
-        "VOsc sig\nOscillator output\nRange: (-1..1)\n";
-    pub const DESC : &'static str =
-r#"V Oscillator
+    pub const damt: &'static str = "VOsc damt\nDistortion amount.\nRange: (0..1)\n";
+    pub const ovrsmpl: &'static str = "VOsc ovrsmpl\nEnable/Disable oversampling.";
+    pub const sig: &'static str = "VOsc sig\nOscillator output\nRange: (-1..1)\n";
+    pub const DESC: &'static str = r#"V Oscillator
 
 A vector phase shaping oscillator, to create interesting waveforms and ways to manipulate them. It has two parameters ('v' and 'd') to shape the phase of the sinusoid wave, and a 'vs' parameter to add extra spice. Distortion can beef up the oscillator output and you can apply oversampling.
 "#;
-    pub const HELP : &'static str =
-r#"VOsc - Vector Phase Shaping Oscillator
+    pub const HELP: &'static str = r#"VOsc - Vector Phase Shaping Oscillator
 A vector phase shaping oscillator, to create interesting waveforms and
 ways to manipulate them. It has two parameters ('v' and 'd') to shape the
 phase of the sinusoid wave, and a third parameter 'vs' to add extra spice.
 With distortion you can beef up the oscillator output even more and to
 make it more harmonic you can apply oversampling.
 "#;
-
 }
 
 impl DspNode for VOsc {
-    fn outputs() -> usize { 1 }
+    fn outputs() -> usize {
+        1
+    }
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.israte = 1.0 / (srate * (OVERSAMPLING as f32));
@@ -104,26 +97,30 @@ impl DspNode for VOsc {
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, _ectx: &mut NodeExecContext,
+        &mut self,
+        ctx: &mut T,
+        _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        atoms: &[SAtom], inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
-    {
-        use crate::dsp::{out, inp, denorm, denorm_offs, at};
+        atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf],
+        ctx_vals: LedPhaseVals,
+    ) {
+        use crate::dsp::{at, denorm, denorm_offs, inp, out};
 
-        let freq    = inp::VOsc::freq(inputs);
-        let det     = inp::VOsc::det(inputs);
-        let d       = inp::VOsc::d(inputs);
-        let v       = inp::VOsc::v(inputs);
-        let vs      = inp::VOsc::vs(inputs);
-        let damt    = inp::VOsc::damt(inputs);
-        let out     = out::VOsc::sig(outputs);
+        let freq = inp::VOsc::freq(inputs);
+        let det = inp::VOsc::det(inputs);
+        let d = inp::VOsc::d(inputs);
+        let v = inp::VOsc::v(inputs);
+        let vs = inp::VOsc::vs(inputs);
+        let damt = inp::VOsc::damt(inputs);
+        let out = out::VOsc::sig(outputs);
         let ovrsmpl = at::VOsc::ovrsmpl(atoms);
-        let dist    = at::VOsc::dist(atoms);
+        let dist = at::VOsc::dist(atoms);
 
         let israte = self.israte;
 
-        let dist       = dist.i() as u8;
+        let dist = dist.i() as u8;
         let oversample = ovrsmpl.i() == 1;
 
         let osc = &mut self.osc;
@@ -131,9 +128,9 @@ impl DspNode for VOsc {
         if oversample {
             for frame in 0..ctx.nframes() {
                 let freq = denorm_offs::VOsc::freq(freq, det.read(frame), frame);
-                let v    = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
-                let d    = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
-                let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
+                let v = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
+                let d = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
+                let vs = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
                 let damt = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
 
                 let v = VPSOscillator::limit_v(d, v + vs);
@@ -146,13 +143,12 @@ impl DspNode for VOsc {
 
                 out.write(frame, self.oversampling.downsample());
             }
-
         } else {
             for frame in 0..ctx.nframes() {
                 let freq = denorm_offs::VOsc::freq(freq, det.read(frame), frame);
-                let v    = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
-                let d    = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
-                let vs   = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
+                let v = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
+                let d = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
+                let vs = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
                 let damt = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
 
                 let v = VPSOscillator::limit_v(d, v + vs);
@@ -175,17 +171,17 @@ impl DspNode for VOsc {
                 osc.reset();
             }
 
-            let v     = NodeId::VOsc(0).inp_param("v").unwrap().inp();
-            let vs    = NodeId::VOsc(0).inp_param("vs").unwrap().inp();
-            let d     = NodeId::VOsc(0).inp_param("d").unwrap().inp();
-            let damt  = NodeId::VOsc(0).inp_param("damt").unwrap().inp();
-            let dist  = NodeId::VOsc(0).inp_param("dist").unwrap().inp();
+            let v = NodeId::VOsc(0).inp_param("v").unwrap().inp();
+            let vs = NodeId::VOsc(0).inp_param("vs").unwrap().inp();
+            let d = NodeId::VOsc(0).inp_param("d").unwrap().inp();
+            let damt = NodeId::VOsc(0).inp_param("damt").unwrap().inp();
+            let dist = NodeId::VOsc(0).inp_param("dist").unwrap().inp();
 
-            let v     = gd.get_denorm(v as u32).clamp(0.0, 1.0);
-            let d     = gd.get_denorm(d as u32).clamp(0.0, 1.0);
-            let vs    = gd.get_denorm(vs as u32).clamp(0.0, 20.0);
-            let damt  = gd.get_denorm(damt as u32);
-            let dist  = gd.get(dist as u32).map(|a| a.i()).unwrap_or(0);
+            let v = gd.get_denorm(v as u32).clamp(0.0, 1.0);
+            let d = gd.get_denorm(d as u32).clamp(0.0, 1.0);
+            let vs = gd.get_denorm(vs as u32).clamp(0.0, 20.0);
+            let damt = gd.get_denorm(damt as u32);
+            let dist = gd.get(dist as u32).map(|a| a.i()).unwrap_or(0);
 
             let v = VPSOscillator::limit_v(d, v + vs);
             let s = osc.next(1.0, israte, d, v);

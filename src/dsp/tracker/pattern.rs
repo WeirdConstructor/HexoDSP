@@ -3,33 +3,33 @@
 // See README.md and COPYING for details.
 
 use super::PatternColType;
-use super::MAX_PATTERN_LEN;
 use super::MAX_COLS;
+use super::MAX_PATTERN_LEN;
 use crate::matrix_repr::PatternRepr;
 
 #[derive(Debug)]
 pub struct PatternData {
-    col_types:  [PatternColType; MAX_COLS],
-    data:       Vec<Vec<Option<u16>>>,
-    out_data:   Vec<[(f32, u8); MAX_PATTERN_LEN]>,
-    strings:    Vec<Vec<Option<String>>>,
-    cursor:     (usize, usize),
-    rows:       usize,
-    edit_step:  usize,
-    dirty_col:  [bool; MAX_COLS],
+    col_types: [PatternColType; MAX_COLS],
+    data: Vec<Vec<Option<u16>>>,
+    out_data: Vec<[(f32, u8); MAX_PATTERN_LEN]>,
+    strings: Vec<Vec<Option<String>>>,
+    cursor: (usize, usize),
+    rows: usize,
+    edit_step: usize,
+    dirty_col: [bool; MAX_COLS],
     generation: usize,
 }
 
 impl PatternData {
     pub fn new(rows: usize) -> Self {
         Self {
-            col_types:  [PatternColType::Value; MAX_COLS],
-            data:       vec![vec![None; MAX_COLS]; MAX_PATTERN_LEN],
-            out_data:   vec![[(0.0, 0); MAX_PATTERN_LEN]; MAX_COLS],
-            strings:    vec![vec![None; MAX_COLS]; MAX_PATTERN_LEN],
-            cursor:     (2, 2),
-            edit_step:  4,
-            dirty_col:  [true; MAX_COLS],
+            col_types: [PatternColType::Value; MAX_COLS],
+            data: vec![vec![None; MAX_COLS]; MAX_PATTERN_LEN],
+            out_data: vec![[(0.0, 0); MAX_PATTERN_LEN]; MAX_COLS],
+            strings: vec![vec![None; MAX_COLS]; MAX_PATTERN_LEN],
+            cursor: (2, 2),
+            edit_step: 4,
+            dirty_col: [true; MAX_COLS],
             generation: 0,
             rows,
         }
@@ -39,12 +39,16 @@ impl PatternData {
 impl PatternData {
     pub fn is_unset(&self) -> bool {
         for ct in self.col_types.iter() {
-            if *ct != PatternColType::Value { return false; }
+            if *ct != PatternColType::Value {
+                return false;
+            }
         }
 
         for rows in self.data.iter() {
             for col in rows.iter() {
-                if col.is_some() { return false; }
+                if col.is_some() {
+                    return false;
+                }
             }
         }
 
@@ -54,58 +58,52 @@ impl PatternData {
     pub fn to_repr(&self) -> PatternRepr {
         let mut col_types = [0; MAX_COLS];
         for (i, ct) in self.col_types.iter().enumerate() {
-            col_types[i] =
-                match ct {
-                    PatternColType::Value => 0,
-                    PatternColType::Note  => 1,
-                    PatternColType::Step  => 2,
-                    PatternColType::Gate  => 3,
-                };
+            col_types[i] = match ct {
+                PatternColType::Value => 0,
+                PatternColType::Note => 1,
+                PatternColType::Step => 2,
+                PatternColType::Gate => 3,
+            };
         }
 
         let mut data = vec![vec![-1; MAX_COLS]; MAX_PATTERN_LEN];
         for (row_idx, row) in self.data.iter().enumerate() {
             for (col_idx, cell) in row.iter().enumerate() {
-                data[row_idx][col_idx] =
-                    if let Some(c) = cell { *c as i32 }
-                    else                  { -1 };
+                data[row_idx][col_idx] = if let Some(c) = cell { *c as i32 } else { -1 };
             }
         }
 
         PatternRepr {
             col_types,
             data,
-            rows:      self.rows,
+            rows: self.rows,
             edit_step: self.edit_step,
-            cursor:    self.cursor,
+            cursor: self.cursor,
         }
     }
 
     pub fn from_repr(&mut self, repr: &PatternRepr) {
         for (i, ct) in repr.col_types.iter().enumerate() {
-            self.col_types[i] =
-                match *ct {
-                    0 => PatternColType::Value,
-                    1 => PatternColType::Note,
-                    2 => PatternColType::Step,
-                    3 => PatternColType::Gate,
-                    _ => PatternColType::Value,
-                };
+            self.col_types[i] = match *ct {
+                0 => PatternColType::Value,
+                1 => PatternColType::Note,
+                2 => PatternColType::Step,
+                3 => PatternColType::Gate,
+                _ => PatternColType::Value,
+            };
 
             self.modified_col(i);
         }
 
         for (row_idx, row) in repr.data.iter().enumerate() {
             for (col_idx, cell) in row.iter().enumerate() {
-                self.data[row_idx][col_idx] =
-                    if *cell < 0 { None }
-                    else         { Some(*cell as u16) };
+                self.data[row_idx][col_idx] = if *cell < 0 { None } else { Some(*cell as u16) };
             }
         }
 
-        self.rows      = repr.rows;
+        self.rows = repr.rows;
         self.edit_step = repr.edit_step;
-        self.cursor    = repr.cursor;
+        self.cursor = repr.cursor;
         self.generation += 1;
     }
 
@@ -143,85 +141,74 @@ impl PatternData {
         match self.col_types[col] {
             PatternColType::Value => {
                 let mut start_value = 0.0;
-                let mut start_idx   = 0;
-                let mut end_idx     = 0;
+                let mut start_idx = 0;
+                let mut end_idx = 0;
 
                 while end_idx <= out_col.len() {
                     let mut break_after_write = false;
-                    let cur_value =
-                        if end_idx == self.rows {
-                            end_idx -= 1;
-                            break_after_write = true;
-                            Some(self.data[end_idx][col]
+                    let cur_value = if end_idx == self.rows {
+                        end_idx -= 1;
+                        break_after_write = true;
+                        Some(
+                            self.data[end_idx][col]
                                 .map(|v| ((v & 0xFFF) as f32) / (0xFFF as f32))
-                                .unwrap_or(0.0))
-                        } else {
-                            self.data[end_idx][col].map(|v|
-                                ((v & 0xFFF) as f32) / (0xFFF as f32))
-                        };
+                                .unwrap_or(0.0),
+                        )
+                    } else {
+                        self.data[end_idx][col].map(|v| ((v & 0xFFF) as f32) / (0xFFF as f32))
+                    };
 
                     if let Some(end_value) = cur_value {
                         out_col[start_idx] = (start_value, 0);
-                        out_col[end_idx]   = (end_value, 1);
+                        out_col[end_idx] = (end_value, 1);
 
                         let delta_rows = end_idx - start_idx;
 
                         if delta_rows > 1 {
                             for idx in (start_idx + 1)..end_idx {
-                                let x =
-                                      (idx - start_idx) as f32
-                                    / (delta_rows as f32);
-                                out_col[idx] =
-                                    (start_value * (1.0 - x) + end_value * x, 0);
+                                let x = (idx - start_idx) as f32 / (delta_rows as f32);
+                                out_col[idx] = (start_value * (1.0 - x) + end_value * x, 0);
                             }
                         }
 
                         start_value = end_value;
-                        start_idx   = end_idx;
-                        end_idx     = end_idx + 1;
+                        start_idx = end_idx;
+                        end_idx = end_idx + 1;
 
                         if break_after_write {
                             break;
                         }
-
                     } else {
                         end_idx += 1;
                     }
                 }
-            },
+            }
             PatternColType::Note => {
                 let mut cur_value = (0.0, 0);
 
                 for row in 0..out_col.len() {
                     if let Some(new_value) = self.data[row][col] {
-                        cur_value = (
-                            ((new_value as i32 - 69) as f32 * 0.1) / 12.0,
-                            1
-                        );
+                        cur_value = (((new_value as i32 - 69) as f32 * 0.1) / 12.0, 1);
                     } else {
                         cur_value.1 = 0;
                     }
 
-                    out_col[row] =
-                        (cur_value.0.clamp(-1.0, 1.0), cur_value.1);
+                    out_col[row] = (cur_value.0.clamp(-1.0, 1.0), cur_value.1);
                 }
-            },
+            }
             PatternColType::Step => {
                 let mut cur_value = (0.0, 0);
 
                 for row in 0..out_col.len() {
                     if let Some(new_value) = self.data[row][col] {
-                        cur_value = (
-                            ((new_value & 0xFFF) as f32) / (0xFFF as f32),
-                            1
-                        );
+                        cur_value = (((new_value & 0xFFF) as f32) / (0xFFF as f32), 1);
                     } else {
                         cur_value.1 = 0;
                     }
 
                     out_col[row] = cur_value;
                 }
-            },
+            }
             PatternColType::Gate => {
                 // XXX: We need to iterate over all rows, even if
                 //      self.rows < out_col.len(), because empty cells
@@ -229,14 +216,13 @@ impl PatternData {
                 //      this internal format!? But in either case we transmit
                 //      a full row to the backend anyways.
                 for row in 0..out_col.len() {
-                    out_col[row] =
-                        if let Some(new_value) = self.data[row][col] {
-                            (f32::from_bits(new_value as u32), 1)
-                        } else {
-                            (f32::from_bits(0xF000 as u32), 0)
-                        };
+                    out_col[row] = if let Some(new_value) = self.data[row][col] {
+                        (f32::from_bits(new_value as u32), 1)
+                    } else {
+                        (f32::from_bits(0xF000 as u32), 0)
+                    };
                 }
-            },
+            }
         }
     }
 }
@@ -278,8 +264,12 @@ pub trait UIPatternModel: std::fmt::Debug {
 
 impl UIPatternModel for PatternData {
     fn get_cell(&mut self, row: usize, col: usize) -> Option<&str> {
-        if row >= self.data.len()    { return None; }
-        if col >= self.data[0].len() { return None; }
+        if row >= self.data.len() {
+            return None;
+        }
+        if col >= self.data[0].len() {
+            return None;
+        }
 
         if self.strings[row][col].is_none() {
             if let Some(v) = self.data[row][col] {
@@ -293,27 +283,39 @@ impl UIPatternModel for PatternData {
     }
 
     fn clear_cell(&mut self, row: usize, col: usize) {
-        if row >= self.data.len()    { return; }
-        if col >= self.data[0].len() { return; }
+        if row >= self.data.len() {
+            return;
+        }
+        if col >= self.data[0].len() {
+            return;
+        }
 
-        self.data[row][col]    = None;
+        self.data[row][col] = None;
         self.strings[row][col] = None;
         self.modified_col(col);
         self.generation += 1;
     }
 
     fn get_cell_value(&mut self, row: usize, col: usize) -> u16 {
-        if row >= self.data.len()    { return 0; }
-        if col >= self.data[0].len() { return 0; }
+        if row >= self.data.len() {
+            return 0;
+        }
+        if col >= self.data[0].len() {
+            return 0;
+        }
 
         self.data[row][col].unwrap_or(0)
     }
 
     fn set_cell_value(&mut self, row: usize, col: usize, val: u16) {
-        if row >= self.data.len()    { return; }
-        if col >= self.data[0].len() { return; }
+        if row >= self.data.len() {
+            return;
+        }
+        if col >= self.data[0].len() {
+            return;
+        }
 
-        self.data[row][col]    = Some(val);
+        self.data[row][col] = Some(val);
         self.strings[row][col] = None;
         self.modified_col(col);
         self.generation += 1;
@@ -343,9 +345,13 @@ impl UIPatternModel for PatternData {
         }
     }
 
-    fn cols(&self) -> usize { self.data[0].len() }
+    fn cols(&self) -> usize {
+        self.data[0].len()
+    }
 
-    fn rows(&self) -> usize { self.rows }
+    fn rows(&self) -> usize {
+        self.rows
+    }
 
     fn set_rows(&mut self, rows: usize) {
         self.rows = rows.min(self.data.len());
@@ -354,28 +360,36 @@ impl UIPatternModel for PatternData {
     }
 
     fn set_col_note_type(&mut self, col: usize) {
-        if col >= self.col_types.len() { return; }
+        if col >= self.col_types.len() {
+            return;
+        }
         self.col_types[col] = PatternColType::Note;
         self.modified_col(col);
         self.generation += 1;
     }
 
     fn set_col_step_type(&mut self, col: usize) {
-        if col >= self.col_types.len() { return; }
+        if col >= self.col_types.len() {
+            return;
+        }
         self.col_types[col] = PatternColType::Step;
         self.modified_col(col);
         self.generation += 1;
     }
 
     fn set_col_value_type(&mut self, col: usize) {
-        if col >= self.col_types.len() { return; }
+        if col >= self.col_types.len() {
+            return;
+        }
         self.col_types[col] = PatternColType::Value;
         self.modified_col(col);
         self.generation += 1;
     }
 
     fn set_col_gate_type(&mut self, col: usize) {
-        if col >= self.col_types.len() { return; }
+        if col >= self.col_types.len() {
+            return;
+        }
         self.col_types[col] = PatternColType::Gate;
         self.modified_col(col);
         self.generation += 1;
@@ -385,16 +399,21 @@ impl UIPatternModel for PatternData {
         self.cursor = (row, col);
         self.generation += 1;
     }
-    fn get_cursor(&self) -> (usize, usize) { self.cursor }
+    fn get_cursor(&self) -> (usize, usize) {
+        self.cursor
+    }
     fn set_edit_step(&mut self, es: usize) {
         self.edit_step = es;
         self.generation += 1;
     }
-    fn get_edit_step(&mut self) -> usize { self.edit_step }
+    fn get_edit_step(&mut self) -> usize {
+        self.edit_step
+    }
 
-    fn get_generation(&self) -> usize { self.generation }
+    fn get_generation(&self) -> usize {
+        self.generation
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -403,11 +422,14 @@ mod tests {
     macro_rules! assert_float_eq {
         ($a:expr, $b:expr) => {
             if ($a - $b).abs() > 0.0001 {
-                panic!(r#"assertion failed: `(left == right)`
+                panic!(
+                    r#"assertion failed: `(left == right)`
       left: `{:?}`,
-     right: `{:?}`"#, $a, $b)
+     right: `{:?}`"#,
+                    $a, $b
+                )
             }
-        }
+        };
     }
 
     #[test]
@@ -424,9 +446,7 @@ mod tests {
 
             let inc = 1.0 / 2.0;
             for i in 1..2 {
-                let delta =
-                    out_data[col][i].0
-                    - out_data[col][i - 1].0;
+                let delta = out_data[col][i].0 - out_data[col][i - 1].0;
                 assert_float_eq!(delta, inc);
             }
         }
@@ -446,9 +466,7 @@ mod tests {
 
             let inc = 1.0 / 3.0;
             for i in 1..3 {
-                let delta =
-                    out_data[col][i].0
-                    - out_data[col][i - 1].0;
+                let delta = out_data[col][i].0 - out_data[col][i - 1].0;
                 assert_float_eq!(delta, inc);
             }
         }
@@ -460,7 +478,7 @@ mod tests {
 
         for col in 0..MAX_COLS {
             pats.set_col_value_type(col);
-            pats.set_cell_value(0,  col, 0);
+            pats.set_cell_value(0, col, 0);
             pats.set_cell_value(15, col, 0xFFF);
             pats.sync_out_data(col);
 
@@ -470,9 +488,7 @@ mod tests {
 
             //d// println!("out: {:?}", &out_data[col][0..16]);
             for i in 1..16 {
-                let delta =
-                    out_data[col][i].0
-                    - out_data[col][i - 1].0;
+                let delta = out_data[col][i].0 - out_data[col][i - 1].0;
                 assert_float_eq!(delta, inc);
             }
         }
@@ -492,9 +508,7 @@ mod tests {
             let inc = 1.0 / 15.0;
 
             for i in 1..16 {
-                let delta =
-                    out_data[col][i].0
-                    - out_data[col][i - 1].0;
+                let delta = out_data[col][i].0 - out_data[col][i - 1].0;
                 assert_float_eq!(delta.abs(), inc);
             }
         }
@@ -514,9 +528,7 @@ mod tests {
 
             //d// println!("out: {:?}", &out_data[col][0..16]);
             for i in 0..8 {
-                assert_float_eq!(
-                    out_data[col][i].0,
-                    out_data[col][15 - i].0);
+                assert_float_eq!(out_data[col][i].0, out_data[col][15 - i].0);
             }
         }
     }
@@ -535,9 +547,7 @@ mod tests {
 
             //d// println!("out: {:?}", &out_data[col][0..16]);
             for i in 0..8 {
-                assert_float_eq!(
-                    out_data[col][i].0,
-                    out_data[col][15 - i].0);
+                assert_float_eq!(out_data[col][i].0, out_data[col][15 - i].0);
             }
         }
     }
@@ -558,9 +568,7 @@ mod tests {
 
             //d// println!("out: {:?}", &out_data[col][0..16]);
             for i in 0..8 {
-                assert_float_eq!(
-                    out_data[col][i].0,
-                    out_data[col][15 - i].0);
+                assert_float_eq!(out_data[col][i].0, out_data[col][15 - i].0);
             }
         }
     }
@@ -585,9 +593,7 @@ mod tests {
             assert_float_eq!(0.5, out_data[col][9].0);
 
             for i in 0..8 {
-                assert_float_eq!(
-                    out_data[col][i].0,
-                    out_data[col][15 - i].0);
+                assert_float_eq!(out_data[col][i].0, out_data[col][15 - i].0);
             }
         }
     }
@@ -598,20 +604,20 @@ mod tests {
 
         for col in 0..MAX_COLS {
             pats.set_col_step_type(col);
-            pats.set_cell_value(4,  col, 0x450);
-            pats.set_cell_value(5,  col, 0x0);
-            pats.set_cell_value(7,  col, 0x7ff);
-            pats.set_cell_value(9,  col, 0x800);
+            pats.set_cell_value(4, col, 0x450);
+            pats.set_cell_value(5, col, 0x0);
+            pats.set_cell_value(7, col, 0x7ff);
+            pats.set_cell_value(9, col, 0x800);
             pats.set_cell_value(10, col, 0xfff);
             pats.sync_out_data(col);
 
             let out_data = pats.get_out_data();
-            assert_float_eq!(out_data[col][0].0,  0.0);
-            assert_float_eq!(out_data[col][4].0,  0.26959708);
-            assert_float_eq!(out_data[col][5].0,  0.0);
-            assert_float_eq!(out_data[col][7].0,  0.4998779);
-            assert_float_eq!(out_data[col][8].0,  0.4998779);
-            assert_float_eq!(out_data[col][9].0,  0.50012213);
+            assert_float_eq!(out_data[col][0].0, 0.0);
+            assert_float_eq!(out_data[col][4].0, 0.26959708);
+            assert_float_eq!(out_data[col][5].0, 0.0);
+            assert_float_eq!(out_data[col][7].0, 0.4998779);
+            assert_float_eq!(out_data[col][8].0, 0.4998779);
+            assert_float_eq!(out_data[col][9].0, 0.50012213);
             assert_float_eq!(out_data[col][10].0, 1.0);
             assert_float_eq!(out_data[col][15].0, 1.0);
         }
@@ -630,8 +636,8 @@ mod tests {
             pats.sync_out_data(col);
 
             let out_data = pats.get_out_data();
-            assert_float_eq!(out_data[col][0].0,  0.0);
-            assert_float_eq!(out_data[col][4].0,  0.0);
+            assert_float_eq!(out_data[col][0].0, 0.0);
+            assert_float_eq!(out_data[col][4].0, 0.0);
             assert_float_eq!(out_data[col][5].0, -0.575);
             assert_float_eq!(out_data[col][7].0, -0.1);
             assert_float_eq!(out_data[col][9].0, -0.1);

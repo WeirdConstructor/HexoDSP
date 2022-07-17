@@ -2,8 +2,8 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
+use num_traits::{cast::FromPrimitive, cast::ToPrimitive, Float, FloatConst};
 use std::cell::RefCell;
-use num_traits::{Float, FloatConst, cast::FromPrimitive, cast::ToPrimitive};
 
 macro_rules! trait_alias {
     ($name:ident = $base1:ident + $($base2:ident +)+) => {
@@ -15,19 +15,16 @@ macro_rules! trait_alias {
 trait_alias!(Flt = Float + FloatConst + ToPrimitive + FromPrimitive +);
 
 /// Logarithmic table size of the table in [fast_cos] / [fast_sin].
-static FAST_COS_TAB_LOG2_SIZE : usize = 9;
+static FAST_COS_TAB_LOG2_SIZE: usize = 9;
 /// Table size of the table in [fast_cos] / [fast_sin].
-static FAST_COS_TAB_SIZE : usize      = 1 << FAST_COS_TAB_LOG2_SIZE; // =512
+static FAST_COS_TAB_SIZE: usize = 1 << FAST_COS_TAB_LOG2_SIZE; // =512
 /// The wave table of [fast_cos] / [fast_sin].
-static mut FAST_COS_TAB : [f32; 513] = [0.0; 513];
+static mut FAST_COS_TAB: [f32; 513] = [0.0; 513];
 
 /// Initializes the cosine wave table for [fast_cos] and [fast_sin].
 pub fn init_cos_tab() {
-    for i in 0..(FAST_COS_TAB_SIZE+1) {
-        let phase : f32 =
-            (i as f32)
-            * ((std::f32::consts::TAU)
-               / (FAST_COS_TAB_SIZE as f32));
+    for i in 0..(FAST_COS_TAB_SIZE + 1) {
+        let phase: f32 = (i as f32) * ((std::f32::consts::TAU) / (FAST_COS_TAB_SIZE as f32));
         unsafe {
             // XXX: note: mutable statics can be mutated by multiple
             //      threads: aliasing violations or data races
@@ -38,7 +35,7 @@ pub fn init_cos_tab() {
 }
 
 /// Internal phase increment/scaling for [fast_cos].
-const PHASE_SCALE : f32 = 1.0_f32 / (std::f32::consts::TAU);
+const PHASE_SCALE: f32 = 1.0_f32 / (std::f32::consts::TAU);
 
 /// A faster implementation of cosine. It's not that much faster than
 /// Rust's built in cosine function. But YMMV.
@@ -67,8 +64,8 @@ pub fn fast_cos(mut x: f32) -> f32 {
         // XXX: note: mutable statics can be mutated by multiple
         //      threads: aliasing violations or data races
         //      will cause undefined behavior
-        let left         = FAST_COS_TAB[index as usize];
-        let right        = FAST_COS_TAB[index as usize + 1];
+        let left = FAST_COS_TAB[index as usize];
+        let right = FAST_COS_TAB[index as usize + 1];
 
         return left + (right - left) * fract;
     }
@@ -117,7 +114,7 @@ pub struct RandGen {
 // https://github.com/mscharley/rust-xoroshiro128
 /// Given the mutable `state` generates the next pseudo random number.
 pub fn next_xoroshiro128(state: &mut [u64; 2]) -> u64 {
-    let s0: u64     = state[0];
+    let s0: u64 = state[0];
     let mut s1: u64 = state[1];
     let result: u64 = s0.wrapping_add(s1);
 
@@ -134,17 +131,15 @@ pub fn next_xoroshiro128(state: &mut [u64; 2]) -> u64 {
 /// Maps any `u64` to a `f64` in the open interval `[0.0, 1.0)`.
 pub fn u64_to_open01(u: u64) -> f64 {
     use core::f64::EPSILON;
-    let float_size         = std::mem::size_of::<f64>() as u32 * 8;
-    let fraction           = u >> (float_size - 52);
+    let float_size = std::mem::size_of::<f64>() as u32 * 8;
+    let fraction = u >> (float_size - 52);
     let exponent_bits: u64 = (1023 as u64) << 52;
     f64::from_bits(fraction | exponent_bits) - (1.0 - EPSILON / 2.0)
 }
 
 impl RandGen {
     pub fn new() -> Self {
-        RandGen {
-            r: [0x193a6754a8a7d469, 0x97830e05113ba7bb],
-        }
+        RandGen { r: [0x193a6754a8a7d469, 0x97830e05113ba7bb] }
     }
 
     /// Next random unsigned 64bit integer.
@@ -206,7 +201,7 @@ pub fn rand_u64() -> u64 {
 // <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-//- splitmix64 (http://xoroshiro.di.unimi.it/splitmix64.c) 
+//- splitmix64 (http://xoroshiro.di.unimi.it/splitmix64.c)
 //
 /// A splitmix64 random number generator.
 ///
@@ -224,7 +219,9 @@ pub struct SplitMix64(pub u64);
 const PHI: u64 = 0x9e3779b97f4a7c15;
 
 impl SplitMix64 {
-    pub fn new(seed: u64) -> Self { Self(seed) }
+    pub fn new(seed: u64) -> Self {
+        Self(seed)
+    }
     pub fn new_from_i64(seed: i64) -> Self {
         Self::new(u64::from_be_bytes(seed.to_be_bytes()))
     }
@@ -249,8 +246,7 @@ impl SplitMix64 {
 
     #[inline]
     pub fn next_i64(&mut self) -> i64 {
-        i64::from_be_bytes(
-            self.next_u64().to_be_bytes())
+        i64::from_be_bytes(self.next_u64().to_be_bytes())
     }
 
     #[inline]
@@ -283,7 +279,6 @@ pub fn crossfade_clip<F: Flt>(v1: F, v2: F, mix: F) -> F {
     v1 * (f::<F>(1.0) - mix) + (v2 * mix).min(f::<F>(1.0)).max(f::<F>(-1.0))
 }
 
-
 /// Linear (f32) crossfade with driving the `v2` result through a tanh().
 ///
 /// * `v1` - signal 1, range -1.0 to 1.0
@@ -306,8 +301,8 @@ pub fn crossfade_cpow(v1: f32, v2: f32, mix: f32) -> f32 {
     v1 * s2 + v2 * s1
 }
 
-const CROSS_LOG_MIN : f32 = -13.815510557964274; // (0.000001_f32).ln();
-const CROSS_LOG_MAX : f32 = 0.0;                 // (1.0_f32).ln();
+const CROSS_LOG_MIN: f32 = -13.815510557964274; // (0.000001_f32).ln();
+const CROSS_LOG_MAX: f32 = 0.0; // (1.0_f32).ln();
 
 /// Logarithmic crossfade.
 ///
@@ -316,9 +311,7 @@ const CROSS_LOG_MAX : f32 = 0.0;                 // (1.0_f32).ln();
 /// * `mix` - mix position, range 0.0 to 1.0, mid is at 0.5
 #[inline]
 pub fn crossfade_log(v1: f32, v2: f32, mix: f32) -> f32 {
-    let x =
-        (mix * (CROSS_LOG_MAX - CROSS_LOG_MIN) + CROSS_LOG_MIN)
-        .exp();
+    let x = (mix * (CROSS_LOG_MAX - CROSS_LOG_MIN) + CROSS_LOG_MIN).exp();
     crossfade(v1, v2, x)
 }
 
@@ -334,20 +327,21 @@ pub fn crossfade_exp(v1: f32, v2: f32, mix: f32) -> f32 {
 
 #[inline]
 pub fn clamp(f: f32, min: f32, max: f32) -> f32 {
-         if f < min { min }
-    else if f > max { max }
-    else            {   f }
+    if f < min {
+        min
+    } else if f > max {
+        max
+    } else {
+        f
+    }
 }
 
 pub fn square_135(phase: f32) -> f32 {
-      fast_sin(phase)
-    + fast_sin(phase * 3.0) / 3.0
-    + fast_sin(phase * 5.0) / 5.0
+    fast_sin(phase) + fast_sin(phase * 3.0) / 3.0 + fast_sin(phase * 5.0) / 5.0
 }
 
 pub fn square_35(phase: f32) -> f32 {
-      fast_sin(phase * 3.0) / 3.0
-    + fast_sin(phase * 5.0) / 5.0
+    fast_sin(phase * 3.0) / 3.0 + fast_sin(phase * 5.0) / 5.0
 }
 
 // note: MIDI note value?
@@ -379,9 +373,7 @@ pub fn note_to_freq(note: f32) -> f32 {
 /// ```
 #[inline]
 pub fn f_distort(gain: f32, threshold: f32, i: f32) -> f32 {
-    gain * (
-        i * ( i.abs() + threshold )
-        / ( i * i + (threshold - 1.0) * i.abs() + 1.0 ))
+    gain * (i * (i.abs() + threshold) / (i * i + (threshold - 1.0) * i.abs() + 1.0))
 }
 
 // Ported from LMMS under GPLv2
@@ -397,11 +389,7 @@ pub fn f_distort(gain: f32, threshold: f32, i: f32) -> f32 {
 #[inline]
 pub fn f_fold_distort(gain: f32, threshold: f32, i: f32) -> f32 {
     if i >= threshold || i < -threshold {
-        gain
-        * ((
-            ((i - threshold) % threshold * 4.0).abs()
-            - threshold * 2.0).abs()
-           - threshold)
+        gain * ((((i - threshold) % threshold * 4.0).abs() - threshold * 2.0).abs() - threshold)
     } else {
         gain * i
     }
@@ -428,7 +416,6 @@ pub fn p2range_exp4(x: f32, a: f32, b: f32) -> f32 {
     let x = x * x * x * x;
     (a * (1.0 - x)) + (b * x)
 }
-
 
 pub fn range2p(v: f32, a: f32, b: f32) -> f32 {
     ((v - a) / (b - a)).abs()
@@ -475,15 +462,12 @@ pub fn quicker_tanh(v: f32) -> f32 {
 pub fn quick_tanh64(v: f64) -> f64 {
     let abs_v = v.abs();
     let square = v * v;
-    let num =
-        v * (2.45550750702956
-             + 2.45550750702956 * abs_v
-             + square * (0.893229853513558
-                         + 0.821226666969744 * abs_v));
+    let num = v
+        * (2.45550750702956
+            + 2.45550750702956 * abs_v
+            + square * (0.893229853513558 + 0.821226666969744 * abs_v));
     let den =
-        2.44506634652299
-        + (2.44506634652299 + square)
-          * (v + 0.814642734961073 * v * abs_v).abs();
+        2.44506634652299 + (2.44506634652299 + square) * (v + 0.814642734961073 * v * abs_v).abs();
 
     num / den
 }
@@ -491,15 +475,12 @@ pub fn quick_tanh64(v: f64) -> f64 {
 pub fn quick_tanh(v: f32) -> f32 {
     let abs_v = v.abs();
     let square = v * v;
-    let num =
-        v * (2.45550750702956
-             + 2.45550750702956 * abs_v
-             + square * (0.893229853513558
-                         + 0.821226666969744 * abs_v));
+    let num = v
+        * (2.45550750702956
+            + 2.45550750702956 * abs_v
+            + square * (0.893229853513558 + 0.821226666969744 * abs_v));
     let den =
-        2.44506634652299
-        + (2.44506634652299 + square)
-          * (v + 0.814642734961073 * v * abs_v).abs();
+        2.44506634652299 + (2.44506634652299 + square) * (v + 0.814642734961073 * v * abs_v).abs();
 
     num / den
 }
@@ -552,17 +533,14 @@ pub fn sqrt4_to_pow4(x: f32, v: f32) -> f32 {
         let xsq = xsq1.sqrt();
         let v = (v - 0.75) * 4.0;
         xsq1 * (1.0 - v) + xsq * v
-
     } else if v > 0.5 {
         let xsq = x.sqrt();
         let v = (v - 0.5) * 4.0;
         x * (1.0 - v) + xsq * v
-
     } else if v > 0.25 {
         let xx = x * x;
         let v = (v - 0.25) * 4.0;
         x * v + xx * (1.0 - v)
-
     } else {
         let xx = x * x;
         let xxxx = xx * xx;
@@ -572,27 +550,23 @@ pub fn sqrt4_to_pow4(x: f32, v: f32) -> f32 {
 }
 
 /// A-100 Eurorack states, that a trigger is usually 2-10 milliseconds.
-pub const TRIG_SIGNAL_LENGTH_MS : f32 = 2.0;
+pub const TRIG_SIGNAL_LENGTH_MS: f32 = 2.0;
 
 /// The lower threshold for the schmidt trigger to reset.
-pub const TRIG_LOW_THRES  : f32 = 0.25;
+pub const TRIG_LOW_THRES: f32 = 0.25;
 /// The threshold, once reached, will cause a trigger event and signals
 /// a logical '1'. Anything below this is a logical '0'.
-pub const TRIG_HIGH_THRES : f32 = 0.5;
-
+pub const TRIG_HIGH_THRES: f32 = 0.5;
 
 #[derive(Debug, Clone, Copy)]
 pub struct TrigSignal {
-    length:     u32,
-    scount:     u32,
+    length: u32,
+    scount: u32,
 }
 
 impl TrigSignal {
     pub fn new() -> Self {
-        Self {
-            length: ((44100.0 * TRIG_SIGNAL_LENGTH_MS) / 1000.0).ceil() as u32,
-            scount: 0,
-        }
+        Self { length: ((44100.0 * TRIG_SIGNAL_LENGTH_MS) / 1000.0).ceil() as u32, scount: 0 }
     }
 
     pub fn reset(&mut self) {
@@ -605,7 +579,9 @@ impl TrigSignal {
     }
 
     #[inline]
-    pub fn trigger(&mut self) { self.scount = self.length; }
+    pub fn trigger(&mut self) {
+        self.scount = self.length;
+    }
 
     #[inline]
     pub fn next(&mut self) -> f32 {
@@ -619,20 +595,22 @@ impl TrigSignal {
 }
 
 impl Default for TrigSignal {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct ChangeTrig {
-    ts:     TrigSignal,
-    last:   f32,
+    ts: TrigSignal,
+    last: f32,
 }
 
 impl ChangeTrig {
     pub fn new() -> Self {
         Self {
-            ts:     TrigSignal::new(),
-            last:   -100.0, // some random value :-)
+            ts: TrigSignal::new(),
+            last: -100.0, // some random value :-)
         }
     }
 
@@ -657,19 +635,19 @@ impl ChangeTrig {
 }
 
 impl Default for ChangeTrig {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Trigger {
-    triggered:  bool,
+    triggered: bool,
 }
 
 impl Trigger {
     pub fn new() -> Self {
-        Self {
-            triggered: false,
-        }
+        Self { triggered: false }
     }
 
     #[inline]
@@ -685,11 +663,9 @@ impl Trigger {
             }
 
             false
-
         } else if input > TRIG_HIGH_THRES {
             self.triggered = true;
             true
-
         } else {
             false
         }
@@ -698,27 +674,22 @@ impl Trigger {
 
 #[derive(Debug, Clone, Copy)]
 pub struct TriggerPhaseClock {
-    clock_phase:    f64,
-    clock_inc:      f64,
-    prev_trigger:   bool,
-    clock_samples:  u32,
+    clock_phase: f64,
+    clock_inc: f64,
+    prev_trigger: bool,
+    clock_samples: u32,
 }
 
 impl TriggerPhaseClock {
     pub fn new() -> Self {
-        Self {
-            clock_phase:    0.0,
-            clock_inc:      0.0,
-            prev_trigger:   true,
-            clock_samples:  0,
-        }
+        Self { clock_phase: 0.0, clock_inc: 0.0, prev_trigger: true, clock_samples: 0 }
     }
 
     #[inline]
     pub fn reset(&mut self) {
         self.clock_samples = 0;
-        self.clock_inc     = 0.0;
-        self.prev_trigger  = true;
+        self.clock_inc = 0.0;
+        self.prev_trigger = true;
         self.clock_samples = 0;
     }
 
@@ -733,13 +704,11 @@ impl TriggerPhaseClock {
             if trigger_in <= TRIG_LOW_THRES {
                 self.prev_trigger = false;
             }
-
         } else if trigger_in > TRIG_HIGH_THRES {
             self.prev_trigger = true;
 
             if self.clock_samples > 0 {
-                self.clock_inc =
-                    1.0 / (self.clock_samples as f64);
+                self.clock_inc = 1.0 / (self.clock_samples as f64);
             }
 
             self.clock_samples = 0;
@@ -756,24 +725,20 @@ impl TriggerPhaseClock {
 
 #[derive(Debug, Clone, Copy)]
 pub struct TriggerSampleClock {
-    prev_trigger:   bool,
-    clock_samples:  u32,
-    counter:        u32,
+    prev_trigger: bool,
+    clock_samples: u32,
+    counter: u32,
 }
 
 impl TriggerSampleClock {
     pub fn new() -> Self {
-        Self {
-            prev_trigger:   true,
-            clock_samples:  0,
-            counter:        0,
-        }
+        Self { prev_trigger: true, clock_samples: 0, counter: 0 }
     }
 
     #[inline]
     pub fn reset(&mut self) {
         self.clock_samples = 0;
-        self.counter       = 0;
+        self.counter = 0;
     }
 
     #[inline]
@@ -782,11 +747,10 @@ impl TriggerSampleClock {
             if trigger_in <= TRIG_LOW_THRES {
                 self.prev_trigger = false;
             }
-
         } else if trigger_in > TRIG_HIGH_THRES {
-            self.prev_trigger  = true;
+            self.prev_trigger = true;
             self.clock_samples = self.counter;
-            self.counter       = 0;
+            self.counter = 0;
         }
 
         self.counter += 1;
@@ -798,20 +762,17 @@ impl TriggerSampleClock {
 /// A slew rate limiter, with a configurable time per 1.0 increase.
 #[derive(Debug, Clone, Copy)]
 pub struct SlewValue<F: Flt> {
-    current:        F,
-    slew_per_ms:    F,
+    current: F,
+    slew_per_ms: F,
 }
 
 impl<F: Flt> SlewValue<F> {
     pub fn new() -> Self {
-        Self {
-            current:     f(0.0),
-            slew_per_ms: f(1000.0 / 44100.0),
-        }
+        Self { current: f(0.0), slew_per_ms: f(1000.0 / 44100.0) }
     }
 
     pub fn reset(&mut self) {
-        self.current    = f(0.0);
+        self.current = f(0.0);
     }
 
     pub fn set_sample_rate(&mut self, srate: F) {
@@ -819,7 +780,9 @@ impl<F: Flt> SlewValue<F> {
     }
 
     #[inline]
-    pub fn value(&self) -> F { self.current }
+    pub fn value(&self) -> F {
+        self.current
+    }
 
     /// * `slew_ms_per_1` - The time (in milliseconds) it should take
     /// to get to 1.0 from 0.0.
@@ -828,13 +791,9 @@ impl<F: Flt> SlewValue<F> {
         // at 0.11ms, there are barely enough samples for proper slew.
         if slew_ms_per_1 < f(0.11) {
             self.current = target;
-
         } else {
             let max_delta = self.slew_per_ms / slew_ms_per_1;
-            self.current =
-                target
-                    .min(self.current + max_delta)
-                    .max(self.current - max_delta);
+            self.current = target.min(self.current + max_delta).max(self.current - max_delta);
         }
 
         self.current
@@ -845,28 +804,28 @@ impl<F: Flt> SlewValue<F> {
 #[derive(Debug, Clone, Copy)]
 pub struct RampValue<F: Flt> {
     slew_count: u64,
-    current:    F,
-    target:     F,
-    inc:        F,
-    sr_ms:      F,
+    current: F,
+    target: F,
+    inc: F,
+    sr_ms: F,
 }
 
 impl<F: Flt> RampValue<F> {
     pub fn new() -> Self {
         Self {
             slew_count: 0,
-            current:    f(0.0),
-            target:     f(0.0),
-            inc:        f(0.0),
-            sr_ms:      f(44100.0 / 1000.0),
+            current: f(0.0),
+            target: f(0.0),
+            inc: f(0.0),
+            sr_ms: f(44100.0 / 1000.0),
         }
     }
 
     pub fn reset(&mut self) {
         self.slew_count = 0;
-        self.current    = f(0.0);
-        self.target     = f(0.0);
-        self.inc        = f(0.0);
+        self.current = f(0.0);
+        self.target = f(0.0);
+        self.inc = f(0.0);
     }
 
     pub fn set_sample_rate(&mut self, srate: F) {
@@ -879,9 +838,8 @@ impl<F: Flt> RampValue<F> {
 
         // 0.02ms, thats a fraction of a sample at 44.1kHz
         if slew_time_ms < f(0.02) {
-            self.current    = self.target;
+            self.current = self.target;
             self.slew_count = 0;
-
         } else {
             let slew_samples = slew_time_ms * self.sr_ms;
             self.slew_count = slew_samples.to_u64().unwrap_or(0);
@@ -890,7 +848,9 @@ impl<F: Flt> RampValue<F> {
     }
 
     #[inline]
-    pub fn value(&self) -> F { self.current }
+    pub fn value(&self) -> F {
+        self.current
+    }
 
     #[inline]
     pub fn next(&mut self) -> F {
@@ -906,46 +866,46 @@ impl<F: Flt> RampValue<F> {
 }
 
 /// Default size of the delay buffer: 5 seconds at 8 times 48kHz
-const DEFAULT_DELAY_BUFFER_SAMPLES : usize = 8 * 48000 * 5;
+const DEFAULT_DELAY_BUFFER_SAMPLES: usize = 8 * 48000 * 5;
 
 macro_rules! fc {
-    ($F: ident, $e: expr) => { F::from_f64($e).unwrap() }
+    ($F: ident, $e: expr) => {
+        F::from_f64($e).unwrap()
+    };
 }
 
 #[allow(dead_code)]
 #[inline]
-fn f<F: Flt>(x: f64) -> F { F::from_f64(x).unwrap() }
+fn f<F: Flt>(x: f64) -> F {
+    F::from_f64(x).unwrap()
+}
 
 #[allow(dead_code)]
 #[inline]
-fn fclamp<F: Flt>(x: F, mi: F, mx: F) -> F { x.max(mi).min(mx) }
+fn fclamp<F: Flt>(x: F, mi: F, mx: F) -> F {
+    x.max(mi).min(mx)
+}
 
 #[allow(dead_code)]
 #[inline]
-fn fclampc<F: Flt>(x: F, mi: f64, mx: f64) -> F { x.max(f(mi)).min(f(mx)) }
+fn fclampc<F: Flt>(x: F, mi: f64, mx: f64) -> F {
+    x.max(f(mi)).min(f(mx))
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct DelayBuffer<F: Flt> {
-    data:   Vec<F>,
-    wr:     usize,
-    srate:  F,
+    data: Vec<F>,
+    wr: usize,
+    srate: F,
 }
 
 impl<F: Flt> DelayBuffer<F> {
     pub fn new() -> Self {
-        Self {
-            data:   vec![f(0.0); DEFAULT_DELAY_BUFFER_SAMPLES],
-            wr:     0,
-            srate:  f(44100.0),
-        }
+        Self { data: vec![f(0.0); DEFAULT_DELAY_BUFFER_SAMPLES], wr: 0, srate: f(44100.0) }
     }
 
     pub fn new_with_size(size: usize) -> Self {
-        Self {
-            data:   vec![f(0.0); size],
-            wr:     0,
-            srate:  f(44100.0),
-        }
+        Self { data: vec![f(0.0); size], wr: 0, srate: f(44100.0) }
     }
 
     pub fn set_sample_rate(&mut self, srate: F) {
@@ -1024,13 +984,13 @@ impl<F: Flt> DelayBuffer<F> {
     /// * `s_offs` - Sample offset in samples.
     #[inline]
     pub fn linear_interpolate_at_s(&self, s_offs: F) -> F {
-        let data   = &self.data[..];
-        let len    = data.len();
-        let offs   = s_offs.floor().to_usize().unwrap_or(0) % len;
-        let fract  = s_offs.fract();
+        let data = &self.data[..];
+        let len = data.len();
+        let offs = s_offs.floor().to_usize().unwrap_or(0) % len;
+        let fract = s_offs.fract();
 
         let i = (self.wr + len) - offs;
-        let x0 = data[i       % len];
+        let x0 = data[i % len];
         let x1 = data[(i - 1) % len];
 
         x0 + fract * (x1 - x0)
@@ -1049,14 +1009,14 @@ impl<F: Flt> DelayBuffer<F> {
     /// * `s_offs` - Sample offset in samples.
     #[inline]
     pub fn cubic_interpolate_at_s(&self, s_offs: F) -> F {
-        let data   = &self.data[..];
-        let len    = data.len();
-        let offs   = s_offs.floor().to_usize().unwrap_or(0) % len;
-        let fract  = s_offs.fract();
+        let data = &self.data[..];
+        let len = data.len();
+        let offs = s_offs.floor().to_usize().unwrap_or(0) % len;
+        let fract = s_offs.fract();
 
         let i = (self.wr + len) - offs;
 
-        // Hermite interpolation, take from 
+        // Hermite interpolation, take from
         // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
         //
         // Thanks go to Eric Wood!
@@ -1064,14 +1024,14 @@ impl<F: Flt> DelayBuffer<F> {
         // For the interpolation code:
         // MIT License, Copyright (c) 2021 Eric Wood
         let xm1 = data[(i + 1) % len];
-        let x0  = data[i       % len];
-        let x1  = data[(i - 1) % len];
-        let x2  = data[(i - 2) % len];
+        let x0 = data[i % len];
+        let x1 = data[(i - 1) % len];
+        let x2 = data[(i - 2) % len];
 
-        let c     = (x1 - xm1) * f(0.5);
-        let v     = x0 - x1;
-        let w     = c + v;
-        let a     = w + v + (x2 - x0) * f(0.5);
+        let c = (x1 - xm1) * f(0.5);
+        let v = x0 - x1;
+        let w = c + v;
+        let a = w + v + (x2 - x0) * f(0.5);
         let b_neg = w + a;
 
         let fract = fract as F;
@@ -1080,25 +1040,22 @@ impl<F: Flt> DelayBuffer<F> {
 
     #[inline]
     pub fn nearest_at(&self, delay_time_ms: F) -> F {
-        let len  = self.data.len();
-        let offs =
-            ((delay_time_ms * self.srate)
-             / f(1000.0))
-            .floor().to_usize().unwrap_or(0) % len;
-        let idx  = ((self.wr + len) - offs) % len;
+        let len = self.data.len();
+        let offs = ((delay_time_ms * self.srate) / f(1000.0)).floor().to_usize().unwrap_or(0) % len;
+        let idx = ((self.wr + len) - offs) % len;
         self.data[idx]
     }
 
     #[inline]
     pub fn at(&self, delay_sample_count: usize) -> F {
-        let len  = self.data.len();
-        let idx  = ((self.wr + len) - delay_sample_count) % len;
+        let len = self.data.len();
+        let idx = ((self.wr + len) - delay_sample_count) % len;
         self.data[idx]
     }
 }
 
 /// Default size of the delay buffer: 1 seconds at 8 times 48kHz
-const DEFAULT_ALLPASS_COMB_SAMPLES : usize = 8 * 48000;
+const DEFAULT_ALLPASS_COMB_SAMPLES: usize = 8 * 48000;
 
 #[derive(Debug, Clone, Default)]
 pub struct AllPass<F: Flt> {
@@ -1107,9 +1064,7 @@ pub struct AllPass<F: Flt> {
 
 impl<F: Flt> AllPass<F> {
     pub fn new() -> Self {
-        Self {
-            delay: DelayBuffer::new_with_size(DEFAULT_ALLPASS_COMB_SAMPLES),
-        }
+        Self { delay: DelayBuffer::new_with_size(DEFAULT_ALLPASS_COMB_SAMPLES) }
     }
 
     pub fn set_sample_rate(&mut self, srate: F) {
@@ -1141,9 +1096,7 @@ pub struct Comb {
 
 impl Comb {
     pub fn new() -> Self {
-        Self {
-            delay: DelayBuffer::new_with_size(DEFAULT_ALLPASS_COMB_SAMPLES),
-        }
+        Self { delay: DelayBuffer::new_with_size(DEFAULT_ALLPASS_COMB_SAMPLES) }
     }
 
     pub fn set_sample_rate(&mut self, srate: f32) {
@@ -1213,21 +1166,21 @@ pub fn process_1pole_lowpass(input: f32, freq: f32, israte: f32, z: &mut f32) ->
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct OnePoleLPF<F: Flt> {
-    israte:     F,
-    a:          F,
-    b:          F,
-    freq:       F,
-    z:          F,
+    israte: F,
+    a: F,
+    b: F,
+    freq: F,
+    z: F,
 }
 
 impl<F: Flt> OnePoleLPF<F> {
     pub fn new() -> Self {
         Self {
             israte: f::<F>(1.0) / f(44100.0),
-            a:      f::<F>(0.0),
-            b:      f::<F>(0.0),
-            freq:   f::<F>(1000.0),
-            z:      f::<F>(0.0),
+            a: f::<F>(0.0),
+            b: f::<F>(0.0),
+            freq: f::<F>(1000.0),
+            z: f::<F>(0.0),
         }
     }
 
@@ -1267,36 +1220,29 @@ impl<F: Flt> OnePoleLPF<F> {
 // under MIT License
 #[derive(Debug, Copy, Clone, Default)]
 pub struct FixedOnePole {
-    b0:   f32,
-    a1:   f32,
-    y1:   f32,
+    b0: f32,
+    a1: f32,
+    y1: f32,
     gain: f32,
 }
 
 impl FixedOnePole {
     pub fn new(pole: f32, gain: f32) -> Self {
-        let b0 =
-            if pole > 0.0 { 1.0 - pole }
-            else { 1.0 + pole };
+        let b0 = if pole > 0.0 { 1.0 - pole } else { 1.0 + pole };
 
-        Self {
-            b0,
-            a1: -pole,
-            y1: 0.0,
-            gain
-        }
+        Self { b0, a1: -pole, y1: 0.0, gain }
     }
 
     pub fn reset(&mut self) {
         self.y1 = 0.0;
     }
 
-    pub fn set_gain(&mut self, gain: f32) { self.gain = gain; }
+    pub fn set_gain(&mut self, gain: f32) {
+        self.gain = gain;
+    }
 
     pub fn process(&mut self, input: f32) -> f32 {
-        let output =
-              self.b0 * self.gain * input
-            - self.a1 * self.y1;
+        let output = self.b0 * self.gain * input - self.a1 * self.y1;
         self.y1 = output;
         output
     }
@@ -1329,13 +1275,10 @@ impl FixedOnePole {
 ///    }
 ///```
 pub fn process_1pole_highpass(input: f32, freq: f32, israte: f32, z: &mut f32, y: &mut f32) -> f32 {
-    let b  = (-std::f32::consts::TAU * freq * israte).exp();
-    let a  = (1.0 + b) / 2.0;
+    let b = (-std::f32::consts::TAU * freq * israte).exp();
+    let a = (1.0 + b) / 2.0;
 
-    let v =
-          a  * input
-        - a  * *z
-        + b  * *y;
+    let v = a * input - a * *z + b * *y;
     *y = v;
     *z = input;
     v
@@ -1343,23 +1286,23 @@ pub fn process_1pole_highpass(input: f32, freq: f32, israte: f32, z: &mut f32, y
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct OnePoleHPF<F: Flt> {
-    israte:     F,
-    a:          F,
-    b:          F,
-    freq:       F,
-    z:          F,
-    y:          F,
+    israte: F,
+    a: F,
+    b: F,
+    freq: F,
+    z: F,
+    y: F,
 }
 
 impl<F: Flt> OnePoleHPF<F> {
     pub fn new() -> Self {
         Self {
             israte: f(1.0 / 44100.0),
-            a:      f(0.0),
-            b:      f(0.0),
-            freq:   f(1000.0),
-            z:      f(0.0),
-            y:      f(0.0),
+            a: f(0.0),
+            b: f(0.0),
+            freq: f(1000.0),
+            z: f(0.0),
+            y: f(0.0),
         }
     }
 
@@ -1373,7 +1316,6 @@ impl<F: Flt> OnePoleHPF<F> {
         self.b = (f::<F>(-1.0) * F::TAU() * self.freq * self.israte).exp();
         self.a = (f::<F>(1.0) + self.b) / f(2.0);
     }
-
 
     pub fn set_sample_rate(&mut self, srate: F) {
         self.israte = f::<F>(1.0) / srate;
@@ -1390,10 +1332,7 @@ impl<F: Flt> OnePoleHPF<F> {
 
     #[inline]
     pub fn process(&mut self, input: F) -> F {
-        let v =
-              self.a * input
-            - self.a * self.z
-            + self.b * self.y;
+        let v = self.a * input - self.a * self.z + self.b * self.y;
 
         self.y = v;
         self.z = input;
@@ -1401,7 +1340,6 @@ impl<F: Flt> OnePoleHPF<F> {
         v
     }
 }
-
 
 // one pole from:
 // http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.pdf
@@ -1468,7 +1406,7 @@ pub fn process_1pole_tpt_lowpass(input: f32, freq: f32, israte: f32, z: &mut f32
 ///    }
 ///```
 pub fn process_1pole_tpt_highpass(input: f32, freq: f32, israte: f32, z: &mut f32) -> f32 {
-    let g  = (std::f32::consts::PI * freq * israte).tan();
+    let g = (std::f32::consts::PI * freq * israte).tan();
     let a1 = g / (1.0 + g);
 
     let v1 = a1 * (input - *z);
@@ -1479,7 +1417,7 @@ pub fn process_1pole_tpt_highpass(input: f32, freq: f32, israte: f32, z: &mut f3
 }
 
 /// The internal oversampling factor of [process_hal_chamberlin_svf].
-const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
+const FILTER_OVERSAMPLE_HAL_CHAMBERLIN: usize = 2;
 // Hal Chamberlin's State Variable (12dB/oct) filter
 // https://www.earlevel.com/main/2003/03/02/the-digital-state-variable-filter/
 // Inspired by SynthV1 by Rui Nuno Capela, under the terms of
@@ -1518,17 +1456,21 @@ const FILTER_OVERSAMPLE_HAL_CHAMBERLIN : usize = 2;
 ///```
 #[inline]
 pub fn process_hal_chamberlin_svf(
-    input: f32, freq: f32, res: f32, israte: f32, band: &mut f32, low: &mut f32)
-    -> (f32, f32)
-{
-    let q      = 1.0 - res;
+    input: f32,
+    freq: f32,
+    res: f32,
+    israte: f32,
+    band: &mut f32,
+    low: &mut f32,
+) -> (f32, f32) {
+    let q = 1.0 - res;
     let cutoff = 2.0 * (std::f32::consts::PI * freq * 0.5 * israte).sin();
 
-    let mut high  = 0.0;
+    let mut high = 0.0;
     let mut notch = 0.0;
 
     for _ in 0..FILTER_OVERSAMPLE_HAL_CHAMBERLIN {
-        *low  += cutoff * *band;
+        *low += cutoff * *band;
         high = input - *low - q * *band;
         *band += cutoff * high;
         notch = high + *low;
@@ -1582,14 +1524,19 @@ pub fn process_hal_chamberlin_svf(
 // the paper.
 #[inline]
 pub fn process_simper_svf(
-    input: f32, freq: f32, res: f32, israte: f32, ic1eq: &mut f32, ic2eq: &mut f32
+    input: f32,
+    freq: f32,
+    res: f32,
+    israte: f32,
+    ic1eq: &mut f32,
+    ic2eq: &mut f32,
 ) -> (f32, f32, f32) {
     // XXX: the 1.989 were tuned by hand, so the resonance is more audible.
     let k = 2f32 - (1.989f32 * res);
     let w = std::f32::consts::PI * freq * israte;
 
-    let s1  = w.sin();
-    let s2  = (2.0 * w).sin();
+    let s1 = w.sin();
+    let s2 = (2.0 * w).sin();
     let nrm = 1.0 / (2.0 + k * s2);
 
     let g0 = s2 * nrm;
@@ -1660,11 +1607,16 @@ pub fn process_simper_svf(
 // and https://github.com/ddiakopoulos/MoogLadders/blob/master/src/MusicDSPModel.h
 #[inline]
 pub fn process_stilson_moog(
-    input: f32, freq: f32, res: f32, israte: f32,
-    b0: &mut f32, b1: &mut f32, b2: &mut f32, b3: &mut f32,
+    input: f32,
+    freq: f32,
+    res: f32,
+    israte: f32,
+    b0: &mut f32,
+    b1: &mut f32,
+    b2: &mut f32,
+    b3: &mut f32,
     delay: &mut [f32; 4],
 ) -> f32 {
-
     let cutoff = 2.0 * freq * israte;
 
     let p = cutoff * (1.8 - 0.8 * cutoff);
@@ -1675,10 +1627,10 @@ pub fn process_stilson_moog(
 
     let res = res * (t2 + 6.0 * t1) / (t2 - 6.0 * t1);
 
-	let x = input - res * *b3;
+    let x = input - res * *b3;
 
     // Four cascaded one-pole filters (bilinear transform)
-    *b0 = x   * p + delay[0] * p - k * *b0;
+    *b0 = x * p + delay[0] * p - k * *b0;
     *b1 = *b0 * p + delay[1] * p - k * *b1;
     *b2 = *b1 * p + delay[2] * p - k * *b2;
     *b3 = *b2 * p + delay[3] * p - k * *b3;
@@ -1699,18 +1651,14 @@ pub fn process_stilson_moog(
 // under GPLv3 or any later
 #[derive(Debug, Clone, Copy)]
 pub struct DCBlockFilter<F: Flt> {
-    xm1:    F,
-    ym1:    F,
-    r:      F,
+    xm1: F,
+    ym1: F,
+    r: F,
 }
 
 impl<F: Flt> DCBlockFilter<F> {
     pub fn new() -> Self {
-        Self {
-            xm1: f(0.0),
-            ym1: f(0.0),
-            r:   f(0.995),
-        }
+        Self { xm1: f(0.0), ym1: f(0.0), r: f(0.995) }
     }
 
     pub fn reset(&mut self) {
@@ -1747,11 +1695,9 @@ fn poly_blep_64(t: f64, dt: f64) -> f64 {
     if t < dt {
         let t = t / dt;
         2. * t - (t * t) - 1.
-
     } else if t > (1.0 - dt) {
         let t = (t - 1.0) / dt;
         (t * t) + 2. * t + 1.
-
     } else {
         0.
     }
@@ -1761,11 +1707,9 @@ fn poly_blep(t: f32, dt: f32) -> f32 {
     if t < dt {
         let t = t / dt;
         2. * t - (t * t) - 1.
-
     } else if t > (1.0 - dt) {
         let t = (t - 1.0) / dt;
         (t * t) + 2. * t + 1.
-
     } else {
         0.
     }
@@ -1801,8 +1745,8 @@ fn poly_blep(t: f32, dt: f32) -> f32 {
 ///```
 #[derive(Debug, Clone)]
 pub struct PolyBlepOscillator {
-    phase:       f32,
-    init_phase:  f32,
+    phase: f32,
+    init_phase: f32,
     last_output: f32,
 }
 
@@ -1820,18 +1764,14 @@ impl PolyBlepOscillator {
     /// let mut osc = PolyBlepOscillator::new(rand_01() * 0.25);
     ///```
     pub fn new(init_phase: f32) -> Self {
-        Self {
-            phase:       0.0,
-            last_output: 0.0,
-            init_phase,
-        }
+        Self { phase: 0.0, last_output: 0.0, init_phase }
     }
 
     /// Reset the internal state of the oscillator as if you just called
     /// [PolyBlepOscillator::new].
     #[inline]
     pub fn reset(&mut self) {
-        self.phase       = self.init_phase;
+        self.phase = self.init_phase;
         self.last_output = 0.0;
     }
 
@@ -1884,9 +1824,7 @@ impl PolyBlepOscillator {
     pub fn next_tri(&mut self, freq: f32, israte: f32) -> f32 {
         let phase_inc = freq * israte;
 
-        let mut s =
-            if self.phase < 0.5 { 1.0 }
-            else                { -1.0 };
+        let mut s = if self.phase < 0.5 { 1.0 } else { -1.0 };
 
         s += poly_blep(self.phase, phase_inc);
         s -= poly_blep((self.phase + 0.5).fract(), phase_inc);
@@ -1961,13 +1899,10 @@ impl PolyBlepOscillator {
         let pw = (0.1 * pw) + ((1.0 - pw) * 0.5); // some scaling
         let dc_compensation = (0.5 - pw) * 2.0;
 
-        let mut s =
-            if self.phase < pw { 1.0 }
-            else { -1.0 };
+        let mut s = if self.phase < pw { 1.0 } else { -1.0 };
 
         s += poly_blep(self.phase, phase_inc);
-        s -= poly_blep((self.phase + (1.0 - pw)).fract(),
-                            phase_inc);
+        s -= poly_blep((self.phase + (1.0 - pw)).fract(), phase_inc);
 
         s += dc_compensation;
 
@@ -2004,13 +1939,10 @@ impl PolyBlepOscillator {
 
         let pw = (0.1 * pw) + ((1.0 - pw) * 0.5); // some scaling
 
-        let mut s =
-            if self.phase < pw { 1.0 }
-            else { -1.0 };
+        let mut s = if self.phase < pw { 1.0 } else { -1.0 };
 
         s += poly_blep(self.phase, phase_inc);
-        s -= poly_blep((self.phase + (1.0 - pw)).fract(),
-                            phase_inc);
+        s -= poly_blep((self.phase + (1.0 - pw)).fract(), phase_inc);
 
         self.phase += phase_inc;
         self.phase = self.phase.fract();
@@ -2086,8 +2018,8 @@ impl PolyBlepOscillator {
 ///```
 #[derive(Debug, Clone)]
 pub struct VPSOscillator {
-    phase:       f32,
-    init_phase:  f32,
+    phase: f32,
+    init_phase: f32,
 }
 
 impl VPSOscillator {
@@ -2095,10 +2027,7 @@ impl VPSOscillator {
     ///
     /// * `init_phase` - The initial phase of the oscillator.
     pub fn new(init_phase: f32) -> Self {
-        Self {
-            phase:       0.0,
-            init_phase,
-        }
+        Self { phase: 0.0, init_phase }
     }
 
     /// Reset the phase of the oscillator to the initial phase.
@@ -2117,7 +2046,7 @@ impl VPSOscillator {
         if x < d {
             (v * x) / d
         } else {
-            v + ((1.0 - v) * (x - d))/(1.0 - d)
+            v + ((1.0 - v) * (x - d)) / (1.0 - d)
         }
     }
 
@@ -2184,13 +2113,13 @@ pub struct TriSawLFO<F: Flt> {
     /// The (inverse) sample rate. Eg. 1.0 / 44100.0.
     israte: F,
     /// The current oscillator phase.
-    phase:  F,
+    phase: F,
     /// The point from where the falling edge will be used.
-    rev:    F,
+    rev: F,
     /// Whether the LFO is currently rising
     rising: bool,
     /// The frequency.
-    freq:   F,
+    freq: F,
     /// Precomputed rise/fall rate of the LFO.
     rise_r: F,
     fall_r: F,
@@ -2202,10 +2131,10 @@ impl<F: Flt> TriSawLFO<F> {
     pub fn new() -> Self {
         let mut this = Self {
             israte: f(1.0 / 44100.0),
-            phase:  f(0.0),
-            rev:    f(0.5),
+            phase: f(0.0),
+            rev: f(0.5),
             rising: true,
-            freq:   f(1.0),
+            freq: f(1.0),
             fall_r: f(0.0),
             rise_r: f(0.0),
             init_phase: f(0.0),
@@ -2216,13 +2145,13 @@ impl<F: Flt> TriSawLFO<F> {
 
     pub fn set_phase_offs(&mut self, phase: F) {
         self.init_phase = phase;
-        self.phase      = phase;
+        self.phase = phase;
     }
 
     #[inline]
     fn recalc(&mut self) {
-        self.rev    = fclampc(self.rev, 0.0001, 0.999);
-        self.rise_r = f::<F>( 1.0) / self.rev;
+        self.rev = fclampc(self.rev, 0.0001, 0.999);
+        self.rise_r = f::<F>(1.0) / self.rev;
         self.fall_r = f::<F>(-1.0) / (f::<F>(1.0) - self.rev);
     }
 
@@ -2232,15 +2161,15 @@ impl<F: Flt> TriSawLFO<F> {
     }
 
     pub fn reset(&mut self) {
-        self.phase  = self.init_phase;
-        self.rev    = f(0.5);
+        self.phase = self.init_phase;
+        self.rev = f(0.5);
         self.rising = true;
     }
 
     #[inline]
     pub fn set(&mut self, freq: F, rev: F) {
         self.freq = freq as F;
-        self.rev  = rev  as F;
+        self.rev = rev as F;
         self.recalc();
     }
 
@@ -2255,12 +2184,11 @@ impl<F: Flt> TriSawLFO<F> {
             self.rising = false;
         }
 
-        let s =
-            if self.rising {
-                self.phase * self.rise_r
-            } else {
-                self.phase * self.fall_r - self.fall_r
-            };
+        let s = if self.rising {
+            self.phase * self.rise_r
+        } else {
+            self.phase * self.fall_r - self.fall_r
+        };
 
         self.phase = self.phase + self.freq * self.israte;
 
@@ -2275,18 +2203,14 @@ impl<F: Flt> TriSawLFO<F> {
 
 #[derive(Debug, Clone)]
 pub struct Quantizer {
-    old_mask:   i64,
-    lkup_tbl:   [(f32, f32); 24],
-    last_key:   f32,
+    old_mask: i64,
+    lkup_tbl: [(f32, f32); 24],
+    last_key: f32,
 }
 
 impl Quantizer {
     pub fn new() -> Self {
-        Self {
-            old_mask:   0xFFFF_FFFF,
-            lkup_tbl:   [(0.0, 0.0); 24],
-            last_key:   0.0,
-        }
+        Self { old_mask: 0xFFFF_FFFF, lkup_tbl: [(0.0, 0.0); 24], last_key: 0.0 }
     }
 
     #[inline]
@@ -2301,23 +2225,21 @@ impl Quantizer {
 
     #[inline]
     fn setup_lookup_table(&mut self) {
-        let mask        = self.old_mask;
+        let mask = self.old_mask;
         let any_enabled = mask > 0x0;
 
         for i in 0..24 {
             let mut min_d_note_idx = 0;
-            let mut min_dist       = 1000000000;
+            let mut min_dist = 1000000000;
 
             for note in -12..=24 {
-                let dist     = ((i + 1_i64) / 2 - note).abs();
+                let dist = ((i + 1_i64) / 2 - note).abs();
                 let note_idx = note.rem_euclid(12);
 
                 // XXX: We add 9 here for the mask lookup,
                 // to shift the keyboard, which starts at C!
                 // And first bit in the mask is the C note. 10th is the A note.
-                if any_enabled
-                   && (mask & (0x1 << ((note_idx + 9) % 12))) == 0x0
-                {
+                if any_enabled && (mask & (0x1 << ((note_idx + 9) % 12))) == 0x0 {
                     continue;
                 }
 
@@ -2328,7 +2250,7 @@ impl Quantizer {
 
                 if dist < min_dist {
                     min_d_note_idx = note;
-                    min_dist       = dist;
+                    min_dist = dist;
                 } else {
                     break;
                 }
@@ -2337,9 +2259,13 @@ impl Quantizer {
             self.lkup_tbl[i as usize] = (
                 (min_d_note_idx + 9).rem_euclid(12) as f32 * (0.1 / 12.0),
                 min_d_note_idx.rem_euclid(12) as f32 * (0.1 / 12.0)
-                + (     if min_d_note_idx < 0  { -0.1 }
-                   else if min_d_note_idx > 11 {  0.1 }
-                   else                        {  0.0 })
+                    + (if min_d_note_idx < 0 {
+                        -0.1
+                    } else if min_d_note_idx > 11 {
+                        0.1
+                    } else {
+                        0.0
+                    }),
             );
         }
         //d// println!("TBL: {:?}", self.lkup_tbl);
@@ -2353,16 +2279,15 @@ impl Quantizer {
     #[inline]
     pub fn process(&mut self, inp: f32) -> f32 {
         let note_num = (inp * 240.0).round() as i64;
-        let octave   = note_num.div_euclid(24);
+        let octave = note_num.div_euclid(24);
         let note_idx = note_num - octave * 24;
 
-//        println!(
-//            "INP {:7.4} => octave={:3}, note_idx={:3} note_num={:3} inp={:9.6}",
-//            inp, octave, note_idx, note_num, inp * 240.0);
+        //        println!(
+        //            "INP {:7.4} => octave={:3}, note_idx={:3} note_num={:3} inp={:9.6}",
+        //            inp, octave, note_idx, note_num, inp * 240.0);
         //d// println!("TBL: {:?}", self.lkup_tbl);
 
-        let (ui_key_pitch, note_pitch) =
-            self.lkup_tbl[note_idx as usize % 24];
+        let (ui_key_pitch, note_pitch) = self.lkup_tbl[note_idx as usize % 24];
         self.last_key = ui_key_pitch;
         note_pitch + octave as f32 * 0.1
     }
@@ -2382,33 +2307,27 @@ pub struct CtrlPitchQuantizer {
     last_key: u8,
 }
 
-const QUANT_TUNE_TO_A4 : f32 = (9.0 / 12.0) * 0.1;
+const QUANT_TUNE_TO_A4: f32 = (9.0 / 12.0) * 0.1;
 
 impl CtrlPitchQuantizer {
     pub fn new() -> Self {
         Self {
-            keys:           vec![0.0; 12 * 10],
-            used_keys:      [0.0; 12],
+            keys: vec![0.0; 12 * 10],
+            used_keys: [0.0; 12],
             mask_key_count: 0,
-            input_params:   0xFFFFFFFFFF,
-            last_key:       0,
+            input_params: 0xFFFFFFFFFF,
+            last_key: 0,
         }
     }
 
     #[inline]
     pub fn last_key_pitch(&self) -> f32 {
-        self.used_keys[
-            self.last_key as usize
-            % (self.mask_key_count as usize)]
-        + QUANT_TUNE_TO_A4
+        self.used_keys[self.last_key as usize % (self.mask_key_count as usize)] + QUANT_TUNE_TO_A4
     }
 
     #[inline]
     pub fn update_keys(&mut self, mut mask: i64, min_oct: i64, max_oct: i64) {
-        let inp_params =
-              (mask as u64)
-            | ((min_oct as u64) << 12)
-            | ((max_oct as u64) << 20);
+        let inp_params = (mask as u64) | ((min_oct as u64) << 12) | ((max_oct as u64) << 20);
 
         if self.input_params == inp_params {
             return;
@@ -2419,12 +2338,13 @@ impl CtrlPitchQuantizer {
         let mut mask_count = 0;
 
         // set all keys, if none are set!
-        if mask == 0x0 { mask = 0xFFFF; }
+        if mask == 0x0 {
+            mask = 0xFFFF;
+        }
 
         for i in 0..12 {
             if mask & (0x1 << i) > 0 {
-                self.used_keys[mask_count] =
-                    (i as f32 / 12.0) * 0.1 - QUANT_TUNE_TO_A4;
+                self.used_keys[mask_count] = (i as f32 / 12.0) * 0.1 - QUANT_TUNE_TO_A4;
                 mask_count += 1;
             }
         }
@@ -2465,17 +2385,18 @@ impl CtrlPitchQuantizer {
 }
 
 #[macro_export]
-macro_rules! fa_distort { ($formatter: expr, $v: expr, $denorm_v: expr) => { {
-    let s =
-        match ($v.round() as usize) {
-            0  => "Off",
-            1  => "TanH",
-            2  => "B.D.Jong",
-            3  => "Fold",
-            _  => "?",
+macro_rules! fa_distort {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {{
+        let s = match ($v.round() as usize) {
+            0 => "Off",
+            1 => "TanH",
+            2 => "B.D.Jong",
+            3 => "Fold",
+            _ => "?",
         };
-    write!($formatter, "{}", s)
-} } }
+        write!($formatter, "{}", s)
+    }};
+}
 
 #[inline]
 pub fn apply_distortion(s: f32, damt: f32, dist_type: u8) -> f32 {
@@ -2486,7 +2407,7 @@ pub fn apply_distortion(s: f32, damt: f32, dist_type: u8) -> f32 {
             let damt = damt.clamp(0.0, 0.99);
             let damt = 1.0 - damt * damt;
             f_fold_distort(1.0, damt, s) * (1.0 / damt)
-        },
+        }
         _ => s,
     }
 }

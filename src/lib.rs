@@ -246,35 +246,37 @@ projects and authors, I can't relicense it.
 
 */
 
-pub mod nodes;
+pub mod cell_dir;
 #[allow(unused_macros, non_snake_case)]
 pub mod dsp;
+pub mod log;
 pub mod matrix;
-pub mod cell_dir;
-pub mod monitor;
 pub mod matrix_repr;
+pub mod monitor;
+pub mod nodes;
 pub mod sample_lib;
 mod util;
-pub mod log;
 
-pub use log::log;
-pub use nodes::{new_node_engine, NodeConfigurator, NodeExecutor};
 pub use cell_dir::CellDir;
-pub use matrix::{Matrix, Cell};
-pub use dsp::{NodeId, ParamId, SAtom, NodeInfo};
+pub use dsp::{NodeId, NodeInfo, ParamId, SAtom};
+pub use log::log;
+pub use matrix::{Cell, Matrix};
 pub use matrix_repr::load_patch_from_file;
 pub use matrix_repr::save_patch_to_file;
+pub use nodes::{new_node_engine, NodeConfigurator, NodeExecutor};
 pub use sample_lib::{SampleLibrary, SampleLoadError};
 
 pub struct Context<'a, 'b, 'c, 'd> {
-    pub nframes:    usize,
-    pub output:     &'a mut [&'b mut [f32]],
-    pub input:      &'c [&'d [f32]],
+    pub nframes: usize,
+    pub output: &'a mut [&'b mut [f32]],
+    pub input: &'c [&'d [f32]],
 }
 
 impl<'a, 'b, 'c, 'd> nodes::NodeAudioContext for Context<'a, 'b, 'c, 'd> {
     #[inline]
-    fn nframes(&self) -> usize { self.nframes }
+    fn nframes(&self) -> usize {
+        self.nframes
+    }
 
     #[inline]
     fn output(&mut self, channel: usize, frame: usize, v: f32) {
@@ -286,7 +288,6 @@ impl<'a, 'b, 'c, 'd> nodes::NodeAudioContext for Context<'a, 'b, 'c, 'd> {
         self.input[channel][frame]
     }
 }
-
 
 pub fn test() -> bool {
     true
