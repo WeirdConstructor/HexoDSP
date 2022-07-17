@@ -20,7 +20,9 @@ pub struct Gz3Filt {
     olatency: f32, // how many samples before recomputing goertzel on new window
     frames_processed: usize,
 
-    temp_out:f32,
+    tempf1: f32,
+    tempf2: f32,
+    tempf3: f32,
 
     ogain: f32,
 }
@@ -39,7 +41,9 @@ impl Gz3Filt {
             olatency: 2048.0,
             frames_processed: 0,
 
-            temp_out: 0.0,
+            tempf1: 0.0,
+            tempf2: 0.0,
+            tempf3: 0.0,
 
             srate: 44100.0,
             ogain: -2.0, // value that can't be set by the user
@@ -52,7 +56,12 @@ impl Gz3Filt {
     pub const latency : &'static str =
         "GzFilt latency\n How many samples to average the frequency strength over. Higher is more accurate but less time-specific\nRange: (256..65536)\n";
     pub const gain: &'static str = "GzFilt gain\nFilter gain.\nRange: (0..1)\n";
-    pub const sig: &'static str = "GzFilt sig\nFiltered signal output.\nRange: (-1..1)\n";
+    pub const sigf1: &'static str =
+        "GzFilt sig\nFiltered signal output with respect to the first frequency.\nRange: (-1..1)\n";
+    pub const sigf2: &'static str = "GzFilt sig\nFiltered signal output with respect to the second frequency.\nRange: (-1..1)\n";
+    pub const sigf3: &'static str =
+        "GzFilt sig\nFiltered signal output with respect to the third frequency.\nRange: (-1..1)\n";
+
     pub const DESC: &'static str = r#"Goertzel Algorithm
 
 This is the implementation of a goertzel algorithm for extraction of a particular frequency. It is basically a fine bandpass around a specific frequency.
@@ -78,7 +87,7 @@ impl DspNode for Gz3Filt {
     }
 
     fn reset(&mut self) {
-        self.temp_out = 0.0;
+        self.tempf1 = 0.0;
         self.g1.reset();
         self.g2.reset();
         self.g3.reset();
@@ -95,7 +104,7 @@ impl DspNode for Gz3Filt {
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{at, denorm, inp, out};
+        use crate::dsp::{denorm, inp,out_idx};
 
         // aquiring params from context
         let inp = inp::Gz3Filt::inp(inputs);
@@ -103,7 +112,18 @@ impl DspNode for Gz3Filt {
         let latency = inp::Gz3Filt::latency(inputs);
 
         let gain = inp::Gz3Filt::gain(inputs);
-        let out = out::Gz3Filt::sig(outputs);
+        //let out_i = out_idx::Gz3Filt::sigf1(); //TODO: put this into out_idx crate
+        let outf1;
+        let mut outf2;
+        let outf3;
+        (outf1, outf2) = outputs.split_at_mut(1);
+        (outf2, outf3) = outf2.split_at_mut(1); //assumes channels are same size
+
+        let outf1 = &mut outf1[0];
+        let outf2 = &mut outf2[0];
+        let outf3 = &mut outf3[0];
+        
+
 
         let freq1 = inp::Gz3Filt::freq1(inputs);
         let freq2 = inp::Gz3Filt::freq2(inputs);
@@ -151,23 +171,33 @@ impl DspNode for Gz3Filt {
         self.g3.setCoeff(cfreq3, ctx.nframes(), self.srate);
 
         // latency winds up rounding to int multiple of buffer size because thats simpler
-        
-        let mut s:f32;
+
+        let mut s1 = 0.0;
+        let mut s2: f32;
+        let mut s3: f32;
         for frame in 0..ctx.nframes() {
-            s = inp.read(frame);
-            s = self.g1.tick(s) + self.g2.tick(s) + self.g3.tick(s);
-            self.frames_processed+=1;
+            let s = inp.read(frame);
+            //WRITEME: split into 3 signals instead of summing
+            s1 = self.g1.tick(s);
+            s2 = self.g2.tick(s);
+            s3 = self.g3.tick(s);
+            self.frames_processed += 1;
             if self.frames_processed as f32 > self.olatency {
-                self.temp_out = s; //only updates after a calculation on a new window
+                self.tempf1 = s1; //only updates after a calculation on a new window
+                self.tempf2 = s2; //only updates after a calculation on a new window
+                self.tempf3 = s3; //only updates after a calculation on a new window
+
                 self.frames_processed = 0;
                 self.g1.reset();
                 self.g2.reset();
                 self.g3.reset();
             }
             let gain = denorm::Gz3Filt::gain(gain, frame);
-            out.write(frame, self.temp_out * gain); 
+            outf1.write(frame, self.tempf1 * gain);
+            outf2.write(frame, self.tempf2 * gain);
+            outf3.write(frame, self.tempf3 * gain);
         }
 
-        ctx_vals[0].set(out.read(ctx.nframes() - 1));
+        ctx_vals[0].set(s1); //not sure what this does
     }
 }

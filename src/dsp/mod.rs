@@ -1012,7 +1012,7 @@ macro_rules! node_list {
             (3 freq3   n_pit     d_pit r_fq  f_freq stp_d 0.0, 20000.0, 440.0)
             (4 latency n_pit     d_pit r_fq  f_ms   stp_d 256.0, 65536.0, 2048.0)
             (5 gain   n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
-            [0 sig],
+            [0 sigf1][1 sigf2][2 sigf3],
 
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
