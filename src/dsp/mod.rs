@@ -51,8 +51,6 @@ mod node_test;
 #[allow(non_upper_case_globals)]
 mod node_tseq;
 #[allow(non_upper_case_globals)]
-mod node_bowstri;
-#[allow(non_upper_case_globals)]
 mod node_goertzel;
 pub mod goertzel;
 mod node_tslfo;
@@ -120,10 +118,6 @@ use node_out::Out;
 use node_pverb::PVerb;
 use node_quant::Quant;
 use node_rndwk::RndWk;
-use node_mux9::Mux9;
-use node_cqnt::CQnt;
-use node_quant::Quant;
-use node_bowstri::BowStri;
 use node_goertzel::Gz3Filt;
 use node_sampl::Sampl;
 use node_sfilter::SFilter;
