@@ -432,7 +432,6 @@ impl NodeConfigurator {
                 nparam.value = at.clone();
 
                 let at_idx = nparam.at_idx;
-                println!("SEND ATOM UPDATE: {}, {:?}", at_idx, at);
                 let _ = self
                     .shared
                     .graph_update_prod
@@ -960,7 +959,6 @@ impl NodeConfigurator {
 
         self.output_fb_cons = prog.take_feedback_consumer();
 
-        println!("NEW PROG id={}", prog.unique_id);
         let _ = self.shared.graph_update_prod.push(GraphMessage::NewProg { prog, copy_old_out });
     }
 
