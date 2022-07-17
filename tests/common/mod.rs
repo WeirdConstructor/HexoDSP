@@ -2,122 +2,156 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
+pub use hexodsp::dsp::*;
 pub use hexodsp::matrix::*;
 pub use hexodsp::nodes::new_node_engine;
-pub use hexodsp::dsp::*;
 pub use hexodsp::NodeExecutor;
 
 use hound;
 
-pub const SAMPLE_RATE : f32 = 44100.0;
+pub const SAMPLE_RATE: f32 = 44100.0;
 #[allow(dead_code)]
-pub const SAMPLE_RATE_US : usize = 44100;
+pub const SAMPLE_RATE_US: usize = 44100;
 
 #[macro_export]
 macro_rules! init_test {
     ($matrix: ident, $node_exec: ident, $size: expr) => {
         let (node_conf, mut node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, $size, $size);
-        let $matrix    = &mut matrix;
+        let $matrix = &mut matrix;
         let $node_exec = &mut node_exec;
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! assert_float_eq {
     ($a:expr, $b:expr) => {
         if ($a - $b).abs() > 0.0001 {
-            panic!(r#"assertion failed: `(left == right)`
+            panic!(
+                r#"assertion failed: `(left == right)`
   left: `{:?}`,
- right: `{:?}`"#, $a, $b)
+ right: `{:?}`"#,
+                $a, $b
+            )
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! assert_fpair_eq {
     ($a:expr, $b:expr) => {
         if ($a.0 - $b.0).abs() > 0.0001 {
-            panic!(r#"assertion failed: `(left.0 == right.0)`
+            panic!(
+                r#"assertion failed: `(left.0 == right.0)`
   left: `{:?}`,
- right: `{:?}`"#, $a.0, $b.0)
+ right: `{:?}`"#,
+                $a.0, $b.0
+            )
         }
         if ($a.1 - $b.1).abs() > 0.0001 {
-            panic!(r#"assertion failed: `(left.1 == right.1)`
+            panic!(
+                r#"assertion failed: `(left.1 == right.1)`
   left: `{:?}`,
- right: `{:?}`"#, $a.1, $b.1)
+ right: `{:?}`"#,
+                $a.1, $b.1
+            )
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! assert_f3tupl_eq {
     ($a:expr, $b:expr) => {
         if ($a.0 - $b.0).abs() > 0.0001 {
-            panic!(r#"assertion failed: `(left.0 == right.0)`
+            panic!(
+                r#"assertion failed: `(left.0 == right.0)`
   left.0: `{:?}`,
- right.0: `{:?}`"#, $a.0, $b.0)
+ right.0: `{:?}`"#,
+                $a.0, $b.0
+            )
         }
         if ($a.1 - $b.1).abs() > 0.0001 {
-            panic!(r#"assertion failed: `(left.1 == right.1)`
+            panic!(
+                r#"assertion failed: `(left.1 == right.1)`
   left.1: `{:?}`,
- right.1: `{:?}`"#, $a.1, $b.1)
+ right.1: `{:?}`"#,
+                $a.1, $b.1
+            )
         }
         if ($a.2 - $b.2).abs() > 0.0001 {
-            panic!(r#"assertion failed: `(left.2 == right.2)`
+            panic!(
+                r#"assertion failed: `(left.2 == right.2)`
   left.2: `{:?}`,
- right.2: `{:?}`"#, $a.2, $b.2)
+ right.2: `{:?}`"#,
+                $a.2, $b.2
+            )
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! assert_vec_feq {
     ($vec:expr, $cmp_vec:expr) => {
         let cmp_vec = $cmp_vec;
-        let res : Vec<f32> = $vec.iter().copied().collect();
+        let res: Vec<f32> = $vec.iter().copied().collect();
 
         for (i, (s, scmp)) in res.iter().zip(cmp_vec.iter()).enumerate() {
             if (s - scmp).abs() > 0.0001 {
-                panic!(r#"
+                panic!(
+                    r#"
 table_left: {:?}
 
 table_right: {:?}
 
 assertion failed: `(left[{}] == right[{}])`
       left: `{:?}`,
-     right: `{:?}`"#, &res[i..], &(cmp_vec[i..]), i, i, s, scmp)
+     right: `{:?}`"#,
+                    &res[i..],
+                    &(cmp_vec[i..]),
+                    i,
+                    i,
+                    s,
+                    scmp
+                )
             }
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! assert_decimated_feq {
     ($vec:expr, $decimate:expr, $cmp_vec:expr) => {
         let cmp_vec = $cmp_vec;
-        let res : Vec<f32> = $vec.iter().step_by($decimate).copied().collect();
+        let res: Vec<f32> = $vec.iter().step_by($decimate).copied().collect();
 
         for (i, (s, scmp)) in res.iter().zip(cmp_vec.iter()).enumerate() {
             if (s - scmp).abs() > 0.0001 {
-                panic!(r#"
+                panic!(
+                    r#"
 table_left: {:?}
 
 table_right: {:?}
 
 assertion failed: `(left[{}] == right[{}])`
       left: `{:?}`,
-     right: `{:?}`"#, &res[i..], &(cmp_vec[i..]), i, i, s, scmp)
+     right: `{:?}`"#,
+                    &res[i..],
+                    &(cmp_vec[i..]),
+                    i,
+                    i,
+                    s,
+                    scmp
+                )
             }
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! assert_slope_feq {
     ($vec:expr, $cmp_vec:expr) => {
         let cmp_vec = $cmp_vec;
-        let mut res : Vec<f32> = vec![];
+        let mut res: Vec<f32> = vec![];
         let mut prev = 0.0;
         for (i, s) in $vec.iter().enumerate() {
             let delta = *s - prev;
@@ -127,28 +161,36 @@ macro_rules! assert_slope_feq {
             prev = *s;
         }
 
-        let res : Vec<f32> = res.iter().copied().collect();
+        let res: Vec<f32> = res.iter().copied().collect();
 
         for (i, (s, scmp)) in res.iter().zip(cmp_vec.iter()).enumerate() {
             if (s - scmp).abs() > 0.0001 {
-                panic!(r#"
+                panic!(
+                    r#"
 table_left: {:?}
 
 table_right: {:?}
 
 assertion failed: `(left[{}] == right[{}])`
       left: `{:?}`,
-     right: `{:?}`"#, &res[i..], &(cmp_vec[i..]), i, i, s, scmp)
+     right: `{:?}`"#,
+                    &res[i..],
+                    &(cmp_vec[i..]),
+                    i,
+                    i,
+                    s,
+                    scmp
+                )
             }
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! assert_decimated_slope_feq {
     ($vec:expr, $decimate:expr, $cmp_vec:expr) => {
         let cmp_vec = $cmp_vec;
-        let mut res : Vec<f32> = vec![];
+        let mut res: Vec<f32> = vec![];
         let mut prev = 0.0;
         for (i, s) in $vec.iter().enumerate() {
             let delta = *s - prev;
@@ -158,29 +200,36 @@ macro_rules! assert_decimated_slope_feq {
             prev = *s;
         }
 
-        let res : Vec<f32> = res.iter().step_by($decimate).copied().collect();
+        let res: Vec<f32> = res.iter().step_by($decimate).copied().collect();
 
         for (i, (s, scmp)) in res.iter().zip(cmp_vec.iter()).enumerate() {
             if (s - scmp).abs() > 0.0001 {
-                panic!(r#"
+                panic!(
+                    r#"
 table_left: {:?}
 
 table_right: {:?}
 
 assertion failed: `(left[{}] == right[{}])`
       left: `{:?}`,
-     right: `{:?}`"#, &res[i..], &(cmp_vec[i..]), i, i, s, scmp)
+     right: `{:?}`"#,
+                    &res[i..],
+                    &(cmp_vec[i..]),
+                    i,
+                    i,
+                    s,
+                    scmp
+                )
             }
         }
-    }
+    };
 }
-
 
 #[macro_export]
 macro_rules! assert_decimated_slope_feq_fine {
     ($vec:expr, $decimate:expr, $cmp_vec:expr) => {
         let cmp_vec = $cmp_vec;
-        let mut res : Vec<f32> = vec![];
+        let mut res: Vec<f32> = vec![];
         let mut prev = 0.0;
         for (i, s) in $vec.iter().enumerate() {
             let delta = *s - prev;
@@ -190,28 +239,36 @@ macro_rules! assert_decimated_slope_feq_fine {
             prev = *s;
         }
 
-        let res : Vec<f32> = res.iter().step_by($decimate).copied().collect();
+        let res: Vec<f32> = res.iter().step_by($decimate).copied().collect();
 
         for (i, (s, scmp)) in res.iter().zip(cmp_vec.iter()).enumerate() {
             if (s - scmp).abs() > 0.0000001 {
-                panic!(r#"
+                panic!(
+                    r#"
 table_left: {:?}
 
 table_right: {:?}
 
 assertion failed: `(left[{}] == right[{}])`
       left: `{:?}`,
-     right: `{:?}`"#, &res[i..], &(cmp_vec[i..]), i, i, s, scmp)
+     right: `{:?}`"#,
+                    &res[i..],
+                    &(cmp_vec[i..]),
+                    i,
+                    i,
+                    s,
+                    scmp
+                )
             }
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! assert_decimated_slope_feq_sfine {
     ($vec:expr, $decimate:expr, $cmp_vec:expr) => {
         let cmp_vec = $cmp_vec;
-        let mut res : Vec<f32> = vec![];
+        let mut res: Vec<f32> = vec![];
         let mut prev = 0.0;
         for (i, s) in $vec.iter().enumerate() {
             let delta = *s - prev;
@@ -221,28 +278,38 @@ macro_rules! assert_decimated_slope_feq_sfine {
             prev = *s;
         }
 
-        let res : Vec<f32> = res.iter().step_by($decimate).copied().collect();
+        let res: Vec<f32> = res.iter().step_by($decimate).copied().collect();
 
         for (i, (s, scmp)) in res.iter().zip(cmp_vec.iter()).enumerate() {
             if (s - scmp).abs() > 0.000000001 {
-                panic!(r#"
+                panic!(
+                    r#"
 table_left: {:?}
 
 table_right: {:?}
 
 assertion failed: `(left[{}] == right[{}])`
       left: `{:?}`,
-     right: `{:?}`"#, &res[i..], &(cmp_vec[i..]), i, i, s, scmp)
+     right: `{:?}`"#,
+                    &res[i..],
+                    &(cmp_vec[i..]),
+                    i,
+                    i,
+                    s,
+                    scmp
+                )
             }
         }
-    }
+    };
 }
 
 #[macro_export]
 macro_rules! dump_table {
     ($vec:expr) => {
-    for (i, s) in $vec.iter().enumerate() { println!("{:2} {:?}", i, s); }
-    }
+        for (i, s) in $vec.iter().enumerate() {
+            println!("{:2} {:?}", i, s);
+        }
+    };
 }
 
 #[allow(dead_code)]
@@ -314,7 +381,7 @@ pub fn collect_gates(inp: &[f32]) -> Vec<(usize, usize)> {
 macro_rules! assert_rmsmima {
     ($rms:expr, $b:expr) => {
         assert_f3tupl_eq!($rms, $b);
-    }
+    };
 }
 
 #[macro_export]
@@ -322,7 +389,7 @@ macro_rules! assert_minmax_of_rms {
     ($rms:expr, $b:expr) => {
         let (_, min, max) = $rms;
         assert_fpair_eq!((min, max), $b);
-    }
+    };
 }
 
 #[allow(unused)]
@@ -344,14 +411,26 @@ pub fn pset_d(matrix: &mut Matrix, nid: NodeId, parm: &str, v_denorm: f32) {
 }
 
 #[allow(unused)]
-pub fn pset_n_wait(matrix: &mut Matrix, ne: &mut NodeExecutor, nid: NodeId, parm: &str, v_norm: f32) {
+pub fn pset_n_wait(
+    matrix: &mut Matrix,
+    ne: &mut NodeExecutor,
+    nid: NodeId,
+    parm: &str,
+    v_norm: f32,
+) {
     let p = nid.inp_param(parm).unwrap();
     matrix.set_param(p, SAtom::param(v_norm));
     run_for_ms(ne, 15.0);
 }
 
 #[allow(unused)]
-pub fn pset_d_wait(matrix: &mut Matrix, ne: &mut NodeExecutor, nid: NodeId, parm: &str, v_denorm: f32) {
+pub fn pset_d_wait(
+    matrix: &mut Matrix,
+    ne: &mut NodeExecutor,
+    nid: NodeId,
+    parm: &str,
+    v_denorm: f32,
+) {
     let p = nid.inp_param(parm).unwrap();
     matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
     run_for_ms(ne, 15.0);
@@ -364,7 +443,13 @@ pub fn pset_mod(matrix: &mut Matrix, nid: NodeId, parm: &str, modamt: f32) {
 }
 
 #[allow(unused)]
-pub fn pset_mod_wait(matrix: &mut Matrix, ne: &mut NodeExecutor, nid: NodeId, parm: &str, modamt: f32) {
+pub fn pset_mod_wait(
+    matrix: &mut Matrix,
+    ne: &mut NodeExecutor,
+    nid: NodeId,
+    parm: &str,
+    modamt: f32,
+) {
     let p = nid.inp_param(parm).unwrap();
     matrix.set_param_modamt(p, Some(modamt));
     run_for_ms(ne, 15.0);
@@ -386,7 +471,10 @@ pub fn save_wav(name: &str, buf: &[f32]) {
     }
 }
 
-pub fn run_no_input(node_exec: &mut hexodsp::nodes::NodeExecutor, seconds: f32) -> (Vec<f32>, Vec<f32>) {
+pub fn run_no_input(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    seconds: f32,
+) -> (Vec<f32>, Vec<f32>) {
     run_realtime_no_input(node_exec, seconds, false)
 }
 
@@ -395,16 +483,20 @@ pub fn run_for_ms(node_exec: &mut hexodsp::nodes::NodeExecutor, ms: f32) -> (Vec
     run_realtime_no_input(node_exec, ms / 1000.0, false)
 }
 
-pub fn run_realtime_no_input(node_exec: &mut hexodsp::nodes::NodeExecutor, seconds: f32, sleep_a_bit: bool) -> (Vec<f32>, Vec<f32>) {
+pub fn run_realtime_no_input(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    seconds: f32,
+    sleep_a_bit: bool,
+) -> (Vec<f32>, Vec<f32>) {
     node_exec.test_run(seconds, sleep_a_bit)
 }
 
 pub fn calc_rms_mimax_each_ms(buf: &[f32], ms: f32) -> Vec<(f32, f32, f32)> {
     let ms_samples = ms * SAMPLE_RATE / 1000.0;
-    let len_ms     = ms_samples as usize;
+    let len_ms = ms_samples as usize;
 
-    let mut idx    = 0;
-    let mut res    = vec![];
+    let mut idx = 0;
+    let mut res = vec![];
     loop {
         if (idx + len_ms) > buf.len() {
             break;
@@ -417,11 +509,8 @@ pub fn calc_rms_mimax_each_ms(buf: &[f32], ms: f32) -> Vec<(f32, f32, f32)> {
             min = s.min(min);
         }
 
-        let rms : f32 =
-            buf[idx..(idx + len_ms)]
-                .iter()
-                .map(|s: &f32| s * s).sum::<f32>()
-            / ms_samples;
+        let rms: f32 =
+            buf[idx..(idx + len_ms)].iter().map(|s: &f32| s * s).sum::<f32>() / ms_samples;
 
         res.push((rms, min, max));
 
@@ -434,8 +523,9 @@ pub fn calc_rms_mimax_each_ms(buf: &[f32], ms: f32) -> Vec<(f32, f32, f32)> {
 #[allow(dead_code)]
 pub fn run_and_undersample(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
-    run_len_ms: f32, samples: usize) -> Vec<f32>
-{
+    run_len_ms: f32,
+    samples: usize,
+) -> Vec<f32> {
     let (out_l, _out_r) = run_no_input(node_exec, run_len_ms / 1000.0);
 
     let sample_interval = out_l.len() / samples;
@@ -452,8 +542,8 @@ pub fn run_and_undersample(
 #[allow(dead_code)]
 pub fn run_and_get_each_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
-    len_ms: f32) -> Vec<(f32, f32, f32)>
-{
+    len_ms: f32,
+) -> Vec<(f32, f32, f32)> {
     let (out_l, _out_r) = run_no_input(node_exec, (len_ms * 3.0) / 1000.0);
     calc_rms_mimax_each_ms(&out_l[..], len_ms)
 }
@@ -467,8 +557,8 @@ pub fn run_and_get_each_rms_mimax(
 pub fn run_and_get_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     len_ms: f32,
-    sample_ms: f32) -> Vec<(f32, f32, f32)>
-{
+    sample_ms: f32,
+) -> Vec<(f32, f32, f32)> {
     let (out_l, _out_r) = run_no_input(node_exec, len_ms / 1000.0);
     calc_rms_mimax_each_ms(&out_l[..], sample_ms)
 }
@@ -476,8 +566,8 @@ pub fn run_and_get_rms_mimax(
 #[allow(dead_code)]
 pub fn run_and_get_first_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
-    len_ms: f32) -> (f32, f32, f32)
-{
+    len_ms: f32,
+) -> (f32, f32, f32) {
     let (out_l, _out_r) = run_no_input(node_exec, (len_ms * 3.0) / 1000.0);
     let rms_mimax = calc_rms_mimax_each_ms(&out_l[..], len_ms);
     rms_mimax[0]
@@ -486,18 +576,15 @@ pub fn run_and_get_first_rms_mimax(
 #[allow(unused)]
 pub fn run_and_get_l_rms_mimax(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
-    len_ms: f32) -> (f32, f32, f32)
-{
+    len_ms: f32,
+) -> (f32, f32, f32) {
     let (out_l, _out_r) = run_no_input(node_exec, (len_ms * 3.0) / 1000.0);
     let rms_mimax = calc_rms_mimax_each_ms(&out_l[..], len_ms);
     rms_mimax[1]
 }
 
 #[allow(unused)]
-pub fn run_and_get_counted_freq(
-    node_exec: &mut hexodsp::nodes::NodeExecutor, ms: f32)
-    -> f64
-{
+pub fn run_and_get_counted_freq(node_exec: &mut hexodsp::nodes::NodeExecutor, ms: f32) -> f64 {
     let (out_l, _out_r) =
         // +0.1 here for some extra samples
         // this is just for tuning the frequency counter, so that it detects
@@ -506,7 +593,7 @@ pub fn run_and_get_counted_freq(
         run_no_input(node_exec, (ms + 0.1) / 1000.0);
 
     let mut zero_trans = 0;
-    let mut last_val   = 0.0;
+    let mut last_val = 0.0;
 
     for s in out_l.iter() {
         if last_val >= 0.0 && *s < 0.0 {
@@ -531,12 +618,11 @@ pub fn run_and_get_counted_freq(
 pub fn run_and_get_fft4096(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     thres: u32,
-    offs_ms: f32) -> Vec<(u16, u32)>
-{
+    offs_ms: f32,
+) -> Vec<(u16, u32)> {
     let min_samples_for_fft = 4096.0;
-    let offs_samples        = (offs_ms * (SAMPLE_RATE / 1000.0)).ceil();
-    let min_len_samples =
-        offs_samples
+    let offs_samples = (offs_ms * (SAMPLE_RATE / 1000.0)).ceil();
+    let min_len_samples = offs_samples
         // 2.0 * for safety margin
         + 2.0 * min_samples_for_fft;
     let run_len_s = min_len_samples / SAMPLE_RATE;
@@ -547,8 +633,8 @@ pub fn run_and_get_fft4096(
 #[allow(unused)]
 pub fn run_and_get_fft4096_2(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
-    thres: u32) -> Vec<(u16, u32)>
-{
+    thres: u32,
+) -> Vec<(u16, u32)> {
     let min_samples_for_fft = 4096.0;
     let min_len_samples = 2.0 * min_samples_for_fft;
     let run_len_s = min_len_samples / SAMPLE_RATE;
@@ -560,9 +646,9 @@ pub fn run_and_get_fft4096_2(
 #[allow(unused)]
 pub fn run_fft_spectrum_each_47ms(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
-    thres: u32, count: usize)
-    -> Vec<Vec<(u16, u32)>>
-{
+    thres: u32,
+    count: usize,
+) -> Vec<Vec<(u16, u32)>> {
     let mut out = vec![];
 
     for _ in 0..count {
@@ -579,9 +665,9 @@ pub fn run_fft_spectrum_each_47ms(
 
 #[allow(unused)]
 pub fn calc_exp_avg_buckets4096(fft: &[(u16, u32)]) -> Vec<(u16, u32)> {
-    let mut avg     = vec![];
-    let mut last_n  = [0; 256];
-    let mut p       = 0;
+    let mut avg = vec![];
+    let mut last_n = [0; 256];
+    let mut p = 0;
     let mut cur_len = 2;
 
     for (i, (fq, lvl)) in fft.iter().enumerate() {
@@ -590,12 +676,8 @@ pub fn calc_exp_avg_buckets4096(fft: &[(u16, u32)]) -> Vec<(u16, u32)> {
         if p >= cur_len {
             avg.push((
                 *fq,
-                last_n
-                    .iter()
-                    .take(cur_len)
-                    .map(|x| *x)
-                    .sum::<u32>()
-                / (cur_len as u32)));
+                last_n.iter().take(cur_len).map(|x| *x).sum::<u32>() / (cur_len as u32),
+            ));
             p = 0;
         }
 
@@ -616,12 +698,7 @@ pub fn avg_fft_freqs(round_by: f32, ranges: &[u16], fft: &[(u16, u32)]) -> Vec<(
     let mut from = 0;
     let mut out = vec![];
     for rng in ranges.iter() {
-        out.push(
-            (from,
-             ((avg_fft_range(from, *rng, fft)
-               / round_by)
-              .floor() * round_by)
-             as u32));
+        out.push((from, ((avg_fft_range(from, *rng, fft) / round_by).floor() * round_by) as u32));
         from = *rng;
     }
 
@@ -631,10 +708,10 @@ pub fn avg_fft_freqs(round_by: f32, ranges: &[u16], fft: &[(u16, u32)]) -> Vec<(
 #[allow(unused)]
 pub fn avg_fft_range(from_freq: u16, to_freq: u16, fft: &[(u16, u32)]) -> f32 {
     let mut count = 0;
-    let mut sum   = 0;
+    let mut sum = 0;
     for (fq, lvl) in fft.iter() {
         if from_freq <= *fq && *fq < to_freq {
-            sum   += *lvl;
+            sum += *lvl;
             count += 1;
         }
     }
@@ -642,17 +719,15 @@ pub fn avg_fft_range(from_freq: u16, to_freq: u16, fft: &[(u16, u32)]) -> f32 {
     sum as f32 / count as f32
 }
 
-
 #[allow(unused)]
 pub fn run_and_get_fft512(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     thres: u32,
-    offs_ms: f32) -> Vec<(u16, u32)>
-{
+    offs_ms: f32,
+) -> Vec<(u16, u32)> {
     let min_samples_for_fft = 512.0;
-    let offs_samples        = (offs_ms * (SAMPLE_RATE / 1000.0)).ceil();
-    let min_len_samples =
-        offs_samples
+    let offs_samples = (offs_ms * (SAMPLE_RATE / 1000.0)).ceil();
+    let min_len_samples = offs_samples
         // 2.0 * for safety margin
         + 2.0 * min_samples_for_fft;
     let run_len_s = min_len_samples / SAMPLE_RATE;
@@ -660,12 +735,11 @@ pub fn run_and_get_fft512(
     fft_thres_at_ms(&mut out_l[..], FFT::F512, thres, offs_ms)
 }
 
-
 #[allow(unused)]
 pub fn run_and_get_fft4096_now(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
-    thres: u32) -> Vec<(u16, u32)>
-{
+    thres: u32,
+) -> Vec<(u16, u32)> {
     let min_samples_for_fft = 4096.0 * 1.5; // 1.5 for some extra margin
     let run_len_s = min_samples_for_fft / SAMPLE_RATE;
     let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
@@ -676,8 +750,8 @@ pub fn run_and_get_fft4096_now(
 #[allow(unused)]
 pub fn run_and_get_avg_fft4096_now(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
-    thres: u32) -> Vec<(u16, u32)>
-{
+    thres: u32,
+) -> Vec<(u16, u32)> {
     let min_samples_for_fft = 4096.0 * 1.5; // 1.5 for some extra margin
     let run_len_s = min_samples_for_fft / SAMPLE_RATE;
 
@@ -717,17 +791,17 @@ pub enum FFT {
 impl FFT {
     pub fn size(&self) -> usize {
         match self {
-            FFT::F16      => 16,
-            FFT::F32      => 32,
-            FFT::F64      => 64,
-            FFT::F128     => 128,
-            FFT::F512     => 512,
-            FFT::F1024    => 1024,
-            FFT::F2048    => 2048,
-            FFT::F4096    => 4096,
-            FFT::F8192    => 8192,
-            FFT::F16384   => 16384,
-            FFT::F65535   => 65535,
+            FFT::F16 => 16,
+            FFT::F32 => 32,
+            FFT::F64 => 64,
+            FFT::F128 => 128,
+            FFT::F512 => 512,
+            FFT::F1024 => 1024,
+            FFT::F2048 => 2048,
+            FFT::F4096 => 4096,
+            FFT::F8192 => 8192,
+            FFT::F16384 => 16384,
+            FFT::F65535 => 65535,
         }
     }
 }
@@ -755,30 +829,22 @@ pub fn fft(buf: &mut [f32], size: FFT, amp_thres: u32) -> Vec<(u16, u32)> {
 
     // Hann window:
     for (i, s) in buf[0..len].iter_mut().enumerate() {
-        let w =
-            0.5
-            * (1.0 
-               - ((2.0 * std::f32::consts::PI * i as f32)
-                  / (len as f32 - 1.0))
-                 .cos());
+        let w = 0.5 * (1.0 - ((2.0 * std::f32::consts::PI * i as f32) / (len as f32 - 1.0)).cos());
         *s *= w;
     }
 
-    use rustfft::{FftPlanner, num_complex::Complex};
+    use rustfft::{num_complex::Complex, FftPlanner};
 
     let mut complex_buf =
-        buf.iter()
-           .map(|s| Complex { re: *s, im: 0.0 })
-           .collect::<Vec<Complex<f32>>>();
+        buf.iter().map(|s| Complex { re: *s, im: 0.0 }).collect::<Vec<Complex<f32>>>();
 
     let mut p = FftPlanner::<f32>::new();
     let fft = p.plan_fft_forward(len);
 
     fft.process(&mut complex_buf[0..len]);
 
-    let amplitudes: Vec<_> =
-        complex_buf[0..len].iter().map(|c| c.norm() as u32).collect();
-//    println!("fft: {:?}", &complex_buf[0..len]);
+    let amplitudes: Vec<_> = complex_buf[0..len].iter().map(|c| c.norm() as u32).collect();
+    //    println!("fft: {:?}", &complex_buf[0..len]);
 
     for (i, amp) in amplitudes.iter().enumerate() {
         if *amp >= amp_thres {
@@ -787,12 +853,10 @@ pub fn fft(buf: &mut [f32], size: FFT, amp_thres: u32) -> Vec<(u16, u32)> {
                 // no freqency images above nyquist...
                 continue;
             }
-//            println!("{:6.0} {}", freq, *amp);
+            //            println!("{:6.0} {}", freq, *amp);
             res.push((freq.round() as u16, *amp));
         }
     }
 
     res
 }
-
-

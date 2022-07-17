@@ -11,12 +11,10 @@ fn check_node_smap() {
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
     let smap = NodeId::SMap(0);
-    let out  = NodeId::Out(0);
-    matrix.place(0, 0, Cell::empty(smap)
-                       .out(None, None, smap.out("sig")));
-    matrix.place(0, 1, Cell::empty(out)
-                       .input(out.inp("ch1"), None, None));
-    pset_n(&mut matrix, smap, "inp",  0.5);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smap).out(None, None, smap.out("sig")));
+    matrix.place(0, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
+    pset_n(&mut matrix, smap, "inp", 0.5);
 
     pset_n(&mut matrix, smap, "min", -1.0);
     pset_n(&mut matrix, smap, "max", -0.9); // we expect -0.95
@@ -35,7 +33,7 @@ fn check_node_smap() {
     let res = run_for_ms(&mut node_exec, 10.0);
     assert_decimated_feq!(res.0, 10, vec![-0.975; 50]);
 
-    pset_n(&mut matrix, smap, "inp",  1.0);
+    pset_n(&mut matrix, smap, "inp", 1.0);
     run_for_ms(&mut node_exec, 10.0);
 
     pset_s(&mut matrix, smap, "mode", 2); // unipolar inverted
@@ -49,15 +47,13 @@ fn check_node_smap_clip() {
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
     let smap = NodeId::SMap(0);
-    let out  = NodeId::Out(0);
-    matrix.place(0, 0, Cell::empty(smap)
-                       .out(None, None, smap.out("sig")));
-    matrix.place(0, 1, Cell::empty(out)
-                       .input(out.inp("ch1"), None, None));
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(smap).out(None, None, smap.out("sig")));
+    matrix.place(0, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
 
     pset_s(&mut matrix, smap, "mode", 0); // unipolar
-    pset_n(&mut matrix, smap, "inp",  -0.5);
-    pset_n(&mut matrix, smap, "min",  0.1);
+    pset_n(&mut matrix, smap, "inp", -0.5);
+    pset_n(&mut matrix, smap, "min", 0.1);
     pset_n(&mut matrix, smap, "max", -0.1);
 
     matrix.sync().unwrap();
@@ -74,7 +70,7 @@ fn check_node_smap_clip() {
 
     // go to -1.5 input here, which is very much below unipolar
     // and a bit below bipolar.
-    pset_n(&mut matrix, smap, "inp",  -1.5); // out of range input
+    pset_n(&mut matrix, smap, "inp", -1.5); // out of range input
 
     run_for_ms(&mut node_exec, 10.0);
 

@@ -2,18 +2,18 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use super::MAX_PATTERN_LEN;
 use super::MAX_COLS;
+use super::MAX_PATTERN_LEN;
 use crate::dsp::helpers::SplitMix64;
 
 pub struct PatternSequencer {
-    rows:       usize,
-    data:       Vec<Vec<(f32, u8)>>,
-    rng:        SplitMix64,
-    rand_vals:  [(usize, f64); MAX_COLS],
+    rows: usize,
+    data: Vec<Vec<(f32, u8)>>,
+    rng: SplitMix64,
+    rand_vals: [(usize, f64); MAX_COLS],
 }
 
-const FRACT_16THS : [f32; 16] = [
+const FRACT_16THS: [f32; 16] = [
     1.0 / 16.0,
     2.0 / 16.0,
     3.0 / 16.0,
@@ -23,38 +23,35 @@ const FRACT_16THS : [f32; 16] = [
     7.0 / 16.0,
     8.0 / 16.0,
     9.0 / 16.0,
-   10.0 / 16.0,
-   11.0 / 16.0,
-   12.0 / 16.0,
-   13.0 / 16.0,
-   14.0 / 16.0,
-   15.0 / 16.0,
-           1.0
+    10.0 / 16.0,
+    11.0 / 16.0,
+    12.0 / 16.0,
+    13.0 / 16.0,
+    14.0 / 16.0,
+    15.0 / 16.0,
+    1.0,
 ];
 
 impl PatternSequencer {
     pub fn new_default_seed(rows: usize) -> Self {
         Self {
             rows,
-            data:      vec![vec![(0.0, 0); MAX_PATTERN_LEN]; MAX_COLS],
-            rng:       SplitMix64::new(0x91234),
+            data: vec![vec![(0.0, 0); MAX_PATTERN_LEN]; MAX_COLS],
+            rng: SplitMix64::new(0x91234),
             rand_vals: [(99999, 0.0); MAX_COLS],
         }
     }
 
     pub fn new(rows: usize) -> Self {
         use std::time::SystemTime;
-        let seed =
-            match SystemTime::now()
-                  .duration_since(SystemTime::UNIX_EPOCH)
-            {
-                Ok(n)  => n.as_nanos() as i64,
-                Err(_) => 1_234_567_890,
-            };
+        let seed = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+            Ok(n) => n.as_nanos() as i64,
+            Err(_) => 1_234_567_890,
+        };
         Self {
             rows,
-            data:      vec![vec![(0.0, 0); MAX_PATTERN_LEN]; MAX_COLS],
-            rng:       SplitMix64::new_from_i64(seed),
+            data: vec![vec![(0.0, 0); MAX_PATTERN_LEN]; MAX_COLS],
+            rng: SplitMix64::new_from_i64(seed),
             rand_vals: [(99999, 0.0); MAX_COLS],
         }
     }
@@ -63,35 +60,33 @@ impl PatternSequencer {
         self.rows = rows;
     }
 
-    pub fn rows(&self) -> usize { self.rows }
+    pub fn rows(&self) -> usize {
+        self.rows
+    }
 
     pub fn set_col(&mut self, col: usize, col_data: &[(f32, u8)]) {
-        for (out_cell, in_cell) in
-            self.data[col]
-                .iter_mut()
-                .zip(col_data.iter())
-        {
+        for (out_cell, in_cell) in self.data[col].iter_mut().zip(col_data.iter()) {
             *out_cell = *in_cell;
         }
     }
 
     pub fn col_interpolate_at_phase(
-        &self, col: usize, phase: &[f32], out: &mut [f32], out_gate: &mut [f32])
-    {
+        &self,
+        col: usize,
+        phase: &[f32],
+        out: &mut [f32],
+        out_gate: &mut [f32],
+    ) {
         let col = &self.data[col][..];
 
-        let last_row_idx : f32 = (self.rows as f32) - 0.00001;
+        let last_row_idx: f32 = (self.rows as f32) - 0.00001;
         let rows = self.rows;
 
-        for ((phase, out), out_gate) in
-            phase.iter()
-                .zip(out.iter_mut())
-                .zip(out_gate.iter_mut())
-        {
-            let row_phase  = phase * last_row_idx;
+        for ((phase, out), out_gate) in phase.iter().zip(out.iter_mut()).zip(out_gate.iter_mut()) {
+            let row_phase = phase * last_row_idx;
             let phase_frac = row_phase.fract();
-            let line       = row_phase.floor() as usize % rows;
-            let prev_line  = if line == 0 { self.rows - 1 } else { line - 1 };
+            let line = row_phase.floor() as usize % rows;
+            let prev_line = if line == 0 { self.rows - 1 } else { line - 1 };
 
             let prev = col[prev_line].0;
             let next = col[line].0;
@@ -102,66 +97,66 @@ impl PatternSequencer {
             //          line, next,
             //          phase_frac);
 
-            *out      = prev * (1.0 - phase_frac) + next * phase_frac;
+            *out = prev * (1.0 - phase_frac) + next * phase_frac;
             *out_gate = gate as f32;
         }
     }
 
     pub fn col_get_at_phase(
-        &self, col: usize, phase: &[f32], out: &mut [f32], out_gate: &mut [f32])
-    {
+        &self,
+        col: usize,
+        phase: &[f32],
+        out: &mut [f32],
+        out_gate: &mut [f32],
+    ) {
         let col = &self.data[col][..];
 
-        let last_row_idx : f32 = (self.rows as f32) - 0.00001;
+        let last_row_idx: f32 = (self.rows as f32) - 0.00001;
         let rows = self.rows;
 
-        for ((phase, out), out_gate) in
-            phase.iter()
-                .zip(out.iter_mut())
-                .zip(out_gate.iter_mut())
-        {
-            let row_phase  = phase * last_row_idx;
-            let line       = row_phase.floor() as usize % rows;
+        for ((phase, out), out_gate) in phase.iter().zip(out.iter_mut()).zip(out_gate.iter_mut()) {
+            let row_phase = phase * last_row_idx;
+            let line = row_phase.floor() as usize % rows;
 
             let (val, gate) = col[line];
-            *out      = val;
+            *out = val;
             *out_gate = gate as f32;
         }
     }
 
     pub fn col_gate_at_phase(
-        &mut self, col_idx: usize, phase: &[f32], out: &mut [f32], out_gate: &mut [f32])
-    {
+        &mut self,
+        col_idx: usize,
+        phase: &[f32],
+        out: &mut [f32],
+        out_gate: &mut [f32],
+    ) {
         let col = &self.data[col_idx][..];
 
-        let last_row_idx : f32 = (self.rows as f32) - 0.00001;
+        let last_row_idx: f32 = (self.rows as f32) - 0.00001;
         let rows = self.rows;
 
-        for ((phase, out), out_gate) in
-            phase.iter()
-                .zip(out.iter_mut())
-                .zip(out_gate.iter_mut())
-        {
-            let row_phase  = phase.clamp(0.0, 1.0) * last_row_idx;
-            let line       = row_phase.floor() as usize % rows;
+        for ((phase, out), out_gate) in phase.iter().zip(out.iter_mut()).zip(out_gate.iter_mut()) {
+            let row_phase = phase.clamp(0.0, 1.0) * last_row_idx;
+            let line = row_phase.floor() as usize % rows;
             let phase_frac = row_phase.fract();
 
-            let gate : u32 = col[line].0.to_bits();
-            let ggate : u8 = col[line].1;
+            let gate: u32 = col[line].0.to_bits();
+            let ggate: u8 = col[line].1;
 
             // pulse_width:
             //      0xF  - Gate is on for full row
             //      0x0  - Gate is on for a very short burst
-            let pulse_width : f32 = FRACT_16THS[(gate & 0x00F) as usize];
+            let pulse_width: f32 = FRACT_16THS[(gate & 0x00F) as usize];
             // row_div:
             //      0xF  - Row has 1  Gate
             //      0x0  - Row is divided up into 16 Gates
-            let row_div     : f32 = (16 - ((gate & 0x0F0) >> 4)) as f32;
+            let row_div: f32 = (16 - ((gate & 0x0F0) >> 4)) as f32;
             // probability:
             //      0xF  - Row is always triggered
             //      0x7  - Row fires only in 50% of the cases
             //      0x0  - Row fires only in ~6% of the cases
-            let probability : u8 = ((gate & 0xF00) >> 8) as u8;
+            let probability: u8 = ((gate & 0xF00) >> 8) as u8;
 
             let sub_frac = (phase_frac * row_div).fract();
             //d// println!(
@@ -169,14 +164,13 @@ impl PatternSequencer {
             //d//     row_div, pulse_width, sub_frac, phase_frac);
 
             if probability < 0xF {
-                let rand_val =
-                    if self.rand_vals[col_idx].0 != line {
-                        let new_rand_val = self.rng.next_open01();
-                        self.rand_vals[col_idx] = (line, new_rand_val);
-                        new_rand_val
-                    } else {
-                        self.rand_vals[col_idx].1
-                    };
+                let rand_val = if self.rand_vals[col_idx].0 != line {
+                    let new_rand_val = self.rng.next_open01();
+                    self.rand_vals[col_idx] = (line, new_rand_val);
+                    new_rand_val
+                } else {
+                    self.rand_vals[col_idx].1
+                };
                 //d// println!("RANDVAL: {:?} | {:9.7}", self.rand_vals[col_idx], FRACT_16THS[probability as usize]);
 
                 if rand_val > (FRACT_16THS[probability as usize] as f64) {
@@ -191,10 +185,10 @@ impl PatternSequencer {
             }
 
             if (gate & 0xF000) > 0 {
-                *out      = 0.0;
+                *out = 0.0;
                 *out_gate = 0.0;
             } else {
-                *out      = if sub_frac <= pulse_width { 1.0 } else { 0.0 };
+                *out = if sub_frac <= pulse_width { 1.0 } else { 0.0 };
                 *out_gate = ggate as f32;
             }
         }
@@ -208,11 +202,14 @@ mod tests {
     macro_rules! assert_float_eq {
         ($a:expr, $b:expr) => {
             if ($a - $b).abs() > 0.0001 {
-                panic!(r#"assertion failed: `(left == right)`
+                panic!(
+                    r#"assertion failed: `(left == right)`
       left: `{:?}`,
-     right: `{:?}`"#, $a, $b)
+     right: `{:?}`"#,
+                    $a, $b
+                )
             }
-        }
+        };
     }
 
     #[test]
@@ -220,11 +217,14 @@ mod tests {
         let mut ps = PatternSequencer::new(2);
         ps.set_col(0, &[(0.0, 0), (1.0, 1)]);
 
-        let mut out      = [0.0; 6];
+        let mut out = [0.0; 6];
         let mut out_gate = [0.0; 6];
         ps.col_interpolate_at_phase(
-            0, &[0.0, 0.1, 0.50, 0.51, 0.9, 0.99999],
-            &mut out[..], &mut out_gate[..]);
+            0,
+            &[0.0, 0.1, 0.50, 0.51, 0.9, 0.99999],
+            &mut out[..],
+            &mut out_gate[..],
+        );
         assert_float_eq!(out[0], 1.0);
         assert_float_eq!(out[1], 0.8);
         assert_float_eq!(out[2], 0.0);
@@ -245,25 +245,22 @@ mod tests {
         let mut ps = PatternSequencer::new(256);
         ps.set_col(0, &[(f32::from_bits(0xF000), 0); 256]);
 
-        let mut out      = [0.0; 1];
+        let mut out = [0.0; 1];
         let mut out_gate = [0.0; 1];
-        ps.col_gate_at_phase(
-            0, &[0.9999999999], &mut out[..], &mut out_gate[..]);
-        assert_float_eq!(out[0],      0.0);
+        ps.col_gate_at_phase(0, &[0.9999999999], &mut out[..], &mut out_gate[..]);
+        assert_float_eq!(out[0], 0.0);
         assert_float_eq!(out_gate[0], 0.0);
 
         let mut ps = PatternSequencer::new(256);
         ps.set_col(0, &[(0.0, 0); 256]);
 
-        ps.col_get_at_phase(
-            0, &[0.9999999999], &mut out[..], &mut out_gate[..]);
-        assert_float_eq!(out[0],        0.0);
-        assert_float_eq!(out_gate[0],   0.0);
+        ps.col_get_at_phase(0, &[0.9999999999], &mut out[..], &mut out_gate[..]);
+        assert_float_eq!(out[0], 0.0);
+        assert_float_eq!(out_gate[0], 0.0);
 
-        ps.col_interpolate_at_phase(
-            0, &[0.9999999999], &mut out[..], &mut out_gate[..]);
-        assert_float_eq!(out[0],        0.0);
-        assert_float_eq!(out_gate[0],   0.0);
+        ps.col_interpolate_at_phase(0, &[0.9999999999], &mut out[..], &mut out_gate[..]);
+        assert_float_eq!(out[0], 0.0);
+        assert_float_eq!(out_gate[0], 0.0);
     }
 
     #[test]
@@ -271,10 +268,9 @@ mod tests {
         let mut ps = PatternSequencer::new(2);
         ps.set_col(0, &[(0.0, 0), (1.0, 1)]);
 
-        let mut out      = [0.0; 3];
+        let mut out = [0.0; 3];
         let mut out_gate = [0.0; 3];
-        ps.col_get_at_phase(
-            0, &[0.1, 0.51, 0.9], &mut out[..], &mut out_gate[..]);
+        ps.col_get_at_phase(0, &[0.1, 0.51, 0.9], &mut out[..], &mut out_gate[..]);
         assert_float_eq!(out[0], 0.0);
         assert_float_eq!(out[1], 1.0);
         assert_float_eq!(out[2], 1.0);
@@ -288,11 +284,9 @@ mod tests {
         let mut ps = PatternSequencer::new(3);
         ps.set_col(0, &[(0.0, 0), (0.3, 1), (1.0, 1)]);
 
-        let mut out      = [0.0; 6];
+        let mut out = [0.0; 6];
         let mut out_gate = [0.0; 6];
-        ps.col_get_at_phase(
-            0, &[0.1, 0.5, 0.51, 0.6, 0.9, 0.99],
-            &mut out[..], &mut out_gate[..]);
+        ps.col_get_at_phase(0, &[0.1, 0.5, 0.51, 0.6, 0.9, 0.99], &mut out[..], &mut out_gate[..]);
         assert_float_eq!(out[0], 0.0);
         assert_float_eq!(out[1], 0.3);
         assert_float_eq!(out[2], 0.3);
@@ -311,16 +305,16 @@ mod tests {
     #[test]
     fn check_seq_gate_1() {
         let mut ps = PatternSequencer::new(2);
-        ps.set_col(0, &[
-            (f32::from_bits(0x0FFF), 1),
-            (f32::from_bits(0xF000), 0),
-        ]);
+        ps.set_col(0, &[(f32::from_bits(0x0FFF), 1), (f32::from_bits(0xF000), 0)]);
 
-        let mut out      = [0.0; 6];
+        let mut out = [0.0; 6];
         let mut out_gate = [0.0; 6];
         ps.col_gate_at_phase(
-            0, &[0.1, 0.5, 0.5001, 0.6, 0.9, 0.99],
-            &mut out[..], &mut out_gate[..]);
+            0,
+            &[0.1, 0.5, 0.5001, 0.6, 0.9, 0.99],
+            &mut out[..],
+            &mut out_gate[..],
+        );
         //d// println!("out: {:?}", out);
 
         assert_float_eq!(out[0], 1.0);
@@ -341,7 +335,9 @@ mod tests {
     fn count_high(slice: &[f32]) -> usize {
         let mut sum = 0;
         for p in slice.iter() {
-            if *p > 0.5 { sum += 1; }
+            if *p > 0.5 {
+                sum += 1;
+            }
         }
         sum
     }
@@ -361,11 +357,14 @@ mod tests {
     #[test]
     fn check_seq_gate_2() {
         let mut ps = PatternSequencer::new(3);
-        ps.set_col(0, &[
-            (f32::from_bits(0x0FF0), 1),
-            (f32::from_bits(0x0FF7), 0),
-            (f32::from_bits(0x0FFF), 1),
-        ]);
+        ps.set_col(
+            0,
+            &[
+                (f32::from_bits(0x0FF0), 1),
+                (f32::from_bits(0x0FF7), 0),
+                (f32::from_bits(0x0FFF), 1),
+            ],
+        );
 
         let mut phase = vec![0.0; 96];
         let inc = 1.0 / (96.0 - 1.0);
@@ -377,35 +376,37 @@ mod tests {
 
         //d// println!("PHASE: {:?}", phase);
 
-        let mut out      = [0.0; 96];
+        let mut out = [0.0; 96];
         let mut out_gate = [0.0; 96];
-        ps.col_gate_at_phase(
-            0, &phase[..], &mut out[..], &mut out_gate[..]);
+        ps.col_gate_at_phase(0, &phase[..], &mut out[..], &mut out_gate[..]);
         //d// println!("out: {:?}", &out[0..32]);
 
-        assert_eq!(count_high(&out[0..32]),   2);
+        assert_eq!(count_high(&out[0..32]), 2);
         assert_eq!(count_high(&out[32..64]), 16);
         assert_eq!(count_high(&out[64..96]), 32);
-        assert_eq!(count_high(&out_gate[0..32]),  32);
-        assert_eq!(count_high(&out_gate[32..64]),  0);
+        assert_eq!(count_high(&out_gate[0..32]), 32);
+        assert_eq!(count_high(&out_gate[32..64]), 0);
         assert_eq!(count_high(&out_gate[64..96]), 32);
 
-        assert_eq!(count_up(&out[0..32]),   1);
-        assert_eq!(count_up(&out[32..64]),  1);
-        assert_eq!(count_up(&out[64..96]),  1);
-        assert_eq!(count_up(&out_gate[0..32]),   1);
-        assert_eq!(count_up(&out_gate[32..64]),  0);
-        assert_eq!(count_up(&out_gate[64..96]),  1);
+        assert_eq!(count_up(&out[0..32]), 1);
+        assert_eq!(count_up(&out[32..64]), 1);
+        assert_eq!(count_up(&out[64..96]), 1);
+        assert_eq!(count_up(&out_gate[0..32]), 1);
+        assert_eq!(count_up(&out_gate[32..64]), 0);
+        assert_eq!(count_up(&out_gate[64..96]), 1);
     }
 
     #[test]
     fn check_seq_gate_div_1() {
         let mut ps = PatternSequencer::new(3);
-        ps.set_col(0, &[
-            (f32::from_bits(0x0F80), 1),
-            (f32::from_bits(0x0F87), 0),
-            (f32::from_bits(0x0F8F), 1),
-        ]);
+        ps.set_col(
+            0,
+            &[
+                (f32::from_bits(0x0F80), 1),
+                (f32::from_bits(0x0F87), 0),
+                (f32::from_bits(0x0F8F), 1),
+            ],
+        );
 
         let mut phase = vec![0.0; 3 * 64];
         let inc = 1.0 / ((3.0 * 64.0) - 1.0);
@@ -417,35 +418,37 @@ mod tests {
 
         //d// println!("PHASE: {:?}", phase);
 
-        let mut out      = [0.0; 3 * 64];
+        let mut out = [0.0; 3 * 64];
         let mut out_gate = [0.0; 3 * 64];
-        ps.col_gate_at_phase(
-            0, &phase[..], &mut out[..], &mut out_gate[..]);
+        ps.col_gate_at_phase(0, &phase[..], &mut out[..], &mut out_gate[..]);
 
-        assert_eq!(count_high(&out[0..64]),  8);
-        assert_eq!(count_up(  &out[0..64]),  8);
-        assert_eq!(count_high(&out_gate[0..64]),  64);
-        assert_eq!(count_up(  &out_gate[0..64]),  1);
+        assert_eq!(count_high(&out[0..64]), 8);
+        assert_eq!(count_up(&out[0..64]), 8);
+        assert_eq!(count_high(&out_gate[0..64]), 64);
+        assert_eq!(count_up(&out_gate[0..64]), 1);
 
         assert_eq!(count_high(&out[64..128]), 32);
-        assert_eq!(count_up(  &out[64..128]),  8);
-        assert_eq!(count_high(&out_gate[64..128]),  0);
-        assert_eq!(count_up(  &out_gate[64..128]),  0);
+        assert_eq!(count_up(&out[64..128]), 8);
+        assert_eq!(count_high(&out_gate[64..128]), 0);
+        assert_eq!(count_up(&out_gate[64..128]), 0);
 
         assert_eq!(count_high(&out[128..192]), 64);
-        assert_eq!(count_up(  &out[128..192]),  1);
+        assert_eq!(count_up(&out[128..192]), 1);
         assert_eq!(count_high(&out_gate[128..192]), 64);
-        assert_eq!(count_up(  &out_gate[128..192]),  1);
+        assert_eq!(count_up(&out_gate[128..192]), 1);
     }
 
     #[test]
     fn check_seq_gate_div_2() {
         let mut ps = PatternSequencer::new(3);
-        ps.set_col(0, &[
-            (f32::from_bits(0x0F00), 1),
-            (f32::from_bits(0x0F07), 0),
-            (f32::from_bits(0x0F0F), 1),
-        ]);
+        ps.set_col(
+            0,
+            &[
+                (f32::from_bits(0x0F00), 1),
+                (f32::from_bits(0x0F07), 0),
+                (f32::from_bits(0x0F0F), 1),
+            ],
+        );
 
         let mut phase = vec![0.0; 6 * 64];
         let inc = 1.0 / ((6.0 * 64.0) - 1.0);
@@ -457,34 +460,37 @@ mod tests {
 
         //d// println!("PHASE: {:?}", phase);
 
-        let mut out      = [0.0; 6 * 64];
+        let mut out = [0.0; 6 * 64];
         let mut out_gate = [0.0; 6 * 64];
         ps.col_gate_at_phase(0, &phase[..], &mut out[..], &mut out_gate[..]);
 
         assert_eq!(count_high(&out[0..128]), 16);
-        assert_eq!(count_up(  &out[0..128]), 16);
+        assert_eq!(count_up(&out[0..128]), 16);
         assert_eq!(count_high(&out_gate[0..128]), 128);
-        assert_eq!(count_up(  &out_gate[0..128]),   1);
+        assert_eq!(count_up(&out_gate[0..128]), 1);
 
         assert_eq!(count_high(&out[128..256]), 64);
-        assert_eq!(count_up(  &out[128..256]), 16);
+        assert_eq!(count_up(&out[128..256]), 16);
         assert_eq!(count_high(&out_gate[128..256]), 0);
-        assert_eq!(count_up(  &out_gate[128..256]), 0);
+        assert_eq!(count_up(&out_gate[128..256]), 0);
 
         assert_eq!(count_high(&out[256..384]), 128);
-        assert_eq!(count_up(  &out[256..384]),   1);
+        assert_eq!(count_up(&out[256..384]), 1);
         assert_eq!(count_high(&out_gate[256..384]), 128);
-        assert_eq!(count_up(  &out_gate[256..384]),   1);
+        assert_eq!(count_up(&out_gate[256..384]), 1);
     }
 
     #[test]
     fn check_seq_gate_div_3() {
         let mut ps = PatternSequencer::new(3);
-        ps.set_col(0, &[
-            (f32::from_bits(0x0FE0), 1),
-            (f32::from_bits(0x0FE7), 0),
-            (f32::from_bits(0x0FEF), 1),
-        ]);
+        ps.set_col(
+            0,
+            &[
+                (f32::from_bits(0x0FE0), 1),
+                (f32::from_bits(0x0FE7), 0),
+                (f32::from_bits(0x0FEF), 1),
+            ],
+        );
 
         let mut phase = vec![0.0; 6 * 64];
         let inc = 1.0 / ((6.0 * 64.0) - 1.0);
@@ -496,24 +502,24 @@ mod tests {
 
         //d// println!("PHASE: {:?}", phase);
 
-        let mut out      = [0.0; 6 * 64];
+        let mut out = [0.0; 6 * 64];
         let mut out_gate = [0.0; 6 * 64];
         ps.col_gate_at_phase(0, &phase[..], &mut out[..], &mut out_gate[..]);
 
-        assert_eq!(count_high(&out[0..128]),  8);
-        assert_eq!(count_up(  &out[0..128]),  2);
-        assert_eq!(count_high(&out_gate[0..128]),  128);
-        assert_eq!(count_up(  &out_gate[0..128]),    1);
+        assert_eq!(count_high(&out[0..128]), 8);
+        assert_eq!(count_up(&out[0..128]), 2);
+        assert_eq!(count_high(&out_gate[0..128]), 128);
+        assert_eq!(count_up(&out_gate[0..128]), 1);
 
         assert_eq!(count_high(&out[128..256]), 64);
-        assert_eq!(count_up(  &out[128..256]),  2);
+        assert_eq!(count_up(&out[128..256]), 2);
         assert_eq!(count_high(&out_gate[128..256]), 0);
-        assert_eq!(count_up(  &out_gate[128..256]), 0);
+        assert_eq!(count_up(&out_gate[128..256]), 0);
 
         assert_eq!(count_high(&out[256..384]), 128);
-        assert_eq!(count_up(  &out[256..384]),   1);
+        assert_eq!(count_up(&out[256..384]), 1);
         assert_eq!(count_high(&out_gate[256..384]), 128);
-        assert_eq!(count_up(  &out_gate[256..384]),   1);
+        assert_eq!(count_up(&out_gate[256..384]), 1);
     }
 
     fn run_probability_test_for(prob: u32) -> (usize, usize) {
@@ -535,7 +541,7 @@ mod tests {
             phase_run += inc;
         }
 
-        let mut out      = vec![0.0; samples];
+        let mut out = vec![0.0; samples];
         let mut out_gate = vec![0.0; samples];
         ps.col_gate_at_phase(0, &phase[..], &mut out[..], &mut out_gate[..]);
 
@@ -546,7 +552,7 @@ mod tests {
     fn check_seq_gate_div_rng() {
         // XXX: The result numbers are highly dependent on the
         //      sampling rate inside run_probability_test_for().
-        assert_eq!(run_probability_test_for(0x000), (5,   5));
+        assert_eq!(run_probability_test_for(0x000), (5, 5));
         assert_eq!(run_probability_test_for(0x100), (12, 11));
         assert_eq!(run_probability_test_for(0x200), (20, 18));
         assert_eq!(run_probability_test_for(0x300), (26, 23));
@@ -559,8 +565,8 @@ mod tests {
         assert_eq!(run_probability_test_for(0xA00), (70, 22));
         assert_eq!(run_probability_test_for(0xB00), (79, 18));
         assert_eq!(run_probability_test_for(0xC00), (84, 13));
-        assert_eq!(run_probability_test_for(0xD00), (93,  7));
-        assert_eq!(run_probability_test_for(0xE00), (96,  5));
+        assert_eq!(run_probability_test_for(0xD00), (93, 7));
+        assert_eq!(run_probability_test_for(0xE00), (96, 5));
         assert_eq!(run_probability_test_for(0xF00), (100, 1));
     }
 }

@@ -55,17 +55,20 @@ fn main() {
             // first the input:
             (amp, amp.inp("inp").unwrap()),
             // then the output that is assigned to it:
-            (sin, sin.out("sig").unwrap()));
+            (sin, sin.out("sig").unwrap()),
+        );
 
         node_conf.set_prog_node_exec_connection(
             &mut prog,
             (out, out.inp("ch1").unwrap()),
-            (amp, amp.out("sig").unwrap()));
+            (amp, amp.out("sig").unwrap()),
+        );
 
         node_conf.set_prog_node_exec_connection(
             &mut prog,
             (out, out.inp("ch2").unwrap()),
-            (amp, amp.out("sig").unwrap()));
+            (amp, amp.out("sig").unwrap()),
+        );
 
         // Finally upload the NodeProg to the audio thread.
         node_conf.upload_prog(prog, true);
@@ -85,40 +88,38 @@ fn main() {
             // implemented yet (2021-05-18) and is not implemented
             // in this jack interface).
 
-            let new_gain =
-                match amp_counter {
-                    0 => 0.2,
-                    1 => 0.3,
-                    2 => 0.35,
-                    3 => 0.3,
-                    4 => 0.1,
-                    _ => {
-                        amp_counter = 0;
-                        // Pitch is defined in 0.1 per octave.
-                        //  0.0 is A4,
-                        //  0.1 is A5
-                        // -0.1 is A3
-                        let new_pitch =
-                            match pitch_counter {
-                                0 => 0.0,  // A4
-                                1 => -0.1, // A3
-                                2 => 0.1,  // A5
-                                3 => -0.1, // A3
-                                4 => -0.2, // A2
-                                _ => {
-                                    pitch_counter = 0;
-                                    // -0.15 is 6 semitones above A3 => D#3
-                                    -0.15
-                                },
-                            };
-                        pitch_counter += 1;
+            let new_gain = match amp_counter {
+                0 => 0.2,
+                1 => 0.3,
+                2 => 0.35,
+                3 => 0.3,
+                4 => 0.1,
+                _ => {
+                    amp_counter = 0;
+                    // Pitch is defined in 0.1 per octave.
+                    //  0.0 is A4,
+                    //  0.1 is A5
+                    // -0.1 is A3
+                    let new_pitch = match pitch_counter {
+                        0 => 0.0,  // A4
+                        1 => -0.1, // A3
+                        2 => 0.1,  // A5
+                        3 => -0.1, // A3
+                        4 => -0.2, // A2
+                        _ => {
+                            pitch_counter = 0;
+                            // -0.15 is 6 semitones above A3 => D#3
+                            -0.15
+                        }
+                    };
+                    pitch_counter += 1;
 
-                        println!("set pitch={:4.2}", new_pitch);
-                        node_conf.set_param(sin_freq_param, new_pitch.into());
+                    println!("set pitch={:4.2}", new_pitch);
+                    node_conf.set_param(sin_freq_param, new_pitch.into());
 
-                        0.1
-                    },
-                };
+                    0.1
+                }
+            };
             amp_counter += 1;
 
             println!("set gain={:4.2}", new_gain);
@@ -139,17 +140,11 @@ impl jack::NotificationHandler for Notifications {
     }
 
     fn shutdown(&mut self, status: jack::ClientStatus, reason: &str) {
-        println!(
-            "JACK: shutdown with status {:?} because \"{}\"",
-            status, reason
-        );
+        println!("JACK: shutdown with status {:?} because \"{}\"", status, reason);
     }
 
     fn freewheel(&mut self, _: &jack::Client, is_enabled: bool) {
-        println!(
-            "JACK: freewheel mode is {}",
-            if is_enabled { "on" } else { "off" }
-        );
+        println!("JACK: freewheel mode is {}", if is_enabled { "on" } else { "off" });
     }
 
     fn buffer_size(&mut self, _: &jack::Client, sz: jack::Frames) -> jack::Control {
@@ -192,10 +187,7 @@ impl jack::NotificationHandler for Notifications {
         old_name: &str,
         new_name: &str,
     ) -> jack::Control {
-        println!(
-            "JACK: port with id {} renamed from {} to {}",
-            port_id, old_name, new_name
-        );
+        println!("JACK: port with id {} renamed from {} to {}", port_id, old_name, new_name);
         jack::Control::Continue
     }
 
@@ -210,11 +202,7 @@ impl jack::NotificationHandler for Notifications {
             "JACK: ports with id {} and {} are {}",
             port_id_a,
             port_id_b,
-            if are_connected {
-                "connected"
-            } else {
-                "disconnected"
-            }
+            if are_connected { "connected" } else { "disconnected" }
         );
     }
 
@@ -243,24 +231,15 @@ impl jack::NotificationHandler for Notifications {
 // runs the audio loop with the NodeExecutor.
 fn start_backend<F: FnMut()>(node_exec: NodeExecutor, mut frontend_loop: F) {
     let (client, _status) =
-        jack::Client::new("HexoDSPJackDemo", jack::ClientOptions::NO_START_SERVER)
-        .unwrap();
+        jack::Client::new("HexoDSPJackDemo", jack::ClientOptions::NO_START_SERVER).unwrap();
 
-    let in_a =
-        client.register_port("hexodsp_in1", jack::AudioIn::default())
-            .unwrap();
-    let in_b =
-        client.register_port("hexodsp_in2", jack::AudioIn::default())
-            .unwrap();
-    let mut out_a =
-        client.register_port("hexodsp_out1", jack::AudioOut::default())
-            .unwrap();
-    let mut out_b =
-        client.register_port("hexodsp_out2", jack::AudioOut::default())
-            .unwrap();
+    let in_a = client.register_port("hexodsp_in1", jack::AudioIn::default()).unwrap();
+    let in_b = client.register_port("hexodsp_in2", jack::AudioIn::default()).unwrap();
+    let mut out_a = client.register_port("hexodsp_out1", jack::AudioOut::default()).unwrap();
+    let mut out_b = client.register_port("hexodsp_out2", jack::AudioOut::default()).unwrap();
 
-    let ne        = Arc::new(Mutex::new(node_exec));
-    let ne2       = ne.clone();
+    let ne = Arc::new(Mutex::new(node_exec));
+    let ne2 = ne.clone();
 
     let mut first = true;
     let process_callback = move |client: &jack::Client, ps: &jack::ProcessScope| -> jack::Control {
@@ -270,9 +249,11 @@ fn start_backend<F: FnMut()>(node_exec: NodeExecutor, mut frontend_loop: F) {
         let in_b_p = in_b.as_slice(ps);
 
         if first {
-            client.connect_ports_by_name("HexoDSPJackDemo:hexodsp_out1", "system:playback_1")
+            client
+                .connect_ports_by_name("HexoDSPJackDemo:hexodsp_out1", "system:playback_1")
                 .expect("jack connect ports works");
-            client.connect_ports_by_name("HexoDSPJackDemo:hexodsp_out2", "system:playback_2")
+            client
+                .connect_ports_by_name("HexoDSPJackDemo:hexodsp_out2", "system:playback_2")
                 .expect("jack connect ports works");
             first = false;
         }
@@ -293,30 +274,24 @@ fn start_backend<F: FnMut()>(node_exec: NodeExecutor, mut frontend_loop: F) {
         node_exec.process_graph_updates();
 
         let mut frames_left = nframes;
-        let mut offs        = 0;
+        let mut offs = 0;
 
         while frames_left > 0 {
-            let cur_nframes =
-                if frames_left >= hexodsp::dsp::MAX_BLOCK_SIZE {
-                    hexodsp::dsp::MAX_BLOCK_SIZE
-                } else {
-                    frames_left
-                };
+            let cur_nframes = if frames_left >= hexodsp::dsp::MAX_BLOCK_SIZE {
+                hexodsp::dsp::MAX_BLOCK_SIZE
+            } else {
+                frames_left
+            };
 
             frames_left -= cur_nframes;
 
-            let output = &mut [&mut out_a_p[offs..(offs + cur_nframes)],
-                               &mut out_b_p[offs..(offs + cur_nframes)]];
-            let input =
-                &[&in_a_p[offs..(offs + cur_nframes)],
-                  &in_b_p[offs..(offs + cur_nframes)]];
+            let output = &mut [
+                &mut out_a_p[offs..(offs + cur_nframes)],
+                &mut out_b_p[offs..(offs + cur_nframes)],
+            ];
+            let input = &[&in_a_p[offs..(offs + cur_nframes)], &in_b_p[offs..(offs + cur_nframes)]];
 
-            let mut context =
-                Context {
-                    nframes: cur_nframes,
-                    output,
-                    input,
-                };
+            let mut context = Context { nframes: cur_nframes, output, input };
 
             for i in 0..context.nframes {
                 context.output[0][i] = 0.0;
@@ -331,17 +306,12 @@ fn start_backend<F: FnMut()>(node_exec: NodeExecutor, mut frontend_loop: F) {
         jack::Control::Continue
     };
 
-    let process =
-        jack::ClosureProcessHandler::new(process_callback);
+    let process = jack::ClosureProcessHandler::new(process_callback);
 
     // Activate the client, which starts the processing.
-    let active_client =
-        client.activate_async(Notifications {
-            node_exec: ne2,
-        }, process).unwrap();
+    let active_client = client.activate_async(Notifications { node_exec: ne2 }, process).unwrap();
 
     frontend_loop();
 
     active_client.deactivate().unwrap();
 }
-

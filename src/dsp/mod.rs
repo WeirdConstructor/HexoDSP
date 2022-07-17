@@ -3,63 +3,63 @@
 // See README.md and COPYING for details.
 
 #[allow(non_upper_case_globals)]
+mod node_ad;
+#[allow(non_upper_case_globals)]
+mod node_allp;
+#[allow(non_upper_case_globals)]
 mod node_amp;
+#[allow(non_upper_case_globals)]
+mod node_biqfilt;
+#[allow(non_upper_case_globals)]
+mod node_bosc;
+#[allow(non_upper_case_globals)]
+mod node_bowstri;
+#[allow(non_upper_case_globals)]
+mod node_comb;
+#[allow(non_upper_case_globals)]
+mod node_cqnt;
+#[allow(non_upper_case_globals)]
+mod node_delay;
+#[allow(non_upper_case_globals)]
+mod node_fbwr_fbrd;
+#[allow(non_upper_case_globals)]
+mod node_map;
+#[allow(non_upper_case_globals)]
+mod node_mix3;
+#[allow(non_upper_case_globals)]
+mod node_mux9;
+#[allow(non_upper_case_globals)]
+mod node_noise;
+#[allow(non_upper_case_globals)]
+mod node_out;
+#[allow(non_upper_case_globals)]
+mod node_pverb;
+#[allow(non_upper_case_globals)]
+mod node_quant;
+#[allow(non_upper_case_globals)]
+mod node_rndwk;
+#[allow(non_upper_case_globals)]
+mod node_sampl;
+#[allow(non_upper_case_globals)]
+mod node_sfilter;
 #[allow(non_upper_case_globals)]
 mod node_sin;
 #[allow(non_upper_case_globals)]
-mod node_out;
+mod node_smap;
 #[allow(non_upper_case_globals)]
 mod node_test;
 #[allow(non_upper_case_globals)]
 mod node_tseq;
 #[allow(non_upper_case_globals)]
-mod node_sampl;
-#[allow(non_upper_case_globals)]
-mod node_fbwr_fbrd;
-#[allow(non_upper_case_globals)]
-mod node_ad;
-#[allow(non_upper_case_globals)]
-mod node_delay;
-#[allow(non_upper_case_globals)]
-mod node_allp;
-#[allow(non_upper_case_globals)]
-mod node_noise;
-#[allow(non_upper_case_globals)]
-mod node_map;
-#[allow(non_upper_case_globals)]
-mod node_smap;
-#[allow(non_upper_case_globals)]
-mod node_sfilter;
-#[allow(non_upper_case_globals)]
-mod node_mix3;
-#[allow(non_upper_case_globals)]
-mod node_bosc;
-#[allow(non_upper_case_globals)]
-mod node_vosc;
-#[allow(non_upper_case_globals)]
-mod node_biqfilt;
-#[allow(non_upper_case_globals)]
-mod node_comb;
-#[allow(non_upper_case_globals)]
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
-mod node_pverb;
-#[allow(non_upper_case_globals)]
-mod node_rndwk;
-#[allow(non_upper_case_globals)]
-mod node_mux9;
-#[allow(non_upper_case_globals)]
-mod node_cqnt;
-#[allow(non_upper_case_globals)]
-mod node_quant;
-#[allow(non_upper_case_globals)]
-mod node_bowstri;
+mod node_vosc;
 
 pub mod biquad;
-pub mod tracker;
 pub mod dattorro;
-mod satom;
 pub mod helpers;
+mod satom;
+pub mod tracker;
 
 use crate::nodes::NodeAudioContext;
 use crate::nodes::NodeExecContext;
@@ -71,64 +71,63 @@ pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 
 pub use satom::*;
 
-use crate::fa_out_mono;
-use crate::fa_test_s;
-use crate::fa_amp_neg_att;
-use crate::fa_tseq_cmode;
-use crate::fa_sampl_dclick;
-use crate::fa_sampl_pmode;
-use crate::fa_sampl_dir;
 use crate::fa_ad_mult;
+use crate::fa_amp_neg_att;
+use crate::fa_biqfilt_ord;
+use crate::fa_biqfilt_type;
+use crate::fa_bosc_wtype;
+use crate::fa_comb_mode;
+use crate::fa_cqnt;
+use crate::fa_cqnt_omax;
+use crate::fa_cqnt_omin;
 use crate::fa_delay_mode;
-use crate::fa_noise_mode;
+use crate::fa_distort;
 use crate::fa_map_clip;
+use crate::fa_mux9_in_cnt;
+use crate::fa_noise_mode;
+use crate::fa_out_mono;
+use crate::fa_quant;
+use crate::fa_sampl_dclick;
+use crate::fa_sampl_dir;
+use crate::fa_sampl_pmode;
+use crate::fa_sfilter_type;
 use crate::fa_smap_clip;
 use crate::fa_smap_mode;
-use crate::fa_sfilter_type;
-use crate::fa_bosc_wtype;
-use crate::fa_biqfilt_type;
-use crate::fa_biqfilt_ord;
+use crate::fa_test_s;
+use crate::fa_tseq_cmode;
 use crate::fa_vosc_ovrsmpl;
-use crate::fa_distort;
-use crate::fa_comb_mode;
-use crate::fa_mux9_in_cnt;
-use crate::fa_cqnt;
-use crate::fa_cqnt_omin;
-use crate::fa_cqnt_omax;
-use crate::fa_quant;
 
+use node_ad::Ad;
+use node_allp::AllP;
 use node_amp::Amp;
-use node_sin::Sin;
+use node_biqfilt::BiqFilt;
+use node_bosc::BOsc;
+use node_bowstri::BowStri;
+use node_comb::Comb;
+use node_cqnt::CQnt;
+use node_delay::Delay;
+use node_fbwr_fbrd::FbRd;
+use node_fbwr_fbrd::FbWr;
+use node_map::Map;
+use node_mix3::Mix3;
+use node_mux9::Mux9;
+use node_noise::Noise;
 use node_out::Out;
+use node_pverb::PVerb;
+use node_quant::Quant;
+use node_rndwk::RndWk;
+use node_sampl::Sampl;
+use node_sfilter::SFilter;
+use node_sin::Sin;
+use node_smap::SMap;
 use node_test::Test;
 use node_tseq::TSeq;
-use node_sampl::Sampl;
-use node_fbwr_fbrd::FbWr;
-use node_fbwr_fbrd::FbRd;
-use node_ad::Ad;
-use node_delay::Delay;
-use node_allp::AllP;
-use node_noise::Noise;
-use node_map::Map;
-use node_smap::SMap;
-use node_sfilter::SFilter;
-use node_mix3::Mix3;
-use node_bosc::BOsc;
-use node_vosc::VOsc;
-use node_biqfilt::BiqFilt;
-use node_comb::Comb;
 use node_tslfo::TsLFO;
-use node_pverb::PVerb;
-use node_rndwk::RndWk;
-use node_mux9::Mux9;
-use node_cqnt::CQnt;
-use node_quant::Quant;
-use node_bowstri::BowStri;
+use node_vosc::VOsc;
 
-pub const MIDI_MAX_FREQ : f32 = 13289.75;
+pub const MIDI_MAX_FREQ: f32 = 13289.75;
 
-pub const MAX_BLOCK_SIZE : usize = 128;
-
+pub const MAX_BLOCK_SIZE: usize = 128;
 
 /// A context structure that holds temporary information about the
 /// currently executed node.
@@ -136,12 +135,12 @@ pub const MAX_BLOCK_SIZE : usize = 128;
 pub struct NodeContext<'a> {
     /// The bitmask that indicates which input ports are used/connected
     /// to some output.
-    pub in_connected:  u64,
+    pub in_connected: u64,
     /// The bitmask that indicates which output ports are used/connected
     /// to some input.
-    pub out_connected:  u64,
+    pub out_connected: u64,
     /// The node parameters, which are usually not accessed directly.
-    pub params:         &'a [ProcBuf],
+    pub params: &'a [ProcBuf],
 }
 
 /// This trait is an interface between the graph functions
@@ -183,13 +182,20 @@ pub trait DspNode {
     /// these inputs might be overwritten by outputs of other nodes.
     /// * `outputs` are the output buffers of this node.
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
+        &mut self,
+        ctx: &mut T,
+        ectx: &mut NodeExecContext,
         nctx: &NodeContext,
-        atoms: &[SAtom], inputs: &[ProcBuf], outputs: &mut [ProcBuf],
-        led: LedPhaseVals);
+        atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf],
+        led: LedPhaseVals,
+    );
 
     /// A function factory for generating a graph for the generic node UI.
-    fn graph_fun() -> Option<GraphFun> { None }
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 /// A processing buffer with the exact right maximum size.
@@ -267,7 +273,9 @@ impl ProcBuf {
     /// Reads a sample at `idx`. Be careful to not let the `idx`
     /// land outside of [MAX_BLOCK_SIZE].
     #[inline]
-    pub fn read(&self, idx: usize) -> f32 { unsafe { (*self.0)[idx] } }
+    pub fn read(&self, idx: usize) -> f32 {
+        unsafe { (*self.0)[idx] }
+    }
 
     /// Fills the [ProcBuf] with the sample `v`.
     #[inline]
@@ -279,7 +287,9 @@ impl ProcBuf {
 
     /// Checks if this is a [ProcBuf::null].
     #[inline]
-    pub fn is_null(&self) -> bool { self.0.is_null() }
+    pub fn is_null(&self) -> bool {
+        self.0.is_null()
+    }
 
     /// Deallocates the [ProcBuf]. If you still keep around
     /// other copies of this [ProcBuf], you will most likely land in
@@ -309,9 +319,7 @@ impl std::fmt::Debug for ProcBuf {
 
 impl std::fmt::Display for ProcBuf {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        unsafe {
-            write!(f, "ProcBuf(0: {})", (*self.0)[0])
-        }
+        unsafe { write!(f, "ProcBuf(0: {})", (*self.0)[0]) }
     }
 }
 
@@ -343,354 +351,420 @@ pub enum UICategory {
 impl UICategory {
     pub fn default_color_idx(&self) -> u8 {
         match self {
-            UICategory::None   => 17,
-            UICategory::Osc    => 0,
-            UICategory::Mod    => 7,
-            UICategory::NtoM   => 4,
+            UICategory::None => 17,
+            UICategory::Osc => 0,
+            UICategory::Mod => 7,
+            UICategory::NtoM => 4,
             UICategory::Signal => 2,
-            UICategory::Ctrl   => 12,
+            UICategory::Ctrl => 12,
             UICategory::IOUtil => 10,
         }
     }
 }
 
 // The following macros define normalize/denormalize functions:
-macro_rules! n_id { ($x: expr) => { $x } }
-macro_rules! d_id { ($x: expr) => { $x } }
+macro_rules! n_id {
+    ($x: expr) => {
+        $x
+    };
+}
+macro_rules! d_id {
+    ($x: expr) => {
+        $x
+    };
+}
 
 macro_rules! define_lin {
     ($n_id: ident $d_id: ident $min: expr, $max: expr) => {
-        macro_rules! $n_id { ($x: expr) => {
-            (($x - $min) / ($max - $min) as f32).abs()
-        } }
+        macro_rules! $n_id {
+            ($x: expr) => {
+                (($x - $min) / ($max - $min) as f32).abs()
+            };
+        }
 
-        macro_rules! $d_id { ($x: expr) => {
-            $min * (1.0 - $x) + $max * $x
-        } }
-    }
+        macro_rules! $d_id {
+            ($x: expr) => {
+                $min * (1.0 - $x) + $max * $x
+            };
+        }
+    };
 }
 
 macro_rules! define_exp {
     ($n_id: ident $d_id: ident $min: expr, $max: expr) => {
-        macro_rules! $n_id { ($x: expr) => {
-            (($x - $min) / ($max - $min) as f32).abs().sqrt()
-        } }
-        macro_rules! $d_id { ($x: expr) => {
-            { let x : f32 = $x * $x; $min * (1.0 - x) + $max * x }
-        } }
-    }
+        macro_rules! $n_id {
+            ($x: expr) => {
+                (($x - $min) / ($max - $min) as f32).abs().sqrt()
+            };
+        }
+        macro_rules! $d_id {
+            ($x: expr) => {{
+                let x: f32 = $x * $x;
+                $min * (1.0 - x) + $max * x
+            }};
+        }
+    };
 }
 
 macro_rules! define_exp4 {
     ($n_id: ident $d_id: ident $min: expr, $max: expr) => {
-        macro_rules! $n_id { ($x: expr) => {
-            (($x - $min) / ($max - $min) as f32).abs().sqrt().sqrt()
-        } }
-        macro_rules! $d_id { ($x: expr) => {
-            { let x : f32 = $x * $x * $x * $x; $min * (1.0 - x) + $max * x }
-        } }
-    }
+        macro_rules! $n_id {
+            ($x: expr) => {
+                (($x - $min) / ($max - $min) as f32).abs().sqrt().sqrt()
+            };
+        }
+        macro_rules! $d_id {
+            ($x: expr) => {{
+                let x: f32 = $x * $x * $x * $x;
+                $min * (1.0 - x) + $max * x
+            }};
+        }
+    };
 }
 
 macro_rules! define_exp6 {
     ($n_id: ident $d_id: ident $min: expr, $max: expr) => {
-        macro_rules! $n_id { ($x: expr) => {
-            (($x - $min) / ($max - $min) as f32).abs().powf(1.0 / 6.0)
-        } }
-        macro_rules! $d_id { ($x: expr) => {
-            { let x : f32 = ($x).powf(6.0); $min * (1.0 - x) + $max * x }
-        } }
-    }
+        macro_rules! $n_id {
+            ($x: expr) => {
+                (($x - $min) / ($max - $min) as f32).abs().powf(1.0 / 6.0)
+            };
+        }
+        macro_rules! $d_id {
+            ($x: expr) => {{
+                let x: f32 = ($x).powf(6.0);
+                $min * (1.0 - x) + $max * x
+            }};
+        }
+    };
 }
 
+#[macro_export]
+macro_rules! n_pit {
+    ($x: expr) => {
+        0.1 * (($x as f32).max(0.01) / 440.0).log2()
+    };
+}
 
 #[macro_export]
-macro_rules! n_pit { ($x: expr) => {
-    0.1 * (($x as f32).max(0.01) / 440.0).log2()
-} }
-
-#[macro_export]
-macro_rules! d_pit { ($x: expr) => {
-    {
-        let note : f32 = ($x as f32) * 10.0;
+macro_rules! d_pit {
+    ($x: expr) => {{
+        let note: f32 = ($x as f32) * 10.0;
         440.0 * (2.0_f32).powf(note.clamp(-10.0, 10.0))
-    }
-} }
+    }};
+}
 
 // The following macros define detune parameter behaviour:
 // 0.2         => 24.0
 // 0.1         => 12.0
 // 0.008333333 => 1.0
 // 0.000083333 => 0.001
-macro_rules! n_det { ($x: expr) => { $x / 120.0 } }
-macro_rules! d_det { ($x: expr) => { $x * 120.0 } }
+macro_rules! n_det {
+    ($x: expr) => {
+        $x / 120.0
+    };
+}
+macro_rules! d_det {
+    ($x: expr) => {
+        $x * 120.0
+    };
+}
 /// The rounding function for detune UI knobs
-macro_rules! r_det { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        n_det!((d_det!($x)).round())
-    } else {
-        n_det!((d_det!($x) * 100.0).round() / 100.0)
-    }
-} }
+macro_rules! r_det {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            n_det!((d_det!($x)).round())
+        } else {
+            n_det!((d_det!($x) * 100.0).round() / 100.0)
+        }
+    };
+}
 
 /// The rounding function for -1 to 1 signal knobs
-macro_rules! r_s { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        ($x * 10.0).round() / 10.0
-    } else {
-        ($x * 100.0).round() / 100.0
-    }
-} }
-
-/// The rounding function for milliseconds knobs
-macro_rules! r_dc_ms { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        n_declick!((d_declick!($x)).round())
-    } else {
-        n_declick!((d_declick!($x) * 10.0).round() / 10.0)
-    }
-} }
-
-/// The rounding function for milliseconds knobs
-macro_rules! r_ems { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        n_env!((d_env!($x)).round())
-    } else {
-        n_env!((d_env!($x) * 10.0).round() / 10.0)
-    }
-} }
-
-/// The rounding function for milliseconds knobs
-macro_rules! r_tms { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        if d_time!($x) > 1000.0 {
-            n_time!((d_time!($x) / 100.0).round() * 100.0)
-        } else if d_time!($x) > 100.0 {
-            n_time!((d_time!($x) / 10.0).round() * 10.0)
+macro_rules! r_s {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            ($x * 10.0).round() / 10.0
         } else {
-            n_time!((d_time!($x)).round())
+            ($x * 100.0).round() / 100.0
         }
-    } else {
-        n_time!((d_time!($x) * 10.0).round() / 10.0)
-    }
-} }
+    };
+}
 
 /// The rounding function for milliseconds knobs
-macro_rules! r_fms { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        if d_ftme!($x) > 1000.0 {
-            n_ftme!((d_ftme!($x) / 100.0).round() * 100.0)
-        } else if d_ftme!($x) > 100.0 {
-            n_ftme!((d_ftme!($x) / 10.0).round() * 10.0)
+macro_rules! r_dc_ms {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            n_declick!((d_declick!($x)).round())
         } else {
-            n_ftme!((d_ftme!($x)).round())
+            n_declick!((d_declick!($x) * 10.0).round() / 10.0)
         }
-    } else {
-        n_ftme!((d_ftme!($x) * 10.0).round() / 10.0)
-    }
-} }
+    };
+}
+
+/// The rounding function for milliseconds knobs
+macro_rules! r_ems {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            n_env!((d_env!($x)).round())
+        } else {
+            n_env!((d_env!($x) * 10.0).round() / 10.0)
+        }
+    };
+}
+
+/// The rounding function for milliseconds knobs
+macro_rules! r_tms {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            if d_time!($x) > 1000.0 {
+                n_time!((d_time!($x) / 100.0).round() * 100.0)
+            } else if d_time!($x) > 100.0 {
+                n_time!((d_time!($x) / 10.0).round() * 10.0)
+            } else {
+                n_time!((d_time!($x)).round())
+            }
+        } else {
+            n_time!((d_time!($x) * 10.0).round() / 10.0)
+        }
+    };
+}
+
+/// The rounding function for milliseconds knobs
+macro_rules! r_fms {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            if d_ftme!($x) > 1000.0 {
+                n_ftme!((d_ftme!($x) / 100.0).round() * 100.0)
+            } else if d_ftme!($x) > 100.0 {
+                n_ftme!((d_ftme!($x) / 10.0).round() * 10.0)
+            } else {
+                n_ftme!((d_ftme!($x)).round())
+            }
+        } else {
+            n_ftme!((d_ftme!($x) * 10.0).round() / 10.0)
+        }
+    };
+}
 
 /// The rounding function for milliseconds knobs that also have a 0.0 setting
-macro_rules! r_tmz { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        if d_timz!($x) > 1000.0 {
-            n_timz!((d_timz!($x) / 100.0).round() * 100.0)
-        } else if d_timz!($x) > 100.0 {
-            n_timz!((d_timz!($x) / 10.0).round() * 10.0)
+macro_rules! r_tmz {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            if d_timz!($x) > 1000.0 {
+                n_timz!((d_timz!($x) / 100.0).round() * 100.0)
+            } else if d_timz!($x) > 100.0 {
+                n_timz!((d_timz!($x) / 10.0).round() * 10.0)
+            } else {
+                n_timz!((d_timz!($x)).round())
+            }
         } else {
-            n_timz!((d_timz!($x)).round())
+            n_timz!((d_timz!($x) * 10.0).round() / 10.0)
         }
-    } else {
-        n_timz!((d_timz!($x) * 10.0).round() / 10.0)
-    }
-} }
+    };
+}
 
 /// The rounding function for freq knobs (n_pit / d_pit)
-macro_rules! r_fq { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        ($x * 10.0).round() / 10.0
-    } else {
-        let p = d_pit!($x);
-        if p < 10.0 {
-            n_pit!((p * 10.0).round() / 10.0)
-        } else if p < 100.0 {
-            n_pit!(p.round())
-        } else if p < 1000.0 {
-            n_pit!((p / 10.0).round() * 10.0)
-        } else if p < 10000.0 {
-            n_pit!((p / 100.0).round() * 100.0)
+macro_rules! r_fq {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            ($x * 10.0).round() / 10.0
         } else {
-            n_pit!((p / 1000.0).round() * 1000.0)
+            let p = d_pit!($x);
+            if p < 10.0 {
+                n_pit!((p * 10.0).round() / 10.0)
+            } else if p < 100.0 {
+                n_pit!(p.round())
+            } else if p < 1000.0 {
+                n_pit!((p / 10.0).round() * 10.0)
+            } else if p < 10000.0 {
+                n_pit!((p / 100.0).round() * 100.0)
+            } else {
+                n_pit!((p / 1000.0).round() * 1000.0)
+            }
         }
-    }
-} }
+    };
+}
 
 /// The rounding function for vs (v scale) UI knobs
-macro_rules! r_vps { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        n_vps!((d_vps!($x)).round())
-    } else {
-        n_vps!((d_vps!($x) * 10.0).round() / 10.0)
-    }
-} }
+macro_rules! r_vps {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            n_vps!((d_vps!($x)).round())
+        } else {
+            n_vps!((d_vps!($x) * 10.0).round() / 10.0)
+        }
+    };
+}
 
 /// The rounding function for LFO time knobs
-macro_rules! r_lfot { ($x: expr, $coarse: expr) => {
-    if $coarse {
-        let denv = d_lfot!($x);
+macro_rules! r_lfot {
+    ($x: expr, $coarse: expr) => {
+        if $coarse {
+            let denv = d_lfot!($x);
 
-        if denv < 10.0 {
-            let hz = 1000.0 / denv;
-            let hz = (hz / 10.0).round() * 10.0;
-            n_lfot!(1000.0 / hz)
-
-        } else if denv < 250.0 {
-            n_lfot!((denv / 5.0).round() * 5.0)
-
-        } else if denv < 1500.0 {
-            n_lfot!((denv / 50.0).round() * 50.0)
-
-        } else if denv < 2500.0 {
-            n_lfot!((denv / 100.0).round() * 100.0)
-
-        } else if denv < 5000.0 {
-            n_lfot!((denv / 500.0).round() * 500.0)
-
-        } else if denv < 60000.0 {
-            n_lfot!((denv / 1000.0).round() * 1000.0)
-
+            if denv < 10.0 {
+                let hz = 1000.0 / denv;
+                let hz = (hz / 10.0).round() * 10.0;
+                n_lfot!(1000.0 / hz)
+            } else if denv < 250.0 {
+                n_lfot!((denv / 5.0).round() * 5.0)
+            } else if denv < 1500.0 {
+                n_lfot!((denv / 50.0).round() * 50.0)
+            } else if denv < 2500.0 {
+                n_lfot!((denv / 100.0).round() * 100.0)
+            } else if denv < 5000.0 {
+                n_lfot!((denv / 500.0).round() * 500.0)
+            } else if denv < 60000.0 {
+                n_lfot!((denv / 1000.0).round() * 1000.0)
+            } else {
+                n_lfot!((denv / 5000.0).round() * 5000.0)
+            }
         } else {
-            n_lfot!((denv / 5000.0).round() * 5000.0)
+            let denv = d_lfot!($x);
+
+            let o = if denv < 10.0 {
+                let hz = 1000.0 / denv;
+                let hz = hz.round();
+                n_lfot!(1000.0 / hz)
+            } else if denv < 100.0 {
+                n_lfot!(denv.round())
+            } else if denv < 1000.0 {
+                n_lfot!((denv / 5.0).round() * 5.0)
+            } else if denv < 2500.0 {
+                n_lfot!((denv / 10.0).round() * 10.0)
+            } else if denv < 25000.0 {
+                n_lfot!((denv / 100.0).round() * 100.0)
+            } else {
+                n_lfot!((denv / 500.0).round() * 500.0)
+            };
+
+            o
         }
-    } else {
-        let denv = d_lfot!($x);
-
-        let o =
-        if denv < 10.0 {
-            let hz = 1000.0 / denv;
-            let hz = hz.round();
-            n_lfot!(1000.0 / hz)
-
-        } else if denv < 100.0 {
-            n_lfot!(denv.round())
-
-        } else if denv < 1000.0 {
-            n_lfot!((denv / 5.0).round() * 5.0)
-
-        } else if denv < 2500.0 {
-            n_lfot!((denv / 10.0).round() * 10.0)
-
-        } else if denv < 25000.0 {
-            n_lfot!((denv / 100.0).round() * 100.0)
-
-        } else {
-            n_lfot!((denv / 500.0).round() * 500.0)
-        };
-
-        o
-    }
-} }
+    };
+}
 
 /// The default steps function:
-macro_rules! stp_d { () => { (20.0, 100.0) } }
+macro_rules! stp_d {
+    () => {
+        (20.0, 100.0)
+    };
+}
 /// The UI steps to control parameters with a finer fine control:
-macro_rules! stp_m { () => { (20.0, 200.0) } }
+macro_rules! stp_m {
+    () => {
+        (20.0, 200.0)
+    };
+}
 /// The UI steps to control parameters with a very fine fine control:
-macro_rules! stp_f { () => { (20.0, 1000.0) } }
+macro_rules! stp_f {
+    () => {
+        (20.0, 1000.0)
+    };
+}
 
 // Rounding function that does nothing
-macro_rules! r_id { ($x: expr, $coarse: expr) => { $x } }
+macro_rules! r_id {
+    ($x: expr, $coarse: expr) => {
+        $x
+    };
+}
 
 // Default formatting function
-macro_rules! f_def { ($formatter: expr, $v: expr, $denorm_v: expr) => {
-    write!($formatter, "{:6.3}", $denorm_v)
-} }
+macro_rules! f_def {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {
+        write!($formatter, "{:6.3}", $denorm_v)
+    };
+}
 
 // Default formatting function with low precision
-macro_rules! f_deflp { ($formatter: expr, $v: expr, $denorm_v: expr) => {
-    write!($formatter, "{:5.2}", $denorm_v)
-} }
+macro_rules! f_deflp {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {
+        write!($formatter, "{:5.2}", $denorm_v)
+    };
+}
 
 // Default formatting function with very low precision
-macro_rules! f_defvlp { ($formatter: expr, $v: expr, $denorm_v: expr) => {
-    write!($formatter, "{:4.1}", $denorm_v)
-} }
+macro_rules! f_defvlp {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {
+        write!($formatter, "{:4.1}", $denorm_v)
+    };
+}
 
-macro_rules! f_freq { ($formatter: expr, $v: expr, $denorm_v: expr) => {
-    if ($denorm_v >= 1000.0) {
-        write!($formatter, "{:6.0}Hz", $denorm_v)
-    } else if ($denorm_v >= 100.0) {
-        write!($formatter, "{:6.1}Hz", $denorm_v)
-    } else {
-        write!($formatter, "{:6.2}Hz", $denorm_v)
-    }
-} }
+macro_rules! f_freq {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {
+        if ($denorm_v >= 1000.0) {
+            write!($formatter, "{:6.0}Hz", $denorm_v)
+        } else if ($denorm_v >= 100.0) {
+            write!($formatter, "{:6.1}Hz", $denorm_v)
+        } else {
+            write!($formatter, "{:6.2}Hz", $denorm_v)
+        }
+    };
+}
 
-macro_rules! f_ms { ($formatter: expr, $v: expr, $denorm_v: expr) => {
-    if $denorm_v >= 1000.0 {
-        write!($formatter, "{:6.0}ms", $denorm_v)
-    } else if $denorm_v >= 100.0 {
-        write!($formatter, "{:5.1}ms", $denorm_v)
-    } else {
-        write!($formatter, "{:5.2}ms", $denorm_v)
-    }
-} }
+macro_rules! f_ms {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {
+        if $denorm_v >= 1000.0 {
+            write!($formatter, "{:6.0}ms", $denorm_v)
+        } else if $denorm_v >= 100.0 {
+            write!($formatter, "{:5.1}ms", $denorm_v)
+        } else {
+            write!($formatter, "{:5.2}ms", $denorm_v)
+        }
+    };
+}
 
-macro_rules! f_lfot { ($formatter: expr, $v: expr, $denorm_v: expr) => {
-    if $denorm_v < 10.0 {
-        write!($formatter, "{:5.1}Hz", 1000.0 / $denorm_v)
+macro_rules! f_lfot {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {
+        if $denorm_v < 10.0 {
+            write!($formatter, "{:5.1}Hz", 1000.0 / $denorm_v)
+        } else if $denorm_v < 250.0 {
+            write!($formatter, "{:4.1}ms", $denorm_v)
+        } else if $denorm_v < 1500.0 {
+            write!($formatter, "{:4.0}ms", $denorm_v)
+        } else if $denorm_v < 10000.0 {
+            write!($formatter, "{:5.2}s", $denorm_v / 1000.0)
+        } else {
+            write!($formatter, "{:5.1}s", $denorm_v / 1000.0)
+        }
+    };
+}
 
-    } else if $denorm_v < 250.0 {
-        write!($formatter, "{:4.1}ms", $denorm_v)
-
-    } else if $denorm_v < 1500.0 {
-        write!($formatter, "{:4.0}ms", $denorm_v)
-
-    } else if $denorm_v < 10000.0 {
-        write!($formatter, "{:5.2}s", $denorm_v / 1000.0)
-
-    } else {
-        write!($formatter, "{:5.1}s", $denorm_v / 1000.0)
-    }
-} }
-
-
-macro_rules! f_det { ($formatter: expr, $v: expr, $denorm_v: expr) => {
-    {
-        let sign      = if $denorm_v < 0.0 { -1.0 } else { 1.0 };
+macro_rules! f_det {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {{
+        let sign = if $denorm_v < 0.0 { -1.0 } else { 1.0 };
         let semitones = $denorm_v.trunc().abs();
-        let cents     = ($denorm_v.fract() * 100.0).round().abs();
+        let cents = ($denorm_v.fract() * 100.0).round().abs();
 
         if (cents > 0.1) {
             write!($formatter, "{:2.0}s {:3.0}c", sign * semitones, cents)
         } else {
             write!($formatter, "{:2.0}s", sign * semitones)
         }
-    }
-} }
-
+    }};
+}
 
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
-define_exp!{n_gain d_gain 0.0, 2.0}
-define_exp!{n_att  d_att  0.0, 1.0}
+define_exp! {n_gain d_gain 0.0, 2.0}
+define_exp! {n_att  d_att  0.0, 1.0}
 
-define_exp!{n_declick d_declick 0.0, 50.0}
+define_exp! {n_declick d_declick 0.0, 50.0}
 
-define_exp!{n_env d_env 0.0, 1000.0}
+define_exp! {n_env d_env 0.0, 1000.0}
 
-define_exp6!{n_lfot d_lfot 0.1,300000.0}
-define_exp!{n_time d_time 0.5,  5000.0}
-define_exp!{n_ftme d_ftme 0.1,  1000.0}
-define_exp!{n_timz d_timz 0.0,  5000.0}
+define_exp6! {n_lfot d_lfot 0.1,300000.0}
+define_exp! {n_time d_time 0.5,  5000.0}
+define_exp! {n_ftme d_ftme 0.1,  1000.0}
+define_exp! {n_timz d_timz 0.0,  5000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
-define_lin!{n_ogin d_ogin 0.0, 2.0}
+define_lin! {n_ogin d_ogin 0.0, 2.0}
 
-define_lin!{n_pgin d_pgin 1.0, 10.0}
+define_lin! {n_pgin d_pgin 1.0, 10.0}
 
-define_lin!{n_vps d_vps 0.0, 20.0}
+define_lin! {n_vps d_vps 0.0, 20.0}
 
 // A note about the input-indicies:
 //
@@ -708,7 +782,7 @@ define_lin!{n_vps d_vps 0.0, 20.0}
 // for new nodes.
 macro_rules! node_list {
     ($inmacro: ident) => {
-        $inmacro!{
+        $inmacro! {
             nop => Nop,
             amp => Amp UIType::Generic UICategory::Signal
              // node_param_idx
@@ -938,7 +1012,7 @@ macro_rules! node_list {
                [4 out4]
                [5 outc],
         }
-    }
+    };
 }
 
 impl UICategory {
@@ -968,7 +1042,7 @@ impl UICategory {
             }
         }
 
-        node_list!{make_cat_lister};
+        node_list! {make_cat_lister};
     }
 }
 
@@ -985,20 +1059,18 @@ fn rand_node_satisfies_spec(nid: NodeId, sel: RandNodeSelector) -> bool {
 
     match sel {
         RandNodeSelector::Any => true,
-        RandNodeSelector::OnlyUseful => {
-            match nid {
-                NodeId::Nop     => false,
-                NodeId::Out(_)  => false,
-                NodeId::FbRd(_) => false,
-                NodeId::Test(_) => false,
-                _ => true,
-            }
+        RandNodeSelector::OnlyUseful => match nid {
+            NodeId::Nop => false,
+            NodeId::Out(_) => false,
+            NodeId::FbRd(_) => false,
+            NodeId::Test(_) => false,
+            _ => true,
         },
     }
 }
 
 pub fn get_rand_node_id(count: usize, sel: RandNodeSelector) -> Vec<NodeId> {
-    let mut sm  = crate::dsp::helpers::SplitMix64::new_time_seed();
+    let mut sm = crate::dsp::helpers::SplitMix64::new_time_seed();
     let mut out = vec![];
 
     let mut cnt = 0;
@@ -1029,24 +1101,22 @@ pub fn get_rand_node_id(count: usize, sel: RandNodeSelector) -> Vec<NodeId> {
 /// [crate::Matrix::info_for].
 #[derive(Clone)]
 pub struct NodeInfo {
-    node_id:        NodeId,
-    inputs:         Vec<&'static str>,
-    atoms:          Vec<&'static str>,
-    outputs:        Vec<&'static str>,
-    input_help:     Vec<&'static str>,
-    output_help:    Vec<&'static str>,
-    node_help:      &'static str,
-    node_desc:      &'static str,
-    node_name:      &'static str,
-    norm_v:         std::rc::Rc<dyn Fn(usize, f32) -> f32>,
-    denorm_v:       std::rc::Rc<dyn Fn(usize, f32) -> f32>,
+    node_id: NodeId,
+    inputs: Vec<&'static str>,
+    atoms: Vec<&'static str>,
+    outputs: Vec<&'static str>,
+    input_help: Vec<&'static str>,
+    output_help: Vec<&'static str>,
+    node_help: &'static str,
+    node_desc: &'static str,
+    node_name: &'static str,
+    norm_v: std::rc::Rc<dyn Fn(usize, f32) -> f32>,
+    denorm_v: std::rc::Rc<dyn Fn(usize, f32) -> f32>,
 }
 
 impl std::fmt::Debug for NodeInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.debug_struct("NodeInfo")
-         .field("node_id", &self.node_id)
-         .finish()
+        f.debug_struct("NodeInfo").field("node_id", &self.node_id).finish()
     }
 }
 
@@ -1838,8 +1908,8 @@ macro_rules! make_node_enum {
     }
 }
 
-node_list!{make_node_info_enum}
-node_list!{make_node_enum}
+node_list! {make_node_info_enum}
+node_list! {make_node_enum}
 
 pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
     macro_rules! make_node_factory_match {
@@ -1866,7 +1936,7 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
         }
     }
 
-    node_list!{make_node_factory_match}
+    node_list! {make_node_factory_match}
 }
 
 impl Node {
@@ -1905,11 +1975,15 @@ impl Node {
     /// display some kind of position indicator.
     #[inline]
     pub fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
+        &mut self,
+        ctx: &mut T,
+        ectx: &mut NodeExecContext,
         nctx: &NodeContext,
-        atoms: &[SAtom], inputs: &[ProcBuf], outputs: &mut [ProcBuf],
-        led: LedPhaseVals)
-    {
+        atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf],
+        led: LedPhaseVals,
+    ) {
         macro_rules! make_node_process {
             ($s1: ident => $v1: ident,
                 $($str: ident => $variant: ident
@@ -1933,10 +2007,9 @@ impl Node {
             }
         }
 
-        node_list!{make_node_process}
+        node_list! {make_node_process}
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1944,9 +2017,9 @@ mod tests {
 
     #[test]
     fn check_node_size_staying_small() {
-        assert_eq!(std::mem::size_of::<Node>(),     56);
-        assert_eq!(std::mem::size_of::<NodeId>(),   2);
-        assert_eq!(std::mem::size_of::<ParamId>(),  24);
+        assert_eq!(std::mem::size_of::<Node>(), 56);
+        assert_eq!(std::mem::size_of::<NodeId>(), 2);
+        assert_eq!(std::mem::size_of::<ParamId>(), 24);
     }
 
     #[test]
@@ -1962,9 +2035,7 @@ mod tests {
             let x = (((i as f32) / 1000.0) - 0.5) * 2.0;
             let r = d_pit!(x);
             //d// println!("x={:8.5} => {:8.5}", x, r);
-            assert_eq!(
-                (n_pit!(r) * 10000.0).round() as i32,
-                (x * 10000.0).round() as i32);
+            assert_eq!((n_pit!(r) * 10000.0).round() as i32, (x * 10000.0).round() as i32);
         }
     }
 }

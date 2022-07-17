@@ -7,31 +7,27 @@ use crate::nodes::MAX_ALLOCATED_NODES;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-pub const MAX_NODE_EDGES    : usize = 64;
-pub const UNUSED_NODE_EDGE  : usize = 999999;
+pub const MAX_NODE_EDGES: usize = 64;
+pub const UNUSED_NODE_EDGE: usize = 999999;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Node {
     /// The [NodeId] of this node.
-    node_id:    NodeId,
+    node_id: NodeId,
     /// The output edges of this node.
-    edges:      [usize; MAX_NODE_EDGES],
+    edges: [usize; MAX_NODE_EDGES],
     /// The first unused index in the `edges` array.
     unused_idx: usize,
 }
 
 impl Node {
     pub fn new() -> Self {
-        Self {
-            node_id:    NodeId::Nop,
-            edges:      [UNUSED_NODE_EDGE; MAX_NODE_EDGES],
-            unused_idx: 0,
-        }
+        Self { node_id: NodeId::Nop, edges: [UNUSED_NODE_EDGE; MAX_NODE_EDGES], unused_idx: 0 }
     }
 
     pub fn clear(&mut self) {
-        self.node_id    = NodeId::Nop;
-        self.edges      = [UNUSED_NODE_EDGE; MAX_NODE_EDGES];
+        self.node_id = NodeId::Nop;
+        self.edges = [UNUSED_NODE_EDGE; MAX_NODE_EDGES];
         self.unused_idx = 0;
     }
 
@@ -49,9 +45,9 @@ impl Node {
 
 #[derive(Debug, Clone)]
 pub struct NodeGraphOrdering {
-    node2idx:   HashMap<NodeId, usize>,
+    node2idx: HashMap<NodeId, usize>,
     node_count: usize,
-    nodes:      [Node; MAX_ALLOCATED_NODES],
+    nodes: [Node; MAX_ALLOCATED_NODES],
 
     in_degree: [usize; MAX_ALLOCATED_NODES],
 }
@@ -59,10 +55,10 @@ pub struct NodeGraphOrdering {
 impl NodeGraphOrdering {
     pub fn new() -> Self {
         Self {
-            node2idx:   HashMap::new(),
+            node2idx: HashMap::new(),
             node_count: 0,
-            nodes:      [Node::new(); MAX_ALLOCATED_NODES],
-            in_degree:  [0; MAX_ALLOCATED_NODES],
+            nodes: [Node::new(); MAX_ALLOCATED_NODES],
+            in_degree: [0; MAX_ALLOCATED_NODES],
         }
     }
 
@@ -74,7 +70,6 @@ impl NodeGraphOrdering {
     pub fn add_node(&mut self, node_id: NodeId) -> usize {
         if let Some(idx) = self.node2idx.get(&node_id) {
             *idx
-
         } else {
             let idx = self.node_count;
             self.node_count += 1;
@@ -106,8 +101,7 @@ impl NodeGraphOrdering {
     }
 
     pub fn has_path(&self, from_node_id: NodeId, to_node_id: NodeId) -> Option<bool> {
-        let mut visited_set : HashSet<NodeId> =
-            HashSet::with_capacity(MAX_ALLOCATED_NODES);
+        let mut visited_set: HashSet<NodeId> = HashSet::with_capacity(MAX_ALLOCATED_NODES);
 
         let mut node_stack = Vec::with_capacity(MAX_ALLOCATED_NODES);
         node_stack.push(from_node_id);
@@ -139,8 +133,7 @@ impl NodeGraphOrdering {
     /// and no proper order can be computed. `out` will be cleared
     /// in this case.
     pub fn calculate_order(&mut self, out: &mut Vec<NodeId>) -> bool {
-        let mut deq =
-            std::collections::VecDeque::with_capacity(MAX_ALLOCATED_NODES);
+        let mut deq = std::collections::VecDeque::with_capacity(MAX_ALLOCATED_NODES);
 
         for indeg in self.in_degree.iter_mut() {
             *indeg = 0;
@@ -186,7 +179,9 @@ impl NodeGraphOrdering {
 }
 
 impl Default for NodeGraphOrdering {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]
@@ -242,14 +237,17 @@ mod tests {
 
         let mut out = vec![];
         assert!(ng.calculate_order(&mut out));
-        assert_eq!(out[..], [
-            NodeId::Sin(2),
-            NodeId::Out(0),
-            NodeId::Amp(0),
-            NodeId::Amp(1),
-            NodeId::Sin(0),
-            NodeId::Sin(1)
-        ]);
+        assert_eq!(
+            out[..],
+            [
+                NodeId::Sin(2),
+                NodeId::Out(0),
+                NodeId::Amp(0),
+                NodeId::Amp(1),
+                NodeId::Sin(0),
+                NodeId::Sin(1)
+            ]
+        );
     }
 
     #[test]
@@ -278,14 +276,17 @@ mod tests {
 
         let mut out = vec![];
         assert!(ng.calculate_order(&mut out));
-        assert_eq!(out[..], [
-            NodeId::Sin(2),
-            NodeId::Amp(0),
-            NodeId::Amp(1),
-            NodeId::Sin(0),
-            NodeId::Sin(1),
-            NodeId::Out(0),
-        ]);
+        assert_eq!(
+            out[..],
+            [
+                NodeId::Sin(2),
+                NodeId::Amp(0),
+                NodeId::Amp(1),
+                NodeId::Sin(0),
+                NodeId::Sin(1),
+                NodeId::Out(0),
+            ]
+        );
     }
 
     #[test]
@@ -310,14 +311,17 @@ mod tests {
 
         let mut out = vec![];
         assert!(ng.calculate_order(&mut out));
-        assert_eq!(out[..], [
-            NodeId::Sin(2),
-            NodeId::Amp(1),
-            NodeId::Sin(1),
-            NodeId::Amp(0),
-            NodeId::Out(0),
-            NodeId::Sin(0),
-        ]);
+        assert_eq!(
+            out[..],
+            [
+                NodeId::Sin(2),
+                NodeId::Amp(1),
+                NodeId::Sin(1),
+                NodeId::Amp(0),
+                NodeId::Out(0),
+                NodeId::Sin(0),
+            ]
+        );
     }
 
     #[test]
@@ -331,9 +335,7 @@ mod tests {
         ng.add_edge(NodeId::Sin(0), NodeId::Sin(1));
         ng.add_edge(NodeId::Sin(0), NodeId::Sin(2));
 
-        assert!(
-            ng.has_path(NodeId::Sin(2), NodeId::Sin(1))
-            .is_none());
+        assert!(ng.has_path(NodeId::Sin(2), NodeId::Sin(1)).is_none());
 
         let mut out = vec![];
         assert!(!ng.calculate_order(&mut out));

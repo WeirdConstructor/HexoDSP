@@ -17,90 +17,83 @@
 
 use crate::dsp::helpers::crossfade;
 
-const DAT_SAMPLE_RATE    : f64 = 29761.0;
-const DAT_SAMPLES_PER_MS : f64 = DAT_SAMPLE_RATE / 1000.0;
+const DAT_SAMPLE_RATE: f64 = 29761.0;
+const DAT_SAMPLES_PER_MS: f64 = DAT_SAMPLE_RATE / 1000.0;
 
-const DAT_INPUT_APF_TIMES_MS : [f64; 4] = [
+const DAT_INPUT_APF_TIMES_MS: [f64; 4] = [
     141.0 / DAT_SAMPLES_PER_MS,
     107.0 / DAT_SAMPLES_PER_MS,
     379.0 / DAT_SAMPLES_PER_MS,
     277.0 / DAT_SAMPLES_PER_MS,
 ];
 
-const DAT_LEFT_APF1_TIME_MS  : f64 = 672.0  / DAT_SAMPLES_PER_MS;
-const DAT_LEFT_APF2_TIME_MS  : f64 = 1800.0 / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_APF1_TIME_MS: f64 = 672.0 / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_APF2_TIME_MS: f64 = 1800.0 / DAT_SAMPLES_PER_MS;
 
-const DAT_RIGHT_APF1_TIME_MS : f64 = 908.0  / DAT_SAMPLES_PER_MS;
-const DAT_RIGHT_APF2_TIME_MS : f64 = 2656.0 / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_APF1_TIME_MS: f64 = 908.0 / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_APF2_TIME_MS: f64 = 2656.0 / DAT_SAMPLES_PER_MS;
 
-const DAT_LEFT_DELAY1_TIME_MS : f64 = 4453.0  / DAT_SAMPLES_PER_MS;
-const DAT_LEFT_DELAY2_TIME_MS : f64 = 3720.0  / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_DELAY1_TIME_MS: f64 = 4453.0 / DAT_SAMPLES_PER_MS;
+const DAT_LEFT_DELAY2_TIME_MS: f64 = 3720.0 / DAT_SAMPLES_PER_MS;
 
-const DAT_RIGHT_DELAY1_TIME_MS : f64 = 4217.0 / DAT_SAMPLES_PER_MS;
-const DAT_RIGHT_DELAY2_TIME_MS : f64 = 3163.0 / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_DELAY1_TIME_MS: f64 = 4217.0 / DAT_SAMPLES_PER_MS;
+const DAT_RIGHT_DELAY2_TIME_MS: f64 = 3163.0 / DAT_SAMPLES_PER_MS;
 
-const DAT_LEFT_TAPS_TIME_MS : [f64; 7] = [
-    266.0  / DAT_SAMPLES_PER_MS,
+const DAT_LEFT_TAPS_TIME_MS: [f64; 7] = [
+    266.0 / DAT_SAMPLES_PER_MS,
     2974.0 / DAT_SAMPLES_PER_MS,
     1913.0 / DAT_SAMPLES_PER_MS,
     1996.0 / DAT_SAMPLES_PER_MS,
     1990.0 / DAT_SAMPLES_PER_MS,
-    187.0  / DAT_SAMPLES_PER_MS,
+    187.0 / DAT_SAMPLES_PER_MS,
     1066.0 / DAT_SAMPLES_PER_MS,
 ];
 
-const DAT_RIGHT_TAPS_TIME_MS : [f64; 7] = [
-    353.0  / DAT_SAMPLES_PER_MS,
+const DAT_RIGHT_TAPS_TIME_MS: [f64; 7] = [
+    353.0 / DAT_SAMPLES_PER_MS,
     3627.0 / DAT_SAMPLES_PER_MS,
     1228.0 / DAT_SAMPLES_PER_MS,
     2673.0 / DAT_SAMPLES_PER_MS,
     2111.0 / DAT_SAMPLES_PER_MS,
-    335.0  / DAT_SAMPLES_PER_MS,
-    121.0  / DAT_SAMPLES_PER_MS,
+    335.0 / DAT_SAMPLES_PER_MS,
+    121.0 / DAT_SAMPLES_PER_MS,
 ];
 
-const DAT_LFO_FREQS_HZ : [f64; 4] = [ 0.1, 0.15, 0.12, 0.18 ];
+const DAT_LFO_FREQS_HZ: [f64; 4] = [0.1, 0.15, 0.12, 0.18];
 
-const DAT_INPUT_DIFFUSION1 : f64 = 0.75;
-const DAT_INPUT_DIFFUSION2 : f64 = 0.625;
-const DAT_PLATE_DIFFUSION1 : f64 = 0.7;
-const DAT_PLATE_DIFFUSION2 : f64 = 0.5;
+const DAT_INPUT_DIFFUSION1: f64 = 0.75;
+const DAT_INPUT_DIFFUSION2: f64 = 0.625;
+const DAT_PLATE_DIFFUSION1: f64 = 0.7;
+const DAT_PLATE_DIFFUSION2: f64 = 0.5;
 
-const DAT_LFO_EXCURSION_MS : f64 = 16.0 / DAT_SAMPLES_PER_MS;
-const DAT_LFO_EXCURSION_MOD_MAX : f64 = 16.0;
+const DAT_LFO_EXCURSION_MS: f64 = 16.0 / DAT_SAMPLES_PER_MS;
+const DAT_LFO_EXCURSION_MOD_MAX: f64 = 16.0;
 
-use crate::dsp::helpers::{
-    AllPass,
-    TriSawLFO,
-    OnePoleLPF,
-    OnePoleHPF,
-    DelayBuffer,
-    DCBlockFilter
-};
+use crate::dsp::helpers::{AllPass, DCBlockFilter, DelayBuffer, OnePoleHPF, OnePoleLPF, TriSawLFO};
 
 #[derive(Debug, Clone)]
 pub struct DattorroReverb {
     last_scale: f64,
 
-    inp_dc_block:   [DCBlockFilter<f64>; 2],
-    out_dc_block:   [DCBlockFilter<f64>; 2],
+    inp_dc_block: [DCBlockFilter<f64>; 2],
+    out_dc_block: [DCBlockFilter<f64>; 2],
 
     lfos: [TriSawLFO<f64>; 4],
 
     input_hpf: OnePoleHPF<f64>,
     input_lpf: OnePoleLPF<f64>,
 
-    pre_delay:  DelayBuffer<f64>,
+    pre_delay: DelayBuffer<f64>,
     input_apfs: [(AllPass<f64>, f64, f64); 4],
 
-    apf1:   [(AllPass<f64>, f64, f64); 2],
-    hpf:    [OnePoleHPF<f64>; 2],
-    lpf:    [OnePoleLPF<f64>; 2],
-    apf2:   [(AllPass<f64>, f64, f64); 2],
+    apf1: [(AllPass<f64>, f64, f64); 2],
+    hpf: [OnePoleHPF<f64>; 2],
+    lpf: [OnePoleLPF<f64>; 2],
+    apf2: [(AllPass<f64>, f64, f64); 2],
     delay1: [(DelayBuffer<f64>, f64); 2],
     delay2: [(DelayBuffer<f64>, f64); 2],
 
-    left_sum:  f64,
+    left_sum: f64,
     right_sum: f64,
 
     dbg_count: usize,
@@ -140,21 +133,21 @@ impl DattorroReverb {
         let mut this = Self {
             last_scale: 1.0,
 
-            inp_dc_block:   [DCBlockFilter::new(); 2],
-            out_dc_block:   [DCBlockFilter::new(); 2],
+            inp_dc_block: [DCBlockFilter::new(); 2],
+            out_dc_block: [DCBlockFilter::new(); 2],
 
             lfos: [TriSawLFO::new(); 4],
 
             input_hpf: OnePoleHPF::new(),
             input_lpf: OnePoleLPF::new(),
 
-            pre_delay:  DelayBuffer::new(),
+            pre_delay: DelayBuffer::new(),
             input_apfs: Default::default(),
 
-            apf1:   Default::default(),
-            hpf:    [OnePoleHPF::new(); 2],
-            lpf:    [OnePoleLPF::new(); 2],
-            apf2:   Default::default(),
+            apf1: Default::default(),
+            hpf: [OnePoleHPF::new(); 2],
+            lpf: [OnePoleLPF::new(); 2],
+            apf2: Default::default(),
             delay1: Default::default(),
             delay2: Default::default(),
 
@@ -176,23 +169,15 @@ impl DattorroReverb {
         self.input_lpf.set_freq(22000.0);
         self.input_hpf.set_freq(0.0);
 
-        self.input_apfs[0] =
-            (AllPass::new(), DAT_INPUT_APF_TIMES_MS[0], DAT_INPUT_DIFFUSION1);
-        self.input_apfs[1] =
-            (AllPass::new(), DAT_INPUT_APF_TIMES_MS[1], DAT_INPUT_DIFFUSION1);
-        self.input_apfs[2] =
-            (AllPass::new(), DAT_INPUT_APF_TIMES_MS[2], DAT_INPUT_DIFFUSION2);
-        self.input_apfs[3] =
-            (AllPass::new(), DAT_INPUT_APF_TIMES_MS[3], DAT_INPUT_DIFFUSION2);
+        self.input_apfs[0] = (AllPass::new(), DAT_INPUT_APF_TIMES_MS[0], DAT_INPUT_DIFFUSION1);
+        self.input_apfs[1] = (AllPass::new(), DAT_INPUT_APF_TIMES_MS[1], DAT_INPUT_DIFFUSION1);
+        self.input_apfs[2] = (AllPass::new(), DAT_INPUT_APF_TIMES_MS[2], DAT_INPUT_DIFFUSION2);
+        self.input_apfs[3] = (AllPass::new(), DAT_INPUT_APF_TIMES_MS[3], DAT_INPUT_DIFFUSION2);
 
-        self.apf1[0] =
-            (AllPass::new(), DAT_LEFT_APF1_TIME_MS, -DAT_PLATE_DIFFUSION1);
-        self.apf1[1] =
-            (AllPass::new(), DAT_RIGHT_APF1_TIME_MS, -DAT_PLATE_DIFFUSION1);
-        self.apf2[0] =
-            (AllPass::new(), DAT_LEFT_APF2_TIME_MS, -DAT_PLATE_DIFFUSION2);
-        self.apf2[1] =
-            (AllPass::new(), DAT_RIGHT_APF2_TIME_MS, -DAT_PLATE_DIFFUSION2);
+        self.apf1[0] = (AllPass::new(), DAT_LEFT_APF1_TIME_MS, -DAT_PLATE_DIFFUSION1);
+        self.apf1[1] = (AllPass::new(), DAT_RIGHT_APF1_TIME_MS, -DAT_PLATE_DIFFUSION1);
+        self.apf2[0] = (AllPass::new(), DAT_LEFT_APF2_TIME_MS, -DAT_PLATE_DIFFUSION2);
+        self.apf2[1] = (AllPass::new(), DAT_RIGHT_APF2_TIME_MS, -DAT_PLATE_DIFFUSION2);
 
         self.delay1[0] = (DelayBuffer::new(), DAT_LEFT_DELAY1_TIME_MS);
         self.delay1[1] = (DelayBuffer::new(), DAT_RIGHT_DELAY1_TIME_MS);
@@ -229,7 +214,7 @@ impl DattorroReverb {
 
         self.pre_delay.reset();
 
-        self.left_sum  = 0.0;
+        self.left_sum = 0.0;
         self.right_sum = 0.0;
 
         self.set_time_scale(1.0);
@@ -241,14 +226,14 @@ impl DattorroReverb {
             let scale = scale.max(0.1);
             self.last_scale = scale;
 
-            self.apf1[0].1 = DAT_LEFT_APF1_TIME_MS  * scale;
+            self.apf1[0].1 = DAT_LEFT_APF1_TIME_MS * scale;
             self.apf1[1].1 = DAT_RIGHT_APF1_TIME_MS * scale;
-            self.apf2[0].1 = DAT_LEFT_APF2_TIME_MS  * scale;
+            self.apf2[0].1 = DAT_LEFT_APF2_TIME_MS * scale;
             self.apf2[1].1 = DAT_RIGHT_APF2_TIME_MS * scale;
 
-            self.delay1[0].1 = DAT_LEFT_DELAY1_TIME_MS  * scale;
+            self.delay1[0].1 = DAT_LEFT_DELAY1_TIME_MS * scale;
             self.delay1[1].1 = DAT_RIGHT_DELAY1_TIME_MS * scale;
-            self.delay2[0].1 = DAT_LEFT_DELAY2_TIME_MS  * scale;
+            self.delay2[0].1 = DAT_LEFT_DELAY2_TIME_MS * scale;
             self.delay2[1].1 = DAT_RIGHT_DELAY2_TIME_MS * scale;
         }
     }
@@ -291,44 +276,40 @@ impl DattorroReverb {
     }
 
     #[inline]
-    fn calc_apf_delay_times(&mut self, params: &mut dyn DattorroReverbParams)
-        -> (f64, f64, f64, f64)
-    {
-        let left_apf1_delay_ms =
-            self.apf1[0].1
+    fn calc_apf_delay_times(
+        &mut self,
+        params: &mut dyn DattorroReverbParams,
+    ) -> (f64, f64, f64, f64) {
+        let left_apf1_delay_ms = self.apf1[0].1
             + (self.lfos[0].next_bipolar() as f64
-               * DAT_LFO_EXCURSION_MS
-               * DAT_LFO_EXCURSION_MOD_MAX
-               * params.mod_depth());
-        let right_apf1_delay_ms =
-            self.apf1[1].1
+                * DAT_LFO_EXCURSION_MS
+                * DAT_LFO_EXCURSION_MOD_MAX
+                * params.mod_depth());
+        let right_apf1_delay_ms = self.apf1[1].1
             + (self.lfos[1].next_bipolar() as f64
-               * DAT_LFO_EXCURSION_MS
-               * DAT_LFO_EXCURSION_MOD_MAX
-               * params.mod_depth());
-        let left_apf2_delay_ms =
-            self.apf2[0].1
+                * DAT_LFO_EXCURSION_MS
+                * DAT_LFO_EXCURSION_MOD_MAX
+                * params.mod_depth());
+        let left_apf2_delay_ms = self.apf2[0].1
             + (self.lfos[2].next_bipolar() as f64
-               * DAT_LFO_EXCURSION_MS
-               * DAT_LFO_EXCURSION_MOD_MAX
-               * params.mod_depth());
-        let right_apf2_delay_ms =
-            self.apf2[1].1
+                * DAT_LFO_EXCURSION_MS
+                * DAT_LFO_EXCURSION_MOD_MAX
+                * params.mod_depth());
+        let right_apf2_delay_ms = self.apf2[1].1
             + (self.lfos[3].next_bipolar() as f64
-               * DAT_LFO_EXCURSION_MS
-               * DAT_LFO_EXCURSION_MOD_MAX
-               * params.mod_depth());
+                * DAT_LFO_EXCURSION_MS
+                * DAT_LFO_EXCURSION_MOD_MAX
+                * params.mod_depth());
 
-        (left_apf1_delay_ms, right_apf1_delay_ms,
-         left_apf2_delay_ms, right_apf2_delay_ms)
+        (left_apf1_delay_ms, right_apf1_delay_ms, left_apf2_delay_ms, right_apf2_delay_ms)
     }
 
     pub fn process(
         &mut self,
         params: &mut dyn DattorroReverbParams,
-        input_l: f64, input_r: f64
-    ) -> (f64, f64)
-    {
+        input_l: f64,
+        input_r: f64,
+    ) -> (f64, f64) {
         // Some parameter setup...
         let timescale = 0.1 + (4.0 - 0.1) * params.time_scale();
         self.set_time_scale(timescale);
@@ -342,23 +323,18 @@ impl DattorroReverb {
         let mod_speed = mod_speed * mod_speed;
         let mod_speed = mod_speed * 99.0 + 1.0;
 
-        self.lfos[0].set(
-            DAT_LFO_FREQS_HZ[0] * mod_speed, params.mod_shape());
-        self.lfos[1].set(
-            DAT_LFO_FREQS_HZ[1] * mod_speed, params.mod_shape());
-        self.lfos[2].set(
-            DAT_LFO_FREQS_HZ[2] * mod_speed, params.mod_shape());
-        self.lfos[3].set(
-            DAT_LFO_FREQS_HZ[3] * mod_speed, params.mod_shape());
+        self.lfos[0].set(DAT_LFO_FREQS_HZ[0] * mod_speed, params.mod_shape());
+        self.lfos[1].set(DAT_LFO_FREQS_HZ[1] * mod_speed, params.mod_shape());
+        self.lfos[2].set(DAT_LFO_FREQS_HZ[2] * mod_speed, params.mod_shape());
+        self.lfos[3].set(DAT_LFO_FREQS_HZ[3] * mod_speed, params.mod_shape());
 
         self.apf1[0].2 = -DAT_PLATE_DIFFUSION1 * params.diffusion();
         self.apf1[1].2 = -DAT_PLATE_DIFFUSION1 * params.diffusion();
-        self.apf2[0].2 =  DAT_PLATE_DIFFUSION2 * params.diffusion();
-        self.apf2[1].2 =  DAT_PLATE_DIFFUSION2 * params.diffusion();
+        self.apf2[0].2 = DAT_PLATE_DIFFUSION2 * params.diffusion();
+        self.apf2[1].2 = DAT_PLATE_DIFFUSION2 * params.diffusion();
 
-        let (left_apf1_delay_ms, right_apf1_delay_ms,
-             left_apf2_delay_ms, right_apf2_delay_ms)
-            = self.calc_apf_delay_times(params);
+        let (left_apf1_delay_ms, right_apf1_delay_ms, left_apf2_delay_ms, right_apf2_delay_ms) =
+            self.calc_apf_delay_times(params);
 
         // Parameter setup done!
 
@@ -373,13 +349,11 @@ impl DattorroReverb {
         let out_hpf = self.input_hpf.process(out_lpf);
 
         // HPF => Pre-Delay
-        let out_pre_delay =
-            if params.pre_delay_time_ms() < 0.1 {
-                out_hpf
-            } else {
-                self.pre_delay.next_cubic(
-                    params.pre_delay_time_ms(), out_hpf)
-            };
+        let out_pre_delay = if params.pre_delay_time_ms() < 0.1 {
+            out_hpf
+        } else {
+            self.pre_delay.next_cubic(params.pre_delay_time_ms(), out_hpf)
+        };
 
         // Pre-Delay => 4 All-Pass filters
         let mut diffused = out_pre_delay;
@@ -388,11 +362,10 @@ impl DattorroReverb {
         }
 
         // Mix between diffused and pre-delayed intput for further processing
-        let tank_feed =
-            crossfade(out_pre_delay, diffused, params.input_diffusion_mix());
+        let tank_feed = crossfade(out_pre_delay, diffused, params.input_diffusion_mix());
 
         // First tap for the output
-        self.left_sum  += tank_feed;
+        self.left_sum += tank_feed;
         self.right_sum += tank_feed;
 
         // Calculate tank decay of the left/right signal channels.
@@ -411,22 +384,21 @@ impl DattorroReverb {
         let left = self.apf2[0].0.next(left_apf2_delay_ms, self.apf2[0].2, left);
         let left = self.delay2[0].0.next_cubic(self.delay2[0].1, left);
 
-//        if self.dbg_count % 48 == 0 {
-//            println!("APFS dcy={:8.6}; {:8.6} {:8.6} {:8.6} {:8.6} | {:8.6} {:8.6} {:8.6} {:8.6}",
-//                decay,
-//                self.apf1[0].2,
-//                self.apf1[1].2,
-//                self.apf2[0].2,
-//                self.apf2[1].2,
-//                left_apf1_delay_ms, right_apf1_delay_ms,
-//                left_apf2_delay_ms, right_apf2_delay_ms);
-//            println!("DELY1/2 {:8.6} / {:8.6} | {:8.6} / {:8.6}",
-//                self.delay1[0].1,
-//                self.delay2[0].1,
-//                self.delay1[1].1,
-//                self.delay2[1].1);
-//        }
-
+        //        if self.dbg_count % 48 == 0 {
+        //            println!("APFS dcy={:8.6}; {:8.6} {:8.6} {:8.6} {:8.6} | {:8.6} {:8.6} {:8.6} {:8.6}",
+        //                decay,
+        //                self.apf1[0].2,
+        //                self.apf1[1].2,
+        //                self.apf2[0].2,
+        //                self.apf2[1].2,
+        //                left_apf1_delay_ms, right_apf1_delay_ms,
+        //                left_apf2_delay_ms, right_apf2_delay_ms);
+        //            println!("DELY1/2 {:8.6} / {:8.6} | {:8.6} / {:8.6}",
+        //                self.delay1[0].1,
+        //                self.delay2[0].1,
+        //                self.delay1[1].1,
+        //                self.delay2[1].1);
+        //        }
 
         // Right Sum => APF1 => Delay1 => LPF => HPF => APF2 => Delay2
         // And then send this over to the left sum.
@@ -441,27 +413,27 @@ impl DattorroReverb {
         let right = self.delay2[1].0.next_cubic(self.delay2[1].1, right);
 
         self.right_sum = left * decay;
-        self.left_sum  = right * decay;
+        self.left_sum = right * decay;
 
         let mut left_accum = left_apf_tap;
-        left_accum += self.delay1[0].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[0]);
-        left_accum += self.delay1[0].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[1]);
+        left_accum += self.delay1[0].0.tap_n(DAT_LEFT_TAPS_TIME_MS[0]);
+        left_accum += self.delay1[0].0.tap_n(DAT_LEFT_TAPS_TIME_MS[1]);
         left_accum -= self.apf2[0].0.delay_tap_n(DAT_LEFT_TAPS_TIME_MS[2]);
-        left_accum += self.delay2[0].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[3]);
-        left_accum -= self.delay1[1].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[4]);
+        left_accum += self.delay2[0].0.tap_n(DAT_LEFT_TAPS_TIME_MS[3]);
+        left_accum -= self.delay1[1].0.tap_n(DAT_LEFT_TAPS_TIME_MS[4]);
         left_accum -= self.apf2[1].0.delay_tap_n(DAT_LEFT_TAPS_TIME_MS[5]);
-        left_accum -= self.delay2[1].0.tap_n(    DAT_LEFT_TAPS_TIME_MS[6]);
+        left_accum -= self.delay2[1].0.tap_n(DAT_LEFT_TAPS_TIME_MS[6]);
 
         let mut right_accum = right_apf_tap;
-        right_accum += self.delay1[1].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[0]);
-        right_accum += self.delay1[1].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[1]);
+        right_accum += self.delay1[1].0.tap_n(DAT_RIGHT_TAPS_TIME_MS[0]);
+        right_accum += self.delay1[1].0.tap_n(DAT_RIGHT_TAPS_TIME_MS[1]);
         right_accum -= self.apf2[1].0.delay_tap_n(DAT_RIGHT_TAPS_TIME_MS[2]);
-        right_accum += self.delay2[1].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[3]);
-        right_accum -= self.delay1[0].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[4]);
+        right_accum += self.delay2[1].0.tap_n(DAT_RIGHT_TAPS_TIME_MS[3]);
+        right_accum -= self.delay1[0].0.tap_n(DAT_RIGHT_TAPS_TIME_MS[4]);
         right_accum -= self.apf2[0].0.delay_tap_n(DAT_RIGHT_TAPS_TIME_MS[5]);
-        right_accum -= self.delay2[0].0.tap_n(    DAT_RIGHT_TAPS_TIME_MS[6]);
+        right_accum -= self.delay2[0].0.tap_n(DAT_RIGHT_TAPS_TIME_MS[6]);
 
-        let left_out  = self.out_dc_block[0].next(left_accum);
+        let left_out = self.out_dc_block[0].next(left_accum);
         let right_out = self.out_dc_block[1].next(right_accum);
 
         self.dbg_count += 1;

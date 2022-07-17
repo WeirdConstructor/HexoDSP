@@ -3,25 +3,21 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{NodeId, ParamId, SAtom};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 #[derive(Debug, Clone, Copy)]
 pub struct CellRepr {
     pub node_id: NodeId,
-    pub x:       usize,
-    pub y:       usize,
-    pub inp:     [i16; 3],
-    pub out:     [i16; 3],
+    pub x: usize,
+    pub y: usize,
+    pub inp: [i16; 3],
+    pub out: [i16; 3],
 }
 
-fn deserialize_node_id(v: &Value, i1: usize, i2: usize)
-    -> Result<NodeId, MatrixDeserError>
-{
+fn deserialize_node_id(v: &Value, i1: usize, i2: usize) -> Result<NodeId, MatrixDeserError> {
     let nid = NodeId::from_str(v[i1].as_str().unwrap_or("???"));
     if nid == NodeId::Nop {
-        return Err(
-            MatrixDeserError::UnknownNode(
-                v[i1].as_str().unwrap_or("???").to_string()));
+        return Err(MatrixDeserError::UnknownNode(v[i1].as_str().unwrap_or("???").to_string()));
     }
 
     Ok(nid.to_instance(v[i2].as_i64().unwrap_or(0) as usize))
@@ -30,22 +26,20 @@ fn deserialize_node_id(v: &Value, i1: usize, i2: usize)
 fn inp2idx(node_id: NodeId, v: &Value) -> i16 {
     let inp = v.as_i64().unwrap_or(-2) as i16;
 
-    if inp > -2 { inp }
-    else {
-        v.as_str()
-         .map(|s| node_id.inp(s).map(|i| i as i16).unwrap_or(-1))
-         .unwrap_or(-1)
+    if inp > -2 {
+        inp
+    } else {
+        v.as_str().map(|s| node_id.inp(s).map(|i| i as i16).unwrap_or(-1)).unwrap_or(-1)
     }
 }
 
 fn out2idx(node_id: NodeId, v: &Value) -> i16 {
     let out = v.as_i64().unwrap_or(-2) as i16;
 
-    if out > -2 { out }
-    else {
-        v.as_str()
-         .map(|s| node_id.out(s).map(|i| i as i16).unwrap_or(-1))
-         .unwrap_or(-1)
+    if out > -2 {
+        out
+    } else {
+        v.as_str().map(|s| node_id.out(s).map(|i| i as i16).unwrap_or(-1)).unwrap_or(-1)
     }
 }
 
@@ -53,9 +47,7 @@ fn inp_idx2value(node_id: NodeId, idx: i16) -> Value {
     if idx == -1 {
         json!(-1)
     } else {
-        node_id.inp_name_by_idx(idx as u8)
-            .map(|n| json!(n))
-            .unwrap_or_else(|| json!(-1))
+        node_id.inp_name_by_idx(idx as u8).map(|n| json!(n)).unwrap_or_else(|| json!(-1))
     }
 }
 
@@ -63,12 +55,9 @@ fn out_idx2value(node_id: NodeId, idx: i16) -> Value {
     if idx == -1 {
         json!(-1)
     } else {
-        node_id.out_name_by_idx(idx as u8)
-            .map(|n| json!(n))
-            .unwrap_or_else(|| json!(-1))
+        node_id.out_name_by_idx(idx as u8).map(|n| json!(n)).unwrap_or_else(|| json!(-1))
     }
 }
-
 
 impl CellRepr {
     pub fn serialize(&self) -> Value {
@@ -77,12 +66,16 @@ impl CellRepr {
             self.node_id.instance(),
             self.x,
             self.y,
-            [inp_idx2value(self.node_id, self.inp[0]),
-             inp_idx2value(self.node_id, self.inp[1]),
-             inp_idx2value(self.node_id, self.inp[2])],
-            [out_idx2value(self.node_id, self.out[0]),
-             out_idx2value(self.node_id, self.out[1]),
-             out_idx2value(self.node_id, self.out[2])],
+            [
+                inp_idx2value(self.node_id, self.inp[0]),
+                inp_idx2value(self.node_id, self.inp[1]),
+                inp_idx2value(self.node_id, self.inp[2])
+            ],
+            [
+                out_idx2value(self.node_id, self.out[0]),
+                out_idx2value(self.node_id, self.out[1]),
+                out_idx2value(self.node_id, self.out[2])
+            ],
         ])
     }
 
@@ -91,31 +84,31 @@ impl CellRepr {
 
         Ok(Self {
             node_id,
-            x:       v[2].as_i64().unwrap_or(0) as usize,
-            y:       v[3].as_i64().unwrap_or(0) as usize,
+            x: v[2].as_i64().unwrap_or(0) as usize,
+            y: v[3].as_i64().unwrap_or(0) as usize,
             inp: [
                 inp2idx(node_id, &v[4][0]),
                 inp2idx(node_id, &v[4][1]),
-                inp2idx(node_id, &v[4][2])
+                inp2idx(node_id, &v[4][2]),
             ],
             out: [
                 out2idx(node_id, &v[5][0]),
                 out2idx(node_id, &v[5][1]),
-                out2idx(node_id, &v[5][2])
+                out2idx(node_id, &v[5][2]),
             ],
         })
     }
 }
 
-use crate::dsp::tracker::{MAX_PATTERN_LEN, MAX_COLS};
+use crate::dsp::tracker::{MAX_COLS, MAX_PATTERN_LEN};
 
 #[derive(Debug, Clone)]
 pub struct PatternRepr {
     pub col_types: [u8; MAX_COLS],
-    pub data:      Vec<Vec<i32>>,
-    pub rows:      usize,
+    pub data: Vec<Vec<i32>>,
+    pub rows: usize,
     pub edit_step: usize,
-    pub cursor:    (usize, usize),
+    pub cursor: (usize, usize),
 }
 
 impl PatternRepr {
@@ -177,25 +170,24 @@ impl PatternRepr {
         Ok(Self {
             col_types,
             data,
-            rows:       v["rows"]     .as_i64().unwrap_or(0) as usize,
-            edit_step:  v["edit_step"].as_i64().unwrap_or(0) as usize,
+            rows: v["rows"].as_i64().unwrap_or(0) as usize,
+            edit_step: v["edit_step"].as_i64().unwrap_or(0) as usize,
             cursor: (
                 v["cursor_row"].as_i64().unwrap_or(0) as usize,
-                v["cursor_col"].as_i64().unwrap_or(0) as usize
+                v["cursor_col"].as_i64().unwrap_or(0) as usize,
             ),
         })
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct MatrixRepr {
-    pub cells:      Vec<CellRepr>,
-    pub params:     Vec<(ParamId, f32, Option<f32>)>,
-    pub atoms:      Vec<(ParamId, SAtom)>,
-    pub patterns:   Vec<Option<PatternRepr>>,
+    pub cells: Vec<CellRepr>,
+    pub params: Vec<(ParamId, f32, Option<f32>)>,
+    pub atoms: Vec<(ParamId, SAtom)>,
+    pub patterns: Vec<Option<PatternRepr>>,
     pub properties: Vec<(String, SAtom)>,
-    pub version:    i64,
+    pub version: i64,
 }
 
 #[derive(Debug, Clone)]
@@ -236,23 +228,35 @@ impl From<std::io::Error> for MatrixDeserError {
 fn deserialize_atom(v: &Value) -> Result<SAtom, MatrixDeserError> {
     match v[0].as_str().unwrap_or("?") {
         "i" => {
-            if let Some(v) = v[1].as_i64() { Ok(SAtom::setting(v)) }
-            else { Err(MatrixDeserError::InvalidAtom(v.to_string())) }
-        },
+            if let Some(v) = v[1].as_i64() {
+                Ok(SAtom::setting(v))
+            } else {
+                Err(MatrixDeserError::InvalidAtom(v.to_string()))
+            }
+        }
         "p" => {
-            if let Some(v) = v[1].as_f64() { Ok(SAtom::param(v as f32)) }
-            else { Err(MatrixDeserError::InvalidAtom(v.to_string())) }
-        },
+            if let Some(v) = v[1].as_f64() {
+                Ok(SAtom::param(v as f32))
+            } else {
+                Err(MatrixDeserError::InvalidAtom(v.to_string()))
+            }
+        }
         "s" => {
-            if let Some(v) = v[1].as_str() { Ok(SAtom::str(v)) }
-            else { Err(MatrixDeserError::InvalidAtom(v.to_string())) }
-        },
+            if let Some(v) = v[1].as_str() {
+                Ok(SAtom::str(v))
+            } else {
+                Err(MatrixDeserError::InvalidAtom(v.to_string()))
+            }
+        }
         "as" => {
-            if let Some(v) = v[1].as_str() { Ok(SAtom::audio_unloaded(v)) }
-            else { Err(MatrixDeserError::InvalidAtom(v.to_string())) }
-        },
+            if let Some(v) = v[1].as_str() {
+                Ok(SAtom::audio_unloaded(v))
+            } else {
+                Err(MatrixDeserError::InvalidAtom(v.to_string()))
+            }
+        }
         "ms" => {
-            let mut buf : [f32; 8] = [0.0; 8];
+            let mut buf: [f32; 8] = [0.0; 8];
 
             for i in 0..8 {
                 if let Some(v) = v[i + 1].as_f64() {
@@ -263,44 +267,35 @@ fn deserialize_atom(v: &Value) -> Result<SAtom, MatrixDeserError> {
             }
 
             Ok(SAtom::micro(&buf))
-        },
+        }
         _ => Err(MatrixDeserError::InvalidAtom(v.to_string())),
     }
 }
 
 fn serialize_atom(atom: &SAtom) -> Value {
     match atom {
-        SAtom::MicroSample(s) => json!(["ms",
-            s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7],
-        ]),
-        SAtom::Str(s)              => json!(["s", s]),
+        SAtom::MicroSample(s) => json!(["ms", s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7],]),
+        SAtom::Str(s) => json!(["s", s]),
         SAtom::AudioSample((s, _)) => json!(["as", s]),
-        SAtom::Setting(i)          => json!(["i", i]),
-        SAtom::Param(p)            => json!(["p", p]),
+        SAtom::Setting(i) => json!(["i", i]),
+        SAtom::Param(p) => json!(["p", p]),
     }
 }
 
 impl MatrixRepr {
     pub fn empty() -> Self {
-        let cells      = vec![];
-        let params     = vec![];
-        let atoms      = vec![];
-        let patterns   = vec![];
+        let cells = vec![];
+        let params = vec![];
+        let atoms = vec![];
+        let patterns = vec![];
         let properties = vec![];
 
-        Self {
-            cells,
-            params,
-            atoms,
-            patterns,
-            properties,
-            version: 2,
-        }
+        Self { cells, params, atoms, patterns, properties, version: 2 }
     }
 
     pub fn write_to_file(&mut self, filepath: &str) -> std::io::Result<()> {
-        use std::io::prelude::*;
         use std::fs::OpenOptions;
+        use std::io::prelude::*;
 
         let tmp_filepath = format!("{}~", filepath);
 
@@ -308,29 +303,20 @@ impl MatrixRepr {
         ser.push('\n');
 
         let mut file =
-            OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(true)
-            .open(&tmp_filepath)?;
-            file.write_all(ser.as_bytes())?;
-            std::fs::rename(&tmp_filepath, &filepath)?;
+            OpenOptions::new().create(true).write(true).truncate(true).open(&tmp_filepath)?;
+        file.write_all(ser.as_bytes())?;
+        std::fs::rename(&tmp_filepath, &filepath)?;
 
-            Ok(())
+        Ok(())
     }
 
     pub fn read_from_file(filepath: &str) -> Result<MatrixRepr, MatrixDeserError> {
-        use std::io::prelude::*;
         use std::fs::OpenOptions;
+        use std::io::prelude::*;
 
-        let mut file =
-            OpenOptions::new()
-            .write(false)
-            .create(false)
-            .read(true)
-            .open(&filepath)?;
+        let mut file = OpenOptions::new().write(false).create(false).read(true).open(&filepath)?;
 
-        let mut contents : Vec<u8> = Vec::new();
+        let mut contents: Vec<u8> = Vec::new();
         file.read_to_end(&mut contents)?;
 
         let s = std::str::from_utf8(&contents)?;
@@ -339,12 +325,12 @@ impl MatrixRepr {
     }
 
     pub fn deserialize(s: &str) -> Result<MatrixRepr, MatrixDeserError> {
-        let v : Value = serde_json::from_str(s)?;
+        let v: Value = serde_json::from_str(s)?;
 
         let mut m = MatrixRepr::empty();
 
         if let Some(version) = v.get("VERSION") {
-            let version : i64 = version.as_i64().unwrap_or(0);
+            let version: i64 = version.as_i64().unwrap_or(0);
 
             if version > 2 {
                 return Err(MatrixDeserError::BadVersion);
@@ -367,13 +353,13 @@ impl MatrixRepr {
                 let param_id = node_id.inp_param(v[2].as_str().unwrap_or(""));
 
                 if let Some(param_id) = param_id {
-                    m.params.push(
-                        (param_id,
-                         v[3].as_f64().unwrap_or(0.0) as f32,
-                         v[4].as_f64().map(|v| v as f32)));
+                    m.params.push((
+                        param_id,
+                        v[3].as_f64().unwrap_or(0.0) as f32,
+                        v[4].as_f64().map(|v| v as f32),
+                    ));
                 } else {
-                    return Err(
-                        MatrixDeserError::UnknownParamId(v.to_string()));
+                    return Err(MatrixDeserError::UnknownParamId(v.to_string()));
                 }
             }
         }
@@ -386,9 +372,9 @@ impl MatrixRepr {
 
                 if let Some(param_id) = param_id {
                     m.atoms.push((param_id, deserialize_atom(&v[3])?))
-                //d// } else {
-                //d//     return Err(
-                //d//         MatrixDeserError::UnknownParamId(v.to_string()));
+                    //d// } else {
+                    //d//     return Err(
+                    //d//         MatrixDeserError::UnknownParamId(v.to_string()));
                 }
             }
         }
@@ -397,18 +383,18 @@ impl MatrixRepr {
         if let Value::Array(props) = props {
             for v in props.iter() {
                 let key = v[0].as_str().unwrap_or("");
-                m.properties.push(
-                    (key.to_string(), deserialize_atom(&v[1])?));
+                m.properties.push((key.to_string(), deserialize_atom(&v[1])?));
             }
         }
 
         let patterns = &v["patterns"];
         if let Value::Array(patterns) = patterns {
             for p in patterns.iter() {
-                m.patterns.push(
-                    if p.is_object() {
-                        Some(PatternRepr::deserialize(&p)?)
-                    } else { None });
+                m.patterns.push(if p.is_object() {
+                    Some(PatternRepr::deserialize(&p)?)
+                } else {
+                    None
+                });
             }
         }
 
@@ -427,12 +413,7 @@ impl MatrixRepr {
         let mut params = json!([]);
         if let Value::Array(params) = &mut params {
             for (p, v, ma) in self.params.iter() {
-                let mut param_v = json!([
-                    p.node_id().name(),
-                    p.node_id().instance(),
-                    p.name(),
-                    v,
-                ]);
+                let mut param_v = json!([p.node_id().name(), p.node_id().instance(), p.name(), v,]);
 
                 if let Value::Array(param_v) = &mut param_v {
                     if let Some(ma) = ma {
@@ -449,13 +430,12 @@ impl MatrixRepr {
         let mut atoms = json!([]);
         if let Value::Array(atoms) = &mut atoms {
             for (p, v) in self.atoms.iter() {
-                atoms.push(
-                    json!([
-                        p.node_id().name(),
-                        p.node_id().instance(),
-                        p.name(),
-                        serialize_atom(v),
-                    ]));
+                atoms.push(json!([
+                    p.node_id().name(),
+                    p.node_id().instance(),
+                    p.name(),
+                    serialize_atom(v),
+                ]));
             }
         }
 
@@ -482,9 +462,7 @@ impl MatrixRepr {
         let mut patterns = json!([]);
         if let Value::Array(patterns) = &mut patterns {
             for p in self.patterns.iter() {
-                patterns.push(
-                    if let Some(p) = p { p.serialize() }
-                    else { Value::Null });
+                patterns.push(if let Some(p) = p { p.serialize() } else { Value::Null });
             }
         }
 
@@ -494,17 +472,19 @@ impl MatrixRepr {
     }
 }
 
-pub fn load_patch_from_file(matrix: &mut crate::matrix::Matrix, filepath: &str)
-    -> Result<(), MatrixDeserError>
-{
+pub fn load_patch_from_file(
+    matrix: &mut crate::matrix::Matrix,
+    filepath: &str,
+) -> Result<(), MatrixDeserError> {
     let mr = MatrixRepr::read_from_file(filepath)?;
     matrix.from_repr(&mr)?;
     Ok(())
 }
 
-pub fn save_patch_to_file(matrix: &mut crate::matrix::Matrix, filepath: &str)
-    -> std::io::Result<()>
-{
+pub fn save_patch_to_file(
+    matrix: &mut crate::matrix::Matrix,
+    filepath: &str,
+) -> std::io::Result<()> {
     let mut mr = matrix.to_repr();
     mr.write_to_file(filepath)
 }
@@ -513,7 +493,7 @@ pub fn save_patch_to_file(matrix: &mut crate::matrix::Matrix, filepath: &str)
 mod tests {
     use super::*;
 
-    use crate::matrix::{Matrix, Cell};
+    use crate::matrix::{Cell, Matrix};
 
     #[test]
     fn check_empty_repr_serialization() {
@@ -521,8 +501,10 @@ mod tests {
 
         let s = matrix_repr.serialize();
 
-        assert_eq!(s,
-            "{\"VERSION\":2,\"atoms\":[],\"cells\":[],\"params\":[],\"patterns\":[],\"props\":[]}");
+        assert_eq!(
+            s,
+            "{\"VERSION\":2,\"atoms\":[],\"cells\":[],\"params\":[],\"patterns\":[],\"props\":[]}"
+        );
         assert!(MatrixRepr::deserialize(&s).is_ok());
     }
 
@@ -535,13 +517,12 @@ mod tests {
 
         let sin = NodeId::Sin(2);
 
-        matrix.place(0, 0,
-            Cell::empty(sin)
-            .out(None, Some(0), None));
-        matrix.place(1, 0,
-            Cell::empty(NodeId::Out(0))
-            .input(None, Some(0), None)
-            .out(None, None, Some(0)));
+        matrix.place(0, 0, Cell::empty(sin).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Out(0)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
         matrix.sync().unwrap();
 
         let freq_param = sin.inp_param("freq").unwrap();
@@ -577,18 +558,15 @@ mod tests {
         let s = serialize_atom(&deserialize_atom(&v).unwrap()).to_string();
         assert_eq!(s, v.to_string());
 
-        let v =
-            serialize_atom(
-                &SAtom::micro(&[1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0]));
+        let v = serialize_atom(&SAtom::micro(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]));
         assert_eq!(v.to_string(), "[\"ms\",1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0]");
         let s = serialize_atom(&deserialize_atom(&v).unwrap()).to_string();
         assert_eq!(s, v.to_string());
 
-        let v =
-            serialize_atom(
-                &SAtom::audio(
-                    "lol.wav",
-                    std::sync::Arc::new(vec![1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0])));
+        let v = serialize_atom(&SAtom::audio(
+            "lol.wav",
+            std::sync::Arc::new(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+        ));
         assert_eq!(v.to_string(), "[\"as\",\"lol.wav\"]");
         let s = serialize_atom(&deserialize_atom(&v).unwrap()).to_string();
         assert_eq!(s, v.to_string());
@@ -596,15 +574,16 @@ mod tests {
 
     #[test]
     fn check_cell_repr() {
-        let cell =
-            Cell::empty(NodeId::Out(2))
-            .input(Some(2), Some(0), Some(1))
-            .out(Some(11), Some(4), Some(1));
+        let cell = Cell::empty(NodeId::Out(2)).input(Some(2), Some(0), Some(1)).out(
+            Some(11),
+            Some(4),
+            Some(1),
+        );
         let cr = cell.to_repr();
 
         let s = cr.serialize().to_string();
 
-        let v : Value = serde_json::from_str(&s).unwrap();
+        let v: Value = serde_json::from_str(&s).unwrap();
         let cr2 = CellRepr::deserialize(&v).unwrap();
 
         let s2 = cr2.serialize().to_string();
@@ -621,13 +600,12 @@ mod tests {
 
             let sin = NodeId::Sin(2);
 
-            matrix.place(0, 0,
-                Cell::empty(sin)
-                .out(None, Some(0), None));
-            matrix.place(1, 0,
-                Cell::empty(NodeId::Out(0))
-                .input(None, Some(0), None)
-                .out(None, None, Some(0)));
+            matrix.place(0, 0, Cell::empty(sin).out(None, Some(0), None));
+            matrix.place(
+                1,
+                0,
+                Cell::empty(NodeId::Out(0)).input(None, Some(0), None).out(None, None, Some(0)),
+            );
             matrix.sync().unwrap();
 
             let freq_param = sin.inp_param("freq").unwrap();
@@ -636,8 +614,7 @@ mod tests {
             let mut mr = matrix.to_repr();
             let s2 = mr.serialize().to_string();
 
-            save_patch_to_file(
-                &mut matrix, "hexosynth_test_patch.hxy").unwrap();
+            save_patch_to_file(&mut matrix, "hexosynth_test_patch.hxy").unwrap();
 
             s2
         };
@@ -648,8 +625,7 @@ mod tests {
             let (node_conf, mut _node_exec) = new_node_engine();
             let mut matrix = Matrix::new(node_conf, 3, 3);
 
-            load_patch_from_file(
-                &mut matrix, "hexosynth_test_patch.hxy").unwrap();
+            load_patch_from_file(&mut matrix, "hexosynth_test_patch.hxy").unwrap();
 
             let mut mr = matrix.to_repr();
             let s = mr.serialize().to_string();
@@ -670,9 +646,7 @@ mod tests {
 
             let ts = NodeId::TSeq(0);
 
-            matrix.place(0, 0,
-                Cell::empty(ts)
-                .out(None, Some(0), None));
+            matrix.place(0, 0, Cell::empty(ts).out(None, Some(0), None));
             matrix.sync().unwrap();
 
             {
@@ -694,8 +668,7 @@ mod tests {
             let mut mr = matrix.to_repr();
             let s2 = mr.serialize().to_string();
 
-            save_patch_to_file(
-                &mut matrix, "hexosynth_test_patch_2.hxy").unwrap();
+            save_patch_to_file(&mut matrix, "hexosynth_test_patch_2.hxy").unwrap();
 
             s2
         };
@@ -706,8 +679,7 @@ mod tests {
             let (node_conf, mut _node_exec) = new_node_engine();
             let mut matrix = Matrix::new(node_conf, 3, 3);
 
-            load_patch_from_file(
-                &mut matrix, "hexosynth_test_patch_2.hxy").unwrap();
+            load_patch_from_file(&mut matrix, "hexosynth_test_patch_2.hxy").unwrap();
 
             let mut mr = matrix.to_repr();
             let s = mr.serialize().to_string();
@@ -748,7 +720,8 @@ mod tests {
             matrix.for_each_atom(|unique_idx, param_id, atom, _modamt| {
                 v.insert(
                     format!("{}_{}", unique_idx, param_id.name().to_string()),
-                    param_id.denorm(atom.f()));
+                    param_id.denorm(atom.f()),
+                );
             });
 
             assert_eq!(*v.get("0_freq").unwrap(), 440.0);
@@ -776,7 +749,8 @@ mod tests {
             matrix.for_each_atom(|unique_idx, param_id, atom, _modamt| {
                 v.insert(
                     format!("{}_{}", unique_idx, param_id.name().to_string()),
-                    param_id.denorm(atom.f()));
+                    param_id.denorm(atom.f()),
+                );
             });
 
             assert_eq!(*v.get("0_freq").unwrap(), 440.0);
@@ -796,19 +770,16 @@ mod tests {
 
             let sin = NodeId::Sin(0);
 
-            matrix.place(0, 0,
-                Cell::empty(sin)
-                .out(None, Some(0), None));
-            matrix.place(1, 0,
-                Cell::empty(NodeId::Out(0))
-                .input(None, Some(0), None)
-                .out(None, None, Some(0)));
-            matrix.set_param_modamt(
-                sin.inp_param("det").unwrap(), Some(-0.6)).unwrap();
+            matrix.place(0, 0, Cell::empty(sin).out(None, Some(0), None));
+            matrix.place(
+                1,
+                0,
+                Cell::empty(NodeId::Out(0)).input(None, Some(0), None).out(None, None, Some(0)),
+            );
+            matrix.set_param_modamt(sin.inp_param("det").unwrap(), Some(-0.6)).unwrap();
             matrix.sync().unwrap();
 
-            matrix.set_param_modamt(
-                sin.inp_param("freq").unwrap(), Some(0.6)).unwrap();
+            matrix.set_param_modamt(sin.inp_param("freq").unwrap(), Some(0.6)).unwrap();
 
             let mut mr = matrix.to_repr();
             mr.serialize().to_string()
@@ -858,8 +829,7 @@ mod tests {
 
     #[test]
     fn check_matrix_repr_old_format2new() {
-         let old_format =
-            "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\
+        let old_format = "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\
              \"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,0,-1]],[\"out\",0,1,0,\
              [-1,0,-1],[-1,-1,0]]],\"params\":[[\"out\",0,\"ch1\",0.0],\
              [\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\

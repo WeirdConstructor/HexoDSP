@@ -27,9 +27,7 @@ pub struct SampleLibrary {
 
 impl SampleLibrary {
     pub fn new() -> Self {
-        Self {
-            loaded_samples: HashMap::new(),
-        }
+        Self { loaded_samples: HashMap::new() }
     }
 
     /// Synchronous/blocking loading of a sample from `path`.
@@ -42,11 +40,10 @@ impl SampleLibrary {
             return Ok(self.loaded_samples.get(path).unwrap());
         }
 
-        let mut rd =
-            match hound::WavReader::open(path) {
-                Err(e) => return Err(SampleLoadError::LoadError(e)),
-                Ok(rd) => rd,
-            };
+        let mut rd = match hound::WavReader::open(path) {
+            Err(e) => return Err(SampleLoadError::LoadError(e)),
+            Ok(rd) => rd,
+        };
 
         let channels = rd.spec().channels as usize;
 
@@ -57,7 +54,7 @@ impl SampleLibrary {
                 for s in rd.samples::<f32>().step_by(channels) {
                     v.push(s?);
                 }
-            },
+            }
             // http://blog.bjornroche.com/2009/12/int-float-int-its-jungle-out-there.html
             hound::SampleFormat::Int => {
                 for s in rd.samples::<i16>().step_by(channels) {
@@ -65,7 +62,7 @@ impl SampleLibrary {
                     let s = s as f32 / (0x8000 as f32);
                     v.push(s);
                 }
-            },
+            }
         };
 
         let atom = SAtom::audio(path, std::sync::Arc::new(v));
@@ -76,7 +73,9 @@ impl SampleLibrary {
 }
 
 impl Default for SampleLibrary {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]
@@ -85,10 +84,10 @@ mod tests {
 
     fn save_wav(name: &str, buf: &[f32]) {
         let spec = hound::WavSpec {
-            channels:        1,
-            sample_rate:     44100,
+            channels: 1,
+            sample_rate: 44100,
             bits_per_sample: 16,
-            sample_format:   hound::SampleFormat::Int,
+            sample_format: hound::SampleFormat::Int,
         };
 
         let mut writer = hound::WavWriter::create(name, spec).unwrap();

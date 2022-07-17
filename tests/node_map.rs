@@ -10,14 +10,12 @@ fn check_node_map() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
-    let map  = NodeId::Map(0);
-    let out  = NodeId::Out(0);
-    matrix.place(0, 0, Cell::empty(map)
-                       .out(None, None, map.out("sig")));
-    matrix.place(0, 1, Cell::empty(out)
-                       .input(out.inp("ch1"), None, None));
-    pset_n(&mut matrix, map, "inp",  0.5);
-    pset_n(&mut matrix, map, "atv",  0.5); // => 0.25
+    let map = NodeId::Map(0);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(map).out(None, None, map.out("sig")));
+    matrix.place(0, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
+    pset_n(&mut matrix, map, "inp", 0.5);
+    pset_n(&mut matrix, map, "atv", 0.5); // => 0.25
     pset_n(&mut matrix, map, "offs", 0.1); // => 0.35
 
     pset_n(&mut matrix, map, "imin", 0.0);
@@ -36,14 +34,12 @@ fn check_node_map_clip() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
-    let map  = NodeId::Map(0);
-    let out  = NodeId::Out(0);
-    matrix.place(0, 0, Cell::empty(map)
-                       .out(None, None, map.out("sig")));
-    matrix.place(0, 1, Cell::empty(out)
-                       .input(out.inp("ch1"), None, None));
-    pset_n(&mut matrix, map, "inp",  0.5);
-    pset_n(&mut matrix, map, "atv",  0.5);  // => 0.25
+    let map = NodeId::Map(0);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(map).out(None, None, map.out("sig")));
+    matrix.place(0, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
+    pset_n(&mut matrix, map, "inp", 0.5);
+    pset_n(&mut matrix, map, "atv", 0.5); // => 0.25
     pset_n(&mut matrix, map, "offs", 0.80); // => 1.05
 
     pset_n(&mut matrix, map, "imin", 0.0);

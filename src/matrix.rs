@@ -2,18 +2,13 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::nodes::{
-    NodeConfigurator,
-    NodeGraphOrdering,
-    NodeProg,
-    MAX_ALLOCATED_NODES
-};
-use crate::dsp::{NodeInfo, NodeId, ParamId, SAtom};
-pub use crate::CellDir;
-pub use crate::nodes::MinMaxMonitorSamples;
-pub use crate::monitor::MON_SIG_CNT;
-use crate::matrix_repr::*;
 use crate::dsp::tracker::PatternData;
+use crate::dsp::{NodeId, NodeInfo, ParamId, SAtom};
+use crate::matrix_repr::*;
+pub use crate::monitor::MON_SIG_CNT;
+pub use crate::nodes::MinMaxMonitorSamples;
+use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES};
+pub use crate::CellDir;
 
 use std::collections::{HashMap, HashSet};
 
@@ -38,21 +33,21 @@ use std::collections::{HashMap, HashSet};
 ///```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Cell {
-    node_id:  NodeId,
-    x:        u8,
-    y:        u8,
+    node_id: NodeId,
+    x: u8,
+    y: u8,
     /// Top-Right output
-    out1:     Option<u8>,
+    out1: Option<u8>,
     /// Bottom-Right output
-    out2:     Option<u8>,
+    out2: Option<u8>,
     /// Bottom output
-    out3:     Option<u8>,
+    out3: Option<u8>,
     /// Top input
-    in1:      Option<u8>,
+    in1: Option<u8>,
     /// Top-Left input
-    in2:      Option<u8>,
+    in2: Option<u8>,
     /// Bottom-Left input
-    in3:      Option<u8>,
+    in3: Option<u8>,
 }
 
 impl Cell {
@@ -76,17 +71,7 @@ impl Cell {
     /// This is an alternative constructor, in case you know the position of the
     /// cell before you got it from the Matrix.
     pub fn empty_at(node_id: NodeId, x: u8, y: u8) -> Self {
-        Self {
-            node_id,
-            x,
-            y,
-            out1: None,
-            out2: None,
-            out3: None,
-            in1: None,
-            in2: None,
-            in3: None,
-        }
+        Self { node_id, x, y, out1: None, out2: None, out3: None, in1: None, in2: None, in3: None }
     }
 
     /// Returns a serializable representation of this [Matrix] [Cell].
@@ -114,12 +99,12 @@ impl Cell {
             out: [
                 self.out1.map(|v| v as i16).unwrap_or(-1),
                 self.out2.map(|v| v as i16).unwrap_or(-1),
-                self.out3.map(|v| v as i16).unwrap_or(-1)
+                self.out3.map(|v| v as i16).unwrap_or(-1),
             ],
             inp: [
                 self.in1.map(|v| v as i16).unwrap_or(-1),
                 self.in2.map(|v| v as i16).unwrap_or(-1),
-                self.in3.map(|v| v as i16).unwrap_or(-1)
+                self.in3.map(|v| v as i16).unwrap_or(-1),
             ],
         }
     }
@@ -127,33 +112,31 @@ impl Cell {
     pub fn from_repr(repr: &CellRepr) -> Self {
         Self {
             node_id: repr.node_id,
-            x:       repr.x as u8,
-            y:       repr.y as u8,
-            out1:    if repr.out[0] < 0 { None }
-                     else { Some(repr.out[0] as u8) },
-            out2:    if repr.out[1] < 0 { None }
-                     else { Some(repr.out[1] as u8) },
-            out3:    if repr.out[2] < 0 { None }
-                     else { Some(repr.out[2] as u8) },
-            in1:     if repr.inp[0] < 0 { None }
-                     else { Some(repr.inp[0] as u8) },
-            in2:     if repr.inp[1] < 0 { None }
-                     else { Some(repr.inp[1] as u8) },
-            in3:     if repr.inp[2] < 0 { None }
-                     else { Some(repr.inp[2] as u8) },
+            x: repr.x as u8,
+            y: repr.y as u8,
+            out1: if repr.out[0] < 0 { None } else { Some(repr.out[0] as u8) },
+            out2: if repr.out[1] < 0 { None } else { Some(repr.out[1] as u8) },
+            out3: if repr.out[2] < 0 { None } else { Some(repr.out[2] as u8) },
+            in1: if repr.inp[0] < 0 { None } else { Some(repr.inp[0] as u8) },
+            in2: if repr.inp[1] < 0 { None } else { Some(repr.inp[1] as u8) },
+            in3: if repr.inp[2] < 0 { None } else { Some(repr.inp[2] as u8) },
         }
     }
 
     pub fn with_pos_of(&self, other: Cell) -> Self {
-       let mut new = *self;
-       new.x = other.x;
-       new.y = other.y;
-       new
+        let mut new = *self;
+        new.x = other.x;
+        new.y = other.y;
+        new
     }
 
-    pub fn is_empty(&self) -> bool { self.node_id == NodeId::Nop }
+    pub fn is_empty(&self) -> bool {
+        self.node_id == NodeId::Nop
+    }
 
-    pub fn node_id(&self) -> NodeId { self.node_id }
+    pub fn node_id(&self) -> NodeId {
+        self.node_id
+    }
 
     pub fn set_node_id(&mut self, new_id: NodeId) {
         self.node_id = new_id;
@@ -174,15 +157,13 @@ impl Cell {
             return None;
         }
 
-//        let node_info = infoh.from_node_id(self.node_id);
+        //        let node_info = infoh.from_node_id(self.node_id);
 
         match write!(cur, "{}", self.node_id) {
-            Ok(_)  => {
+            Ok(_) => {
                 let len = cur.position() as usize;
-                Some(
-                    std::str::from_utf8(&(cur.into_inner())[0..len])
-                    .unwrap())
-            },
+                Some(std::str::from_utf8(&(cur.into_inner())[0..len]).unwrap())
+            }
             Err(_) => None,
         }
     }
@@ -192,15 +173,11 @@ impl Cell {
     }
 
     pub fn offs_dir(&mut self, dir: CellDir) -> bool {
-        if let Some(new_pos) =
-            dir.offs_pos((self.x as usize, self.y as usize))
-        {
+        if let Some(new_pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
             self.x = new_pos.0 as u8;
             self.y = new_pos.1 as u8;
             true
-        }
-        else
-        {
+        } else {
             false
         }
     }
@@ -209,54 +186,78 @@ impl Cell {
         match dir {
             CellDir::TR => self.out1.is_some(),
             CellDir::BR => self.out2.is_some(),
-            CellDir::B  => self.out3.is_some(),
+            CellDir::B => self.out3.is_some(),
             CellDir::BL => self.in3.is_some(),
             CellDir::TL => self.in2.is_some(),
-            CellDir::T  => self.in1.is_some(),
-            CellDir::C  => false,
+            CellDir::T => self.in1.is_some(),
+            CellDir::C => false,
         }
     }
 
     pub fn local_port_idx(&self, dir: CellDir) -> Option<u8> {
         match dir {
-            CellDir::TR => { self.out1 },
-            CellDir::BR => { self.out2 },
-            CellDir::B  => { self.out3 },
-            CellDir::BL => { self.in3 },
-            CellDir::TL => { self.in2 },
-            CellDir::T  => { self.in1 },
-            CellDir::C  => None,
+            CellDir::TR => self.out1,
+            CellDir::BR => self.out2,
+            CellDir::B => self.out3,
+            CellDir::BL => self.in3,
+            CellDir::TL => self.in2,
+            CellDir::T => self.in1,
+            CellDir::C => None,
         }
     }
 
     pub fn clear_io_dir(&mut self, dir: CellDir) {
         match dir {
-            CellDir::TR => { self.out1 = None; },
-            CellDir::BR => { self.out2 = None; },
-            CellDir::B  => { self.out3 = None; },
-            CellDir::BL => { self.in3  = None; },
-            CellDir::TL => { self.in2  = None; },
-            CellDir::T  => { self.in1  = None; },
-            CellDir::C  => {
+            CellDir::TR => {
+                self.out1 = None;
+            }
+            CellDir::BR => {
+                self.out2 = None;
+            }
+            CellDir::B => {
+                self.out3 = None;
+            }
+            CellDir::BL => {
+                self.in3 = None;
+            }
+            CellDir::TL => {
+                self.in2 = None;
+            }
+            CellDir::T => {
+                self.in1 = None;
+            }
+            CellDir::C => {
                 self.out1 = None;
                 self.out2 = None;
                 self.out3 = None;
-                self.in1  = None;
-                self.in2  = None;
-                self.in3  = None;
-            },
+                self.in1 = None;
+                self.in2 = None;
+                self.in3 = None;
+            }
         }
     }
 
     pub fn set_io_dir(&mut self, dir: CellDir, idx: usize) {
         match dir {
-            CellDir::TR => { self.out1 = Some(idx as u8); },
-            CellDir::BR => { self.out2 = Some(idx as u8); },
-            CellDir::B  => { self.out3 = Some(idx as u8); },
-            CellDir::BL => { self.in3  = Some(idx as u8); },
-            CellDir::TL => { self.in2  = Some(idx as u8); },
-            CellDir::T  => { self.in1  = Some(idx as u8); },
-            CellDir::C  => {},
+            CellDir::TR => {
+                self.out1 = Some(idx as u8);
+            }
+            CellDir::BR => {
+                self.out2 = Some(idx as u8);
+            }
+            CellDir::B => {
+                self.out3 = Some(idx as u8);
+            }
+            CellDir::BL => {
+                self.in3 = Some(idx as u8);
+            }
+            CellDir::TL => {
+                self.in2 = Some(idx as u8);
+            }
+            CellDir::T => {
+                self.in1 = Some(idx as u8);
+            }
+            CellDir::C => {}
         }
     }
 
@@ -278,27 +279,24 @@ impl Cell {
     /// has an assigned input, that edge is returned.
     /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
     /// and any with `CellDir::C`.
-    pub fn find_first_adjacent_free(&self, m: &mut Matrix, dir: CellDir) -> Option<(CellDir, Option<u8>)> {
+    pub fn find_first_adjacent_free(
+        &self,
+        m: &mut Matrix,
+        dir: CellDir,
+    ) -> Option<(CellDir, Option<u8>)> {
         let mut free_ports = vec![];
 
-        let options : &[CellDir] =
-            if dir == CellDir::C {
-                &[CellDir::T, CellDir::TL, CellDir::BL,
-                  CellDir::TR, CellDir::BR, CellDir::B]
-
-            } else if dir.is_input() {
-                &[CellDir::T, CellDir::TL, CellDir::BL]
-
-            } else {
-                &[CellDir::TR, CellDir::BR, CellDir::B]
-            };
+        let options: &[CellDir] = if dir == CellDir::C {
+            &[CellDir::T, CellDir::TL, CellDir::BL, CellDir::TR, CellDir::BR, CellDir::B]
+        } else if dir.is_input() {
+            &[CellDir::T, CellDir::TL, CellDir::BL]
+        } else {
+            &[CellDir::TR, CellDir::BR, CellDir::B]
+        };
 
         for dir in options {
             if let Some(pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
-                if m.get(pos.0, pos.1)
-                    .map(|c| c.is_empty())
-                    .unwrap_or(false)
-                {
+                if m.get(pos.0, pos.1).map(|c| c.is_empty()).unwrap_or(false) {
                     free_ports.push(dir);
                 }
             }
@@ -320,27 +318,24 @@ impl Cell {
     /// Finds the all adjacent free places around the current cell.
     /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
     /// and any with `CellDir::C`.
-    pub fn find_all_adjacent_free(&self, m: &mut Matrix, dir: CellDir) -> Vec<(CellDir, (usize, usize))> {
+    pub fn find_all_adjacent_free(
+        &self,
+        m: &mut Matrix,
+        dir: CellDir,
+    ) -> Vec<(CellDir, (usize, usize))> {
         let mut free_ports = vec![];
 
-        let options : &[CellDir] =
-            if dir == CellDir::C {
-                &[CellDir::T, CellDir::TL, CellDir::BL,
-                  CellDir::TR, CellDir::BR, CellDir::B]
-
-            } else if dir.is_input() {
-                &[CellDir::T, CellDir::TL, CellDir::BL]
-
-            } else {
-                &[CellDir::TR, CellDir::BR, CellDir::B]
-            };
+        let options: &[CellDir] = if dir == CellDir::C {
+            &[CellDir::T, CellDir::TL, CellDir::BL, CellDir::TR, CellDir::BR, CellDir::B]
+        } else if dir.is_input() {
+            &[CellDir::T, CellDir::TL, CellDir::BL]
+        } else {
+            &[CellDir::TR, CellDir::BR, CellDir::B]
+        };
 
         for dir in options {
             if let Some(pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
-                if m.get(pos.0, pos.1)
-                    .map(|c| c.is_empty())
-                    .unwrap_or(false)
-                {
+                if m.get(pos.0, pos.1).map(|c| c.is_empty()).unwrap_or(false) {
                     free_ports.push((*dir, pos));
                 }
             }
@@ -352,9 +347,7 @@ impl Cell {
     /// If the port is connected, it will return the position of the other cell.
     pub fn is_port_dir_connected(&self, m: &mut Matrix, dir: CellDir) -> Option<(usize, usize)> {
         if self.has_dir_set(dir) {
-            if let Some(new_pos) =
-                dir.offs_pos((self.x as usize, self.y as usize))
-            {
+            if let Some(new_pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
                 if let Some(dst_cell) = m.get(new_pos.0, new_pos.1) {
                     if dst_cell.has_dir_set(dir.flip()) {
                         return Some(new_pos);
@@ -373,21 +366,18 @@ use std::sync::{Arc, Mutex};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MatrixError {
     CycleDetected,
-    DuplicatedInput {
-        output1: (NodeId, u8),
-        output2: (NodeId, u8),
-    },
+    DuplicatedInput { output1: (NodeId, u8), output2: (NodeId, u8) },
     NonEmptyCell { cell: Cell },
-    PosOutOfRange
+    PosOutOfRange,
 }
 
 /// An intermediate data structure to store a single edge in the [Matrix].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Edge {
-    from:      NodeId,
-    from_out:  u8,
-    to:        NodeId,
-    to_input:  u8,
+    from: NodeId,
+    from_out: u8,
+    to: NodeId,
+    to_input: u8,
 }
 
 /// This trait can be passed into [Matrix] as trait object
@@ -418,13 +408,13 @@ pub trait MatrixObserver {
 
 pub struct Matrix {
     /// The node configurator to control the backend.
-    config:      NodeConfigurator,
+    config: NodeConfigurator,
     /// Holds the actual 2 dimensional matrix cells in one big vector.
-    matrix:      Vec<Cell>,
+    matrix: Vec<Cell>,
     /// Width of the matrix.
-    w:           usize,
+    w: usize,
     /// Height of the matrix.
-    h:           usize,
+    h: usize,
 
     /// The retained data structure of the graph topology.
     /// This is used by `sync()` and `check()` to determine the
@@ -470,18 +460,18 @@ unsafe impl Send for Matrix {}
 
 impl Matrix {
     pub fn new(config: NodeConfigurator, w: usize, h: usize) -> Self {
-        let mut matrix : Vec<Cell> = Vec::new();
+        let mut matrix: Vec<Cell> = Vec::new();
         matrix.resize(w * h, Cell::empty(NodeId::Nop));
 
         Self {
-            monitored_cell:  Cell::empty(NodeId::Nop),
-            gen_counter:     0,
-            saved_matrix:    None,
-            graph_ordering:  NodeGraphOrdering::new(),
-            edges:           Vec::with_capacity(MAX_ALLOCATED_NODES * 2),
+            monitored_cell: Cell::empty(NodeId::Nop),
+            gen_counter: 0,
+            saved_matrix: None,
+            graph_ordering: NodeGraphOrdering::new(),
+            edges: Vec::with_capacity(MAX_ALLOCATED_NODES * 2),
             assigned_inputs: HashSet::new(),
-            properties:      HashMap::new(),
-            observer:        None,
+            properties: HashMap::new(),
+            observer: None,
             config,
             w,
             h,
@@ -494,7 +484,9 @@ impl Matrix {
         self.observer = Some(obs);
     }
 
-    pub fn size(&self) -> (usize, usize) { (self.w, self.h) }
+    pub fn size(&self) -> (usize, usize) {
+        (self.w, self.h)
+    }
 
     pub fn unique_index_for(&self, node_id: &NodeId) -> Option<usize> {
         self.config.unique_index_for(node_id)
@@ -524,9 +516,7 @@ impl Matrix {
         self.config.filtered_out_fb_for(ni, out)
     }
 
-    pub fn get_pattern_data(&self, tracker_id: usize)
-        -> Option<Arc<Mutex<PatternData>>>
-    {
+    pub fn get_pattern_data(&self, tracker_id: usize) -> Option<Arc<Mutex<PatternData>>> {
         self.config.get_pattern_data(tracker_id)
     }
 
@@ -583,9 +573,9 @@ impl Matrix {
     /// // a cycle:
     /// assert!(res.is_err());
     ///```
-    pub fn change_matrix<F>(&mut self, mut f: F)
-        -> Result<(), MatrixError>
-        where F: FnMut(&mut Self)
+    pub fn change_matrix<F>(&mut self, mut f: F) -> Result<(), MatrixError>
+    where
+        F: FnMut(&mut Self),
     {
         self.save_matrix();
 
@@ -601,9 +591,9 @@ impl Matrix {
 
     /// Like [Matrix::change_matrix] but the function passed to this
     /// needs to return a `Result<(), MatrixError>`.
-    pub fn change_matrix_err<F>(&mut self, mut f: F)
-        -> Result<(), MatrixError>
-        where F: FnMut(&mut Self) -> Result<(), MatrixError>
+    pub fn change_matrix_err<F>(&mut self, mut f: F) -> Result<(), MatrixError>
+    where
+        F: FnMut(&mut Self) -> Result<(), MatrixError>,
     {
         self.save_matrix();
 
@@ -699,7 +689,9 @@ impl Matrix {
         self.monitor_cell(Cell::empty(NodeId::Nop));
         let _ = self.sync();
 
-        if let Some(obs) = &self.observer { obs.update_all(); }
+        if let Some(obs) = &self.observer {
+            obs.update_all();
+        }
     }
 
     /// Iterates through all atoms. This is useful for reading
@@ -716,7 +708,9 @@ impl Matrix {
     /// graph. Such as parameter values.
     ///
     /// HexoSynth for instance updates the UI by tracking this value.
-    pub fn get_generation(&self) -> usize { self.gen_counter }
+    pub fn get_generation(&self) -> usize {
+        self.gen_counter
+    }
 
     /// Returns a serializable representation of the matrix.
     /// This representation contains all parameters,
@@ -747,36 +741,28 @@ impl Matrix {
     pub fn to_repr(&self) -> MatrixRepr {
         let (params, atoms) = self.config.dump_param_values();
 
-        let mut cells : Vec<CellRepr> = vec![];
-        self.for_each(|_x, _y, cell|
+        let mut cells: Vec<CellRepr> = vec![];
+        self.for_each(|_x, _y, cell| {
             if cell.node_id() != NodeId::Nop {
                 cells.push(cell.to_repr())
-            });
+            }
+        });
 
-        let mut patterns : Vec<Option<PatternRepr>> = vec![];
+        let mut patterns: Vec<Option<PatternRepr>> = vec![];
         let mut tracker_id = 0;
         while let Some(pdata) = self.get_pattern_data(tracker_id) {
-            patterns.push(
-                if pdata.lock().unwrap().is_unset() { None }
-                else { Some(pdata.lock().unwrap().to_repr()) });
+            patterns.push(if pdata.lock().unwrap().is_unset() {
+                None
+            } else {
+                Some(pdata.lock().unwrap().to_repr())
+            });
 
             tracker_id += 1;
         }
 
-        let properties =
-            self.properties
-                .iter()
-                .map(|(k, v)| (k.to_string(), v.clone()))
-                .collect();
+        let properties = self.properties.iter().map(|(k, v)| (k.to_string(), v.clone())).collect();
 
-        MatrixRepr {
-            cells,
-            params,
-            atoms,
-            patterns,
-            properties,
-            version: 2,
-        }
+        MatrixRepr { cells, params, atoms, patterns, properties, version: 2 }
     }
 
     /// Loads the matrix from a previously my [Matrix::to_repr]
@@ -789,10 +775,7 @@ impl Matrix {
 
         let normalize_params = repr.version > 1;
 
-        self.config.load_dumped_param_values(
-            &repr.params[..],
-            &repr.atoms[..],
-            normalize_params);
+        self.config.load_dumped_param_values(&repr.params[..], &repr.atoms[..], normalize_params);
 
         for (key, val) in repr.properties.iter() {
             self.properties.insert(key.to_string(), val.clone());
@@ -813,7 +796,9 @@ impl Matrix {
 
         let ret = self.sync();
 
-        if let Some(obs) = &self.observer { obs.update_all(); }
+        if let Some(obs) = &self.observer {
+            obs.update_all();
+        }
 
         ret
     }
@@ -843,7 +828,9 @@ impl Matrix {
     pub fn set_prop(&mut self, key: &str, val: SAtom) {
         self.gen_counter += 1;
         self.properties.insert(key.to_string(), val);
-        if let Some(obs) = &self.observer { obs.update_prop(key); }
+        if let Some(obs) = &self.observer {
+            obs.update_prop(key);
+        }
     }
 
     /// Retrieves a matrix property. See also [Matrix::set_prop] for an
@@ -861,7 +848,9 @@ impl Matrix {
     }
 
     /// Returns the currently monitored cell.
-    pub fn monitored_cell(&self) -> &Cell { &self.monitored_cell }
+    pub fn monitored_cell(&self) -> &Cell {
+        &self.monitored_cell
+    }
 
     /// Sets the cell to monitor next. Please bear in mind, that you need to
     /// call `sync` before retrieving the cell from the matrix, otherwise
@@ -870,20 +859,14 @@ impl Matrix {
     pub fn monitor_cell(&mut self, cell: Cell) {
         self.monitored_cell = cell;
 
-        let inputs  = [
-            cell.in1,
-            cell.in2,
-            cell.in3,
-        ];
-        let outputs = [
-            cell.out1,
-            cell.out2,
-            cell.out3,
-        ];
+        let inputs = [cell.in1, cell.in2, cell.in3];
+        let outputs = [cell.out1, cell.out2, cell.out3];
 
         self.config.monitor(&cell.node_id, &inputs, &outputs);
 
-        if let Some(obs) = &self.observer { obs.update_monitor(&self.monitored_cell); }
+        if let Some(obs) = &self.observer {
+            obs.update_monitor(&self.monitored_cell);
+        }
     }
 
     /// Is called by [Matrix::sync] to refresh the monitored cell.
@@ -912,7 +895,9 @@ impl Matrix {
     pub fn set_param(&mut self, param: ParamId, at: SAtom) {
         self.config.set_param(param.clone(), at);
         self.gen_counter += 1;
-        if let Some(obs) = &self.observer { obs.update_param(&param); }
+        if let Some(obs) = &self.observer {
+            obs.update_param(&param);
+        }
     }
 
     /// Retrieve the modulation amount of the input parameter.
@@ -921,11 +906,15 @@ impl Matrix {
     }
 
     /// Assign or remove modulation of an input parameter.
-    pub fn set_param_modamt(&mut self, param: ParamId, modamt: Option<f32>)
-        -> Result<(), MatrixError>
-    {
+    pub fn set_param_modamt(
+        &mut self,
+        param: ParamId,
+        modamt: Option<f32>,
+    ) -> Result<(), MatrixError> {
         if self.config.set_param_modamt(param.clone(), modamt) {
-            if let Some(obs) = &self.observer { obs.update_param(&param); }
+            if let Some(obs) = &self.observer {
+                obs.update_param(&param);
+            }
 
             // XXX: Remove the observer from the matrix, so the sync() does not
             //      generate a matrix graph update! There is no structural change!
@@ -940,9 +929,7 @@ impl Matrix {
         }
     }
 
-    pub fn get_adjacent_output(&self, x: usize, y: usize, dir: CellDir)
-        -> Option<(NodeId, u8)>
-    {
+    pub fn get_adjacent_output(&self, x: usize, y: usize, dir: CellDir) -> Option<(NodeId, u8)> {
         if dir.is_output() {
             return None;
         }
@@ -953,19 +940,20 @@ impl Matrix {
             return None;
         }
 
-        let cell_out =
-            match dir {
-                CellDir::T  => cell.out3?,
-                CellDir::TL => cell.out2?,
-                CellDir::BL => cell.out1?,
-                _           => { return None; }
-            };
+        let cell_out = match dir {
+            CellDir::T => cell.out3?,
+            CellDir::TL => cell.out2?,
+            CellDir::BL => cell.out1?,
+            _ => {
+                return None;
+            }
+        };
 
         Some((cell.node_id, cell_out))
     }
 
     pub fn get_adjacent(&self, x: usize, y: usize, dir: CellDir) -> Option<&Cell> {
-        let offs : (i32, i32) = dir.as_offs(x);
+        let offs: (i32, i32) = dir.as_offs(x);
         let x = x as i32 + offs.0;
         let y = y as i32 + offs.1;
 
@@ -982,7 +970,7 @@ impl Matrix {
             match edge {
                 CellDir::TR => cell.in3.is_some(),
                 CellDir::BR => cell.in2.is_some(),
-                CellDir::B  => cell.in1.is_some(),
+                CellDir::B => cell.in1.is_some(),
                 _ => false,
             }
         } else {
@@ -999,7 +987,12 @@ impl Matrix {
         }
     }
 
-    pub fn edge_label<'a>(&self, cell: &Cell, edge: CellDir, buf: &'a mut [u8]) -> Option<(&'a str, bool)> {
+    pub fn edge_label<'a>(
+        &self,
+        cell: &Cell,
+        edge: CellDir,
+        buf: &'a mut [u8],
+    ) -> Option<(&'a str, bool)> {
         use std::io::Write;
         let mut cur = std::io::Cursor::new(buf);
 
@@ -1007,51 +1000,42 @@ impl Matrix {
             return None;
         }
 
-        let out_idx =
-            match edge {
-                CellDir::TR => Some(cell.out1),
-                CellDir::BR => Some(cell.out2),
-                CellDir::B  => Some(cell.out3),
-                _ => None,
-            };
-        let in_idx =
-            match edge {
-                CellDir::BL => Some(cell.in3),
-                CellDir::TL => Some(cell.in2),
-                CellDir::T  => Some(cell.in1),
-                _ => None,
-            };
+        let out_idx = match edge {
+            CellDir::TR => Some(cell.out1),
+            CellDir::BR => Some(cell.out2),
+            CellDir::B => Some(cell.out3),
+            _ => None,
+        };
+        let in_idx = match edge {
+            CellDir::BL => Some(cell.in3),
+            CellDir::TL => Some(cell.in2),
+            CellDir::T => Some(cell.in1),
+            _ => None,
+        };
 
         let info = self.info_for(&cell.node_id)?;
 
         let mut is_connected_edge = false;
 
-        let edge_str =
-            if let Some(out_idx) = out_idx {
-                //d// println!("    CHECK ADJ EDGE {},{} @ {:?}", cell.x, cell.y, edge);
-                is_connected_edge =
-                    self.adjacent_edge_has_input(
-                        cell.x as usize, cell.y as usize, edge);
+        let edge_str = if let Some(out_idx) = out_idx {
+            //d// println!("    CHECK ADJ EDGE {},{} @ {:?}", cell.x, cell.y, edge);
+            is_connected_edge =
+                self.adjacent_edge_has_input(cell.x as usize, cell.y as usize, edge);
 
-                info.out_name(out_idx? as usize)
-
-            } else if let Some(in_idx) = in_idx {
-                info.in_name(in_idx? as usize)
-
-            } else {
-                None
-            };
+            info.out_name(out_idx? as usize)
+        } else if let Some(in_idx) = in_idx {
+            info.in_name(in_idx? as usize)
+        } else {
+            None
+        };
 
         let edge_str = edge_str?;
 
         match write!(cur, "{}", edge_str) {
-            Ok(_)  => {
+            Ok(_) => {
                 let len = cur.position() as usize;
-                Some((
-                    std::str::from_utf8(&(cur.into_inner())[0..len])
-                    .unwrap(),
-                    is_connected_edge))
-            },
+                Some((std::str::from_utf8(&(cur.into_inner())[0..len]).unwrap(), is_connected_edge))
+            }
             Err(_) => None,
         }
     }
@@ -1100,20 +1084,16 @@ impl Matrix {
                     // - check if the previous node exist, if not,
                     //   create them on the fly now:
                     for inst in 0..cell.node_id.instance() {
-                        let new_hole_filler_node_id =
-                            cell.node_id.to_instance(inst);
+                        let new_hole_filler_node_id = cell.node_id.to_instance(inst);
 
-                        if self.config
-                            .unique_index_for(&new_hole_filler_node_id)
-                            .is_none()
-                        {
-                            self.config.create_node(new_hole_filler_node_id)
+                        if self.config.unique_index_for(&new_hole_filler_node_id).is_none() {
+                            self.config
+                                .create_node(new_hole_filler_node_id)
                                 .expect("NodeInfo existent in Matrix");
                         }
                     }
 
-                    self.config.create_node(cell.node_id)
-                        .expect("NodeInfo existent in Matrix");
+                    self.config.create_node(cell.node_id).expect("NodeInfo existent in Matrix");
                 }
             }
         }
@@ -1140,43 +1120,40 @@ impl Matrix {
                 match (cell.in1, in1_output) {
                     (Some(in1_idx), Some(in1_output)) => {
                         self.edges.push(Edge {
-                            to:       cell.node_id,
+                            to: cell.node_id,
                             to_input: in1_idx,
-                            from:     in1_output.0,
+                            from: in1_output.0,
                             from_out: in1_output.1,
                         });
-                        self.graph_ordering.add_edge(
-                            in1_output.0, cell.node_id);
-                    },
-                    _ => {},
+                        self.graph_ordering.add_edge(in1_output.0, cell.node_id);
+                    }
+                    _ => {}
                 }
 
                 match (cell.in2, in2_output) {
                     (Some(in2_idx), Some(in2_output)) => {
                         self.edges.push(Edge {
-                            to:       cell.node_id,
+                            to: cell.node_id,
                             to_input: in2_idx,
-                            from:     in2_output.0,
+                            from: in2_output.0,
                             from_out: in2_output.1,
                         });
-                        self.graph_ordering.add_edge(
-                            in2_output.0, cell.node_id);
-                    },
-                    _ => {},
+                        self.graph_ordering.add_edge(in2_output.0, cell.node_id);
+                    }
+                    _ => {}
                 }
 
                 match (cell.in3, in3_output) {
                     (Some(in3_idx), Some(in3_output)) => {
                         self.edges.push(Edge {
-                            to:       cell.node_id,
+                            to: cell.node_id,
                             to_input: in3_idx,
-                            from:     in3_output.0,
+                            from: in3_output.0,
                             from_out: in3_output.1,
                         });
-                        self.graph_ordering.add_edge(
-                            in3_output.0, cell.node_id);
-                    },
-                    _ => {},
+                        self.graph_ordering.add_edge(in3_output.0, cell.node_id);
+                    }
+                    _ => {}
                 }
             }
         }
@@ -1209,7 +1186,8 @@ impl Matrix {
             self.config.set_prog_node_exec_connection(
                 &mut prog,
                 (edge.to, edge.to_input),
-                (edge.from, edge.from_out));
+                (edge.from, edge.from_out),
+            );
         }
 
         Ok(prog)
@@ -1266,9 +1244,7 @@ impl Matrix {
                     output2: (edge.from, edge.from_out),
                 });
             } else {
-                edge_map.insert(
-                    (edge.to, edge.to_input),
-                    (edge.from, edge.from_out));
+                edge_map.insert((edge.to, edge.to_input), (edge.from, edge.from_out));
             }
         }
 
@@ -1307,7 +1283,9 @@ impl Matrix {
         // just in case something has changed with that monitored cell.
         self.remonitor_cell();
 
-        if let Some(obs) = &self.observer { obs.update_matrix(); }
+        if let Some(obs) = &self.observer {
+            obs.update_matrix();
+        }
 
         Ok(())
     }
@@ -1341,16 +1319,13 @@ mod tests {
         let (node_conf, mut node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
-        matrix.place(0, 0,
-            Cell::empty(NodeId::Sin(0))
-            .out(None, Some(0), None));
-        matrix.place(1, 0,
-            Cell::empty(NodeId::Sin(1))
-            .input(None, Some(0), None)
-            .out(None, None, Some(0)));
-        matrix.place(1, 1,
-            Cell::empty(NodeId::Sin(2))
-            .input(Some(0), None, None));
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(0)).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Sin(1)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
+        matrix.place(1, 1, Cell::empty(NodeId::Sin(2)).input(Some(0), None, None));
         matrix.sync().unwrap();
 
         node_exec.process_graph_updates();
@@ -1362,8 +1337,14 @@ mod tests {
 
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2|0) at=(0-0) mod=(0-0))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(0-0) cpy=(o0 => i2))");
-        assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3|0) in=(4-6|1) at=(0-0) mod=(0-0) cpy=(o1 => i4))");
+        assert_eq!(
+            prog.prog[1].to_string(),
+            "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(0-0) cpy=(o0 => i2))"
+        );
+        assert_eq!(
+            prog.prog[2].to_string(),
+            "Op(i=2 out=(2-3|0) in=(4-6|1) at=(0-0) mod=(0-0) cpy=(o1 => i4))"
+        );
     }
 
     #[test]
@@ -1373,40 +1354,29 @@ mod tests {
         let (node_conf, _node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
-        matrix.place(0, 0,
-            Cell::empty(NodeId::Sin(0))
-            .out(None, Some(0), None));
-        matrix.place(1, 0,
-            Cell::empty(NodeId::Sin(1))
-            .input(None, Some(0), None)
-            .out(None, None, Some(0)));
-        matrix.place(1, 1,
-            Cell::empty(NodeId::Sin(2))
-            .input(Some(0), None, None));
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(0)).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Sin(1)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
+        matrix.place(1, 1, Cell::empty(NodeId::Sin(2)).input(Some(0), None, None));
         matrix.sync().unwrap();
 
-        assert!(
-            matrix.param_input_is_used(
-                NodeId::Sin(1).inp_param("freq").unwrap()));
-        assert!(
-            !matrix.param_input_is_used(
-                NodeId::Sin(0).inp_param("freq").unwrap()));
+        assert!(matrix.param_input_is_used(NodeId::Sin(1).inp_param("freq").unwrap()));
+        assert!(!matrix.param_input_is_used(NodeId::Sin(0).inp_param("freq").unwrap()));
 
         matrix.place(1, 0, Cell::empty(NodeId::Nop));
         matrix.sync().unwrap();
 
-        assert!(
-            !matrix.param_input_is_used(
-                NodeId::Sin(1).inp_param("freq").unwrap()));
-        assert!(
-            !matrix.param_input_is_used(
-                NodeId::Sin(2).inp_param("freq").unwrap()));
+        assert!(!matrix.param_input_is_used(NodeId::Sin(1).inp_param("freq").unwrap()));
+        assert!(!matrix.param_input_is_used(NodeId::Sin(2).inp_param("freq").unwrap()));
     }
 
     #[test]
     fn check_matrix_filled() {
+        use crate::dsp::{Node, NodeId};
         use crate::nodes::new_node_engine;
-        use crate::dsp::{NodeId, Node};
 
         let (node_conf, mut node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 9, 9);
@@ -1423,8 +1393,7 @@ mod tests {
         node_exec.process_graph_updates();
 
         let nodes = node_exec.get_nodes();
-        let ex_nodes : Vec<&Node> =
-            nodes.iter().filter(|n| n.to_id(0) != NodeId::Nop).collect();
+        let ex_nodes: Vec<&Node> = nodes.iter().filter(|n| n.to_id(0) != NodeId::Nop).collect();
         assert_eq!(ex_nodes.len(), 9 * 9 + 1);
     }
 
@@ -1435,13 +1404,12 @@ mod tests {
         let (node_conf, mut node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
-        matrix.place(0, 0,
-            Cell::empty(NodeId::Sin(0))
-            .out(None, Some(0), None));
-        matrix.place(1, 0,
-            Cell::empty(NodeId::Out(0))
-            .input(None, Some(0), None)
-            .out(None, None, Some(0)));
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(0)).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Out(0)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
         matrix.sync().unwrap();
 
         node_exec.set_sample_rate(44100.0);
@@ -1454,7 +1422,10 @@ mod tests {
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog.len(), 2);
         assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2|0) at=(0-0) mod=(0-0))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-1|0) in=(2-5|1) at=(0-1) mod=(0-0) cpy=(o0 => i2))");
+        assert_eq!(
+            prog.prog[1].to_string(),
+            "Op(i=1 out=(1-1|0) in=(2-5|1) at=(0-1) mod=(0-0) cpy=(o0 => i2))"
+        );
     }
 
     #[test]
@@ -1464,13 +1435,12 @@ mod tests {
         let (node_conf, mut node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
-        matrix.place(0, 0,
-            Cell::empty(NodeId::Sin(2))
-            .out(None, Some(0), None));
-        matrix.place(1, 0,
-            Cell::empty(NodeId::Out(0))
-            .input(None, Some(0), None)
-            .out(None, None, Some(0)));
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(2)).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Out(0)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
         matrix.sync().unwrap();
 
         node_exec.set_sample_rate(44100.0);
@@ -1485,7 +1455,10 @@ mod tests {
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog.len(), 2);
         assert_eq!(prog.prog[0].to_string(), "Op(i=2 out=(2-3|1) in=(4-6|0) at=(0-0) mod=(0-0))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-3|0) in=(6-9|1) at=(0-1) mod=(0-0) cpy=(o2 => i6))");
+        assert_eq!(
+            prog.prog[1].to_string(),
+            "Op(i=3 out=(3-3|0) in=(6-9|1) at=(0-1) mod=(0-0) cpy=(o2 => i6))"
+        );
     }
 
     #[test]
@@ -1496,20 +1469,15 @@ mod tests {
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
         matrix.save_matrix();
-        matrix.place(0, 1,
-            Cell::empty(NodeId::Sin(1))
-            .input(Some(0), None, None));
-        matrix.place(0, 0,
-            Cell::empty(NodeId::Sin(1))
-            .out(None, None, Some(0)));
-        let error =
-            if let Err(_) = matrix.check() {
-               matrix.restore_matrix();
-               true
-            } else {
-               matrix.sync().unwrap();
-               false
-            };
+        matrix.place(0, 1, Cell::empty(NodeId::Sin(1)).input(Some(0), None, None));
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(1)).out(None, None, Some(0)));
+        let error = if let Err(_) = matrix.check() {
+            matrix.restore_matrix();
+            true
+        } else {
+            matrix.sync().unwrap();
+            false
+        };
 
         // In this examples case there is an error, as we created
         // a cycle:
@@ -1524,24 +1492,19 @@ mod tests {
         let mut matrix = Matrix::new(node_conf, 5, 5);
 
         matrix.save_matrix();
-        matrix.place(0, 1,
-            Cell::empty(NodeId::Sin(0))
-            .input(Some(0), None, None));
-        matrix.place(0, 0,
-            Cell::empty(NodeId::Sin(1))
-            .out(None, None, Some(0)));
+        matrix.place(0, 1, Cell::empty(NodeId::Sin(0)).input(Some(0), None, None));
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(1)).out(None, None, Some(0)));
 
-        matrix.place(0, 3,
-            Cell::empty(NodeId::Sin(0))
-            .input(Some(0), None, None));
-        matrix.place(0, 2,
-            Cell::empty(NodeId::Sin(2))
-            .out(None, None, Some(0)));
+        matrix.place(0, 3, Cell::empty(NodeId::Sin(0)).input(Some(0), None, None));
+        matrix.place(0, 2, Cell::empty(NodeId::Sin(2)).out(None, None, Some(0)));
 
-        assert_eq!(matrix.check(), Err(MatrixError::DuplicatedInput {
-            output1: (NodeId::Sin(1), 0),
-            output2: (NodeId::Sin(2), 0),
-        }));
+        assert_eq!(
+            matrix.check(),
+            Err(MatrixError::DuplicatedInput {
+                output1: (NodeId::Sin(1), 0),
+                output2: (NodeId::Sin(2), 0),
+            })
+        );
     }
 
     #[test]
@@ -1551,35 +1514,23 @@ mod tests {
         let (node_conf, mut node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
-        matrix.place(0, 0,
-            Cell::empty(NodeId::Sin(0))
-            .out(None, Some(0), None));
-        matrix.place(1, 0,
-            Cell::empty(NodeId::Sin(1))
-            .input(None, Some(0), None)
-            .out(None, None, Some(0)));
-        matrix.place(0, 1,
-            Cell::empty(NodeId::Sin(3))
-            .input(None, None, None)
-            .out(None, Some(0), None));
-        matrix.place(1, 1,
-            Cell::empty(NodeId::Sin(2))
-            .input(Some(0), Some(1), None));
-        matrix.set_param_modamt(
-            NodeId::Sin(1).param_by_idx(0).unwrap(),
-            Some(0.5)).unwrap();
-        matrix.set_param_modamt(
-            NodeId::Sin(1).param_by_idx(1).unwrap(),
-            Some(0.33)).unwrap();
-        matrix.set_param_modamt(
-            NodeId::Sin(0).param_by_idx(0).unwrap(),
-            Some(0.25)).unwrap();
-        matrix.set_param_modamt(
-            NodeId::Sin(2).param_by_idx(0).unwrap(),
-            Some(0.75)).unwrap();
-        matrix.set_param_modamt(
-            NodeId::Sin(2).param_by_idx(1).unwrap(),
-            Some(-0.75)).unwrap();
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(0)).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Sin(1)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
+        matrix.place(
+            0,
+            1,
+            Cell::empty(NodeId::Sin(3)).input(None, None, None).out(None, Some(0), None),
+        );
+        matrix.place(1, 1, Cell::empty(NodeId::Sin(2)).input(Some(0), Some(1), None));
+        matrix.set_param_modamt(NodeId::Sin(1).param_by_idx(0).unwrap(), Some(0.5)).unwrap();
+        matrix.set_param_modamt(NodeId::Sin(1).param_by_idx(1).unwrap(), Some(0.33)).unwrap();
+        matrix.set_param_modamt(NodeId::Sin(0).param_by_idx(0).unwrap(), Some(0.25)).unwrap();
+        matrix.set_param_modamt(NodeId::Sin(2).param_by_idx(0).unwrap(), Some(0.75)).unwrap();
+        matrix.set_param_modamt(NodeId::Sin(2).param_by_idx(1).unwrap(), Some(-0.75)).unwrap();
         matrix.sync().unwrap();
 
         node_exec.process_graph_updates();
@@ -1587,7 +1538,10 @@ mod tests {
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2|0) at=(0-0) mod=(0-1))");
         assert_eq!(prog.prog[1].to_string(), "Op(i=3 out=(3-4|1) in=(6-8|0) at=(0-0) mod=(5-5))");
-        assert_eq!(prog.prog[2].to_string(), "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
+        assert_eq!(
+            prog.prog[2].to_string(),
+            "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)"
+        );
         assert_eq!(prog.prog[3].to_string(), "Op(i=2 out=(2-3|0) in=(4-6|3) at=(0-0) mod=(3-5) cpy=(o1 => i4) cpy=(o3 => i5) mod=3 mod=4)");
     }
 
@@ -1598,33 +1552,30 @@ mod tests {
         let (node_conf, mut node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
-        matrix.place(0, 0,
-            Cell::empty(NodeId::Sin(0))
-            .out(None, Some(0), None));
-        matrix.place(1, 0,
-            Cell::empty(NodeId::Sin(1))
-            .input(None, Some(0), None)
-            .out(None, None, Some(0)));
-        matrix.place(1, 1,
-            Cell::empty(NodeId::Sin(2))
-            .input(Some(0), None, None));
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(0)).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Sin(1)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
+        matrix.place(1, 1, Cell::empty(NodeId::Sin(2)).input(Some(0), None, None));
         matrix.sync().unwrap();
-        matrix.set_param_modamt(
-            NodeId::Sin(1).param_by_idx(0).unwrap(),
-            Some(0.5)).unwrap();
-        matrix.set_param_modamt(
-            NodeId::Sin(1).param_by_idx(1).unwrap(),
-            Some(0.33)).unwrap();
-        matrix.set_param_modamt(
-            NodeId::Sin(0).param_by_idx(0).unwrap(),
-            Some(0.25)).unwrap();
+        matrix.set_param_modamt(NodeId::Sin(1).param_by_idx(0).unwrap(), Some(0.5)).unwrap();
+        matrix.set_param_modamt(NodeId::Sin(1).param_by_idx(1).unwrap(), Some(0.33)).unwrap();
+        matrix.set_param_modamt(NodeId::Sin(0).param_by_idx(0).unwrap(), Some(0.25)).unwrap();
 
         node_exec.process_graph_updates();
 
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-2|0) at=(0-0) mod=(0-1))");
-        assert_eq!(prog.prog[1].to_string(), "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)");
-        assert_eq!(prog.prog[2].to_string(), "Op(i=2 out=(2-3|0) in=(4-6|1) at=(0-0) mod=(3-3) cpy=(o1 => i4))");
+        assert_eq!(
+            prog.prog[1].to_string(),
+            "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)"
+        );
+        assert_eq!(
+            prog.prog[2].to_string(),
+            "Op(i=2 out=(2-3|0) in=(4-6|1) at=(0-0) mod=(3-3) cpy=(o1 => i4))"
+        );
     }
 
     #[test]

@@ -2,16 +2,14 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use std::cell::RefCell;
-use ringbuf::{RingBuffer, Producer, Consumer};
 use lazy_static::lazy_static;
+use ringbuf::{Consumer, Producer, RingBuffer};
+use std::cell::RefCell;
 
 use std::sync::{Arc, Mutex};
 
 lazy_static! {
-    static ref LOG_RECV: Arc<Mutex<LogReceiver>> = {
-        Arc::new(Mutex::new(LogReceiver::new()))
-    };
+    static ref LOG_RECV: Arc<Mutex<LogReceiver>> = { Arc::new(Mutex::new(LogReceiver::new())) };
 }
 
 thread_local! {
@@ -47,17 +45,15 @@ pub fn log<F: Fn(&mut std::io::BufWriter<&mut [u8]>)>(f: F) {
     });
 }
 
-const MAX_LOG_BUFFER : usize = 4096;
+const MAX_LOG_BUFFER: usize = 4096;
 
 pub struct LogReceiver {
-    consumers:  Vec<(&'static str, Consumer<u8>)>,
+    consumers: Vec<(&'static str, Consumer<u8>)>,
 }
 
 impl LogReceiver {
     pub fn new() -> Self {
-        Self {
-            consumers: vec![],
-        }
+        Self { consumers: vec![] }
     }
 
     pub fn retrieve_messages<F: FnMut(&str, &str)>(&mut self, mut f: F) {
@@ -82,10 +78,7 @@ impl LogReceiver {
         let (producer, con) = rb.split();
 
         self.consumers.push((name, con));
-        Log {
-            producer,
-            buf: [0; 512],
-        }
+        Log { producer, buf: [0; 512] }
     }
 
     #[inline]
@@ -99,7 +92,7 @@ impl LogReceiver {
 
 pub struct Log {
     producer: Producer<u8>,
-    buf:      [u8; 512],
+    buf: [u8; 512],
 }
 
 impl Log {
@@ -141,8 +134,7 @@ mod tests {
 
         let mut msgs = vec![];
         for _ in 0..100 {
-            std::thread::sleep(
-                std::time::Duration::from_millis(100));
+            std::thread::sleep(std::time::Duration::from_millis(100));
 
             retrieve_log_messages(|name, s| msgs.push(name.to_string() + "/" + s));
 
@@ -151,6 +143,6 @@ mod tests {
                 assert_eq!(msgs[1], "tstlog/Test Log2!");
                 break;
             }
-        };
+        }
     }
 }

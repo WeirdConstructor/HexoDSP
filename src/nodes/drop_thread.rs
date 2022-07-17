@@ -10,13 +10,12 @@ use ringbuf::Consumer;
 /// thread and dropping them.
 pub(crate) struct DropThread {
     terminate: std::sync::Arc<std::sync::atomic::AtomicBool>,
-    th:        Option<std::thread::JoinHandle<()>>,
+    th: Option<std::thread::JoinHandle<()>>,
 }
 
 impl DropThread {
     pub(crate) fn new(mut graph_drop_con: Consumer<DropMsg>) -> Self {
-        let terminate =
-            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let terminate = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let th_terminate = terminate.clone();
 
         let th = std::thread::spawn(move || {
@@ -34,10 +33,7 @@ impl DropThread {
             }
         });
 
-        Self {
-            th: Some(th),
-            terminate,
-        }
+        Self { th: Some(th), terminate }
     }
 }
 

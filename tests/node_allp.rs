@@ -11,21 +11,17 @@ fn check_node_allp() {
     let mut matrix = Matrix::new(node_conf, 4, 4);
 
     let test = NodeId::Test(0);
-    let ap   = NodeId::AllP(0);
-    let out  = NodeId::Out(0);
-    matrix.place(0, 0, Cell::empty(test)
-                       .out(None, None, test.out("tsig")));
-    matrix.place(0, 1, Cell::empty(ap)
-                       .input(ap.inp("inp"), None, None)
-                       .out(None, None, ap.out("sig")));
-    matrix.place(0, 2, Cell::empty(out)
-                       .input(out.inp("ch1"), None, None)
-                       .out(None, None, None));
-    matrix.place(1, 0, Cell::empty(test)
-                       .out(None, None, test.out("tsig")));
-    matrix.place(1, 1, Cell::empty(out)
-                       .input(out.inp("ch2"), None, None)
-                       .out(None, None, None));
+    let ap = NodeId::AllP(0);
+    let out = NodeId::Out(0);
+    matrix.place(0, 0, Cell::empty(test).out(None, None, test.out("tsig")));
+    matrix.place(
+        0,
+        1,
+        Cell::empty(ap).input(ap.inp("inp"), None, None).out(None, None, ap.out("sig")),
+    );
+    matrix.place(0, 2, Cell::empty(out).input(out.inp("ch1"), None, None).out(None, None, None));
+    matrix.place(1, 0, Cell::empty(test).out(None, None, test.out("tsig")));
+    matrix.place(1, 1, Cell::empty(out).input(out.inp("ch2"), None, None).out(None, None, None));
     pset_d(&mut matrix, ap, "time", 3.0);
     matrix.sync().unwrap();
 
@@ -55,9 +51,23 @@ fn check_node_allp() {
 
     // 2ms the previous 1.0 * 0.7 fed back into the filter,
     // including even more smearing due to cubic interpolation:
-    v.append(&mut vec![-0.0019286226, 0.04086761, -0.1813516, -0.35157663, -0.36315754, -0.35664573,]);
+    v.append(&mut vec![
+        -0.0019286226,
+        0.04086761,
+        -0.1813516,
+        -0.35157663,
+        -0.36315754,
+        -0.35664573,
+    ]);
     v.append(&mut vec![-0.357; (2.0 * 44.1_f32).floor() as usize - 5]);
-    v.append(&mut vec![-0.3550714, -0.39786762, -0.1756484, -0.005423375, 0.006157537, -0.00035427228]);
+    v.append(&mut vec![
+        -0.3550714,
+        -0.39786762,
+        -0.1756484,
+        -0.005423375,
+        0.006157537,
+        -0.00035427228,
+    ]);
     v.append(&mut vec![0.0; 10]);
 
     //d// println!("res={:?}", res.1);

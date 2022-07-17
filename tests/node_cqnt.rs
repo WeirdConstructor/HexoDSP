@@ -7,17 +7,14 @@ use common::*;
 
 fn setup_cqnt(matrix: &mut Matrix, trig_out: bool) {
     let cqnt = NodeId::CQnt(0);
-    let out  = NodeId::Out(0);
+    let out = NodeId::Out(0);
 
     if trig_out {
-        matrix.place(0, 0, Cell::empty(cqnt)
-                           .out(None, None, cqnt.out("t")));
+        matrix.place(0, 0, Cell::empty(cqnt).out(None, None, cqnt.out("t")));
     } else {
-        matrix.place(0, 0, Cell::empty(cqnt)
-                           .out(None, None, cqnt.out("sig")));
+        matrix.place(0, 0, Cell::empty(cqnt).out(None, None, cqnt.out("sig")));
     }
-    matrix.place(0, 1, Cell::empty(out)
-                       .input(out.inp("ch1"), None, None));
+    matrix.place(0, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
 
     pset_s(matrix, cqnt, "keys", 0);
     matrix.sync().unwrap();
@@ -39,20 +36,13 @@ fn check_node_cqnt_1() {
         v.push(res.0[0]);
     }
 
-    assert_vec_feq!(v, vec![
-        -0.075, -0.075,
-        -0.0666, -0.0666,
-        -0.0583,
-        -0.05, -0.05,
-        -0.04166, -0.04166,
-        -0.0333,
-        -0.0250, -0.0250,
-        -0.0166, -0.0166,
-        -0.0083,
-        0.0, 0.0,
-        0.0083, 0.0083,
-        0.0166
-    ]);
+    assert_vec_feq!(
+        v,
+        vec![
+            -0.075, -0.075, -0.0666, -0.0666, -0.0583, -0.05, -0.05, -0.04166, -0.04166, -0.0333,
+            -0.0250, -0.0250, -0.0166, -0.0166, -0.0083, 0.0, 0.0, 0.0083, 0.0083, 0.0166
+        ]
+    );
 }
 
 #[test]
@@ -73,16 +63,10 @@ fn check_node_cqnt_one_key() {
         v.push(res.0[0]);
     }
 
-    assert_vec_feq!(v, vec![
-        -0.05833,
-        -0.05833,
-        -0.05833,
-        -0.05833,
-        -0.05833,
-        -0.05833,
-        -0.05833,
-        -0.05833,
-    ]);
+    assert_vec_feq!(
+        v,
+        vec![-0.05833, -0.05833, -0.05833, -0.05833, -0.05833, -0.05833, -0.05833, -0.05833,]
+    );
 }
 
 #[test]
@@ -105,11 +89,10 @@ fn check_node_cqnt_one_key_oct() {
         v.push(res.0[0]);
     }
 
-    assert_vec_feq!(v, vec![
-        -0.1583, -0.1583, -0.1583, -0.1583,
-        -0.0583, -0.0583, -0.0583,
-         0.0416, 0.0416, 0.0416
-    ]);
+    assert_vec_feq!(
+        v,
+        vec![-0.1583, -0.1583, -0.1583, -0.1583, -0.0583, -0.0583, -0.0583, 0.0416, 0.0416, 0.0416]
+    );
 }
 
 #[test]
@@ -132,17 +115,13 @@ fn check_node_cqnt_min_max_oct() {
         v.push(res.0[0]);
     }
 
-    assert_vec_feq!(v, vec![
-        -0.1583, -0.1583, -0.1583,
-        -0.15, -0.15,
-        -0.1416, -0.1416,
-        -0.0583, -0.0583,
-        -0.05, -0.05, -0.05,
-        -0.0416, -0.0416,
-        0.0416, 0.0416,
-        0.0499, 0.0499,
-        0.0583, 0.0583
-    ]);
+    assert_vec_feq!(
+        v,
+        vec![
+            -0.1583, -0.1583, -0.1583, -0.15, -0.15, -0.1416, -0.1416, -0.0583, -0.0583, -0.05,
+            -0.05, -0.05, -0.0416, -0.0416, 0.0416, 0.0416, 0.0499, 0.0499, 0.0583, 0.0583
+        ]
+    );
 }
 
 #[test]
@@ -167,9 +146,18 @@ fn check_node_cqnt_min_max_oct_trig_out() {
 
     let idxs_big = collect_signal_changes(&v[..], 50);
 
-    assert_eq!(idxs_big, vec![
-        (0, 100),     (5341, 100),  (10240, 100),
-        (15140, 100), (20041, 100), (24941, 100),
-        (29841, 100), (34740, 100), (39640, 100)
-    ]);
+    assert_eq!(
+        idxs_big,
+        vec![
+            (0, 100),
+            (5341, 100),
+            (10240, 100),
+            (15140, 100),
+            (20041, 100),
+            (24941, 100),
+            (29841, 100),
+            (34740, 100),
+            (39640, 100)
+        ]
+    );
 }

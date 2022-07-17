@@ -2,33 +2,28 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
+use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::dsp::{NodeId, SAtom, ProcBuf, DspNode, LedPhaseVals, NodeContext};
 
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct FbWr {
-    fb_index:   u8,
+    fb_index: u8,
 }
 
 impl FbWr {
     pub fn new(nid: &NodeId) -> Self {
-        Self {
-            fb_index: nid.instance() as u8,
-        }
+        Self { fb_index: nid.instance() as u8 }
     }
-    pub const inp : &'static str =
-        "FbWr inp\nSignal input\nRange: (-1..1)\n";
+    pub const inp: &'static str = "FbWr inp\nSignal input\nRange: (-1..1)\n";
 
-    pub const DESC : &'static str =
-"Feedback Delay Writer\n\n\
+    pub const DESC: &'static str = "Feedback Delay Writer\n\n\
 HexoSynth does not allow direct feedback cycles in it's graph.\n\
 To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.\n\
 This node allows you to write a signal into the corresponsing signal delay buffer.\n\
 Use 'FbRd' for using the signal.\n\
 The delay is 3.14ms.";
-    pub const HELP : &'static str =
-r#"Feedback Delay Writer
+    pub const HELP: &'static str = r#"Feedback Delay Writer
 
 HexoSynth does not allow direct feedback cycles in it's graph.
 To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.
@@ -46,59 +41,57 @@ is running at.
 }
 
 impl DspNode for FbWr {
-    fn outputs() -> usize { 0 }
+    fn outputs() -> usize {
+        0
+    }
 
-    fn set_sample_rate(&mut self, _srate: f32) { }
-    fn reset(&mut self) { }
+    fn set_sample_rate(&mut self, _srate: f32) {}
+    fn reset(&mut self) {}
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
+        &mut self,
+        ctx: &mut T,
+        ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        _atoms: &[SAtom], inputs: &[ProcBuf],
-        _outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
-    {
-        use crate::dsp::{inp};
+        _atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        _outputs: &mut [ProcBuf],
+        ctx_vals: LedPhaseVals,
+    ) {
+        use crate::dsp::inp;
 
-        let inp  = inp::FbWr::inp(inputs);
+        let inp = inp::FbWr::inp(inputs);
 
         for frame in 0..ctx.nframes() {
-            ectx.feedback_delay_buffers[self.fb_index as usize]
-                .write(inp.read(frame));
+            ectx.feedback_delay_buffers[self.fb_index as usize].write(inp.read(frame));
         }
 
         ctx_vals[0].set(inp.read(ctx.nframes() - 1));
     }
 }
 
-
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct FbRd {
-    fb_index:   u8,
+    fb_index: u8,
 }
 
 impl FbRd {
     pub fn new(nid: &NodeId) -> Self {
-        Self {
-            fb_index: nid.instance() as u8,
-        }
+        Self { fb_index: nid.instance() as u8 }
     }
-    pub const atv : &'static str =
-        "FbRd atv\nAttenuate or invert input.\n\
+    pub const atv: &'static str = "FbRd atv\nAttenuate or invert input.\n\
          Use this to adjust the feedback amount.\nRange: (-1..1)\n";
-    pub const sig : &'static str =
-        "FbRd sig\nFeedback signal output.\nRange: (-1..1)\n";
+    pub const sig: &'static str = "FbRd sig\nFeedback signal output.\nRange: (-1..1)\n";
 
-    pub const DESC : &'static str =
-"Feedback Delay Reader\n\n\
+    pub const DESC: &'static str = "Feedback Delay Reader\n\n\
 HexoSynth does not allow direct feedback cycles in it's graph.\n\
 To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.\n\
 This node allows you to tap into the corresponsing 'FbWr' signal delay \
 for feedback.\n\
 The delay is 3.14ms.";
-    pub const HELP : &'static str =
-r#"Feedback Delay Reader
+    pub const HELP: &'static str = r#"Feedback Delay Reader
 
 HexoSynth does not allow direct feedback cycles in it's graph.
 To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.
@@ -119,28 +112,32 @@ even inverting the signal.
 }
 
 impl DspNode for FbRd {
-    fn outputs() -> usize { 1 }
+    fn outputs() -> usize {
+        1
+    }
 
-    fn set_sample_rate(&mut self, _srate: f32) { }
-    fn reset(&mut self) { }
+    fn set_sample_rate(&mut self, _srate: f32) {}
+    fn reset(&mut self) {}
 
     #[inline]
     fn process<T: NodeAudioContext>(
-        &mut self, ctx: &mut T, ectx: &mut NodeExecContext,
+        &mut self,
+        ctx: &mut T,
+        ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        _atoms: &[SAtom], inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf], ctx_vals: LedPhaseVals)
-    {
-        use crate::dsp::{out, inp, denorm};
+        _atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf],
+        ctx_vals: LedPhaseVals,
+    ) {
+        use crate::dsp::{denorm, inp, out};
 
-        let atv  = inp::FbRd::atv(inputs);
-        let sig  = out::FbRd::sig(outputs);
+        let atv = inp::FbRd::atv(inputs);
+        let sig = out::FbRd::sig(outputs);
 
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {
-            last_val =
-                ectx.feedback_delay_buffers[self.fb_index as usize]
-                    .read();
+            last_val = ectx.feedback_delay_buffers[self.fb_index as usize].read();
             last_val *= denorm::FbRd::atv(atv, frame);
             sig.write(frame, last_val);
         }
