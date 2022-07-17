@@ -40,20 +40,25 @@ pub(crate) enum DropMsg {
     Atom { atom: SAtom },
 }
 
-/// Big messages for updating the NodeExecutor thread.
+/// Messages for updating the NodeExecutor thread.
 /// Usually used for shoveling NodeProg and Nodes to and from
-/// the NodeExecutor thread.
+/// the NodeExecutor thread. And also parameter updates of course.
 #[derive(Debug)]
 pub enum GraphMessage {
-    NewNode { index: u8, node: Node },
-    NewProg { prog: NodeProg, copy_old_out: bool },
-    Clear { prog: NodeProg },
-}
+    NewNode {
+        index: u8,
+        node: Node,
+    },
+    NewProg {
+        prog: NodeProg,
+        copy_old_out: bool,
+    },
+    Clear {
+        prog: NodeProg,
+    },
 
-/// Messages for small updates between the NodeExecutor thread
-/// and the NodeConfigurator.
-#[derive(Debug)]
-pub enum QuickMessage {
+    // XXX: Parameter updates used to be separate from the graph update, but this
+    // became a race condition and I had to revert this premature optimization.
     AtomUpdate {
         at_idx: usize,
         value: SAtom,

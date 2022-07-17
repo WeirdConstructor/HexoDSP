@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
 lazy_static! {
-    static ref LOG_RECV: Arc<Mutex<LogReceiver>> = { Arc::new(Mutex::new(LogReceiver::new())) };
+    static ref LOG_RECV: Arc<Mutex<LogReceiver>> = Arc::new(Mutex::new(LogReceiver::new()));
 }
 
 thread_local! {

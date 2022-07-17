@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use super::{
-    DropMsg, GraphMessage, NodeProg, QuickMessage, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES,
+    DropMsg, GraphMessage, NodeProg, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES,
     MAX_FB_DELAY_SIZE, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
@@ -77,8 +77,6 @@ pub(crate) struct SharedNodeExec {
     pub(crate) node_ctx_values: Vec<Arc<AtomicFloat>>,
     /// For receiving Node and NodeProg updates
     pub(crate) graph_update_con: Consumer<GraphMessage>,
-    /// For quick updates like UI paramter changes.
-    pub(crate) quick_update_con: Consumer<QuickMessage>,
     /// For receiving deleted/overwritten nodes from the backend thread.
     pub(crate) graph_drop_prod: Producer<DropMsg>,
     /// For sending feedback to the frontend thread.
@@ -275,7 +273,7 @@ impl NodeExecutor {
                     //         is always sent with the new program and "should"
                     //         be up to date, even if we have a slight possible race
                     //         condition between GraphMessage::NewProg
-                    //         and QuickMessage::AtomUpdate.
+                    //         and GraphMessage::AtomUpdate.
 
                     // First overwrite by the current input parameters,
                     // to make sure _all_ inputs have a proper value
@@ -321,6 +319,21 @@ impl NodeExecutor {
                             self.prog.prog.len()
                         );
                     });
+                }
+                GraphMessage::AtomUpdate { at_idx, value } => {
+                    let prog = &mut self.prog;
+                    let garbage = std::mem::replace(&mut prog.atoms[at_idx], value);
+
+                    let _ = self.shared.graph_drop_prod.push(DropMsg::Atom { atom: garbage });
+                }
+                GraphMessage::ParamUpdate { input_idx, value } => {
+                    self.set_param(input_idx, value);
+                }
+                GraphMessage::ModamtUpdate { mod_idx, modamt } => {
+                    self.set_modamt(mod_idx, modamt);
+                }
+                GraphMessage::SetMonitor { bufs } => {
+                    self.monitor_signal_cur_inp_indices = bufs;
                 }
             }
         }
@@ -407,31 +420,6 @@ impl NodeExecutor {
     }
 
     #[inline]
-    pub fn process_param_updates(&mut self, nframes: usize) {
-        while let Some(upd) = self.shared.quick_update_con.pop() {
-            match upd {
-                QuickMessage::AtomUpdate { at_idx, value } => {
-                    let prog = &mut self.prog;
-                    let garbage = std::mem::replace(&mut prog.atoms[at_idx], value);
-
-                    let _ = self.shared.graph_drop_prod.push(DropMsg::Atom { atom: garbage });
-                }
-                QuickMessage::ParamUpdate { input_idx, value } => {
-                    self.set_param(input_idx, value);
-                }
-                QuickMessage::ModamtUpdate { mod_idx, modamt } => {
-                    self.set_modamt(mod_idx, modamt);
-                }
-                QuickMessage::SetMonitor { bufs } => {
-                    self.monitor_signal_cur_inp_indices = bufs;
-                }
-            }
-        }
-
-        self.process_smoothers(nframes);
-    }
-
-    #[inline]
     pub fn process<T: NodeAudioContext>(&mut self, ctx: &mut T) {
         // let tb = std::time::Instant::now();
 
@@ -442,7 +430,7 @@ impl NodeExecutor {
             });
         }
 
-        self.process_param_updates(ctx.nframes());
+        self.process_smoothers(ctx.nframes());
 
         let nodes = &mut self.nodes;
         let ctx_vals = &mut self.shared.node_ctx_values;

@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use super::{
-    FeedbackFilter, GraphMessage, NodeOp, NodeProg, QuickMessage, MAX_ALLOCATED_NODES,
+    FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES,
     MAX_AVAIL_TRACKERS, MAX_INPUTS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::tracker::{PatternData, Tracker};
@@ -37,7 +37,7 @@ pub struct NodeInstance {
     /// A mapping array, to map from input index of the node
     /// to the modulator index. Because not every input has an
     /// associated modulator.
-    /// This is used later to send [QuickMessage::ModamtUpdate].
+    /// This is used later to send [GraphMessage::ModamtUpdate].
     /// The input index into this array is the index returned from
     /// routines like [NodeId::inp_param].
     in2mod_map: [Option<usize>; MAX_INPUTS],
@@ -215,8 +215,6 @@ pub(crate) struct SharedNodeConf {
     pub(crate) node_ctx_values: Vec<Arc<AtomicFloat>>,
     /// For updating the NodeExecutor with graph updates.
     pub(crate) graph_update_prod: Producer<GraphMessage>,
-    /// For quick updates like UI paramter changes.
-    pub(crate) quick_update_prod: Producer<QuickMessage>,
     /// For receiving monitor data from the backend thread.
     pub(crate) monitor: Monitor,
     /// Handles deallocation of dead nodes from the backend.
@@ -229,11 +227,9 @@ use super::node_exec::SharedNodeExec;
 impl SharedNodeConf {
     pub(crate) fn new() -> (Self, SharedNodeExec) {
         let rb_graph = RingBuffer::new(MAX_ALLOCATED_NODES * 2);
-        let rb_quick = RingBuffer::new(MAX_ALLOCATED_NODES * 8);
         let rb_drop = RingBuffer::new(MAX_ALLOCATED_NODES * 2);
 
         let (rb_graph_prod, rb_graph_con) = rb_graph.split();
-        let (rb_quick_prod, rb_quick_con) = rb_quick.split();
         let (rb_drop_prod, rb_drop_con) = rb_drop.split();
 
         let drop_thread = DropThread::new(rb_drop_con);
@@ -252,14 +248,12 @@ impl SharedNodeConf {
             Self {
                 node_ctx_values,
                 graph_update_prod: rb_graph_prod,
-                quick_update_prod: rb_quick_prod,
                 monitor,
                 drop_thread,
             },
             SharedNodeExec {
                 node_ctx_values: exec_node_ctx_vals,
                 graph_update_con: rb_graph_con,
-                quick_update_con: rb_quick_con,
                 graph_drop_prod: rb_drop_prod,
                 monitor_backend,
             },
@@ -384,8 +378,8 @@ impl NodeConfigurator {
                 if let Some(mod_idx) = mod_idx {
                     let _ = self
                         .shared
-                        .quick_update_prod
-                        .push(QuickMessage::ModamtUpdate { mod_idx, modamt });
+                        .graph_update_prod
+                        .push(GraphMessage::ModamtUpdate { mod_idx, modamt });
                 }
 
                 false
@@ -438,10 +432,11 @@ impl NodeConfigurator {
                 nparam.value = at.clone();
 
                 let at_idx = nparam.at_idx;
+                println!("SEND ATOM UPDATE: {}, {:?}", at_idx, at);
                 let _ = self
                     .shared
-                    .quick_update_prod
-                    .push(QuickMessage::AtomUpdate { at_idx, value: at });
+                    .graph_update_prod
+                    .push(GraphMessage::AtomUpdate { at_idx, value: at });
             }
         } else {
             self.param_values.insert(param, at.f());
@@ -453,8 +448,8 @@ impl NodeConfigurator {
                 let input_idx = nparam.input_idx;
                 let _ = self
                     .shared
-                    .quick_update_prod
-                    .push(QuickMessage::ParamUpdate { input_idx, value });
+                    .graph_update_prod
+                    .push(GraphMessage::ParamUpdate { input_idx, value });
             }
         }
     }
@@ -645,7 +640,7 @@ impl NodeConfigurator {
                 i += 1;
             }
 
-            let _ = self.shared.quick_update_prod.push(QuickMessage::SetMonitor { bufs });
+            let _ = self.shared.graph_update_prod.push(GraphMessage::SetMonitor { bufs });
         }
     }
 
@@ -965,6 +960,7 @@ impl NodeConfigurator {
 
         self.output_fb_cons = prog.take_feedback_consumer();
 
+        println!("NEW PROG id={}", prog.unique_id);
         let _ = self.shared.graph_update_prod.push(GraphMessage::NewProg { prog, copy_old_out });
     }
 

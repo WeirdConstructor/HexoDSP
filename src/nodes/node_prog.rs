@@ -3,7 +3,12 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{ProcBuf, SAtom};
+use std::cell::RefCell;
 use triple_buffer::{Input, Output, TripleBuffer};
+
+thread_local! {
+    pub static NODE_PROG_ID_COUNTER: RefCell<usize> = RefCell::new(1);
+}
 
 #[derive(Debug, Clone)]
 pub struct ModOp {
@@ -189,6 +194,10 @@ pub struct NodeProg {
 
     /// Temporary hold for the producer for the `out_feedback`:
     pub out_fb_cons: Option<Output<Vec<f32>>>,
+
+    /// A unique ID assigned to the node prog. Mostly for debugging purposes.
+    /// You should only read this field.
+    pub unique_id: usize,
 }
 
 impl Drop for NodeProg {
@@ -201,6 +210,14 @@ impl Drop for NodeProg {
             buf.free();
         }
     }
+}
+
+fn new_node_prog_id() -> usize {
+    NODE_PROG_ID_COUNTER.with(|cnt| {
+        let unique_id = *cnt.borrow();
+        *cnt.borrow_mut() += 1;
+        unique_id
+    })
 }
 
 impl NodeProg {
@@ -219,6 +236,7 @@ impl NodeProg {
             out_feedback: input_fb,
             out_fb_cons: Some(output_fb),
             locked_buffers: false,
+            unique_id: new_node_prog_id(),
         }
     }
 
@@ -253,6 +271,7 @@ impl NodeProg {
             out_feedback: input_fb,
             out_fb_cons: Some(output_fb),
             locked_buffers: false,
+            unique_id: new_node_prog_id(),
         }
     }
 
