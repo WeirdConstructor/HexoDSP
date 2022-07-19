@@ -17,6 +17,7 @@ When adding a new node to HexoDSP, I recommend working through the following che
 - [ ] Parameter fine tuning
 - [ ] DSP tests for all (relevant) params
 - [ ] Ensure Documentation is properly formatted for the GUI
+- [ ] Format the source using `cargo fmt`
 - [ ] Add CHANGELOG.md entry in HexoSynth
 - [ ] Add CHANGELOG.md entry in HexoDSP
 - [ ] Add table entry in README.md in HexoSynth
@@ -30,13 +31,17 @@ until you get the hang of all the things involved to make it compile in the firs
 
 **Be aware that new DSP nodes need to meet these quality guidelines to be included:**
 
-- Clean Rust code that I can understand and maintain.
+- Clean Rust code that I can understand and maintain. You can use `cargo fmt` (rustfmt) to
+format the code.
 - Does not drag in huge dependency trees. One rationale here is,
 that I don't want the sound of a HexoSynth patch to change (significantly) because
 some upstream crate decided to change their DSP code. To have optimal
 control over this, I would love to have all the DSP code
 contained in HexoDSP. Make sure to link the repository the code comes
-from though.
+from though. If you add dependencies for your DSP node, make sure that it's
+characteristics are properly covered by the automated tests. So that problems become
+visible in case upstream breaks or changes it's DSP code. If DSP code changes just slightly,
+the test cases of course need to be changed accordingly.
 - Come with automated smoke tests like all the other nodes, most test
 signal min/max/rms over time, as well as the frequency spectrum
 where applicable.
