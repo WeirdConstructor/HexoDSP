@@ -10,16 +10,23 @@
 
 When adding a new node to HexoDSP, I recommend working through the following checklist:
 
-- [ ] Implement boilerplate
-- [ ] Document boilerplate
+- [ ] Implement boilerplate in node_yourname.rs
+- [ ] Add input parameter and output signal definition to dsp/mod.rs
+- [ ] Document boilerplate in node_yourname.rs
 - [ ] DSP implementation
 - [ ] Parameter fine tuning
-- [ ] DSP tests for all params
+- [ ] DSP tests for all (relevant) params
 - [ ] Ensure Documentation is properly formatted for the GUI
 - [ ] Add CHANGELOG.md entry in HexoSynth
 - [ ] Add CHANGELOG.md entry in HexoDSP
 - [ ] Add table entry in README.md in HexoSynth
 - [ ] Add table entry in README.md in HexoDSP
+
+The boilerplate can be a bit daunting. But it pays off, because HexoSynth will give
+you a GUI for your DSP code for free at the end.
+
+Generally I recommend starting out small. Define your new node with minimal parameters
+until you get the hang of all the things involved to make it compile in the first place.
 
 Here are some hints to get you started:
 
@@ -60,6 +67,9 @@ so called _Atom parameters_. The data type for these is the [SAtom] datatype. An
 can not be automated.
 
 ### Node Documentation
+
+**Attention: Defining the documentation for your DSP node is not optional. It's required to make
+it compile in the first place!**
 
 Every DSP node must come with online documentation. The online documentation is what makes the
 node usable in the first place. It's the only hint for the user to learn how to use this node.
