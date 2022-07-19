@@ -167,6 +167,81 @@ to the HexoDSP node interface.
 
 The code for `TriSawLFO` in `dsp/helpers.rs` is then independent and reusable else where.
 
+### Node Parameter/Inputs
+
+When implementing your node, you want to access the parameters or inputs of your DSP node.
+This is done using the buffer access modules in `dsp/mod.rs` that are defined using the
+`node_list` macro. Let me give you a short overview using `node_sin.rs` as an example:
+
+```ignore
+    #[inline]
+    fn process<T: NodeAudioContext>(
+        &mut self,
+        ctx: &mut T, // DSP execution context holding the DSP graph input and output buffers.
+        _ectx: &mut NodeExecContext, // Contains special stuff, like the FeedbackBuffers
+        _nctx: &NodeContext, // Holds context info about the node, for instance which ports
+                             // are connected.
+        _atoms: &[SAtom],    // An array holding the Atom parameters
+        inputs: &[ProcBuf],  // An array holding the input parameter buffers, containing
+                             // either outputs from other DSP nodes or smoothed parameter
+                             // settings from the GUI/frontend.
+        outputs: &mut [ProcBuf], // An array holding the output buffers.
+        ctx_vals: LedPhaseVals,  // Values for visual aids in the GUI (the hextile LED)
+    ) {
+        use crate::dsp::{denorm_offs, inp, out};
+
+        let o = out::Sin::sig(outputs);
+        let freq = inp::Sin::freq(inputs);
+        let det = inp::Sin::det(inputs);
+        let isr = 1.0 / self.srate;
+
+        let mut last_val = 0.0;
+        for frame in 0..ctx.nframes() {
+            let freq = denorm_offs::Sampl::freq(freq, det.read(frame), frame);
+            // ...
+        }
+        // ...
+    }
+```
+
+There are three buffer/parameter function access modules loaded in this example:
+
+```ignore
+    use crate::dsp::{denorm_offs, inp, out};
+```
+
+`inp` holds a sub module for each of the available nodes. That means: `inp::Sin`, `inp::Ad`, ...
+Those submodules each have a function that returns the corresponding buffer from the `inputs`
+vector of buffers. That means `inp::Sin::det(inputs)` gives you a reference to a [ProcBuf]
+you can read the normalized signal inputs (range -1 to 1) from.
+
+It works similarly with `out::Sin::sig`, which provides you with a [ProcBuf] reference to
+write your output to.
+
+`denorm_offs` is a special module, that offers you functions to access the denormalized
+value of a specific input parameter with a modulation offset.
+
+Commonly you want to use the `denorm` module to access the denormalized values. That means
+values in human understandable form and that can be used in your DSP arithmetics more easily.
+For instance `denorm::TsLFO::time` from `node_tslfo.rs`:
+
+```ignore
+        use crate::dsp::{denorm, inp, out};
+
+        let time = inp::TsLFO::time(inputs);
+        for frame in 0..ctx.nframes() {
+            let time_ms = denorm::TsLFO::time(time, frame).clamp(0.1, 300000.0);
+            // ...
+        }
+```
+
+`denorm::TsLFO::time` is a function that takes the [ProcBuf] with the raw normalized
+input signal samples and returns the denormalized values in milliseconds for a specific
+frame.
+
+To get a hang of all the possibilities I suggest diving a bit into the other node source code
+a bit.
+
 ### Node Beautification
 
 To make nodes responsive in HexoSynth the `DspNode::process` function receives the [LedPhaseVals].
