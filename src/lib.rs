@@ -2,9 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-/*!
-
-# HexoDSP - Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth.
+/*!# HexoDSP - Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth.
 
 This project contains the complete DSP backend of the modular
 synthesizer [HexoSynth](https://github.com/WeirdConstructor/HexoSynth).
@@ -27,6 +25,34 @@ Here a short list of features:
 * Provides a wide variety of modules
 * Extensible framework for quickly developing new nodes at compile time
 * A comprehensive automated test suite
+
+And following DSP nodes:
+
+| Category | Name | Function |
+|-|-|-|
+| IO Util | Out         | Audio output (to DAW or Jack) |
+| Osc     | Sampl       | Sample player |
+| Osc     | Sin         | Sine oscillator |
+| Osc     | BOsc        | Basic bandlimited waveform oscillator (waveforms: Sin, Tri, Saw, Pulse/Square) |
+| Osc     | VOsc        | Vector phase shaping oscillator |
+| Osc     | Noise       | Noise oscillator |
+| Signal  | Amp         | Amplifier/Attenuator |
+| Signal  | SFilter     | Simple collection of filters, useable for synthesis |
+| Signal  | Delay       | Single tap signal delay |
+| Signal  | PVerb       | Reverb node, based on Dattorros plate reverb algorithm |
+| Signal  | AllP        | All-Pass filter based on internal delay line feedback |
+| Signal  | Comb        | Comb filter |
+| N-\>M   | Mix3        | 3 channel mixer |
+| N-\>M   | Mux9        | 9 channel to 1 output multiplexer/switch |
+| Ctrl    | SMap        | Simple control signal mapper |
+| Ctrl    | Map         | Control signal mapper |
+| Ctrl    | CQnt        | Control signal pitch quantizer |
+| Ctrl    | Quant       | Pitch signal quantizer |
+| Mod     | TSeq        | Tracker/pattern sequencer |
+| Mod     | Ad          | Attack-Decay envelope |
+| Mod     | TsLFO       | Tri/Saw waveform low frequency oscillator (LFO) |
+| Mod     | RndWk       | Random walker, a Sample & Hold noise generator |
+| IO Util | FbWr / FbRd | Utility modules for feedback in patches |
 
 ## API Examples
 

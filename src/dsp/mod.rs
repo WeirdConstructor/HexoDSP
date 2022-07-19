@@ -28,7 +28,26 @@ you a GUI for your DSP code for free at the end.
 Generally I recommend starting out small. Define your new node with minimal parameters
 until you get the hang of all the things involved to make it compile in the first place.
 
-Here are some hints to get you started:
+**Be aware that new DSP nodes need to meet these quality guidelines to be included:**
+
+- Clean Rust code that I can understand and maintain.
+- Does not drag in huge dependency trees. One rationale here is,
+that I don't want the sound of a HexoSynth patch to change (significantly) because
+some upstream crate decided to change their DSP code. To have optimal
+control over this, I would love to have all the DSP code
+contained in HexoDSP. Make sure to link the repository the code comes
+from though.
+- Come with automated smoke tests like all the other nodes, most test
+signal min/max/rms over time, as well as the frequency spectrum
+where applicable.
+- It's parameters have proper denormalized mappings, like `0.5 => 4000 Hz` or `0.3 => 200ms`.
+- Provide short descriptions for the node and it's parameters.
+- Provide a comprehensive longer help text with (more details further down in this guide):
+  - What this node is about
+  - How to use it
+  - How the parameters work in combination
+  - Suggestions which combinations with other nodes might be interesting
+- If applicable: provide a graph function for visualizing what it does.
 
 ### Boilerplate
 
