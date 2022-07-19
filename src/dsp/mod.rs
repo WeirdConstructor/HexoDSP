@@ -376,8 +376,35 @@ When doing this, keep the following grid layout in mind:
            \_____/
 ```
 
+Defining the outputs of a cell is done like this:
+
+```ignore
+        Cell::empty(ad).out(None, None, ad.out("sig"))
+```
+
+[crate::Cell::empty] takes a [NodeId] as first argument. The [crate::Cell]
+structure then allows you to specify the output ports using the [crate::Cell::out]
+function. The 3 arguments of that function are for the 3 edges of that hex tile:
+
+```ignore
+        //                  TopRight  BottomRight Bottom
+        Cell::empty(ad).out(None,     None,       ad.out("sig"))
+```
+
+[crate::Cell::input] works the same way, but the 3 arguments refer to the 3 input
+edges of a hex tile:
+
+```ignore
+        //                     Top             TopLeft  BottomLeft
+        Cell::empty(out).input(out.inp("ch1"), None,    None)
+```
+
+The [NodeId] interface offers you functions to get the input parameter index from
+a name like `out.inp("ch1")` or the output port index from a name: `ad.out("sig")`.
+
 After you have setup everything for the test, you usually want to modify a paramter
 and look at the values the graph returns.
+
 
 ```ignore
     #[test]

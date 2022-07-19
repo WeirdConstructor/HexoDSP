@@ -388,7 +388,7 @@ pub trait MatrixObserver {
     /// Not called, when [MatrixObserver::update_all] tells you that
     /// everything has changed.
     fn update_prop(&self, key: &str);
-    /// Called when a new cell is monitored via [MatrixObserver::monitor_cell].
+    /// Called when a new cell is monitored via [Matrix::monitor_cell].
     /// Not called, when [MatrixObserver::update_all] tells you that
     /// everything has changed.
     fn update_monitor(&self, cell: &Cell);
