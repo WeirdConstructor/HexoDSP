@@ -2182,13 +2182,13 @@ impl<F: Flt> TriSawLFO<F> {
         };
 
         if s.abs() > f(1.0) {
-        println!(
-            "RECALC TRISAW: rev={}, rise={}, fall={}, phase={}",
-            self.rev.to_f64().unwrap_or(0.0),
-            self.rise_r.to_f64().unwrap_or(0.0) as f32,
-            self.fall_r.to_f64().unwrap_or(0.0) as f32,
-            self.phase.to_f64().unwrap_or(0.0) as f32
-        );
+            println!(
+                "RECALC TRISAW: rev={}, rise={}, fall={}, phase={}",
+                self.rev.to_f64().unwrap_or(0.0),
+                self.rise_r.to_f64().unwrap_or(0.0) as f32,
+                self.fall_r.to_f64().unwrap_or(0.0) as f32,
+                self.phase.to_f64().unwrap_or(0.0) as f32
+            );
         }
 
         self.phase = self.phase + self.freq * self.israte;
