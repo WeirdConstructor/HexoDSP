@@ -2116,8 +2116,6 @@ pub struct TriSawLFO<F: Flt> {
     phase: F,
     /// The point from where the falling edge will be used.
     rev: F,
-    /// Whether the LFO is currently rising
-    rising: bool,
     /// The frequency.
     freq: F,
     /// Precomputed rise/fall rate of the LFO.
@@ -2133,7 +2131,6 @@ impl<F: Flt> TriSawLFO<F> {
             israte: f(1.0 / 44100.0),
             phase: f(0.0),
             rev: f(0.5),
-            rising: true,
             freq: f(1.0),
             fall_r: f(0.0),
             rise_r: f(0.0),
@@ -2163,7 +2160,6 @@ impl<F: Flt> TriSawLFO<F> {
     pub fn reset(&mut self) {
         self.phase = self.init_phase;
         self.rev = f(0.5);
-        self.rising = true;
     }
 
     #[inline]
@@ -2177,18 +2173,23 @@ impl<F: Flt> TriSawLFO<F> {
     pub fn next_unipolar(&mut self) -> F {
         if self.phase >= f(1.0) {
             self.phase = self.phase - f(1.0);
-            self.rising = true;
         }
 
-        if self.phase >= self.rev {
-            self.rising = false;
-        }
-
-        let s = if self.rising {
+        let s = if self.phase < self.rev {
             self.phase * self.rise_r
         } else {
             self.phase * self.fall_r - self.fall_r
         };
+
+        if s.abs() > f(1.0) {
+        println!(
+            "RECALC TRISAW: rev={}, rise={}, fall={}, phase={}",
+            self.rev.to_f64().unwrap_or(0.0),
+            self.rise_r.to_f64().unwrap_or(0.0) as f32,
+            self.fall_r.to_f64().unwrap_or(0.0) as f32,
+            self.phase.to_f64().unwrap_or(0.0) as f32
+        );
+        }
 
         self.phase = self.phase + self.freq * self.israte;
 
