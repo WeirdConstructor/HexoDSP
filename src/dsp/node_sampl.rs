@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use super::helpers::Trigger;
+use super::helpers::{Trigger, cubic_interpolate};
 use crate::dsp::{at, denorm, denorm_offs, inp, out}; //, inp, denorm, denorm_v, inp_dir, at};
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
@@ -154,26 +154,7 @@ impl Sampl {
         let f = self.phase.fract();
         self.phase = j as f64 + f + sr_factor * speed;
 
-        // Hermite interpolation, take from
-        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
-        //
-        // Thanks go to Eric Wood!
-        //
-        // For the interpolation code:
-        // MIT License, Copyright (c) 2021 Eric Wood
-        let xm1 = sample_data[(i + 1) % sd_len];
-        let x0 = sample_data[i % sd_len];
-        let x1 = sample_data[(i - 1) % sd_len];
-        let x2 = sample_data[(i - 2) % sd_len];
-
-        let c = (x1 - xm1) * 0.5;
-        let v = x0 - x1;
-        let w = c + v;
-        let a = w + v + (x2 - x0) * 0.5;
-        let b_neg = w + a;
-
-        let f = (1.0 - f) as f32;
-        (((a * f) - b_neg) * f + c) * f + x0
+        cubic_interpolate(&sample_data[..], sd_len, i, (1.0 - f) as f32)
     }
 
     #[allow(clippy::many_single_char_names)]
@@ -188,26 +169,7 @@ impl Sampl {
         let f = self.phase.fract();
         self.phase = (i % sd_len) as f64 + f + sr_factor * speed;
 
-        // Hermite interpolation, take from
-        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
-        //
-        // Thanks go to Eric Wood!
-        //
-        // For the interpolation code:
-        // MIT License, Copyright (c) 2021 Eric Wood
-        let xm1 = sample_data[(i - 1) % sd_len];
-        let x0 = sample_data[i % sd_len];
-        let x1 = sample_data[(i + 1) % sd_len];
-        let x2 = sample_data[(i + 2) % sd_len];
-
-        let c = (x1 - xm1) * 0.5;
-        let v = x0 - x1;
-        let w = c + v;
-        let a = w + v + (x2 - x0) * 0.5;
-        let b_neg = w + a;
-
-        let f = f as f32;
-        (((a * f) - b_neg) * f + c) * f + x0
+        cubic_interpolate(&sample_data[..], sd_len, i, f as f32)
     }
 
     #[allow(clippy::float_cmp)]

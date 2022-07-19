@@ -153,7 +153,7 @@ fn check_node_sampl_reverse() {
     matrix.set_param(dir_p, SAtom::setting(1));
 
     let (rms, min, max) = run_and_get_l_rms_mimax(&mut node_exec, 50.0);
-    assert_rmsmima!((rms, min, max), (0.50059, -0.9997, 0.9997));
+    assert_rmsmima!((rms, min, max), (0.5003373, -0.9997, 0.9997));
 
     let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
     assert_eq!(fft[0], (441, 1023));
@@ -164,11 +164,11 @@ fn check_node_sampl_reverse() {
 
     matrix.set_param(freq_p, SAtom::param(-0.1));
     let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
-    assert_eq!(fft[0], (215, 880));
+    assert_eq!(fft[0], (215, 881));
 
     matrix.set_param(freq_p, SAtom::param(-0.2));
     let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
-    assert_eq!(fft[0], (108, 986));
+    assert_eq!(fft[0], (108, 987));
 
     matrix.set_param(freq_p, SAtom::param(-0.4));
     let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
@@ -176,7 +176,7 @@ fn check_node_sampl_reverse() {
 
     matrix.set_param(freq_p, SAtom::param(-0.5));
     let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
-    assert_eq!(fft[0], (11, 999));
+    assert_eq!(fft[0], (11, 1000));
 
     matrix.set_param(freq_p, SAtom::param(0.2));
     let fft = run_and_get_fft4096(&mut node_exec, 800, 20.0);
@@ -617,8 +617,8 @@ fn check_node_sampl_rev_2() {
         res.0,
         5000,
         vec![
-            0.9999773, 0.886596, 0.77321476, 0.6598335, 0.5464522, 0.43307102, 0.31968975,
-            0.20630851, 0.09292727
+            0.0, 0.88664144, 0.7732602, 0.6598789, 0.54649764, 0.4331164, 0.31973514, 0.20635389,
+            0.09297263
         ]
     );
 

@@ -892,6 +892,48 @@ fn fclampc<F: Flt>(x: F, mi: f64, mx: f64) -> F {
     x.max(f(mi)).min(f(mx))
 }
 
+
+/// Hermite / Cubic interpolation of a buffer full of samples at the given _index_.
+/// _len_ is the buffer length to consider and wrap the index into. And _fract_ is the
+/// fractional part of the index.
+///
+/// Commonly used like this:
+///
+///```
+/// use hexodsp::dsp::helpers::cubic_interpolate;
+///
+/// let buf [f32; 9] = [1.0, 0.2, 0.4, 0.5, 0.7, 0.9, 1.0, 0.3, 0.3];
+/// let pos = 3.3_f32;
+///
+/// let i = pos.floor();
+/// let f = pos.fract();
+///
+/// let res = cubic_interpolate(&buf[..], buf.len(), i, f);
+/// assert_eq!((res - 0.4).abs() < 0.2);
+///```
+#[inline]
+pub fn cubic_interpolate<F: Flt>(data: &[F], len: usize, index: usize, fract: F) -> F {
+    // Hermite interpolation, take from
+    // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
+    //
+    // Thanks go to Eric Wood!
+    //
+    // For the interpolation code:
+    // MIT License, Copyright (c) 2021 Eric Wood
+    let xm1 = data[(index - 1) % len];
+    let x0 = data[index % len];
+    let x1 = data[(index + 1) % len];
+    let x2 = data[(index + 2) % len];
+
+    let c = (x1 - xm1) * f(0.5);
+    let v = x0 - x1;
+    let w = c + v;
+    let a = w + v + (x2 - x0) * f(0.5);
+    let b_neg = w + a;
+
+    (((a * fract) - b_neg) * fract + c) * fract + x0
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct DelayBuffer<F: Flt> {
     data: Vec<F>,
@@ -1006,7 +1048,8 @@ impl<F: Flt> DelayBuffer<F> {
 
     /// Fetch a sample from the delay buffer at the given offset.
     ///
-    /// * `s_offs` - Sample offset in samples.
+    /// * `s_offs` - Sample offset in samples into the past of the [DelayBuffer]
+    /// from the current write (or the "now") position.
     #[inline]
     pub fn cubic_interpolate_at_s(&self, s_offs: F) -> F {
         let data = &self.data[..];
@@ -1016,26 +1059,7 @@ impl<F: Flt> DelayBuffer<F> {
 
         let i = (self.wr + len) - offs;
 
-        // Hermite interpolation, take from
-        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
-        //
-        // Thanks go to Eric Wood!
-        //
-        // For the interpolation code:
-        // MIT License, Copyright (c) 2021 Eric Wood
-        let xm1 = data[(i + 1) % len];
-        let x0 = data[i % len];
-        let x1 = data[(i - 1) % len];
-        let x2 = data[(i - 2) % len];
-
-        let c = (x1 - xm1) * f(0.5);
-        let v = x0 - x1;
-        let w = c + v;
-        let a = w + v + (x2 - x0) * f(0.5);
-        let b_neg = w + a;
-
-        let fract = fract as F;
-        (((a * fract) - b_neg) * fract + c) * fract + x0
+        cubic_interpolate(data, len, i, f::<F>(1.0) - fract)
     }
 
     #[inline]
