@@ -3,8 +3,8 @@
 // See README.md and COPYING for details.
 
 use super::{
-    FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES,
-    MAX_AVAIL_TRACKERS, MAX_INPUTS, UNUSED_MONITOR_IDX,
+    FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_TRACKERS,
+    MAX_INPUTS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
@@ -245,12 +245,7 @@ impl SharedNodeConf {
         }
 
         (
-            Self {
-                node_ctx_values,
-                graph_update_prod: rb_graph_prod,
-                monitor,
-                drop_thread,
-            },
+            Self { node_ctx_values, graph_update_prod: rb_graph_prod, monitor, drop_thread },
             SharedNodeExec {
                 node_ctx_values: exec_node_ctx_vals,
                 graph_update_con: rb_graph_con,
