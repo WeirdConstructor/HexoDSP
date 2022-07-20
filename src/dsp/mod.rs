@@ -90,6 +90,25 @@ Input parameters can be connected to outputs of other DSP nodes. In contrast to 
 so called _Atom parameters_. The data type for these is the [SAtom] datatype. And these parameters
 can not be automated.
 
+You can freely choose parameter names like eg. `inp` or `gain` and
+pick names that suit the parameter semantics best. But I would like you to keep the naming
+consistent with the rest of HexoDSP nodes if that is suitable to the DSP node.
+
+There are some implicit conventions in HexoDSP for naming though:
+
+- `inp` for single channel signal input
+- `ch1`, `ch2`, ... for multiple channels
+- `sig` for signal output
+- `trig` for receiving a single trigger signal
+- `t_*` if multiple trigger signals are expected
+- If you have `freq` inputs, consider also adding `det` for detuning that frequency input.
+But only if you think this makes sense in the context of the DSP node.
+
+The macros in the node list definition like `n_gain`, `d_pit`, `r_fq` and so on
+are all macros that are defined in the HexoDSP crate. You can create your own
+normalization/denormalization, rounding, step and formatting function macros if
+the existing ones don't suit the DSP node's needs.
+
 ### Node Documentation
 
 **Attention: Defining the documentation for your DSP node is not optional. It's required to make
