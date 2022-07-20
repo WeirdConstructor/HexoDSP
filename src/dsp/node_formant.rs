@@ -64,9 +64,9 @@ impl DspNode for Formant {
         for frame in 0..ctx.nframes() {
             // get the inputs
             let base_freq = denorm::Formant::freq(base_freq, frame);
-            let formant_freq = denorm::Formant::freq(formant_freq, frame);
-            let attack_freq = denorm::Formant::freq(attack_freq, frame);
-            let decay_freq = denorm::Formant::freq(decay_freq, frame);
+            let formant_freq = denorm::Formant::form(formant_freq, frame);
+            let attack_freq = denorm::Formant::atk(attack_freq, frame);
+            let decay_freq = denorm::Formant::dcy(decay_freq, frame);
 
             // where the two decays meet
             let carrier_center = decay_freq / (attack_freq + decay_freq);

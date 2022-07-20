@@ -973,10 +973,10 @@ macro_rules! node_list {
                {2 0 mode setting(0) mode fa_noise_mode 0 1}
                [0 sig],
             formant => Formant UIType::Generic UICategory::Osc
-               (0 freq n_pit d_pit r_fq f_freq stp_d 0.0, 1.0, 0.5)
-               (1 form n_pit d_pit r_fq f_freq stp_d 0.0, 1.0, 0.5)
-               (2 atk  n_pit d_pit r_fq f_freq stp_d 0.0, 1.0, 0.5)
-               (3 dcy  n_pit d_pit r_fq f_freq stp_d 0.0, 1.0, 0.5)
+               (0 freq n_pit d_pit r_fq f_freq stp_d -1.0, 1.0, 440.0)
+               (1 form n_pit d_pit r_fq f_freq stp_d -1.0, 1.0, 440.0)
+               (2 atk  n_pit d_pit r_fq f_freq stp_d -1.0, 1.0, 44.0)
+               (3 dcy  n_pit d_pit r_fq f_freq stp_d -1.0, 1.0, 44.0)
                [0 sig],
             sfilter => SFilter UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
