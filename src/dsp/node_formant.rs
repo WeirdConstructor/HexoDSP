@@ -104,6 +104,9 @@ impl DspNode for Formant {
             // entire wave
             let wave = carrier * modulator;
 
+            // increment phase (very imporant)
+            self.phase += self.inv_sample_rate;
+
             out.write(frame, wave);
         }
     }
