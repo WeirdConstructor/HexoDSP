@@ -186,6 +186,9 @@ devote for project coordination. So please don't be offended if your issue rots
 in the GitHub issue tracker, or your pull requests is left dangling around
 for ages.
 
+If you want to contribute new DSP nodes/modules to HexoDSP/HexoSynth,
+please look into the guide at the start of the [crate::dsp] module.
+
 I might merge pull requests if I find the time and think that the contributions
 are in line with my vision.
 
