@@ -109,6 +109,21 @@ are all macros that are defined in the HexoDSP crate. You can create your own
 normalization/denormalization, rounding, step and formatting function macros if
 the existing ones don't suit the DSP node's needs.
 
+### Signal Ranges in HexoDSP
+
+The HexoDSP graph, or rather the nodes, operate with the raw normalized (audio)
+signal range [-1, 1]. There is a second range that is also common in HexoDSP,
+which is the control signal range [0, 1]. Following this convention will help combinding
+HexoDSP nodes with each other. The existing normalization/denormalization functions for the
+node list declaration already encode most of the conventions in HexoDSP, but here is a short
+incomplete overview of common value mappings to the normalized signal ranges:
+
+- Frequencies are usually using the `n_pit` and `d_pit` mappings. Where 0.0 is 440Hz
+and the next octave is at 0.1 with 880Hz and the octave before that is at -0.1 with 220Hz.
+This means one octave per 0.1 signal value.
+- Triggers have to rise above the "high" threshold of 0.5 to be recognized, and the signal has to
+fall below 0.25 to be detected as "low" again. Same works for gates.
+
 ### Node Documentation
 
 **Attention: Defining the documentation for your DSP node is not optional. It's required to make
