@@ -1,7 +1,4 @@
-use super::helpers::{sqrt4_to_pow4, TrigSignal, Trigger};
-use crate::dsp::{
-    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
-};
+use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
 /// A simple amplifier
@@ -15,33 +12,13 @@ impl Formant {
     pub fn new(_nid: &NodeId) -> Self {
         Self { inv_sample_rate: 1.0 / 44100.0, phase: 0.0 }
     }
-    pub const inp: &'static str =
-        "Ad inp\nSignal input. If you don't connect this, and set this to 1.0 \
-        this will act as envelope signal generator. But you can also just \
-        route a signal directly through this of course.\nRange: (-1..1)\n";
-    pub const trig: &'static str =
-        "Ad trig\nTrigger input that starts the attack phase.\nRange: (0..1)\n";
+    pub const freq: &'static str = "Formant freq\nBase frequency to oscilate at\n";
+    pub const form: &'static str = "Formant form\nFrequency of the formant\n";
     pub const atk: &'static str =
-        "Ad atk\nAttack time of the envelope. You can extend the maximum \
-        range of this with the 'mult' setting.\nRange: (0..1)\n";
-    pub const dcy: &'static str = "Ad atk\nDecay time of the envelope. You can extend the maximum \
-        range of this with the 'mult' setting.\nRange: (0..1)\n";
-    pub const ashp: &'static str = "Ad ashp\nAttack shape. This allows you to change the shape \
-        of the attack stage from a logarithmic, to a linear and to an \
-        exponential shape.\nRange: (0..1)\n";
-    pub const dshp: &'static str = "Ad dshp\nDecay shape. This allows you to change the shape \
-        of the decay stage from a logarithmic, to a linear and to an \
-        exponential shape.\nRange: (0..1)\n";
-    pub const mult: &'static str = "Ad mult\nAttack and Decay time range multiplier. \
-        This will extend the maximum range of the 'atk' and 'dcy' parameters.";
-    pub const sig: &'static str =
-        "Ad sig\nEnvelope signal output. If a signal is sent to the 'inp' port, \
-        you will receive an attenuated signal here. If you set 'inp' to a \
-        fixed value (for instance 1.0), this will output an envelope signal \
-        in the range 0.0 to 'inp' (1.0).\nRange: (-1..1)\n";
-    pub const eoet: &'static str =
-        "Ad eoet\nEnd of envelope trigger. This output sends a trigger once \
-        the end of the decay stage has been reached.\nRange: (0..1)";
+        "Formant atk\nFormant attack bandwidth, controls the general bandwidth";
+    pub const dcy: &'static str =
+        "Formant dcy\nFormant decay bandwidth, controls the peak bandwidth";
+    pub const sig: &'static str = "Formant sig\nGenerated formant signal";
     pub const DESC: &'static str = r#"A direct formant synthesizer
 
 This generates a single formant from a given frequency, formant frequency, as well as attack and decay frequencies.
@@ -71,20 +48,26 @@ impl DspNode for Formant {
         ctx: &mut T,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        atoms: &[SAtom],
+        _atoms: &[SAtom],
         inputs: &[ProcBuf],
         outputs: &mut [ProcBuf],
-        ctx_vals: LedPhaseVals,
+        _ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{at, denorm, inp, out};
+        use crate::dsp::{denorm, inp, out};
 
         let base_freq = inp::Formant::freq(inputs);
-        let formant_freq = inp::Formant::fmt(inputs);
+        let formant_freq = inp::Formant::form(inputs);
         let attack_freq = inp::Formant::atk(inputs);
         let decay_freq = inp::Formant::dcy(inputs);
         let out = out::Formant::sig(outputs);
 
         for frame in 0..ctx.nframes() {
+            // get the inputs
+            let base_freq = denorm::Sampl::freq(base_freq, frame);
+            let formant_freq = denorm::Sampl::freq(formant_freq, frame);
+            let attack_freq = denorm::Sampl::freq(attack_freq, frame);
+            let decay_freq = denorm::Sampl::freq(decay_freq, frame);
+
             // where the two decays meet
             let carrier_center = decay_freq / (attack_freq + decay_freq);
 

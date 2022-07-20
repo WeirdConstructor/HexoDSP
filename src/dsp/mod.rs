@@ -1005,7 +1005,11 @@ macro_rules! node_list {
                [0 sig_l]
                [1 sig_r],
             formant => Formant UIType::Generic UICategory::Signal
-               (0),
+               (0 freq n_id d_id r_id f_def stp_d 0.0, 1.0, 0.5)
+               (1 form n_id d_id r_id f_def stp_d 0.0, 1.0, 0.5)
+               (2 atk  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.5)
+               (3 dcy  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.5)
+               [0 sig],
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
                {1 0 p     param(0.0) knob fa_test_s 0  10}
