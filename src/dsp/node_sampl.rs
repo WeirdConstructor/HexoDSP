@@ -148,7 +148,7 @@ impl Sampl {
             return 0.0;
         }
 
-        let j = self.phase.floor() as usize;
+        let j = self.phase.floor() as usize % sd_len;
         let i = ((sd_len - 1) - j);
 
         let f = self.phase.fract();
