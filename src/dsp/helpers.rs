@@ -892,7 +892,6 @@ fn fclampc<F: Flt>(x: F, mi: f64, mx: f64) -> F {
     x.max(f(mi)).min(f(mx))
 }
 
-
 /// Hermite / Cubic interpolation of a buffer full of samples at the given _index_.
 /// _len_ is the buffer length to consider and wrap the index into. And _fract_ is the
 /// fractional part of the index.
@@ -913,6 +912,7 @@ fn fclampc<F: Flt>(x: F, mi: f64, mx: f64) -> F {
 ///```
 #[inline]
 pub fn cubic_interpolate<F: Flt>(data: &[F], len: usize, index: usize, fract: F) -> F {
+    let index = index + len;
     // Hermite interpolation, take from
     // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
     //
@@ -1031,11 +1031,21 @@ impl<F: Flt> DelayBuffer<F> {
         let offs = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract = s_offs.fract();
 
-        let i = (self.wr + len) - offs;
+        // one extra offset, because feed() advances self.wr to the next writing position!
+        let i = (self.wr + len) - (offs + 1);
         let x0 = data[i % len];
         let x1 = data[(i - 1) % len];
 
-        x0 + fract * (x1 - x0)
+        let res = x0 + fract * (x1 - x0);
+        //d// eprintln!(
+        //d//     "INTERP: {:6.4} x0={:6.4} x1={:6.4} fract={:6.4} => {:6.4}",
+        //d//     s_offs.to_f64().unwrap_or(0.0),
+        //d//     x0.to_f64().unwrap(),
+        //d//     x1.to_f64().unwrap(),
+        //d//     fract.to_f64().unwrap(),
+        //d//     res.to_f64().unwrap(),
+        //d// );
+        res
     }
 
     /// Fetch a sample from the delay buffer at the given time.
@@ -1057,23 +1067,33 @@ impl<F: Flt> DelayBuffer<F> {
         let offs = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract = s_offs.fract();
 
-        let i = (self.wr + len) - offs;
-
-        cubic_interpolate(data, len, i, f::<F>(1.0) - fract)
+        let i = (self.wr + len) - (offs + 2);
+        let res = cubic_interpolate(data, len, i, f::<F>(1.0) - fract);
+//        eprintln!(
+//            "cubic at={} ({:6.4}) res={:6.4}",
+//            i % len,
+//            s_offs.to_f64().unwrap(),
+//            res.to_f64().unwrap()
+//        );
+        res
     }
 
     #[inline]
     pub fn nearest_at(&self, delay_time_ms: F) -> F {
         let len = self.data.len();
         let offs = ((delay_time_ms * self.srate) / f(1000.0)).floor().to_usize().unwrap_or(0) % len;
-        let idx = ((self.wr + len) - offs) % len;
+        // (offs + 1) one extra offset, because feed() advances
+        // self.wr to the next writing position!
+        let idx = ((self.wr + len) - (offs + 1)) % len;
         self.data[idx]
     }
 
     #[inline]
     pub fn at(&self, delay_sample_count: usize) -> F {
         let len = self.data.len();
-        let idx = ((self.wr + len) - delay_sample_count) % len;
+        // (delay_sample_count + 1) one extra offset, because feed() advances self.wr to
+        // the next writing position!
+        let idx = ((self.wr + len) - (delay_sample_count + 1)) % len;
         self.data[idx]
     }
 }

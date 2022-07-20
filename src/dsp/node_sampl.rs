@@ -148,8 +148,8 @@ impl Sampl {
             return 0.0;
         }
 
-        let j = self.phase.floor() as usize % sd_len;
-        let i = ((sd_len - 1) - j) + sd_len;
+        let j = self.phase.floor() as usize;
+        let i = ((sd_len - 1) - j);
 
         let f = self.phase.fract();
         self.phase = j as f64 + f + sr_factor * speed;
@@ -165,7 +165,7 @@ impl Sampl {
             return 0.0;
         }
 
-        let i = self.phase.floor() as usize + sd_len;
+        let i = self.phase.floor() as usize;
         let f = self.phase.fract();
         self.phase = (i % sd_len) as f64 + f + sr_factor * speed;
 
