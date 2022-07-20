@@ -901,14 +901,14 @@ fn fclampc<F: Flt>(x: F, mi: f64, mx: f64) -> F {
 ///```
 /// use hexodsp::dsp::helpers::cubic_interpolate;
 ///
-/// let buf [f32; 9] = [1.0, 0.2, 0.4, 0.5, 0.7, 0.9, 1.0, 0.3, 0.3];
+/// let buf : [f32; 9] = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
 /// let pos = 3.3_f32;
 ///
-/// let i = pos.floor();
+/// let i = pos.floor() as usize;
 /// let f = pos.fract();
 ///
 /// let res = cubic_interpolate(&buf[..], buf.len(), i, f);
-/// assert_eq!((res - 0.4).abs() < 0.2);
+/// assert!((res - 0.67).abs() < 0.2_f32);
 ///```
 #[inline]
 pub fn cubic_interpolate<F: Flt>(data: &[F], len: usize, index: usize, fract: F) -> F {
@@ -931,7 +931,31 @@ pub fn cubic_interpolate<F: Flt>(data: &[F], len: usize, index: usize, fract: F)
     let a = w + v + (x2 - x0) * f(0.5);
     let b_neg = w + a;
 
-    (((a * fract) - b_neg) * fract + c) * fract + x0
+    let res = (((a * fract) - b_neg) * fract + c) * fract + x0;
+
+    // let rr2 =
+    //     x0 + f::<F>(0.5) * fract * (
+    //         x1 - xm1 + fract * (
+    //             f::<F>(4.0) * x1
+    //             + f::<F>(2.0) * xm1
+    //             - f::<F>(5.0) * x0
+    //             - x2
+    //             + fract * (f::<F>(3.0) * (x0 - x1) - xm1 + x2)));
+
+    // eprintln!(
+    //     "index={} fract={:6.4} xm1={:6.4} x0={:6.4} x1={:6.4} x2={:6.4} = {:6.4} <> {:6.4}",
+    //     index, fract.to_f64().unwrap(), xm1.to_f64().unwrap(), x0.to_f64().unwrap(), x1.to_f64().unwrap(), x2.to_f64().unwrap(),
+    //     res.to_f64().unwrap(),
+    //     rr2.to_f64().unwrap()
+    // );
+
+    // eprintln!(
+    //     "index={} fract={:6.4} xm1={:6.4} x0={:6.4} x1={:6.4} x2={:6.4} = {:6.4}",
+    //     index, fract.to_f64().unwrap(), xm1.to_f64().unwrap(), x0.to_f64().unwrap(), x1.to_f64().unwrap(), x2.to_f64().unwrap(),
+    //     res.to_f64().unwrap(),
+    // );
+
+    res
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1067,14 +1091,18 @@ impl<F: Flt> DelayBuffer<F> {
         let offs = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract = s_offs.fract();
 
+        // (offs + 1) offset for compensating that self.wr points to the next
+        // unwritten position.
+        // Additional (offs + 1 + 1) offset for cubic_interpolate, which
+        // interpolates into the past through the delay buffer.
         let i = (self.wr + len) - (offs + 2);
         let res = cubic_interpolate(data, len, i, f::<F>(1.0) - fract);
-//        eprintln!(
-//            "cubic at={} ({:6.4}) res={:6.4}",
-//            i % len,
-//            s_offs.to_f64().unwrap(),
-//            res.to_f64().unwrap()
-//        );
+        //        eprintln!(
+        //            "cubic at={} ({:6.4}) res={:6.4}",
+        //            i % len,
+        //            s_offs.to_f64().unwrap(),
+        //            res.to_f64().unwrap()
+        //        );
         res
     }
 
