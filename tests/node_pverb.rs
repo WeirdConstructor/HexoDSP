@@ -125,10 +125,10 @@ fn check_node_pverb_dcy_1() {
     // 19 []
 
     // Now we see a very much longer tail:
-    assert_eq!(spec[0], vec![(388, 19), (431, 74), (474, 61), (517, 10)]);
-    assert_eq!(spec[5], vec![(388, 9), (431, 37), (474, 26)]);
-    assert_eq!(spec[9], vec![(388, 18), (431, 50), (474, 37), (517, 5)]);
-    assert_eq!(spec[19], vec![(388, 7), (431, 15), (474, 8)]);
+    assert_eq!(spec[0], vec![(388, 21), (431, 79), (474, 65), (517, 10)]);
+    assert_eq!(spec[5], vec![(388, 8), (431, 35), (474, 27), (517, 5)]);
+    assert_eq!(spec[9], vec![(388, 19), (431, 50), (474, 37), (517, 5)]);
+    assert_eq!(spec[19], vec![(388, 8), (431, 19), (474, 10)]);
 }
 
 #[test]
@@ -149,7 +149,7 @@ fn check_node_pverb_dcy_2() {
     assert_vec_feq!(
         rms_spec.iter().map(|rms| rms.0).collect::<Vec<f32>>(),
         // Decay over 500 ms:
-        vec![0.2108, 0.5744, 0.0881, 0.0021, 0.0006]
+        vec![0.23928945, 0.5664783, 0.07564733, 0.0016927856, 0.0006737139]
     );
 }
 
@@ -172,7 +172,7 @@ fn check_node_pverb_dcy_3() {
     assert_vec_feq!(
         rms_spec.iter().map(|rms| rms.0).collect::<Vec<f32>>(),
         // Decay over 5000 ms:
-        vec![0.6254, 0.2868, 0.0633, 0.0385, 0.0186,]
+        vec![0.6168, 0.2924, 0.0640, 0.0385, 0.0191]
     );
 }
 
@@ -194,7 +194,7 @@ fn check_node_pverb_dcy_4() {
     assert_vec_feq!(
         rms_spec.iter().map(|rms| rms.0).collect::<Vec<f32>>(),
         // Decay over 10000 ms:
-        vec![0.1313, 0.0995, 0.0932, 0.0507, 0.0456,]
+        vec![0.1319, 0.1046, 0.0942, 0.0517, 0.0435,]
     );
 }
 
@@ -241,9 +241,9 @@ fn check_node_pverb_dif_on() {
     // 17 []
 
     // We expect a diffuse but defined response:
-    assert_eq!(spec[0], vec![(388, 8), (431, 35), (474, 35), (517, 7), (560, 5)]);
-    assert_eq!(spec[7], vec![(431, 18), (474, 21), (517, 6)]);
-    assert_eq!(spec[13], vec![(388, 6), (431, 6)]);
+    assert_eq!(spec[0], vec![(388, 9), (431, 38), (474, 36), (517, 7), (560, 6)]);
+    assert_eq!(spec[7], vec![(431, 15), (474, 19), (517, 6)]);
+    assert_eq!(spec[13], vec![(388, 5), (431, 4)]);
     assert_eq!(spec[17], vec![]);
 }
 
@@ -295,10 +295,10 @@ fn check_node_pverb_dif_off() {
     assert_eq!(spec[0], vec![]);
     assert_eq!(
         spec[1],
-        vec![(301, 4), (345, 6), (388, 84), (431, 206), (474, 152), (517, 23), (560, 7)]
+        vec![(301, 4), (345, 6), (388, 85), (431, 208), (474, 152), (517, 23), (560, 7)]
     );
     assert_eq!(spec[2], vec![]);
-    assert_eq!(spec[3], vec![(345, 7), (388, 79), (431, 198), (474, 134), (517, 15), (560, 4)]);
+    assert_eq!(spec[3], vec![(345, 7), (388, 79), (431, 198), (474, 134), (517, 16), (560, 5)]);
     assert_eq!(spec[7], vec![]);
     assert_eq!(spec[8], vec![(388, 6), (431, 17), (474, 11)]);
     assert_eq!(spec[9], vec![(388, 7), (431, 20), (474, 13)]);
@@ -331,7 +331,7 @@ fn check_node_pverb_dif_off_predly() {
     trig_env(matrix, node_exec);
 
     let spec = run_fft_spectrum_each_47ms(node_exec, 4, 20);
-    dump_table!(spec);
+    //d// dump_table!(spec);
 
     // 0 []
     // 1 []
@@ -354,12 +354,12 @@ fn check_node_pverb_dif_off_predly() {
         vec![
             (215, 5),
             (301, 11),
-            (345, 15),
+            (345, 14),
             (388, 46),
-            (431, 105),
+            (431, 104),
             (474, 86),
-            (517, 18),
-            (560, 14),
+            (517, 17),
+            (560, 15),
             (603, 5)
         ]
     );
