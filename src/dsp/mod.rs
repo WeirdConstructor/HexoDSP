@@ -972,6 +972,12 @@ macro_rules! node_list {
                (1  offs  n_id      d_id  r_s    f_def stp_d -1.0, 1.0, 0.0)
                {2 0 mode setting(0) mode fa_noise_mode 0 1}
                [0 sig],
+            formant => Formant UIType::Generic UICategory::Osc
+               (0 freq n_pit d_pit r_fq f_freq stp_d 0.0, 1.0, 0.5)
+               (1 form n_pit d_pit r_fq f_freq stp_d 0.0, 1.0, 0.5)
+               (2 atk  n_pit d_pit r_fq f_freq stp_d 0.0, 1.0, 0.5)
+               (3 dcy  n_pit d_pit r_fq f_freq stp_d 0.0, 1.0, 0.5)
+               [0 sig],
             sfilter => SFilter UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
@@ -1004,13 +1010,7 @@ macro_rules! node_list {
                (14 mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                [0 sig_l]
                [1 sig_r],
-            formant => Formant UIType::Generic UICategory::Signal
-               (0 freq n_id d_id r_id f_def stp_d 0.0, 1.0, 0.5)
-               (1 form n_id d_id r_id f_def stp_d 0.0, 1.0, 0.5)
-               (2 atk  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.5)
-               (3 dcy  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.5)
-               [0 sig],
-            test => Test UIType::Generic UICategory::IOUtil
+           test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
                {1 0 p     param(0.0) knob fa_test_s 0  10}
                {2 1 trig  param(0.0) knob fa_test_s 0  0}
