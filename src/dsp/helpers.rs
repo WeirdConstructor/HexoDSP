@@ -1221,7 +1221,8 @@ impl<F: Flt> AllPass<F> {
         self.delay.tap_n(time_ms)
     }
 
-    /// Retrieve the next sample from the all-pass filter while feeding in the next.
+    /// Retrieve the next (cubic interpolated) sample from the all-pass
+    /// filter while feeding in the next.
     ///
     /// * `time_ms` - Delay time in milliseconds.
     /// * `g` - Feedback factor (usually something around 0.7 is common)
@@ -1229,6 +1230,20 @@ impl<F: Flt> AllPass<F> {
     #[inline]
     pub fn next(&mut self, time_ms: F, g: F, v: F) -> F {
         let s = self.delay.cubic_interpolate_at(time_ms);
+        let input = v + -g * s;
+        self.delay.feed(input);
+        input * g + s
+    }
+
+    /// Retrieve the next (linear interpolated) sample from the all-pass
+    /// filter while feeding in the next.
+    ///
+    /// * `time_ms` - Delay time in milliseconds.
+    /// * `g` - Feedback factor (usually something around 0.7 is common)
+    /// * `v` - The new input sample to feed the filter.
+    #[inline]
+    pub fn next_linear(&mut self, time_ms: F, g: F, v: F) -> F {
+        let s = self.delay.linear_interpolate_at(time_ms);
         let input = v + -g * s;
         self.delay.feed(input);
         input * g + s
