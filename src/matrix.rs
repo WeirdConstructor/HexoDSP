@@ -275,13 +275,13 @@ impl Cell {
         self
     }
 
-    /// Finds the first free input (one without an adjacent cell). If any free input
+    /// Finds the first free input or output (one without an adjacent cell). If any free input/output
     /// has an assigned input, that edge is returned.
     /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
     /// and any with `CellDir::C`.
     pub fn find_first_adjacent_free(
         &self,
-        m: &mut Matrix,
+        m: &Matrix,
         dir: CellDir,
     ) -> Option<(CellDir, Option<u8>)> {
         let mut free_ports = vec![];
@@ -320,7 +320,7 @@ impl Cell {
     /// and any with `CellDir::C`.
     pub fn find_all_adjacent_free(
         &self,
-        m: &mut Matrix,
+        m: &Matrix,
         dir: CellDir,
     ) -> Vec<(CellDir, (usize, usize))> {
         let mut free_ports = vec![];
@@ -345,7 +345,7 @@ impl Cell {
     }
 
     /// If the port is connected, it will return the position of the other cell.
-    pub fn is_port_dir_connected(&self, m: &mut Matrix, dir: CellDir) -> Option<(usize, usize)> {
+    pub fn is_port_dir_connected(&self, m: &Matrix, dir: CellDir) -> Option<(usize, usize)> {
         if self.has_dir_set(dir) {
             if let Some(new_pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
                 if let Some(dst_cell) = m.get(new_pos.0, new_pos.1) {
