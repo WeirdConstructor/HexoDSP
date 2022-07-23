@@ -978,6 +978,14 @@ impl Matrix {
         }
     }
 
+    /// Retrieves the immediate connections to adjacent cells and returns a list.
+    ///
+    /// Returns a vector with pairs of this content:
+    ///
+    ///    (
+    ///        (this_cell_connection_dir, this_cell_node_io_index),
+    ///        (other_cell_connection_dir, other_cell_node_io_index, (other_cell_x, other_cell_y))
+    ///    )
     pub fn get_connections(
         &self,
         x: usize,
