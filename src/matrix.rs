@@ -978,6 +978,39 @@ impl Matrix {
         }
     }
 
+    pub fn get_connections(
+        &self,
+        x: usize,
+        y: usize,
+    ) -> Option<Vec<((CellDir, u8), (CellDir, u8, (usize, usize)))>> {
+        let this_cell = self.get(x, y)?;
+
+        let mut ret = vec![];
+
+        for edge in 0..6 {
+            let dir = CellDir::from(edge);
+
+            if let Some(node_io_idx) = this_cell.local_port_idx(dir) {
+                if let Some((nx, ny)) = dir.offs_pos((x, y)) {
+                    if !(nx < self.w && ny < self.h) {
+                        continue;
+                    }
+
+                    if let Some(other_cell) = self.get(nx, ny) {
+                        if let Some(other_node_io_idx) = other_cell.local_port_idx(dir.flip()) {
+                            ret.push((
+                                (dir, node_io_idx),
+                                (dir.flip(), other_node_io_idx, (nx, ny)),
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        Some(ret)
+    }
+
     pub fn for_each<F: FnMut(usize, usize, &Cell)>(&self, mut f: F) {
         for x in 0..self.w {
             for y in 0..self.h {
@@ -1348,6 +1381,44 @@ mod tests {
     }
 
     #[test]
+    fn check_matrix_get_connections() {
+        use crate::nodes::new_node_engine;
+
+        let (node_conf, _node_exec) = new_node_engine();
+        let mut matrix = Matrix::new(node_conf, 3, 3);
+
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(0)).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Sin(1)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
+        matrix.place(1, 1, Cell::empty(NodeId::Sin(2)).input(Some(0), None, None));
+        matrix.sync().unwrap();
+
+        let res = matrix.get_connections(1, 0);
+        let res = res.expect("Found connected cells");
+
+        let (src_dir, src_io_idx) = res[0].0;
+        let (dst_dir, dst_io_idx, (nx, ny)) = res[0].1;
+
+        assert_eq!(src_dir, CellDir::B, "Found first connection at bottom");
+        assert_eq!(src_io_idx, 0, "Correct output port");
+        assert_eq!(dst_dir, CellDir::T, "Found first connection at bottom");
+        assert_eq!(dst_io_idx, 0, "Correct output port");
+        assert_eq!((nx, ny), (1, 1), "Correct other position");
+
+        let (src_dir, src_io_idx) = res[1].0;
+        let (dst_dir, dst_io_idx, (nx, ny)) = res[1].1;
+
+        assert_eq!(src_dir, CellDir::TL, "Found first connection at bottom");
+        assert_eq!(src_io_idx, 0, "Correct output port");
+        assert_eq!(dst_dir, CellDir::BR, "Found first connection at bottom");
+        assert_eq!(dst_io_idx, 0, "Correct output port");
+        assert_eq!((nx, ny), (0, 0), "Correct other position");
+    }
+
+    #[test]
     fn check_matrix_param_is_used() {
         use crate::nodes::new_node_engine;
 
@@ -1542,7 +1613,9 @@ mod tests {
             prog.prog[2].to_string(),
             "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)"
         );
-        assert_eq!(prog.prog[3].to_string(), "Op(i=2 out=(2-3|0) in=(4-6|3) at=(0-0) mod=(3-5) cpy=(o1 => i4) cpy=(o3 => i5) mod=3 mod=4)");
+        assert_eq!(
+            prog.prog[3].to_string(),
+            "Op(i=2 out=(2-3|0) in=(4-6|3) at=(0-0) mod=(3-5) cpy=(o1 => i4) cpy=(o3 => i5) mod=3 mod=4)");
     }
 
     #[test]

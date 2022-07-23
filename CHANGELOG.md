@@ -8,3 +8,5 @@ parameter was changed or modulated at runtime.
 * Bugfix: Found a bug in cubic interpolation in the sample player and
 similar bugs in the delay line (and all-pass & comb filters). Refactored
 the cubic interpolation and tested it seperately now.
+* Feature: Matrix::get\_connections() returns information about the connections
+to the adjacent cells.
