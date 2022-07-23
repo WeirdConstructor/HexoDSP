@@ -979,18 +979,24 @@ impl Matrix {
     }
 
     /// Retrieves the immediate connections to adjacent cells and returns a list.
+    /// Returns none if there is no cell at the given position.
     ///
     /// Returns a vector with pairs of this content:
     ///
     ///    (
-    ///        (this_cell_connection_dir, this_cell_node_io_index),
-    ///        (other_cell_connection_dir, other_cell_node_io_index, (other_cell_x, other_cell_y))
+    ///        (center_cell, center_connection_dir, center_node_io_index),
+    ///        (
+    ///            other_cell,
+    ///            other_connection_dir,
+    ///            other__node_io_index,
+    ///            (other_cell_x, other_cell_y)
+    ///        )
     ///    )
     pub fn get_connections(
         &self,
         x: usize,
         y: usize,
-    ) -> Option<Vec<((CellDir, u8), (CellDir, u8, (usize, usize)))>> {
+    ) -> Option<Vec<((Cell, CellDir, u8), (Cell, CellDir, u8, (usize, usize)))>> {
         let this_cell = self.get(x, y)?;
 
         let mut ret = vec![];
@@ -1007,8 +1013,8 @@ impl Matrix {
                     if let Some(other_cell) = self.get(nx, ny) {
                         if let Some(other_node_io_idx) = other_cell.local_port_idx(dir.flip()) {
                             ret.push((
-                                (dir, node_io_idx),
-                                (dir.flip(), other_node_io_idx, (nx, ny)),
+                                (*this_cell, dir, node_io_idx),
+                                (*other_cell, dir.flip(), other_node_io_idx, (nx, ny)),
                             ));
                         }
                     }
@@ -1407,8 +1413,8 @@ mod tests {
         let res = matrix.get_connections(1, 0);
         let res = res.expect("Found connected cells");
 
-        let (src_dir, src_io_idx) = res[0].0;
-        let (dst_dir, dst_io_idx, (nx, ny)) = res[0].1;
+        let (_src_cell, src_dir, src_io_idx) = res[0].0;
+        let (_dst_cell, dst_dir, dst_io_idx, (nx, ny)) = res[0].1;
 
         assert_eq!(src_dir, CellDir::B, "Found first connection at bottom");
         assert_eq!(src_io_idx, 0, "Correct output port");
@@ -1416,8 +1422,8 @@ mod tests {
         assert_eq!(dst_io_idx, 0, "Correct output port");
         assert_eq!((nx, ny), (1, 1), "Correct other position");
 
-        let (src_dir, src_io_idx) = res[1].0;
-        let (dst_dir, dst_io_idx, (nx, ny)) = res[1].1;
+        let (_src_cell, src_dir, src_io_idx) = res[1].0;
+        let (_dst_cell, dst_dir, dst_io_idx, (nx, ny)) = res[1].1;
 
         assert_eq!(src_dir, CellDir::TL, "Found first connection at bottom");
         assert_eq!(src_io_idx, 0, "Correct output port");
