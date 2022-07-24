@@ -55,7 +55,7 @@ struct MatrixChainLink {
 ///
 /// chain.place(&mut matrix, 2, 2).expect("no error in this case");
 ///```
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct MatrixCellChain {
     chain: Vec<MatrixChainLink>,
     error: Option<ChainError>,
