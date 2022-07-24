@@ -113,17 +113,42 @@ use hexodsp::*;
 let (node_conf, mut node_exec) = new_node_engine();
 let mut matrix = Matrix::new(node_conf, 3, 3);
 
-
 let sin = NodeId::Sin(0);
 let amp = NodeId::Amp(0);
+let out = NodeId::Out(0);
 matrix.place(0, 0, Cell::empty(sin)
                    .out(None, None, sin.out("sig")));
 matrix.place(0, 1, Cell::empty(amp)
-                   .input(amp.inp("inp"), None, None));
+                   .input(amp.inp("inp"), None, None)
+                   .out(None, None, amp.out("sig")));
+matrix.place(0, 2, Cell::empty(out)
+                   .input(out.inp("inp"), None, None));
 matrix.sync().unwrap();
 
 let gain_p = amp.inp_param("gain").unwrap();
 matrix.set_param(gain_p, SAtom::param(0.25));
+
+let (out_l, out_r) = node_exec.test_run(0.11, true);
+// out_l and out_r contain two channels of audio
+// samples now.
+```
+
+There is also a simplified version for easier setup of DSP chains
+on the hexagonal grid, using the [crate::MatrixCellChain] abstraction:
+
+```rust
+use hexodsp::*;
+
+let (node_conf, mut node_exec) = new_node_engine();
+let mut matrix = Matrix::new(node_conf, 3, 3);
+let mut chain = MatrixCellChain::new(CellDir::B);
+
+chain.node_out("sin", "sig")
+    .node_io("amp", "inp", "sig")
+    .set_atom("gain", SAtom::param(0.25))
+    .node_inp("out", "ch1")
+    .place(&mut matrix, 0, 0);
+matrix.sync().unwrap();
 
 let (out_l, out_r) = node_exec.test_run(0.11, true);
 // out_l and out_r contain two channels of audio
