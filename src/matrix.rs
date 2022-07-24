@@ -379,7 +379,34 @@ impl Cell {
             }
         }
 
-        free_ports.to_vec()
+        free_ports
+    }
+
+    /// Finds all dangling ports in the specified direction.
+    /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
+    /// and any with `CellDir::C`.
+    pub fn find_unconnected_ports(
+        &self,
+        m: &Matrix,
+        dir: CellDir,
+    ) -> Vec<(CellDir, (usize, usize))> {
+        let mut unused_ports = vec![];
+
+        let options: &[CellDir] = if dir == CellDir::C {
+            &[CellDir::T, CellDir::TL, CellDir::BL, CellDir::TR, CellDir::BR, CellDir::B]
+        } else if dir.is_input() {
+            &[CellDir::T, CellDir::TL, CellDir::BL]
+        } else {
+            &[CellDir::TR, CellDir::BR, CellDir::B]
+        };
+
+        for dir in options {
+            if let Some(pos) = self.is_port_dir_connected(m, *dir) {
+                unused_ports.push((*dir, pos));
+            }
+        }
+
+        unused_ports
     }
 
     /// If the port is connected, it will return the position of the other cell.
