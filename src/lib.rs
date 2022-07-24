@@ -301,6 +301,7 @@ projects and authors, I can't relicense it.
 */
 
 pub mod cell_dir;
+pub mod chain_builder;
 #[allow(unused_macros, non_snake_case)]
 pub mod dsp;
 pub mod log;
@@ -309,10 +310,10 @@ pub mod matrix_repr;
 pub mod monitor;
 pub mod nodes;
 pub mod sample_lib;
-pub mod chain_builder;
 mod util;
 
 pub use cell_dir::CellDir;
+pub use chain_builder::MatrixCellChain;
 pub use dsp::{NodeId, NodeInfo, ParamId, SAtom};
 pub use log::log;
 pub use matrix::{Cell, Matrix};
@@ -320,7 +321,6 @@ pub use matrix_repr::load_patch_from_file;
 pub use matrix_repr::save_patch_to_file;
 pub use nodes::{new_node_engine, NodeConfigurator, NodeExecutor};
 pub use sample_lib::{SampleLibrary, SampleLoadError};
-pub use chain_builder::MatrixCellChain;
 
 pub struct Context<'a, 'b, 'c, 'd> {
     pub nframes: usize,

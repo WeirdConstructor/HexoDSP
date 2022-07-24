@@ -119,9 +119,20 @@ fn check_node_delay_2() {
         vec![
             // 10ms smoothing time for "inp"
             0.001133, // 30ms delaytime just mixing the 0.5:
-            0.5, 0.5, 0.5, // the delayed smoothing ramp (10ms):
+            0.5,
+            0.5,
+            0.5,         // the delayed smoothing ramp (10ms):
             0.950001113, // the delay + input signal:
-            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
         ]
     );
 }

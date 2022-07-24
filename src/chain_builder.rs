@@ -22,7 +22,6 @@ The [crate::MatrixCellChain] abstractions allows very easy placement of DSP sign
 ```
 */
 
-
 use crate::{Cell, CellDir, Matrix, NodeId, ParamId, SAtom};
 use std::collections::HashMap;
 
@@ -75,12 +74,7 @@ impl MatrixCellChain {
     ///
     /// The direction is used to guide the placement of the cells.
     pub fn new(dir: CellDir) -> Self {
-        Self {
-            dir,
-            chain: vec![],
-            error: None,
-            param_idx: 0,
-        }
+        Self { dir, chain: vec![], error: None, param_idx: 0 }
     }
 
     fn output_dir(&self) -> CellDir {
@@ -226,7 +220,12 @@ impl MatrixCellChain {
     ///
     /// If any error occured while building the chain (such as bad input/output names
     /// or unknown parameters), it will be returned here.
-    pub fn place(&mut self, matrix: &mut Matrix, at_x: usize, at_y: usize) -> Result<(), ChainError> {
+    pub fn place(
+        &mut self,
+        matrix: &mut Matrix,
+        at_x: usize,
+        at_y: usize,
+    ) -> Result<(), ChainError> {
         if let Some(err) = self.error.take() {
             return Err(err);
         }
