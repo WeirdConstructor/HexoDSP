@@ -142,7 +142,7 @@ where
     let channels = config.channels as usize;
 
     node_exec.set_sample_rate(sample_rate);
-
+    
     let input_bufs = [[0.0; hexodsp::dsp::MAX_BLOCK_SIZE]; 2];
     let mut outputbufs = [[0.0; hexodsp::dsp::MAX_BLOCK_SIZE]; 2];
 

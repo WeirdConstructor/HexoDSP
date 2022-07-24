@@ -1,0 +1,538 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'hexodsp'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "hexodsp",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'cpal_demo_node_api'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=cpal_demo_node_api",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "cpal_demo_node_api",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'cpal_demo_node_api'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=cpal_demo_node_api",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "cpal_demo_node_api",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'jack_demo_node_api'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=jack_demo_node_api",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "jack_demo_node_api",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'jack_demo_node_api'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=jack_demo_node_api",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "jack_demo_node_api",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'basics'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=basics",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "basics",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'modamt'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=modamt",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "modamt",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_ad'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_ad",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_ad",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_allp'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_allp",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_allp",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_bosc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_bosc",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_bosc",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_comb'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_comb",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_comb",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_cqnt'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_cqnt",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_cqnt",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_delay'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_delay",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_delay",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_goertzel'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_goertzel",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_goertzel",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_map'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_map",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_map",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_mix3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_mix3",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_mix3",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_mux9'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_mux9",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_mux9",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_noise'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_noise",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_noise",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_pverb'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_pverb",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_pverb",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_quant'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_quant",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_quant",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_rndwk'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_rndwk",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_rndwk",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_sampl'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_sampl",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_sampl",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_sfilter'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_sfilter",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_sfilter",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_smap'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_smap",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_smap",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_test'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_test",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_test",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_tslfo'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_tslfo",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_tslfo",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'node_vosc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=node_vosc",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "node_vosc",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'quant'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=quant",
+                    "--package=hexodsp"
+                ],
+                "filter": {
+                    "name": "quant",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
