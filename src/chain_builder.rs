@@ -29,8 +29,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 struct MatrixChainLink {
     cell: Cell,
-    x: i32,
-    y: i32,
+    dir: CellDir,
     params: Vec<(ParamId, SAtom)>,
 }
 
@@ -60,7 +59,6 @@ pub struct MatrixCellChain {
     chain: Vec<MatrixChainLink>,
     error: Option<ChainError>,
     dir: CellDir,
-    pos: (i32, i32),
     param_idx: usize,
 }
 
@@ -80,7 +78,6 @@ impl MatrixCellChain {
             dir,
             chain: vec![],
             error: None,
-            pos: (0, 0),
             param_idx: 0,
         }
     }
@@ -156,12 +153,7 @@ impl MatrixCellChain {
     ///
     /// This also sets the current parameter cell.
     pub fn add_link(&mut self, cell: Cell) {
-        self.chain.push(MatrixChainLink { x: self.pos.0, y: self.pos.1, cell, params: vec![] });
-
-        let offs = self.dir.as_offs(self.pos.0 as usize);
-        self.pos.0 += offs.0;
-        self.pos.1 += offs.1;
-
+        self.chain.push(MatrixChainLink { dir: self.dir, cell, params: vec![] });
         self.param_idx = self.chain.len() - 1;
     }
 
@@ -227,10 +219,10 @@ impl MatrixCellChain {
 
         let mut last_unused = HashMap::new();
 
+        let mut pos = (at_x, at_y);
+
         for link in self.chain.iter() {
-            let (x, y) = (link.x, link.y);
-            let x = (x + (at_x as i32)) as usize;
-            let y = (y + (at_y as i32)) as usize;
+            let (x, y) = pos;
 
             let mut cell = link.cell.clone();
 
@@ -251,6 +243,10 @@ impl MatrixCellChain {
             println!("PLACE: ({},{}) {:?}", x, y, cell);
 
             matrix.place(x, y, cell);
+
+            let offs = link.dir.as_offs(pos.0);
+            pos.0 = (pos.0 as i32 + offs.0) as usize;
+            pos.1 = (pos.1 as i32 + offs.1) as usize;
         }
 
         for link in self.chain.iter() {
