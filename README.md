@@ -1,6 +1,5 @@
 # hexodsp
 
-
 ## HexoDSP - Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth.
 
 This project contains the complete DSP backend of the modular
@@ -24,6 +23,34 @@ Here a short list of features:
 * Provides a wide variety of modules
 * Extensible framework for quickly developing new nodes at compile time
 * A comprehensive automated test suite
+
+And following DSP nodes:
+
+| Category | Name | Function |
+|-|-|-|
+| IO Util | Out         | Audio output (to DAW or Jack) |
+| Osc     | Sampl       | Sample player |
+| Osc     | Sin         | Sine oscillator |
+| Osc     | BOsc        | Basic bandlimited waveform oscillator (waveforms: Sin, Tri, Saw, Pulse/Square) |
+| Osc     | VOsc        | Vector phase shaping oscillator |
+| Osc     | Noise       | Noise oscillator |
+| Signal  | Amp         | Amplifier/Attenuator |
+| Signal  | SFilter     | Simple collection of filters, useable for synthesis |
+| Signal  | Delay       | Single tap signal delay |
+| Signal  | PVerb       | Reverb node, based on Dattorros plate reverb algorithm |
+| Signal  | AllP        | All-Pass filter based on internal delay line feedback |
+| Signal  | Comb        | Comb filter |
+| N-\>M   | Mix3        | 3 channel mixer |
+| N-\>M   | Mux9        | 9 channel to 1 output multiplexer/switch |
+| Ctrl    | SMap        | Simple control signal mapper |
+| Ctrl    | Map         | Control signal mapper |
+| Ctrl    | CQnt        | Control signal pitch quantizer |
+| Ctrl    | Quant       | Pitch signal quantizer |
+| Mod     | TSeq        | Tracker/pattern sequencer |
+| Mod     | Ad          | Attack-Decay envelope |
+| Mod     | TsLFO       | Tri/Saw waveform low frequency oscillator (LFO) |
+| Mod     | RndWk       | Random walker, a Sample & Hold noise generator |
+| IO Util | FbWr / FbRd | Utility modules for feedback in patches |
 
 ### API Examples
 
@@ -84,17 +111,42 @@ use hexodsp::*;
 let (node_conf, mut node_exec) = new_node_engine();
 let mut matrix = Matrix::new(node_conf, 3, 3);
 
-
 let sin = NodeId::Sin(0);
 let amp = NodeId::Amp(0);
+let out = NodeId::Out(0);
 matrix.place(0, 0, Cell::empty(sin)
                    .out(None, None, sin.out("sig")));
 matrix.place(0, 1, Cell::empty(amp)
-                   .input(amp.inp("inp"), None, None));
+                   .input(amp.inp("inp"), None, None)
+                   .out(None, None, amp.out("sig")));
+matrix.place(0, 2, Cell::empty(out)
+                   .input(out.inp("inp"), None, None));
 matrix.sync().unwrap();
 
 let gain_p = amp.inp_param("gain").unwrap();
 matrix.set_param(gain_p, SAtom::param(0.25));
+
+let (out_l, out_r) = node_exec.test_run(0.11, true);
+// out_l and out_r contain two channels of audio
+// samples now.
+```
+
+There is also a simplified version for easier setup of DSP chains
+on the hexagonal grid, using the [crate::MatrixCellChain] abstraction:
+
+```rust
+use hexodsp::*;
+
+let (node_conf, mut node_exec) = new_node_engine();
+let mut matrix = Matrix::new(node_conf, 3, 3);
+let mut chain = MatrixCellChain::new(CellDir::B);
+
+chain.node_out("sin", "sig")
+    .node_io("amp", "inp", "sig")
+    .set_atom("gain", SAtom::param(0.25))
+    .node_inp("out", "ch1")
+    .place(&mut matrix, 0, 0);
+matrix.sync().unwrap();
 
 let (out_l, out_r) = node_exec.test_run(0.11, true);
 // out_l and out_r contain two channels of audio
@@ -158,6 +210,9 @@ The projects is still young, and I currently don't have that much time to
 devote for project coordination. So please don't be offended if your issue rots
 in the GitHub issue tracker, or your pull requests is left dangling around
 for ages.
+
+If you want to contribute new DSP nodes/modules to HexoDSP/HexoSynth,
+please look into the guide at the start of the [crate::dsp] module.
 
 I might merge pull requests if I find the time and think that the contributions
 are in line with my vision.

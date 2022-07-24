@@ -1,6 +1,487 @@
-// Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
+
+/*!
+
+# HexoDSP DSP nodes and DSP code
+
+## How to Add a New DSP Node
+
+When adding a new node to HexoDSP, I recommend working through the following checklist:
+
+- [ ] Implement boilerplate in node_yourname.rs
+- [ ] Add input parameter and output signal definition to dsp/mod.rs
+- [ ] Document boilerplate in node_yourname.rs
+- [ ] DSP implementation
+- [ ] Parameter fine tuning
+- [ ] DSP tests for all (relevant) params
+- [ ] Ensure Documentation is properly formatted for the GUI
+- [ ] Format the source using `cargo fmt`
+- [ ] Add CHANGELOG.md entry in HexoSynth
+- [ ] Add CHANGELOG.md entry in HexoDSP
+- [ ] Add table entry in README.md in HexoSynth
+- [ ] Add table entry in README.md in HexoDSP
+
+The boilerplate can be a bit daunting. But it pays off, because HexoSynth will give
+you a GUI for your DSP code for free at the end.
+
+Generally I recommend starting out small. Define your new node with minimal parameters
+until you get the hang of all the things involved to make it compile in the first place.
+
+**Be aware that new DSP nodes need to meet these quality guidelines to be included:**
+
+- Clean Rust code that I can understand and maintain. You can use `cargo fmt` (rustfmt) to
+format the code.
+- Does not drag in huge dependency trees. One rationale here is,
+that I don't want the sound of a HexoSynth patch to change (significantly) because
+some upstream crate decided to change their DSP code. To have optimal
+control over this, I would love to have all the DSP code
+contained in HexoDSP. Make sure to link the repository the code comes
+from though. If you add dependencies for your DSP node, make sure that it's
+characteristics are properly covered by the automated tests. So that problems become
+visible in case upstream breaks or changes it's DSP code. If DSP code changes just slightly,
+the test cases of course need to be changed accordingly.
+- Come with automated smoke tests like all the other nodes, most test
+signal min/max/rms over time, as well as the frequency spectrum
+where applicable.
+- It's parameters have proper denormalized mappings, like `0.5 => 4000 Hz` or `0.3 => 200ms`.
+- Provide short descriptions for the node and it's parameters.
+- Provide a comprehensive longer help text with (more details further down in this guide):
+  - What this node is about
+  - How to use it
+  - How the parameters work in combination
+  - Suggestions which combinations with other nodes might be interesting
+- If applicable: provide a graph function for visualizing what it does.
+
+### Boilerplate
+
+- I recommend copying an existing node code, like `node_ad.rs` for instance.
+- In this file `mod.rs` copy it's entry in the `node_list` macro definition.
+- Copy the `tests/node_ad.rs` file to have a starting point for the automated testing.
+Also keep in mind looking in other tests, about how they test things. Commonly used
+macros are found in the ´tests/common/´ module.
+
+A `node_list` macro entry looks like this:
+
+```ignore
+    // node_id => node_label UIType UICategory
+    //  |          |          /        |
+    //  /   /------/         /         |
+    // /    |               /          |
+    xxx => Xxx UIType::Generic UICategory::Signal
+     // node_param_idx
+     //   name             denorm round format steps norm norm denorm
+     //         norm_fun   fun    fun   fun    def   min  max  default
+       (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+       (1 gain  n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+       (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
+     // node_param_idx      UI widget type (mode, knob, sample)
+     // | atom_idx          |     format fun
+     // | | name constructor|     |     min max
+     // | | |    |       def|ult_v|lue  |  /
+     // | | |    |       |  |     |     |  |
+       {3 0 mono setting(0) mode fa_out_mono 0  1},
+       [0 sig],
+```
+
+The first entries, encapsulated in ´( )´ are the input ports or also called input parameters.
+Input parameters can be connected to outputs of other DSP nodes. In contrast to the ´{ }´ encapsulated
+so called _Atom parameters_. The data type for these is the [SAtom] datatype. And these parameters
+can not be automated.
+
+You can freely choose parameter names like eg. `inp` or `gain` and
+pick names that suit the parameter semantics best. But I would like you to keep the naming
+consistent with the rest of HexoDSP nodes if that is suitable to the DSP node.
+
+There are some implicit conventions in HexoDSP for naming though:
+
+- `inp` for single channel signal input
+- `ch1`, `ch2`, ... for multiple channels
+- `sig` for signal output
+- `trig` for receiving a single trigger signal
+- `t_*` if multiple trigger signals are expected
+- If you have `freq` inputs, consider also adding `det` for detuning that frequency input.
+But only if you think this makes sense in the context of the DSP node.
+
+The macros in the node list definition like `n_gain`, `d_pit`, `r_fq` and so on
+are all macros that are defined in the HexoDSP crate. You can create your own
+normalization/denormalization, rounding, step and formatting function macros if
+the existing ones don't suit the DSP node's needs.
+
+### Signal Ranges in HexoDSP
+
+The HexoDSP graph, or rather the nodes, operate with the raw normalized (audio)
+signal range [-1, 1]. There is a second range that is also common in HexoDSP,
+which is the control signal range [0, 1]. Following this convention will help combinding
+HexoDSP nodes with each other. The existing normalization/denormalization functions for the
+node list declaration already encode most of the conventions in HexoDSP, but here is a short
+incomplete overview of common value mappings to the normalized signal ranges:
+
+- Frequencies are usually using the `n_pit` and `d_pit` mappings. Where 0.0 is 440Hz
+and the next octave is at 0.1 with 880Hz and the octave before that is at -0.1 with 220Hz.
+This means one octave per 0.1 signal value.
+- Triggers have to rise above the "high" threshold of 0.5 to be recognized, and the signal has to
+fall below 0.25 to be detected as "low" again. Same works for gates.
+
+### Node Documentation
+
+**Attention: Defining the documentation for your DSP node is not optional. It's required to make
+it compile in the first place!**
+
+Every DSP node must come with online documentation. The online documentation is what makes the
+node usable in the first place. It's the only hint for the user to learn how to use this node.
+Keep in mind that the user is not an engineer, but usually a musician. They want to make music
+and know how to use a parameter.
+
+Every input parameter and atom parameter requires you to define a documenation entry in the
+corresponding ´node_*.rs´ module/file. And also a _DESC_ and _HELP_ entry.
+
+Here an example from ´node_ad.rs´:
+
+```ignore
+    pub const inp: &'static str =
+        "Ad inp\nSignal input. If you don't connect this, and set this to 1.0 \
+        this will act as envelope signal generator. But you can also just \
+        route a signal directly through this of course.\nRange: (-1..1)\n";
+```
+
+The general format of the parameter documentation should be:
+
+```ignore
+       "<Node name> <parameter name>\n
+        A short description what this paramter means/does and relates to others.\n
+        Range: <range>\n"
+```
+
+Keep the description of the paramter short and concise. Look at the space available
+in HexoSynth where this is displayed. If you want to write more elaborate documentation
+for a paramter, write it in the `HELP` entry.
+
+The _range_ relates to the DSP signal range this paramter is supposed to receive.
+This should either be the unipolar range (0..1) or the bipolar range (-1..1). Other
+ranges should be avoided, because everything in HexoDSP is supposed to be fine with
+receiving values in those ranges.
+
+Next you need to document the node itself, how it works what it does and so on...
+For this there are two entries:
+
+```ignore
+        pub const DESC: &'static str = r#"Attack-Decay Envelope
+
+    This is a simple envelope offering an attack time and decay time with a shape parameter.
+    You can use it as envelope generator to modulate other inputs or process a signal with it directly.
+    "#;
+
+        pub const HELP: &'static str = r#"Ad - Attack-Decay Envelope
+
+    This simple two stage envelope with attack and decay offers shape parameters
+    ...
+    "#;
+```
+
+_DESC_ should only contain a short description of the node. It's space is as limited as the
+space for the parameter description. It will be autowrapped.
+
+_HELP_ can be a multiple pages long detailed description of the node. Keep the
+width of the lines below a certain limit (below 80 usually). Or else it will be
+truncated in the help text window in HexoSynth. As inspiration what should be in
+the help documentation:
+
+- What the node does (even if it repeats mostly what _DESC_ already says)
+- How the input paramters relate to each other.
+- What the different atom settings (if any) mean.
+- Which other DSP nodes this node is commonly combined with.
+- Interesting or even uncommon uses of this DSP node.
+- Try to inspire the user to experiment.
+
+### Node Code Structure
+
+For non trivial DSP nodes, the DSP code itself should be separate from it's `dsp/node_*.rs`
+file. That file should only care about interfacing the DSP code with HexoDSP, but not implement
+all the complicated DSP code. It's good practice to factor out the DSP code into
+a separate module or file.
+
+Look at `node_tslfo.rs` for instance. It wires up the `TriSawLFO` from `dsp/helpers.rs`
+to the HexoDSP node interface.
+
+```ignore
+    // node_tslfo.rs
+    use super::helpers::{TriSawLFO, Trigger};
+
+    #[derive(Debug, Clone)]
+    pub struct TsLFO {
+        lfo: Box<TriSawLFO<f64>>,
+        trig: Trigger,
+    }
+
+    // ...
+    impl DspNode for TsLFO {
+        // ...
+        #[inline]
+        fn process<T: NodeAudioContext>(&mut self, /* ... */) {
+            // ...
+            let lfo = &mut *self.lfo;
+
+            for frame in 0..ctx.nframes() {
+                // ...
+                out.write(frame, lfo.next_unipolar() as f32);
+            }
+
+            // ...
+        }
+    }
+```
+
+The code for `TriSawLFO` in `dsp/helpers.rs` is then independent and reusable else where.
+
+### Node Parameter/Inputs
+
+When implementing your node, you want to access the parameters or inputs of your DSP node.
+This is done using the buffer access modules in `dsp/mod.rs` that are defined using the
+`node_list` macro. Let me give you a short overview using `node_sin.rs` as an example:
+
+```ignore
+    #[inline]
+    fn process<T: NodeAudioContext>(
+        &mut self,
+        ctx: &mut T, // DSP execution context holding the DSP graph input and output buffers.
+        _ectx: &mut NodeExecContext, // Contains special stuff, like the FeedbackBuffers
+        _nctx: &NodeContext, // Holds context info about the node, for instance which ports
+                             // are connected.
+        _atoms: &[SAtom],    // An array holding the Atom parameters
+        inputs: &[ProcBuf],  // An array holding the input parameter buffers, containing
+                             // either outputs from other DSP nodes or smoothed parameter
+                             // settings from the GUI/frontend.
+        outputs: &mut [ProcBuf], // An array holding the output buffers.
+        ctx_vals: LedPhaseVals,  // Values for visual aids in the GUI (the hextile LED)
+    ) {
+        use crate::dsp::{denorm_offs, inp, out};
+
+        let o = out::Sin::sig(outputs);
+        let freq = inp::Sin::freq(inputs);
+        let det = inp::Sin::det(inputs);
+        let isr = 1.0 / self.srate;
+
+        let mut last_val = 0.0;
+        for frame in 0..ctx.nframes() {
+            let freq = denorm_offs::Sampl::freq(freq, det.read(frame), frame);
+            // ...
+        }
+        // ...
+    }
+```
+
+There are three buffer/parameter function access modules loaded in this example:
+
+```ignore
+    use crate::dsp::{denorm_offs, inp, out};
+```
+
+`inp` holds a sub module for each of the available nodes. That means: `inp::Sin`, `inp::Ad`, ...
+Those submodules each have a function that returns the corresponding buffer from the `inputs`
+vector of buffers. That means `inp::Sin::det(inputs)` gives you a reference to a [ProcBuf]
+you can read the normalized signal inputs (range -1 to 1) from.
+
+It works similarly with `out::Sin::sig`, which provides you with a [ProcBuf] reference to
+write your output to.
+
+`denorm_offs` is a special module, that offers you functions to access the denormalized
+value of a specific input parameter with a modulation offset.
+
+Commonly you want to use the `denorm` module to access the denormalized values. That means
+values in human understandable form and that can be used in your DSP arithmetics more easily.
+For instance `denorm::TsLFO::time` from `node_tslfo.rs`:
+
+```ignore
+        use crate::dsp::{denorm, inp, out};
+
+        let time = inp::TsLFO::time(inputs);
+        for frame in 0..ctx.nframes() {
+            let time_ms = denorm::TsLFO::time(time, frame).clamp(0.1, 300000.0);
+            // ...
+        }
+```
+
+`denorm::TsLFO::time` is a function that takes the [ProcBuf] with the raw normalized
+input signal samples and returns the denormalized values in milliseconds for a specific
+frame.
+
+To get a hang of all the possibilities I suggest diving a bit into the other node source code
+a bit.
+
+### Node Beautification
+
+To make nodes responsive in HexoSynth the `DspNode::process` function receives the [LedPhaseVals].
+These should be written after the inner loop that calculates the samples. The first context value
+is the _LED value_, it should be in the range between -1 and 1. The most easy way to set it is
+by using the last written sample from your loop:
+
+```ignore
+        ctx_vals[0].set(out.read(ctx.nframes() - 1));
+```
+
+But consider giving it a more meaningful value if possible. The `node_ad.rs` sets the LED value
+to the internal phase value of the envelope instead of it's output.
+
+The second value in [LedPhaseVals] is the _Phase value_. It usually has special meaning for the
+node specific visualizations. Such as TSeq emits the position of the playhead for instance.
+The CQnt quantizer emits the most recently activated key to the GUI using the Phase value.
+
+Consider also providing a visualization graph if possible. You can look eg at `node_ad.rs`
+or `node_tslfo.rs` or many others how to provide a visualization graph function:
+
+```ignore
+    impl DspNode for TsLFO {
+        fn graph_fun() -> Option<GraphFun> {
+            Some(Box::new(|gd: &dyn GraphAtomData, _init: bool, x: f32, xn: f32| -> f32 {
+                // ...
+            }))
+        }
+    }
+```
+
+Let me explain the callback function parameters quickly:
+
+- `gd: &dyn GraphAtomData` this trait object gives you access to the input paramters of
+this node. And also the LED and Phase values.
+- `init: bool` allows you to detect when the first sample of the graph is being drawn/requested.
+You can use this to reset any state that is carried with the callback.
+- `x: f32` is the current X position of the graph. Use this to derive the Y value which
+must be returned from the callback.
+- `xn: f32` is the next value for X. This is useful for determining if your function might
+reaches a min or max between _x_ and _xn_, so you could for instance return the min or max
+value now instead of the next sample.
+
+### Automated Testing of Your Node
+
+First lets discuss shortly why automated tests are necessary. HexoDSP has an automated test
+suite to check if any changes on the internal DSP helpers break something. Or if some
+changes on some DSP node accidentally broke something. Or if a platform behaves weirdly.
+Or even if upstream crates that are included broke or changed something essential.
+
+A few things you can test your DSP code for:
+
+- Is non 0.0 signal emitted?
+- Is the signal inside the -1..1 or 0..1 range?
+- Does the signal level change in expected ways if the input parameters are changed?
+- Does the frequency spectrum peak at expected points in the FFT output?
+- Does the frequency spectrum change to expected points in the FFT output when an input parameter
+changed?
+
+Try to nail down the characteristics of your DSP node with a few tests as well as possible.
+
+For the FFT and other tests there are helper functions in `tests/common/mod.rs`
+
+The start of your `tests/node_*.rs` file usually should look like this:
+
+```ignore
+    mod common;
+    use common::*;
+
+    #[test]
+    fn check_node_ad_1() {
+        let (node_conf, mut node_exec) = new_node_engine();
+        let mut matrix = Matrix::new(node_conf, 3, 3);
+
+        let mut chain = MatrixCellChain::new(CellDir::B);
+        chain.node_out("ad", "sig")
+            .node_inp("out", "ch1")
+            .place(&mut matrix, 0, 0).unwrap();
+        matrix.sync().unwrap();
+
+        let ad = NodeId::Ad(0);
+        // ...
+    }
+```
+
+Lets dissect this a bit. The beginning of each test case should setup an instance of the DSP engine
+of HexoDSP using [crate::new_node_engine]. It returns a [crate::NodeConfigurator] and a [crate::NodeExecutor].
+The first is responsible for setting up the DSP graph and modifying it at runtime.
+The latter ([crate::NodeExecutor]) is responsible for executing the DSP graph and generate output samples.
+
+```ignore
+        let (node_conf, mut node_exec) = new_node_engine();
+```
+
+The [crate::Matrix] abstraction encapsulates the configurator and provides you an interface
+to layout the nodes in a hexagonal grid. It is currently the easiest API for using HexoDSP.
+The two parameters to _new_ are the width and height of the hex grid.
+
+```ignore
+        let mut matrix = Matrix::new(node_conf, 3, 3);
+```
+
+Next step is to create a DSP chain of nodes and place that onto the hexagonal matrix.
+Luckily a simpler API has been created with the [crate::MatrixCellChain], that lets
+you build DSP chains on the fly using only names of the nodes and the corresponding
+input/output ports:
+
+```ignore
+        // Create a new cell chain that points in to the given direction (CellDir::B => to bottom).
+        let mut chain = MatrixCellChain::new(CellDir::B);
+        chain.node_out("ad", "sig") // Add a Node::Ad(0) cell, with the "sig" output set
+            .node_inp("out", "ch1") // Add a Node::Out(0) cell, with the "ch1" input set
+            .place(&mut matrix, 0, 0).unwrap();
+```
+
+After placing the new cells, we need to synchronize it with the audio backend:
+
+```ignore
+        matrix.sync().unwrap();
+```
+
+The `sync` is necessary to update the DSP graph.
+
+Next you usually want to define short variable names for the [NodeId] that refer to the DSP
+node instances:
+
+```ignore
+        let ad = NodeId::Ad(0);
+```
+
+The [NodeId] interface offers you functions to get the input parameter index from
+a name like `out.inp("ch1")` or the output port index from a name: `ad.out("sig")`.
+You can have multiple instances for a node. The number in the parenthesis are
+the instance index of that node.
+
+After you have setup everything for the test, you usually want to modify a paramter
+and look at the values the graph returns.
+
+```ignore
+    #[test]
+    fn check_node_ad_1() {
+        // ...
+        // matrix setup code above
+        // ...
+
+        let ad = NodeId::Ad(0);
+
+        // Fetch parameter id:
+        let trig_p = ad.inp_param("trig").unwrap();
+
+        // Set parameter:
+        matrix.set_param(trig_p, SAtom::param(1.0));
+
+        /// Run the DSP graph for 25 milliseconds of audio.
+        let res = run_for_ms(&mut node_exec, 25.0);
+
+        // `res` now contains two vectors. one for first channel "ch1"
+        // and one for the second channel "ch2".
+        assert_decimated_slope_feq!(
+            res.0,
+            // ....
+        )
+    }
+```
+
+***Attention: This is important to keep in mind:*** After using `matrix.set_param(...)` to
+set a paramter, keep in mind that the parameter values will be smoothed. That means it will
+take a few milliseconds until `trig_p` reaches the 1.0. In case of the Ad node that means
+the trigger threshold won't be triggered at the first sample, but a few milliseconds
+later!
+
+*/
 
 #[allow(non_upper_case_globals)]
 mod node_ad;

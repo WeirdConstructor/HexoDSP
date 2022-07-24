@@ -19,15 +19,18 @@ impl From<hound::Error> for SampleLoadError {
     }
 }
 
+const MAX_SAMPLE_LEN_S: usize = 60; // 60 seconds of audio is about 20MB
+
 /// Loads and stores samples, for use as SAtom parameters for
 /// nodes.
 pub struct SampleLibrary {
     loaded_samples: HashMap<String, SAtom>,
+    max_length_s: usize,
 }
 
 impl SampleLibrary {
     pub fn new() -> Self {
-        Self { loaded_samples: HashMap::new() }
+        Self { loaded_samples: HashMap::new(), max_length_s: MAX_SAMPLE_LEN_S }
     }
 
     /// Synchronous/blocking loading of a sample from `path`.
@@ -49,15 +52,17 @@ impl SampleLibrary {
 
         let mut v = vec![rd.spec().sample_rate as f32];
 
+        let max_sample_count = self.max_length_s * rd.spec().sample_rate as usize;
+
         match rd.spec().sample_format {
             hound::SampleFormat::Float => {
-                for s in rd.samples::<f32>().step_by(channels) {
+                for s in rd.samples::<f32>().step_by(channels).take(max_sample_count) {
                     v.push(s?);
                 }
             }
             // http://blog.bjornroche.com/2009/12/int-float-int-its-jungle-out-there.html
             hound::SampleFormat::Int => {
-                for s in rd.samples::<i16>().step_by(channels) {
+                for s in rd.samples::<i16>().step_by(channels).take(max_sample_count) {
                     let s = s?;
                     let s = s as f32 / (0x8000 as f32);
                     v.push(s);

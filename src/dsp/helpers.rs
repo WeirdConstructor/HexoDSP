@@ -395,10 +395,21 @@ pub fn f_fold_distort(gain: f32, threshold: f32, i: f32) -> f32 {
     }
 }
 
+/// Apply linear interpolation between the value a and b.
+///
+/// * `a` - value at x=0.0
+/// * `b` - value at x=1.0
+/// * `x` - value between 0.0 and 1.0 to blend between `a` and `b`.
+#[inline]
 pub fn lerp(x: f32, a: f32, b: f32) -> f32 {
     (a * (1.0 - x)) + (b * x)
 }
 
+/// Apply 64bit linear interpolation between the value a and b.
+///
+/// * `a` - value at x=0.0
+/// * `b` - value at x=1.0
+/// * `x` - value between 0.0 and 1.0 to blend between `a` and `b`.
 pub fn lerp64(x: f64, a: f64, b: f64) -> f64 {
     (a * (1.0 - x)) + (b * x)
 }
@@ -558,6 +569,10 @@ pub const TRIG_LOW_THRES: f32 = 0.25;
 /// a logical '1'. Anything below this is a logical '0'.
 pub const TRIG_HIGH_THRES: f32 = 0.5;
 
+/// Trigger signal generator for HexoDSP nodes.
+///
+/// A trigger in HexoSynth and HexoDSP is commonly 2.0 milliseconds.
+/// This generator generates a trigger signal when [TrigSignal::trigger] is called.
 #[derive(Debug, Clone, Copy)]
 pub struct TrigSignal {
     length: u32,
@@ -565,24 +580,29 @@ pub struct TrigSignal {
 }
 
 impl TrigSignal {
+    /// Create a new trigger generator
     pub fn new() -> Self {
         Self { length: ((44100.0 * TRIG_SIGNAL_LENGTH_MS) / 1000.0).ceil() as u32, scount: 0 }
     }
 
+    /// Reset the trigger generator.
     pub fn reset(&mut self) {
         self.scount = 0;
     }
 
+    /// Set the sample rate to calculate the amount of samples for the trigger signal.
     pub fn set_sample_rate(&mut self, srate: f32) {
         self.length = ((srate * TRIG_SIGNAL_LENGTH_MS) / 1000.0).ceil() as u32;
         self.scount = 0;
     }
 
+    /// Enable sending a trigger impulse the next time [TrigSignal::next] is called.
     #[inline]
     pub fn trigger(&mut self) {
         self.scount = self.length;
     }
 
+    /// Trigger signal output.
     #[inline]
     pub fn next(&mut self) -> f32 {
         if self.scount > 0 {
@@ -600,6 +620,9 @@ impl Default for TrigSignal {
     }
 }
 
+/// Signal change detector that emits a trigger when the input signal changed.
+///
+/// This is commonly used for control signals. It has not much use for audio signals.
 #[derive(Debug, Clone, Copy)]
 pub struct ChangeTrig {
     ts: TrigSignal,
@@ -607,6 +630,7 @@ pub struct ChangeTrig {
 }
 
 impl ChangeTrig {
+    /// Create a new change detector
     pub fn new() -> Self {
         Self {
             ts: TrigSignal::new(),
@@ -614,15 +638,20 @@ impl ChangeTrig {
         }
     }
 
+    /// Reset internal state.
     pub fn reset(&mut self) {
         self.ts.reset();
         self.last = -100.0;
     }
 
+    /// Set the sample rate for the trigger signal generator
     pub fn set_sample_rate(&mut self, srate: f32) {
         self.ts.set_sample_rate(srate);
     }
 
+    /// Feed a new input signal sample.
+    ///
+    /// The return value is the trigger signal.
     #[inline]
     pub fn next(&mut self, inp: f32) -> f32 {
         if (inp - self.last).abs() > std::f32::EPSILON {
@@ -640,21 +669,30 @@ impl Default for ChangeTrig {
     }
 }
 
+/// Trigger signal detector for HexoDSP.
+///
+/// Whenever you need to detect a trigger on an input you can use this component.
+/// A trigger in HexoDSP is any signal over [TRIG_HIGH_THRES]. The internal state is
+/// resetted when the signal drops below [TRIG_LOW_THRES].
 #[derive(Debug, Clone, Copy)]
 pub struct Trigger {
     triggered: bool,
 }
 
 impl Trigger {
+    /// Create a new trigger detector.
     pub fn new() -> Self {
         Self { triggered: false }
     }
 
+    /// Reset the internal state of the trigger detector.
     #[inline]
     pub fn reset(&mut self) {
         self.triggered = false;
     }
 
+    /// Checks the input signal for a trigger and returns true when the signal
+    /// surpassed [TRIG_HIGH_THRES] and has not fallen below [TRIG_LOW_THRES] yet.
     #[inline]
     pub fn check_trigger(&mut self, input: f32) -> bool {
         if self.triggered {
@@ -672,6 +710,10 @@ impl Trigger {
     }
 }
 
+/// Generates a phase signal from a trigger/gate input signal.
+///
+/// This helper allows you to measure the distance between trigger or gate pulses
+/// and generates a phase signal for you that increases from 0.0 to 1.0.
 #[derive(Debug, Clone, Copy)]
 pub struct TriggerPhaseClock {
     clock_phase: f64,
@@ -681,10 +723,12 @@ pub struct TriggerPhaseClock {
 }
 
 impl TriggerPhaseClock {
+    /// Create a new phase clock.
     pub fn new() -> Self {
         Self { clock_phase: 0.0, clock_inc: 0.0, prev_trigger: true, clock_samples: 0 }
     }
 
+    /// Reset the phase clock.
     #[inline]
     pub fn reset(&mut self) {
         self.clock_samples = 0;
@@ -693,11 +737,16 @@ impl TriggerPhaseClock {
         self.clock_samples = 0;
     }
 
+    /// Restart the phase clock. It will count up from 0.0 again on [TriggerPhaseClock::next_phase].
     #[inline]
     pub fn sync(&mut self) {
         self.clock_phase = 0.0;
     }
 
+    /// Generate the phase signal of this clock.
+    ///
+    /// * `clock_limit` - The maximum number of samples to detect two trigger signals in.
+    /// * `trigger_in` - Trigger signal input.
     #[inline]
     pub fn next_phase(&mut self, clock_limit: f64, trigger_in: f32) -> f64 {
         if self.prev_trigger {
@@ -892,6 +941,79 @@ fn fclampc<F: Flt>(x: F, mi: f64, mx: f64) -> F {
     x.max(f(mi)).min(f(mx))
 }
 
+/// Hermite / Cubic interpolation of a buffer full of samples at the given _index_.
+/// _len_ is the buffer length to consider and wrap the index into. And _fract_ is the
+/// fractional part of the index.
+///
+/// This function is generic over f32 and f64. That means you can use your preferred float size.
+///
+/// Commonly used like this:
+///
+///```
+/// use hexodsp::dsp::helpers::cubic_interpolate;
+///
+/// let buf : [f32; 9] = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
+/// let pos = 3.3_f32;
+///
+/// let i = pos.floor() as usize;
+/// let f = pos.fract();
+///
+/// let res = cubic_interpolate(&buf[..], buf.len(), i, f);
+/// assert!((res - 0.67).abs() < 0.2_f32);
+///```
+#[inline]
+pub fn cubic_interpolate<F: Flt>(data: &[F], len: usize, index: usize, fract: F) -> F {
+    let index = index + len;
+    // Hermite interpolation, take from
+    // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
+    //
+    // Thanks go to Eric Wood!
+    //
+    // For the interpolation code:
+    // MIT License, Copyright (c) 2021 Eric Wood
+    let xm1 = data[(index - 1) % len];
+    let x0 = data[index % len];
+    let x1 = data[(index + 1) % len];
+    let x2 = data[(index + 2) % len];
+
+    let c = (x1 - xm1) * f(0.5);
+    let v = x0 - x1;
+    let w = c + v;
+    let a = w + v + (x2 - x0) * f(0.5);
+    let b_neg = w + a;
+
+    let res = (((a * fract) - b_neg) * fract + c) * fract + x0;
+
+    // let rr2 =
+    //     x0 + f::<F>(0.5) * fract * (
+    //         x1 - xm1 + fract * (
+    //             f::<F>(4.0) * x1
+    //             + f::<F>(2.0) * xm1
+    //             - f::<F>(5.0) * x0
+    //             - x2
+    //             + fract * (f::<F>(3.0) * (x0 - x1) - xm1 + x2)));
+
+    // eprintln!(
+    //     "index={} fract={:6.4} xm1={:6.4} x0={:6.4} x1={:6.4} x2={:6.4} = {:6.4} <> {:6.4}",
+    //     index, fract.to_f64().unwrap(), xm1.to_f64().unwrap(), x0.to_f64().unwrap(), x1.to_f64().unwrap(), x2.to_f64().unwrap(),
+    //     res.to_f64().unwrap(),
+    //     rr2.to_f64().unwrap()
+    // );
+
+    // eprintln!(
+    //     "index={} fract={:6.4} xm1={:6.4} x0={:6.4} x1={:6.4} x2={:6.4} = {:6.4}",
+    //     index, fract.to_f64().unwrap(), xm1.to_f64().unwrap(), x0.to_f64().unwrap(), x1.to_f64().unwrap(), x2.to_f64().unwrap(),
+    //     res.to_f64().unwrap(),
+    // );
+
+    res
+}
+
+/// This is a delay buffer/line with linear and cubic interpolation.
+///
+/// It's the basic building block underneath the all-pass filter, comb filters and delay effects.
+/// You can use linear and cubic and no interpolation to access samples in the past. Either
+/// by sample offset or time (millisecond) based.
 #[derive(Debug, Clone, Default)]
 pub struct DelayBuffer<F: Flt> {
     data: Vec<F>,
@@ -900,18 +1022,22 @@ pub struct DelayBuffer<F: Flt> {
 }
 
 impl<F: Flt> DelayBuffer<F> {
+    /// Creates a delay buffer with about 5 seconds of capacity at 8*48000Hz sample rate.
     pub fn new() -> Self {
         Self { data: vec![f(0.0); DEFAULT_DELAY_BUFFER_SAMPLES], wr: 0, srate: f(44100.0) }
     }
 
+    /// Creates a delay buffer with the given amount of samples capacity.
     pub fn new_with_size(size: usize) -> Self {
         Self { data: vec![f(0.0); size], wr: 0, srate: f(44100.0) }
     }
 
+    /// Sets the sample rate that is used for milliseconds => sample conversion.
     pub fn set_sample_rate(&mut self, srate: F) {
         self.srate = srate;
     }
 
+    /// Reset the delay buffer contents and write position.
     pub fn reset(&mut self) {
         self.data.fill(f(0.0));
         self.wr = 0;
@@ -971,7 +1097,7 @@ impl<F: Flt> DelayBuffer<F> {
         self.linear_interpolate_at(delay_time_ms)
     }
 
-    /// Fetch a sample from the delay buffer at the given time.
+    /// Fetch a sample from the delay buffer at the given tim with linear interpolation.
     ///
     /// * `delay_time_ms` - Delay time in milliseconds.
     #[inline]
@@ -979,7 +1105,7 @@ impl<F: Flt> DelayBuffer<F> {
         self.linear_interpolate_at_s((delay_time_ms * self.srate) / f(1000.0))
     }
 
-    /// Fetch a sample from the delay buffer at the given offset.
+    /// Fetch a sample from the delay buffer at the given offset with linear interpolation.
     ///
     /// * `s_offs` - Sample offset in samples.
     #[inline]
@@ -989,14 +1115,24 @@ impl<F: Flt> DelayBuffer<F> {
         let offs = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract = s_offs.fract();
 
-        let i = (self.wr + len) - offs;
+        // one extra offset, because feed() advances self.wr to the next writing position!
+        let i = (self.wr + len) - (offs + 1);
         let x0 = data[i % len];
         let x1 = data[(i - 1) % len];
 
-        x0 + fract * (x1 - x0)
+        let res = x0 + fract * (x1 - x0);
+        //d// eprintln!(
+        //d//     "INTERP: {:6.4} x0={:6.4} x1={:6.4} fract={:6.4} => {:6.4}",
+        //d//     s_offs.to_f64().unwrap_or(0.0),
+        //d//     x0.to_f64().unwrap(),
+        //d//     x1.to_f64().unwrap(),
+        //d//     fract.to_f64().unwrap(),
+        //d//     res.to_f64().unwrap(),
+        //d// );
+        res
     }
 
-    /// Fetch a sample from the delay buffer at the given time.
+    /// Fetch a sample from the delay buffer at the given time with cubic interpolation.
     ///
     /// * `delay_time_ms` - Delay time in milliseconds.
     #[inline]
@@ -1004,9 +1140,10 @@ impl<F: Flt> DelayBuffer<F> {
         self.cubic_interpolate_at_s((delay_time_ms * self.srate) / f(1000.0))
     }
 
-    /// Fetch a sample from the delay buffer at the given offset.
+    /// Fetch a sample from the delay buffer at the given offset with cubic interpolation.
     ///
-    /// * `s_offs` - Sample offset in samples.
+    /// * `s_offs` - Sample offset in samples into the past of the [DelayBuffer]
+    /// from the current write (or the "now") position.
     #[inline]
     pub fn cubic_interpolate_at_s(&self, s_offs: F) -> F {
         let data = &self.data[..];
@@ -1014,42 +1151,41 @@ impl<F: Flt> DelayBuffer<F> {
         let offs = s_offs.floor().to_usize().unwrap_or(0) % len;
         let fract = s_offs.fract();
 
-        let i = (self.wr + len) - offs;
-
-        // Hermite interpolation, take from
-        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
-        //
-        // Thanks go to Eric Wood!
-        //
-        // For the interpolation code:
-        // MIT License, Copyright (c) 2021 Eric Wood
-        let xm1 = data[(i + 1) % len];
-        let x0 = data[i % len];
-        let x1 = data[(i - 1) % len];
-        let x2 = data[(i - 2) % len];
-
-        let c = (x1 - xm1) * f(0.5);
-        let v = x0 - x1;
-        let w = c + v;
-        let a = w + v + (x2 - x0) * f(0.5);
-        let b_neg = w + a;
-
-        let fract = fract as F;
-        (((a * fract) - b_neg) * fract + c) * fract + x0
+        // (offs + 1) offset for compensating that self.wr points to the next
+        // unwritten position.
+        // Additional (offs + 1 + 1) offset for cubic_interpolate, which
+        // interpolates into the past through the delay buffer.
+        let i = (self.wr + len) - (offs + 2);
+        let res = cubic_interpolate(data, len, i, f::<F>(1.0) - fract);
+        //        eprintln!(
+        //            "cubic at={} ({:6.4}) res={:6.4}",
+        //            i % len,
+        //            s_offs.to_f64().unwrap(),
+        //            res.to_f64().unwrap()
+        //        );
+        res
     }
 
+    /// Fetch a sample from the delay buffer at the given time without any interpolation.
+    ///
+    /// * `delay_time_ms` - Delay time in milliseconds.
     #[inline]
     pub fn nearest_at(&self, delay_time_ms: F) -> F {
         let len = self.data.len();
         let offs = ((delay_time_ms * self.srate) / f(1000.0)).floor().to_usize().unwrap_or(0) % len;
-        let idx = ((self.wr + len) - offs) % len;
+        // (offs + 1) one extra offset, because feed() advances
+        // self.wr to the next writing position!
+        let idx = ((self.wr + len) - (offs + 1)) % len;
         self.data[idx]
     }
 
+    /// Fetch a sample from the delay buffer at the given number of samples in the past.
     #[inline]
     pub fn at(&self, delay_sample_count: usize) -> F {
         let len = self.data.len();
-        let idx = ((self.wr + len) - delay_sample_count) % len;
+        // (delay_sample_count + 1) one extra offset, because feed() advances self.wr to
+        // the next writing position!
+        let idx = ((self.wr + len) - (delay_sample_count + 1)) % len;
         self.data[idx]
     }
 }
@@ -1057,32 +1193,57 @@ impl<F: Flt> DelayBuffer<F> {
 /// Default size of the delay buffer: 1 seconds at 8 times 48kHz
 const DEFAULT_ALLPASS_COMB_SAMPLES: usize = 8 * 48000;
 
+/// An all-pass filter based on a delay line.
 #[derive(Debug, Clone, Default)]
 pub struct AllPass<F: Flt> {
     delay: DelayBuffer<F>,
 }
 
 impl<F: Flt> AllPass<F> {
+    /// Creates a new all-pass filter with about 1 seconds space for samples.
     pub fn new() -> Self {
         Self { delay: DelayBuffer::new_with_size(DEFAULT_ALLPASS_COMB_SAMPLES) }
     }
 
+    /// Set the sample rate for millisecond based access.
     pub fn set_sample_rate(&mut self, srate: F) {
         self.delay.set_sample_rate(srate);
     }
 
+    /// Reset the internal delay buffer.
     pub fn reset(&mut self) {
         self.delay.reset();
     }
 
+    /// Access the internal delay at the given amount of milliseconds in the past.
     #[inline]
     pub fn delay_tap_n(&self, time_ms: F) -> F {
         self.delay.tap_n(time_ms)
     }
 
+    /// Retrieve the next (cubic interpolated) sample from the all-pass
+    /// filter while feeding in the next.
+    ///
+    /// * `time_ms` - Delay time in milliseconds.
+    /// * `g` - Feedback factor (usually something around 0.7 is common)
+    /// * `v` - The new input sample to feed the filter.
     #[inline]
     pub fn next(&mut self, time_ms: F, g: F, v: F) -> F {
         let s = self.delay.cubic_interpolate_at(time_ms);
+        let input = v + -g * s;
+        self.delay.feed(input);
+        input * g + s
+    }
+
+    /// Retrieve the next (linear interpolated) sample from the all-pass
+    /// filter while feeding in the next.
+    ///
+    /// * `time_ms` - Delay time in milliseconds.
+    /// * `g` - Feedback factor (usually something around 0.7 is common)
+    /// * `v` - The new input sample to feed the filter.
+    #[inline]
+    pub fn next_linear(&mut self, time_ms: F, g: F, v: F) -> F {
+        let s = self.delay.linear_interpolate_at(time_ms);
         let input = v + -g * s;
         self.delay.feed(input);
         input * g + s
@@ -1194,6 +1355,7 @@ impl<F: Flt> OnePoleLPF<F> {
         self.a = f::<F>(1.0) - self.b;
     }
 
+    #[inline]
     pub fn set_sample_rate(&mut self, srate: F) {
         self.israte = f::<F>(1.0) / srate;
         self.recalc();
@@ -2116,8 +2278,6 @@ pub struct TriSawLFO<F: Flt> {
     phase: F,
     /// The point from where the falling edge will be used.
     rev: F,
-    /// Whether the LFO is currently rising
-    rising: bool,
     /// The frequency.
     freq: F,
     /// Precomputed rise/fall rate of the LFO.
@@ -2133,7 +2293,6 @@ impl<F: Flt> TriSawLFO<F> {
             israte: f(1.0 / 44100.0),
             phase: f(0.0),
             rev: f(0.5),
-            rising: true,
             freq: f(1.0),
             fall_r: f(0.0),
             rise_r: f(0.0),
@@ -2163,7 +2322,6 @@ impl<F: Flt> TriSawLFO<F> {
     pub fn reset(&mut self) {
         self.phase = self.init_phase;
         self.rev = f(0.5);
-        self.rising = true;
     }
 
     #[inline]
@@ -2177,14 +2335,9 @@ impl<F: Flt> TriSawLFO<F> {
     pub fn next_unipolar(&mut self) -> F {
         if self.phase >= f(1.0) {
             self.phase = self.phase - f(1.0);
-            self.rising = true;
         }
 
-        if self.phase >= self.rev {
-            self.rising = false;
-        }
-
-        let s = if self.rising {
+        let s = if self.phase < self.rev {
             self.phase * self.rise_r
         } else {
             self.phase * self.fall_r - self.fall_r
