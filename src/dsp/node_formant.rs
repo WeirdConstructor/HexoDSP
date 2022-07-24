@@ -69,29 +69,26 @@ impl DspNode for Formant {
             let decay_freq = denorm::Formant::dcy(decay_freq, frame);
 
             // where the two decays meet
-            let carrier_center = decay_freq / (attack_freq + decay_freq);
+            let carrier_center = attack_freq / (attack_freq + decay_freq);
 
             // where they meet in amplitude
             let carrier_lowest_amplitude =
-                (-std::f32::consts::TAU * base_freq * carrier_center * decay_freq).exp();
+                (-(std::f32::consts::PI * carrier_center * decay_freq) / base_freq).exp();
 
-            // turn it into a triangle wave
-            let carrier_attack = (1.0 - self.phase) / carrier_center;
-            let carrier_decay = self.phase / (1.0 - carrier_center);
-
-            // actual triangle wave
-            let carrier_base = 1.0 - carrier_attack.min(carrier_decay);
+            // make a triangle wave, with the peak at carrier center
+            let carrier_base =
+                (self.phase / carrier_center).min((1.0 - self.phase) / (1.0 - carrier_center));
 
             // smoothstep
-            let carrier =
-                carrier_base * carrier_base * (3.0 - 2.0 * carrier_base) * carrier_lowest_amplitude
-                    + (1.0 - carrier_lowest_amplitude);
+            let carrier = 1.0
+                - ((1.0 - carrier_lowest_amplitude)
+                    * (carrier_base * carrier_base * (3.0 - 2.0 * carrier_base)));
 
             // multiple of the frequency the modulators are at
             let multiple = formant_freq / base_freq;
 
             // round them to the closest integer of the formant freq
-            let freq_a = multiple.floor();
+            let freq_a = multiple.floor().max(1.0);
             let freq_b = freq_a + 1.0;
 
             // and how much to lerp between them
@@ -106,6 +103,8 @@ impl DspNode for Formant {
 
             // increment phase (very imporant)
             self.phase += base_freq * self.inv_sample_rate;
+
+            // wrap around
             self.phase = self.phase.fract();
 
             out.write(frame, wave);
