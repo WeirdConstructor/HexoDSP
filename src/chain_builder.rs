@@ -165,6 +165,14 @@ impl MatrixCellChain {
         self.param_idx = self.chain.len() - 1;
     }
 
+    /// Place a new node in the chain without any inputs or outputs. This is of limited
+    /// use in this API, but might makes a few corner cases easier in test cases.
+    pub fn node(&mut self, node_id: &str) -> &mut Self {
+        let cell = self.spawn_cell_from_node_id_name(node_id);
+        self.add_link(cell);
+        self
+    }
+
     /// Place a new node in the chain with the given output assigned.
     pub fn node_out(&mut self, node_id: &str, out: &str) -> &mut Self {
         let mut cell = self.spawn_cell_from_node_id_name(node_id);
