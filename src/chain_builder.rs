@@ -65,6 +65,7 @@ pub struct MatrixCellChain {
 /// Error type for the [crate::MatrixCellChain].
 #[derive(Debug, Clone)]
 pub enum ChainError {
+    UnknownNodeId(String),
     UnknownOutput(NodeId, String),
     UnknownInput(NodeId, String),
 }
@@ -143,10 +144,13 @@ impl MatrixCellChain {
     }
 
     /// Utility function for creating [crate::Cell] for this chain.
-    pub fn spawn_cell_from_node_id_name(&mut self, node_id: &str) -> Cell {
-        let node_id = NodeId::from_str(node_id);
+    pub fn spawn_cell_from_node_id_name(&mut self, node_id_name: &str) -> Option<Cell> {
+        let node_id = NodeId::from_str(node_id_name);
+        if node_id == NodeId::Nop && node_id_name != "nop" {
+            return None;
+        }
 
-        Cell::empty(node_id)
+        Some(Cell::empty(node_id))
     }
 
     /// Utility function to add a pre-built [crate::Cell] as next link.
@@ -160,50 +164,60 @@ impl MatrixCellChain {
     /// Place a new node in the chain without any inputs or outputs. This is of limited
     /// use in this API, but might makes a few corner cases easier in test cases.
     pub fn node(&mut self, node_id: &str) -> &mut Self {
-        let cell = self.spawn_cell_from_node_id_name(node_id);
-        self.add_link(cell);
+        if let Some(cell) = self.spawn_cell_from_node_id_name(node_id) {
+            self.add_link(cell);
+        } else {
+            self.error = Some(ChainError::UnknownNodeId(node_id.to_string()));
+        }
+
         self
     }
 
     /// Place a new node in the chain with the given output assigned.
     pub fn node_out(&mut self, node_id: &str, out: &str) -> &mut Self {
-        let mut cell = self.spawn_cell_from_node_id_name(node_id);
+        if let Some(mut cell) = self.spawn_cell_from_node_id_name(node_id) {
+            if let Err(()) = cell.set_output_by_name(out, self.output_dir()) {
+                self.error = Some(ChainError::UnknownOutput(cell.node_id(), out.to_string()));
+            }
 
-        if let Err(()) = cell.set_output_by_name(out, self.output_dir()) {
-            self.error = Some(ChainError::UnknownOutput(cell.node_id(), out.to_string()));
+            self.add_link(cell);
+        } else {
+            self.error = Some(ChainError::UnknownNodeId(node_id.to_string()));
         }
-
-        self.add_link(cell);
 
         self
     }
 
     /// Place a new node in the chain with the given input assigned.
     pub fn node_inp(&mut self, node_id: &str, inp: &str) -> &mut Self {
-        let mut cell = self.spawn_cell_from_node_id_name(node_id);
+        if let Some(mut cell) = self.spawn_cell_from_node_id_name(node_id) {
+            if let Err(()) = cell.set_input_by_name(inp, self.input_dir()) {
+                self.error = Some(ChainError::UnknownInput(cell.node_id(), inp.to_string()));
+            }
 
-        if let Err(()) = cell.set_input_by_name(inp, self.input_dir()) {
-            self.error = Some(ChainError::UnknownInput(cell.node_id(), inp.to_string()));
+            self.add_link(cell);
+        } else {
+            self.error = Some(ChainError::UnknownNodeId(node_id.to_string()));
         }
-
-        self.add_link(cell);
 
         self
     }
 
     /// Place a new node in the chain with the given input and output assigned.
     pub fn node_io(&mut self, node_id: &str, inp: &str, out: &str) -> &mut Self {
-        let mut cell = self.spawn_cell_from_node_id_name(node_id);
+        if let Some(mut cell) = self.spawn_cell_from_node_id_name(node_id) {
+            if let Err(()) = cell.set_input_by_name(inp, self.input_dir()) {
+                self.error = Some(ChainError::UnknownInput(cell.node_id(), inp.to_string()));
+            }
 
-        if let Err(()) = cell.set_input_by_name(inp, self.input_dir()) {
-            self.error = Some(ChainError::UnknownInput(cell.node_id(), inp.to_string()));
+            if let Err(()) = cell.set_output_by_name(out, self.output_dir()) {
+                self.error = Some(ChainError::UnknownOutput(cell.node_id(), out.to_string()));
+            }
+
+            self.add_link(cell);
+        } else {
+            self.error = Some(ChainError::UnknownNodeId(node_id.to_string()));
         }
-
-        if let Err(()) = cell.set_output_by_name(out, self.output_dir()) {
-            self.error = Some(ChainError::UnknownOutput(cell.node_id(), out.to_string()));
-        }
-
-        self.add_link(cell);
 
         self
     }
