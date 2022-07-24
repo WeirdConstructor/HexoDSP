@@ -240,8 +240,6 @@ impl MatrixCellChain {
 
             cell.set_node_id_keep_ios(node_id);
 
-            println!("PLACE: ({},{}) {:?}", x, y, cell);
-
             matrix.place(x, y, cell);
 
             let offs = link.dir.as_offs(pos.0);
