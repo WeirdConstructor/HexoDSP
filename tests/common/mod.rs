@@ -6,6 +6,7 @@ pub use hexodsp::dsp::*;
 pub use hexodsp::matrix::*;
 pub use hexodsp::nodes::new_node_engine;
 pub use hexodsp::NodeExecutor;
+pub use hexodsp::MatrixCellChain;
 
 use hound;
 

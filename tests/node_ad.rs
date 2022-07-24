@@ -10,8 +10,10 @@ fn check_node_ad_1() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
-    let mut chain = hexodsp::chain_builder::MatrixCellChain::new(CellDir::B);
-    chain.node_out("ad", "sig").node_inp("out", "ch1").place(&mut matrix, 0, 0).unwrap();
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain.node_out("ad", "sig")
+        .node_inp("out", "ch1")
+        .place(&mut matrix, 0, 0).unwrap();
     matrix.sync().unwrap();
 
     let ad = NodeId::Ad(0);

@@ -366,12 +366,13 @@ The start of your `tests/node_*.rs` file usually should look like this:
         let (node_conf, mut node_exec) = new_node_engine();
         let mut matrix = Matrix::new(node_conf, 3, 3);
 
-        let ad = NodeId::Ad(0);
-        let out = NodeId::Out(0);
-        matrix.place(0, 0, Cell::empty(ad).out(None, None, ad.out("sig")));
-        matrix.place(0, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
+        let mut chain = MatrixCellChain::new(CellDir::B);
+        chain.node_out("ad", "sig")
+            .node_inp("out", "ch1")
+            .place(&mut matrix, 0, 0).unwrap();
         matrix.sync().unwrap();
 
+        let ad = NodeId::Ad(0);
         // ...
     }
 ```
@@ -393,81 +394,50 @@ The two parameters to _new_ are the width and height of the hex grid.
         let mut matrix = Matrix::new(node_conf, 3, 3);
 ```
 
+Next step is to create a DSP chain of nodes and place that onto the hexagonal matrix.
+Luckily a simpler API has been created with the [crate::MatrixCellChain], that lets
+you build DSP chains on the fly using only names of the nodes and the corresponding
+input/output ports:
+
+```ignore
+        // Create a new cell chain that points in to the given direction (CellDir::B => to bottom).
+        let mut chain = MatrixCellChain::new(CellDir::B);
+        chain.node_out("ad", "sig") // Add a Node::Ad(0) cell, with the "sig" output set
+            .node_inp("out", "ch1") // Add a Node::Out(0) cell, with the "ch1" input set
+            .place(&mut matrix, 0, 0).unwrap();
+```
+
+After placing the new cells, we need to synchronize it with the audio backend:
+
+```ignore
+        matrix.sync().unwrap();
+```
+
+The `sync` is necessary to update the DSP graph.
+
 Next you usually want to define short variable names for the [NodeId] that refer to the DSP
 node instances:
 
 ```ignore
         let ad = NodeId::Ad(0);
-        let out = NodeId::Out(0);
-```
-
-You can have multiple instances for a node. The number in the parenthesis are
-the instance index of that node.
-
-Next you want to layout the nodes adjacent to each other on the hexagonal grid.
-This is a bit more tricky than with a rectangular grid.
-
-```ignore
-        matrix.place(0, 0, Cell::empty(ad).out(None, None, ad.out("sig")));
-        matrix.place(0, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
-        matrix.sync().unwrap();
-```
-
-The `sync` is necessary to update the DSP graph.
-When doing this, keep the following grid layout in mind:
-
-```text
-     _____         _____
-    /     \       /     \
-   /  0,0  \_____/  2,0  \_____
-   \       /     \       /     \
-    \_____/  1,0  \_____/  3,0  \
-    /     \       /     \       /
-   /  0,1  \_____/  2,1  \_____/
-   \       /     \       /     \
-    \_____/  1,1  \_____/  3,1  \
-    /     \       /     \       /
-   /  0,2  \_____/  2,2  \_____/
-   \       /     \       /
-    \_____/  1,2  \_____/
-          \       /
-           \_____/
-```
-
-Defining the outputs of a cell is done like this:
-
-```ignore
-        Cell::empty(ad).out(None, None, ad.out("sig"))
-```
-
-[crate::Cell::empty] takes a [NodeId] as first argument. The [crate::Cell]
-structure then allows you to specify the output ports using the [crate::Cell::out]
-function. The 3 arguments of that function are for the 3 edges of that hex tile:
-
-```ignore
-        //                  TopRight  BottomRight Bottom
-        Cell::empty(ad).out(None,     None,       ad.out("sig"))
-```
-
-[crate::Cell::input] works the same way, but the 3 arguments refer to the 3 input
-edges of a hex tile:
-
-```ignore
-        //                     Top             TopLeft  BottomLeft
-        Cell::empty(out).input(out.inp("ch1"), None,    None)
 ```
 
 The [NodeId] interface offers you functions to get the input parameter index from
 a name like `out.inp("ch1")` or the output port index from a name: `ad.out("sig")`.
+You can have multiple instances for a node. The number in the parenthesis are
+the instance index of that node.
 
 After you have setup everything for the test, you usually want to modify a paramter
 and look at the values the graph returns.
 
-
 ```ignore
     #[test]
     fn check_node_ad_1() {
+        // ...
         // matrix setup code above
+        // ...
+
+        let ad = NodeId::Ad(0);
 
         // Fetch parameter id:
         let trig_p = ad.inp_param("trig").unwrap();

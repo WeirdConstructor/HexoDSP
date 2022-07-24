@@ -295,6 +295,7 @@ pub use matrix_repr::load_patch_from_file;
 pub use matrix_repr::save_patch_to_file;
 pub use nodes::{new_node_engine, NodeConfigurator, NodeExecutor};
 pub use sample_lib::{SampleLibrary, SampleLoadError};
+pub use chain_builder::MatrixCellChain;
 
 pub struct Context<'a, 'b, 'c, 'd> {
     pub nframes: usize,

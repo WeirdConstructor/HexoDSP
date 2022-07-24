@@ -1,6 +1,28 @@
 // Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
+/*!  Defines an API for easy DSP chain building with the hexagonal [crate::Matrix].
+
+The [crate::MatrixCellChain] abstractions allows very easy placement of DSP signal chains:
+
+```
+ use hexodsp::*;
+ let mut chain = MatrixCellChain::new(CellDir::BR);
+ chain.node_out("sin", "sig")
+     .set_denorm("freq", 220.0)
+     .node_io("amp", "inp", "sig")
+     .set_denorm("att", 0.5)
+     .node_inp("out", "ch1");
+
+ // use crate::nodes::new_node_engine;
+ let (node_conf, _node_exec) = new_node_engine();
+ let mut matrix = Matrix::new(node_conf, 7, 7);
+
+ chain.place(&mut matrix, 2, 2).expect("no error in this case");
+```
+*/
+
+
 use crate::{Cell, CellDir, Matrix, NodeId, ParamId, SAtom};
 use std::collections::HashMap;
 
@@ -12,16 +34,16 @@ struct MatrixChainLink {
     params: Vec<(ParamId, SAtom)>,
 }
 
-/// A DSP chain builder for the [hexodsp::Matrix].
+/// A DSP chain builder for the [crate::Matrix].
 ///
-/// This is an extremely easy API to create and place new DSP chains into the [hexodsp::Matrix].
+/// This is an extremely easy API to create and place new DSP chains into the [crate::Matrix].
 /// It can be used by frontends to place DSP chains on user request or it can be used
 /// by test cases to quickly fill the hexagonal Matrix.
 ///
 ///```
 /// use hexodsp::*;
 /// let mut chain = MatrixCellChain::new(CellDir::BR);
-/// chain.node_out("sin")
+/// chain.node_out("sin", "sig")
 ///     .set_denorm("freq", 220.0)
 ///     .node_io("amp", "inp", "sig")
 ///     .set_denorm("att", 0.5)
@@ -42,6 +64,7 @@ pub struct MatrixCellChain {
     param_idx: usize,
 }
 
+/// Error type for the [crate::MatrixCellChain].
 #[derive(Debug, Clone)]
 pub enum ChainError {
     UnknownOutput(NodeId, String),
@@ -122,14 +145,14 @@ impl MatrixCellChain {
         self
     }
 
-    /// Utility function for creating [hexodsp::Cell] for this chain.
+    /// Utility function for creating [crate::Cell] for this chain.
     pub fn spawn_cell_from_node_id_name(&mut self, node_id: &str) -> Cell {
         let node_id = NodeId::from_str(node_id);
 
         Cell::empty(node_id)
     }
 
-    /// Utility function to add a pre-built [hexodsp::Cell] as next link.
+    /// Utility function to add a pre-built [crate::Cell] as next link.
     ///
     /// This also sets the current parameter cell.
     pub fn add_link(&mut self, cell: Cell) {
