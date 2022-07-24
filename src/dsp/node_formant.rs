@@ -72,8 +72,11 @@ impl DspNode for Formant {
             let carrier_center = attack_freq / (attack_freq + decay_freq);
 
             // where they meet in amplitude
-            let carrier_lowest_amplitude =
-                (-(std::f32::consts::PI * carrier_center * decay_freq) / base_freq).exp();
+            let carrier_lowest_amplitude = if carrier_center * decay_freq > base_freq * 2.0 {
+                0.0
+            } else {
+                (-(std::f32::consts::PI * carrier_center * decay_freq) / base_freq).exp()
+            };
 
             // make a triangle wave, with the peak at carrier center
             let carrier_base =
@@ -92,7 +95,7 @@ impl DspNode for Formant {
             let freq_b = freq_a + 1.0;
 
             // and how much to lerp between them
-            let blend = multiple.fract();
+            let blend = multiple.max(1.0).fract();
 
             // get the true modulator
             let modulator = (1.0 - blend) * (std::f32::consts::TAU * self.phase * freq_a).cos()
