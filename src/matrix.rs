@@ -385,11 +385,7 @@ impl Cell {
     /// Finds all dangling ports in the specified direction.
     /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
     /// and any with `CellDir::C`.
-    pub fn find_unconnected_ports(
-        &self,
-        m: &Matrix,
-        dir: CellDir,
-    ) -> Vec<(CellDir, (usize, usize))> {
+    pub fn find_unconnected_ports(&self, m: &Matrix, dir: CellDir) -> Vec<CellDir> {
         let mut unused_ports = vec![];
 
         let options: &[CellDir] = if dir == CellDir::C {
@@ -402,9 +398,7 @@ impl Cell {
 
         for dir in options {
             if self.is_port_dir_connected(m, *dir).is_none() {
-                if let Some(pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
-                    unused_ports.push((*dir, pos));
-                }
+                unused_ports.push(*dir);
             }
         }
 
