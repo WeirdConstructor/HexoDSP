@@ -284,6 +284,7 @@ pub mod matrix_repr;
 pub mod monitor;
 pub mod nodes;
 pub mod sample_lib;
+pub mod chain_builder;
 mod util;
 
 pub use cell_dir::CellDir;

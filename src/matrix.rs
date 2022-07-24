@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
@@ -149,6 +149,10 @@ impl Cell {
         self.out3 = None;
     }
 
+    pub fn set_node_id_keep_ios(&mut self, node_id: NodeId) {
+        self.node_id = node_id;
+    }
+
     pub fn label<'a>(&self, buf: &'a mut [u8]) -> Option<&'a str> {
         use std::io::Write;
         let mut cur = std::io::Cursor::new(buf);
@@ -258,6 +262,40 @@ impl Cell {
                 self.in1 = Some(idx as u8);
             }
             CellDir::C => {}
+        }
+    }
+
+    /// This is a helper function to quickly set an input by name and direction.
+    ///
+    ///```
+    /// use hexodsp::*;
+    ///
+    /// let mut cell = Cell::empty(NodeId::Sin(0));
+    /// cell.set_input_by_name("freq", CellDir::T).unwrap();
+    ///```
+    pub fn set_input_by_name(&mut self, name: &str, dir: CellDir) -> Result<(), ()> {
+        if let Some(idx) = self.node_id.inp(name) {
+            self.set_io_dir(dir, idx as usize);
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+
+    /// This is a helper function to quickly set an output by name and direction.
+    ///
+    ///```
+    /// use hexodsp::*;
+    ///
+    /// let mut cell = Cell::empty(NodeId::Sin(0));
+    /// cell.set_output_by_name("sig", CellDir::B).unwrap();
+    ///```
+    pub fn set_output_by_name(&mut self, name: &str, dir: CellDir) -> Result<(), ()> {
+        if let Some(idx) = self.node_id.out(name) {
+            self.set_io_dir(dir, idx as usize);
+            Ok(())
+        } else {
+            Err(())
         }
     }
 
