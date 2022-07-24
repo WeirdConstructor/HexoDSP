@@ -401,8 +401,10 @@ impl Cell {
         };
 
         for dir in options {
-            if let Some(pos) = self.is_port_dir_connected(m, *dir) {
-                unused_ports.push((*dir, pos));
+            if self.is_port_dir_connected(m, *dir).is_none() {
+                if let Some(pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
+                    unused_ports.push((*dir, pos));
+                }
             }
         }
 
