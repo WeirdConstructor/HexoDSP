@@ -314,7 +314,7 @@ impl Cell {
     }
 
     /// Finds the first free input or output (one without an adjacent cell). If any free input/output
-    /// has an assigned input, that edge is returned.
+    /// has an assigned input, that edge is returned before any else.
     /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
     /// and any with `CellDir::C`.
     pub fn find_first_adjacent_free(

@@ -355,6 +355,24 @@ value now instead of the next sample.
 
 ### Automated Testing of Your Node
 
+First lets discuss shortly why automated tests are necessary. HexoDSP has an automated test
+suite to check if any changes on the internal DSP helpers break something. Or if some
+changes on some DSP node accidentally broke something. Or if a platform behaves weirdly.
+Or even if upstream crates that are included broke or changed something essential.
+
+A few things you can test your DSP code for:
+
+- Is non 0.0 signal emitted?
+- Is the signal inside the -1..1 or 0..1 range?
+- Does the signal level change in expected ways if the input parameters are changed?
+- Does the frequency spectrum peak at expected points in the FFT output?
+- Does the frequency spectrum change to expected points in the FFT output when an input parameter
+changed?
+
+Try to nail down the characteristics of your DSP node with a few tests as well as possible.
+
+For the FFT and other tests there are helper functions in `tests/common/mod.rs`
+
 The start of your `tests/node_*.rs` file usually should look like this:
 
 ```ignore
