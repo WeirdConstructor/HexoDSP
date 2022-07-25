@@ -1408,8 +1408,8 @@ macro_rules! node_list {
                [0 sig],
             scope => Scope UIType::Generic UICategory::IOUtil
                (0  in1   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (0  in2   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (0  in3   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
+               (1  in2   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (2  in3   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
             ad   => Ad   UIType::Generic UICategory::Mod
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
