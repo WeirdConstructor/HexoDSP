@@ -535,6 +535,8 @@ mod node_tseq;
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
+#[allow(non_upper_case_globals)]
+mod node_scope;
 
 pub mod biquad;
 pub mod dattorro;
@@ -605,6 +607,7 @@ use node_test::Test;
 use node_tseq::TSeq;
 use node_tslfo::TsLFO;
 use node_vosc::VOsc;
+use node_scope::Scope;
 
 pub const MIDI_MAX_FREQ: f32 = 13289.75;
 
@@ -1402,6 +1405,9 @@ macro_rules! node_list {
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
             fbrd => FbRd UIType::Generic UICategory::IOUtil
                (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               [0 sig],
+            scope => Scope UIType::Generic UICategory::IOUtil
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                [0 sig],
             ad   => Ad   UIType::Generic UICategory::Mod
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)

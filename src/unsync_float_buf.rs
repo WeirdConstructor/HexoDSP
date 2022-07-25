@@ -47,6 +47,11 @@ impl UnsyncFloatBuf {
     pub fn read(&self, idx: usize) -> f32 {
         self.0.read(idx)
     }
+
+    /// Length of the buffer.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
 }
 
 #[derive(Debug)]
@@ -86,6 +91,10 @@ impl UnsyncFloatBufImpl {
         } else {
             0.0
         }
+    }
+
+    fn len(&self) -> usize {
+        self.len
     }
 }
 
