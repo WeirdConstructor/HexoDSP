@@ -4,15 +4,15 @@
 
 use super::{
     FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_TRACKERS,
-    MAX_INPUTS, MAX_SCOPES, SCOPE_SAMPLES, UNUSED_MONITOR_IDX,
+    MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
-use crate::unsync_float_buf::UnsyncFloatBuf;
 use crate::util::AtomicFloat;
 use crate::SampleLibrary;
+use crate::ScopeHandle;
 
 use ringbuf::{Producer, RingBuffer};
 use std::collections::HashMap;
@@ -179,7 +179,7 @@ pub struct NodeConfigurator {
     /// Holding the tracker sequencers
     pub(crate) trackers: Vec<Tracker>,
     /// Holding the scope buffers:
-    pub(crate) scopes: Vec<[UnsyncFloatBuf; 3]>,
+    pub(crate) scopes: Vec<Arc<ScopeHandle>>,
     /// The shared parts of the [NodeConfigurator]
     /// and the [crate::nodes::NodeExecutor].
     pub(crate) shared: SharedNodeConf,
@@ -266,6 +266,9 @@ impl NodeConfigurator {
 
         let (shared, shared_exec) = SharedNodeConf::new();
 
+        let mut scopes = vec![];
+        scopes.resize_with(MAX_SCOPES, || ScopeHandle::new_shared());
+
         (
             NodeConfigurator {
                 nodes,
@@ -282,14 +285,7 @@ impl NodeConfigurator {
                 atom_values: std::collections::HashMap::new(),
                 node2idx: HashMap::new(),
                 trackers: vec![Tracker::new(); MAX_AVAIL_TRACKERS],
-                scopes: vec![
-                    [
-                        UnsyncFloatBuf::new_with_len(SCOPE_SAMPLES),
-                        UnsyncFloatBuf::new_with_len(SCOPE_SAMPLES),
-                        UnsyncFloatBuf::new_with_len(SCOPE_SAMPLES)
-                    ];
-                    MAX_SCOPES
-                ],
+                scopes,
             },
             shared_exec,
         )
@@ -649,7 +645,7 @@ impl NodeConfigurator {
         }
     }
 
-    pub fn get_scope_buffers(&self, scope: usize) -> Option<[UnsyncFloatBuf; 3]> {
+    pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
         self.scopes.get(scope).cloned()
     }
 
@@ -693,8 +689,8 @@ impl NodeConfigurator {
             }
 
             if let Node::Scope { node } = &mut node {
-                if let Some(buf) = self.scopes.get(ni.instance()) {
-                    node.set_scope_buffers(buf.clone());
+                if let Some(handle) = self.scopes.get(ni.instance()) {
+                    node.set_scope_handle(handle.clone());
                 }
             }
 

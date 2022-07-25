@@ -312,7 +312,7 @@ pub mod matrix_repr;
 pub mod monitor;
 pub mod nodes;
 pub mod sample_lib;
-pub mod unsync_float_buf;
+pub mod scope_handle;
 mod util;
 
 pub use cell_dir::CellDir;
@@ -324,7 +324,7 @@ pub use matrix_repr::load_patch_from_file;
 pub use matrix_repr::save_patch_to_file;
 pub use nodes::{new_node_engine, NodeConfigurator, NodeExecutor};
 pub use sample_lib::{SampleLibrary, SampleLoadError};
-pub use unsync_float_buf::UnsyncFloatBuf;
+pub use scope_handle::ScopeHandle;
 
 pub struct Context<'a, 'b, 'c, 'd> {
     pub nframes: usize,

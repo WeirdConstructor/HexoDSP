@@ -3,26 +3,22 @@
 // See README.md and COPYING for details.
 
 //use super::helpers::{sqrt4_to_pow4, TrigSignal, Trigger};
-use crate::nodes::SCOPE_SAMPLES;
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::nodes::SCOPE_SAMPLES;
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use crate::UnsyncFloatBuf;
+use crate::ScopeHandle;
+use std::sync::Arc;
 
 /// A simple signal scope
 #[derive(Debug, Clone)]
 pub struct Scope {
-    buf: [UnsyncFloatBuf; 3],
+    handle: Arc<ScopeHandle>,
     idx: usize,
 }
 
 impl Scope {
     pub fn new(_nid: &NodeId) -> Self {
-        let buf = [
-            UnsyncFloatBuf::new_with_len(1),
-            UnsyncFloatBuf::new_with_len(1),
-            UnsyncFloatBuf::new_with_len(1),
-        ];
-        Self { buf, idx: 0 }
+        Self { handle: ScopeHandle::new_shared(), idx: 0 }
     }
     pub const in1: &'static str = "Scope in1\nSignal input 1.\nRange: (-1..1)\n";
     pub const in2: &'static str = "Scope in2\nSignal input 2.\nRange: (-1..1)\n";
@@ -38,8 +34,8 @@ record up to 24 signals. The received signal will be forwarded to the GUI and
 you can inspect the waveform there.
 "#;
 
-    pub fn set_scope_buffers(&mut self, buf: [UnsyncFloatBuf; 3]) {
-        self.buf = buf;
+    pub fn set_scope_handle(&mut self, handle: Arc<ScopeHandle>) {
+        self.handle = handle;
     }
 }
 
@@ -57,23 +53,25 @@ impl DspNode for Scope {
         &mut self,
         ctx: &mut T,
         _ectx: &mut NodeExecContext,
-        _nctx: &NodeContext,
+        nctx: &NodeContext,
         _atoms: &[SAtom],
         inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf],
+        _outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{inp, out};
+        use crate::dsp::inp;
 
         let in1 = inp::Scope::in1(inputs);
         let in2 = inp::Scope::in2(inputs);
         let in3 = inp::Scope::in3(inputs);
         let inputs = [in1, in2, in3];
 
+        self.handle.set_active_from_mask(nctx.in_connected);
+
         for frame in 0..ctx.nframes() {
             for (i, input) in inputs.iter().enumerate() {
                 let in_val = input.read(frame);
-                self.buf[i].write(self.idx, in_val);
+                self.handle.write(i, self.idx, in_val);
             }
 
             self.idx = (self.idx + 1) % SCOPE_SAMPLES;

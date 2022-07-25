@@ -26,22 +26,22 @@ fn check_node_scope_1() {
     matrix.set_param(in3_p, SAtom::param(1.0));
     let _res = run_for_ms(&mut node_exec, 11.0);
 
-    let scope = matrix.get_scope_buffers(0).unwrap();
+    let scope = matrix.get_scope_handle(0).unwrap();
     let mut v = vec![];
     for x in 0..SCOPE_SAMPLES {
-        v.push(scope[0].read(x));
+        v.push(scope.read(0, x));
     }
     assert_decimated_feq!(v, 80, vec![0.0022, 0.1836, 0.3650, 0.5464, 0.7278, 0.9093, 1.0]);
 
     let mut v = vec![];
     for x in 0..SCOPE_SAMPLES {
-        v.push(scope[1].read(x));
+        v.push(scope.read(1, x));
     }
     assert_decimated_feq!(v, 80, vec![0.0022, 0.1836, 0.3650, 0.5464, 0.7278, 0.9093, 1.0]);
 
     let mut v = vec![];
     for x in 0..SCOPE_SAMPLES {
-        v.push(scope[2].read(x));
+        v.push(scope.read(2, x));
     }
     assert_decimated_feq!(v, 80, vec![0.0022, 0.1836, 0.3650, 0.5464, 0.7278, 0.9093, 1.0]);
 }

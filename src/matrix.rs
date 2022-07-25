@@ -9,7 +9,7 @@ pub use crate::monitor::MON_SIG_CNT;
 pub use crate::nodes::MinMaxMonitorSamples;
 use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES};
 pub use crate::CellDir;
-use crate::UnsyncFloatBuf;
+use crate::ScopeHandle;
 
 use std::collections::{HashMap, HashSet};
 
@@ -582,8 +582,8 @@ impl Matrix {
         self.config.get_pattern_data(tracker_id)
     }
 
-    pub fn get_scope_buffers(&self, scope: usize) -> Option<[UnsyncFloatBuf; 3]> {
-        self.config.get_scope_buffers(scope)
+    pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
+        self.config.get_scope_handle(scope)
     }
 
     /// Checks if pattern data updates need to be sent to the
