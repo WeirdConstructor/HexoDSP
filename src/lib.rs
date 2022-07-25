@@ -103,9 +103,9 @@ This is a short overview of the API provided by the
 hexagonal Matrix API, which is the primary API used
 inside [HexoSynth](https://github.com/WeirdConstructor/HexoSynth).
 
-This only showcases the non-realtime generation of audio
-samples. For a real time application of this library please
-refer to the examples that come with this library.
+This only showcases the direct generation of audio samples, without any audio
+device playing it. For a real time application of this library please refer to
+the examples that come with this library.
 
 ```rust
 use hexodsp::*;
@@ -132,6 +132,8 @@ let (out_l, out_r) = node_exec.test_run(0.11, true);
 // out_l and out_r contain two channels of audio
 // samples now.
 ```
+
+### Simplified Hexagonal Matrix API
 
 There is also a simplified version for easier setup of DSP chains
 on the hexagonal grid, using the [crate::MatrixCellChain] abstraction:
