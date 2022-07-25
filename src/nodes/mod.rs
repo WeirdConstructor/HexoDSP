@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 pub const MAX_ALLOCATED_NODES: usize = 256;
-pub const MAX_SCOPES: usize = 16;
+pub const MAX_SCOPES: usize = 8;
 pub const SCOPE_SAMPLES: usize = 512;
 pub const MAX_INPUTS: usize = 32;
 pub const MAX_SMOOTHERS: usize = 36 + 4; // 6 * 6 modulator inputs + 4 UI Knobs

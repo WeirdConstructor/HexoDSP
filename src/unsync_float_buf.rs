@@ -54,6 +54,10 @@ impl UnsyncFloatBuf {
     }
 }
 
+/// Private implementation detail for [UnsyncFloatBuf].
+///
+/// This mostly allows [UnsyncFloatBuf] to wrap UnsyncFloatBufImpl into an [std::sync::Arc],
+/// to make sure the `data_store` Vector is not moved accidentally.
 #[derive(Debug)]
 struct UnsyncFloatBufImpl {
     data_store: Vec<AtomicFloat>,
@@ -65,18 +69,23 @@ unsafe impl Sync for UnsyncFloatBuf {}
 unsafe impl Send for UnsyncFloatBuf {}
 
 impl UnsyncFloatBufImpl {
+    /// Create a new shared reference of this. You must not create
+    /// an UnsyncFloatBufImpl that can move! Otherwise the internal pointer
+    /// would be invalidated.
     fn new_shared(len: usize) -> Arc<Self> {
         let mut rc = Arc::new(Self { data_store: Vec::new(), len, ptr: std::ptr::null_mut() });
 
         let mut unsync_buf = Arc::get_mut(&mut rc).expect("No other reference to this Arc");
         unsync_buf.data_store.resize_with(len, || AtomicFloat::new(0.0));
-        // Taking the pointer to the Vec data buffer is fine,
+
+        // XXX: Taking the pointer to the Vec data buffer is fine,
         // because it will not be moved when inside the Arc.
         unsync_buf.ptr = unsync_buf.data_store.as_mut_ptr();
 
         rc
     }
 
+    /// Write a sample.
     fn write(&self, idx: usize, v: f32) {
         if idx < self.len {
             unsafe {
@@ -85,6 +94,7 @@ impl UnsyncFloatBufImpl {
         }
     }
 
+    /// Read a sample.
     fn read(&self, idx: usize) -> f32 {
         if idx < self.len {
             unsafe { (*self.ptr.add(idx)).get() }
@@ -93,6 +103,7 @@ impl UnsyncFloatBufImpl {
         }
     }
 
+    /// Return the length of this buffer.
     fn len(&self) -> usize {
         self.len
     }

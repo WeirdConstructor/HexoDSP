@@ -582,8 +582,8 @@ impl Matrix {
         self.config.get_pattern_data(tracker_id)
     }
 
-    pub fn get_scope_buffer(&self, scope: usize) -> Option<UnsyncFloatBuf> {
-        self.config.get_scope_buffer(scope)
+    pub fn get_scope_buffers(&self, scope: usize) -> Option<[UnsyncFloatBuf; 3]> {
+        self.config.get_scope_buffers(scope)
     }
 
     /// Checks if pattern data updates need to be sent to the
