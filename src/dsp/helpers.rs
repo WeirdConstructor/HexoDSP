@@ -710,6 +710,53 @@ impl Trigger {
     }
 }
 
+/// Trigger signal detector with custom range.
+///
+/// Whenever you need to detect a trigger with a custom threshold.
+#[derive(Debug, Clone, Copy)]
+pub struct CustomTrigger {
+    triggered: bool,
+    low_thres: f32,
+    high_thres: f32,
+}
+
+impl CustomTrigger {
+    /// Create a new trigger detector.
+    pub fn new(low_thres: f32, high_thres: f32) -> Self {
+        Self { triggered: false, low_thres, high_thres }
+    }
+
+    pub fn set_threshold(&mut self, low_thres: f32, high_thres: f32) {
+        self.low_thres = low_thres;
+        self.high_thres = high_thres;
+    }
+
+    /// Reset the internal state of the trigger detector.
+    #[inline]
+    pub fn reset(&mut self) {
+        self.triggered = false;
+    }
+
+    /// Checks the input signal for a trigger and returns true when the signal
+    /// surpassed the high threshold and has not fallen below low threshold yet.
+    #[inline]
+    pub fn check_trigger(&mut self, input: f32) -> bool {
+//        println!("TRIG CHECK: {} <> {}", input, self.high_thres);
+        if self.triggered {
+            if input <= self.low_thres {
+                self.triggered = false;
+            }
+
+            false
+        } else if input > self.high_thres {
+            self.triggered = true;
+            true
+        } else {
+            false
+        }
+    }
+}
+
 /// Generates a phase signal from a trigger/gate input signal.
 ///
 /// This helper allows you to measure the distance between trigger or gate pulses

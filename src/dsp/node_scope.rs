@@ -1,8 +1,14 @@
 // Copyright (c) 2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
+//
+// This code was inspired by VCV Rack's scope:
+// https://github.com/VCVRack/Fundamental/blob/v2/src/Scope.cpp
+// Which is/was under the license GPL-3.0-or-later.
+// Copyright by Andrew Belt, 2021
 
 //use super::helpers::{sqrt4_to_pow4, TrigSignal, Trigger};
+use crate::dsp::helpers::CustomTrigger;
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::SCOPE_SAMPLES;
 use crate::nodes::{NodeAudioContext, NodeExecContext};
@@ -10,7 +16,7 @@ use crate::ScopeHandle;
 use std::sync::Arc;
 
 #[macro_export]
-macro_rules! fa_scope_tsrc  {
+macro_rules! fa_scope_tsrc {
     ($formatter: expr, $v: expr, $denorm_v: expr) => {{
         let s = match ($v.round() as usize) {
             0 => "Off",
@@ -27,24 +33,37 @@ macro_rules! fa_scope_tsrc  {
 pub struct Scope {
     handle: Arc<ScopeHandle>,
     idx: usize,
+    frame_count: usize,
+    srate_ms: f32,
+    trig: CustomTrigger,
 }
 
 impl Scope {
     pub fn new(_nid: &NodeId) -> Self {
-        Self { handle: ScopeHandle::new_shared(), idx: 0 }
+        Self {
+            handle: ScopeHandle::new_shared(),
+            idx: 0,
+            srate_ms: 44.1,
+            frame_count: 0,
+            trig: CustomTrigger::new(0.0, 0.0001),
+        }
     }
     pub const in1: &'static str = "Scope in1\nSignal input 1.\nRange: (-1..1)\n";
     pub const in2: &'static str = "Scope in2\nSignal input 2.\nRange: (-1..1)\n";
     pub const in3: &'static str = "Scope in3\nSignal input 3.\nRange: (-1..1)\n";
-    pub const time: &'static str = "Scope time\nDisplayed time range of the oscilloscope view.\nRange: (0..1)\n";
+    pub const time: &'static str =
+        "Scope time\nDisplayed time range of the oscilloscope view.\nRange: (0..1)\n";
     pub const trig: &'static str = "Scope trig\nExternal trigger input. Only active if 'tsrc' is set to 'Extern'. 'thrsh' applies also for external triggers.\nRange: (-1..1)\n";
     pub const thrsh: &'static str = "Scope thrsh\nTrigger threshold. If the threshold is passed by the signal from low to high the signal recording will be reset. Either for internal or for external triggering. Trigger is only active if 'tsrc' is not 'Off'.\nRange: (-1..1)\n";
     pub const off1: &'static str = "Scope off1\nVisual offset of signal input 1.\nRange: (-1..1)\n";
     pub const off2: &'static str = "Scope off2\nVisual offset of signal input 2.\nRange: (-1..1)\n";
     pub const off3: &'static str = "Scope off3\nVisual offset of signal input 3.\nRange: (-1..1)\n";
-    pub const gain1: &'static str = "Scope gain1\nVisual amplification/attenuation of the signal input 1.\nRange: (0..1)\n";
-    pub const gain2: &'static str = "Scope gain2\nVisual amplification/attenuation of the signal input 2.\nRange: (0..1)\n";
-    pub const gain3: &'static str = "Scope gain3\nVisual amplification/attenuation of the signal input 3.\nRange: (0..1)\n";
+    pub const gain1: &'static str =
+        "Scope gain1\nVisual amplification/attenuation of the signal input 1.\nRange: (0..1)\n";
+    pub const gain2: &'static str =
+        "Scope gain2\nVisual amplification/attenuation of the signal input 2.\nRange: (0..1)\n";
+    pub const gain3: &'static str =
+        "Scope gain3\nVisual amplification/attenuation of the signal input 3.\nRange: (0..1)\n";
     pub const tsrc: &'static str = "Scope tsrc\nTriggering allows you to capture fast signals or pinning fast waveforms into the scope view for better inspection.\nRange: (-1..1)\n";
     pub const DESC: &'static str = r#"Signal Oscilloscope Probe
 
@@ -80,7 +99,9 @@ impl DspNode for Scope {
         1
     }
 
-    fn set_sample_rate(&mut self, _srate: f32) {}
+    fn set_sample_rate(&mut self, srate: f32) {
+        self.srate_ms = srate / 1000.0;
+    }
 
     fn reset(&mut self) {}
 
@@ -95,22 +116,65 @@ impl DspNode for Scope {
         _outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::inp;
+        use crate::dsp::{denorm, inp};
 
         let in1 = inp::Scope::in1(inputs);
         let in2 = inp::Scope::in2(inputs);
         let in3 = inp::Scope::in3(inputs);
+        let time = inp::Scope::time(inputs);
+        let thrsh = inp::Scope::thrsh(inputs);
         let inputs = [in1, in2, in3];
 
         self.handle.set_active_from_mask(nctx.in_connected);
 
-        for frame in 0..ctx.nframes() {
-            for (i, input) in inputs.iter().enumerate() {
-                let in_val = input.read(frame);
-                self.handle.write(i, self.idx, in_val);
-            }
+        let time = denorm::Scope::time(time, 0);
+        let samples_per_block = (time * self.srate_ms) / SCOPE_SAMPLES as f32;
+        let threshold = denorm::Scope::thrsh(thrsh, 0);
+        self.trig.set_threshold(threshold, threshold + 0.001);
 
-            self.idx = (self.idx + 1) % SCOPE_SAMPLES;
+        let trigger_input = in1;
+
+        if samples_per_block < 1.0 {
+            let copy_count = ((1.0 / samples_per_block) as usize).min(SCOPE_SAMPLES);
+
+            for frame in 0..ctx.nframes() {
+                if self.idx < SCOPE_SAMPLES {
+                    for (i, input) in inputs.iter().enumerate() {
+                        let in_val = input.read(frame);
+                        self.handle.write_copies(i, self.idx, copy_count, in_val);
+                    }
+
+                    self.idx = self.idx.saturating_add(copy_count);
+                }
+
+                if self.idx >= SCOPE_SAMPLES && self.trig.check_trigger(trigger_input.read(frame)) {
+                    self.frame_count = 0;
+                    self.idx = 0;
+                }
+            }
+        } else {
+            let samples_per_block = samples_per_block as usize;
+
+            for frame in 0..ctx.nframes() {
+                if self.idx < SCOPE_SAMPLES {
+                    if self.frame_count >= samples_per_block {
+                        for (i, input) in inputs.iter().enumerate() {
+                            let in_val = input.read(frame);
+                            self.handle.write(i, self.idx, in_val);
+                        }
+
+                        self.idx = self.idx.saturating_add(1);
+                        self.frame_count = 0;
+                    }
+
+                    self.frame_count += 1;
+                }
+
+                if self.idx >= SCOPE_SAMPLES && self.trig.check_trigger(trigger_input.read(frame)) {
+                    self.frame_count = 0;
+                    self.idx = 0;
+                }
+            }
         }
 
         let last_frame = ctx.nframes() - 1;

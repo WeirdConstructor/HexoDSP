@@ -27,6 +27,13 @@ impl ScopeHandle {
         })
     }
 
+    pub fn write_copies(&self, buf_idx: usize, idx: usize, copies: usize, v: f32) {
+        let end = (idx + copies).min(SCOPE_SAMPLES);
+        for i in idx..end {
+            self.bufs[buf_idx % 3][i % SCOPE_SAMPLES].set(v);
+        }
+    }
+
     pub fn write(&self, buf_idx: usize, idx: usize, v: f32) {
         self.bufs[buf_idx % 3][idx % SCOPE_SAMPLES].set(v);
     }

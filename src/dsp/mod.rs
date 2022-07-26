@@ -1232,6 +1232,7 @@ macro_rules! f_det {
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
 define_exp! {n_gain d_gain 0.0, 2.0}
+define_exp! {n_xgin d_xgin 0.0, 10.0}
 define_exp! {n_att  d_att  0.0, 1.0}
 
 define_exp! {n_declick d_declick 0.0, 50.0}
@@ -1417,9 +1418,9 @@ macro_rules! node_list {
                (6  off1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (7  off2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (8  off3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (9  gain1 n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
-               (10 gain2 n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
-               (11 gain3 n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               (9  gain1 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               (10 gain2 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               (11 gain3 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
                {12 0 tsrc  setting(0) mode fa_scope_tsrc 0 1},
             ad   => Ad   UIType::Generic UICategory::Mod
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
