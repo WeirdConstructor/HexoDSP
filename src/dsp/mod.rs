@@ -579,6 +579,7 @@ use crate::fa_smap_mode;
 use crate::fa_test_s;
 use crate::fa_tseq_cmode;
 use crate::fa_vosc_ovrsmpl;
+use crate::fa_scope_tsrc;
 
 use node_ad::Ad;
 use node_allp::AllP;
@@ -1409,7 +1410,17 @@ macro_rules! node_list {
             scope => Scope UIType::Generic UICategory::IOUtil
                (0  in1   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  in2   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (2  in3   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
+               (2  in3   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (3  time  n_lfot  d_lfot r_lfot f_lfot stp_f 0.0, 1.0, 1000.0)
+               (4  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (5  thrsh n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (6  off1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (7  off2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (8  off3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (9  gain1 n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               (10 gain2 n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               (11 gain3 n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               {12 0 tsrc  setting(0) mode fa_scope_tsrc 0 1},
             ad   => Ad   UIType::Generic UICategory::Mod
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
