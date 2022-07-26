@@ -33,7 +33,7 @@ macro_rules! fa_scope_tsrc {
 pub struct Scope {
     handle: Arc<ScopeHandle>,
     idx: usize,
-    frame_count: usize,
+    frame_time: f32,
     srate_ms: f32,
     trig: CustomTrigger,
 }
@@ -44,7 +44,7 @@ impl Scope {
             handle: ScopeHandle::new_shared(),
             idx: 0,
             srate_ms: 44.1,
-            frame_count: 0,
+            frame_time: 0.0,
             trig: CustomTrigger::new(0.0, 0.0001),
         }
     }
@@ -129,11 +129,14 @@ impl DspNode for Scope {
 
         let time = denorm::Scope::time(time, 0);
         let samples_per_block = (time * self.srate_ms) / SCOPE_SAMPLES as f32;
+        let time_per_block = time / SCOPE_SAMPLES as f32;
+        let sample_time = 1.0 / self.srate_ms;
         let threshold = denorm::Scope::thrsh(thrsh, 0);
         self.trig.set_threshold(threshold, threshold + 0.001);
 
         let trigger_input = in1;
 
+        //d// println!("TIME time={}; st={}; tpb={}; frame_time={}", time, sample_time, time_per_block, self.frame_time);
         if samples_per_block < 1.0 {
             let copy_count = ((1.0 / samples_per_block) as usize).min(SCOPE_SAMPLES);
 
@@ -148,30 +151,30 @@ impl DspNode for Scope {
                 }
 
                 if self.idx >= SCOPE_SAMPLES && self.trig.check_trigger(trigger_input.read(frame)) {
-                    self.frame_count = 0;
+                    self.frame_time = 0.0;
                     self.idx = 0;
                 }
             }
         } else {
-            let samples_per_block = samples_per_block as usize;
+//            let samples_per_block = samples_per_block as usize;
 
             for frame in 0..ctx.nframes() {
                 if self.idx < SCOPE_SAMPLES {
-                    if self.frame_count >= samples_per_block {
+                    if self.frame_time >= time_per_block {
                         for (i, input) in inputs.iter().enumerate() {
                             let in_val = input.read(frame);
                             self.handle.write(i, self.idx, in_val);
                         }
 
                         self.idx = self.idx.saturating_add(1);
-                        self.frame_count = 0;
+                        self.frame_time -= time_per_block;
                     }
 
-                    self.frame_count += 1;
+                    self.frame_time += sample_time;
                 }
 
                 if self.idx >= SCOPE_SAMPLES && self.trig.check_trigger(trigger_input.read(frame)) {
-                    self.frame_count = 0;
+                    self.frame_time = 0.0;
                     self.idx = 0;
                 }
             }

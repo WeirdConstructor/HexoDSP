@@ -1215,6 +1215,22 @@ macro_rules! f_lfot {
     };
 }
 
+macro_rules! f_lfoms {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {
+        if $denorm_v < 10.0 {
+            write!($formatter, "{:5.3}ms", $denorm_v)
+        } else if $denorm_v < 250.0 {
+            write!($formatter, "{:4.1}ms", $denorm_v)
+        } else if $denorm_v < 1500.0 {
+            write!($formatter, "{:4.0}ms", $denorm_v)
+        } else if $denorm_v < 10000.0 {
+            write!($formatter, "{:5.2}s", $denorm_v / 1000.0)
+        } else {
+            write!($formatter, "{:5.1}s", $denorm_v / 1000.0)
+        }
+    };
+}
+
 macro_rules! f_det {
     ($formatter: expr, $v: expr, $denorm_v: expr) => {{
         let sign = if $denorm_v < 0.0 { -1.0 } else { 1.0 };
@@ -1412,7 +1428,7 @@ macro_rules! node_list {
                (0  in1   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1  in2   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (2  in3   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (3  time  n_lfot  d_lfot r_lfot f_lfot stp_f 0.0, 1.0, 1000.0)
+               (3  time  n_lfot  d_lfot r_lfot f_lfoms stp_f 0.0, 1.0, 1000.0)
                (4  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (5  thrsh n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (6  off1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
