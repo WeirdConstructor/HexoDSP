@@ -44,7 +44,7 @@ fn check_node_scope_inputs() {
         node_pset_d(&mut matrix, "amp", 0, "inp", 1.0);
         let _res = run_for_ms(&mut node_exec, 11.0);
 
-        let (minv, maxv, min, max) = read_scope_buf(&matrix, sig_idx);
+        let (minv, maxv, max, min) = read_scope_buf(&matrix, sig_idx);
         // This tests the smoothing ramp that is applied to setting the "inp" of the Amp(0) node:
         assert_decimated_feq!(minv, 80, vec![0.0022, 0.1836, 0.3650, 0.5464, 0.7278, 0.9093, 1.0]);
         assert_decimated_feq!(maxv, 80, vec![0.0022, 0.1836, 0.3650, 0.5464, 0.7278, 0.9093, 1.0]);
@@ -108,9 +108,7 @@ fn check_node_scope_sine_2hz() {
 
     wait_params_smooth(&mut node_exec);
 
-    let handle = matrix.get_scope_handle(0).unwrap();
     let _res = run_for_ms(&mut node_exec, 1000.0);
-
     let (maxv, minv, max, min) = read_scope_buf(&matrix, 0);
     // 2 Hz is exactly 2 sine peaks in 1000ms. 1000ms is the default time of the Scope.
     assert_decimated_feq!(
@@ -156,10 +154,8 @@ fn check_node_scope_sine_oversampled() {
 
     wait_params_smooth(&mut node_exec);
 
-    let handle = matrix.get_scope_handle(0).unwrap();
     let _res = run_for_ms(&mut node_exec, 1000.0);
-
-    let (maxv, minv, max, min) = read_scope_buf(&matrix, 0);
+    let (maxv, _minv, max, min) = read_scope_buf(&matrix, 0);
     assert_decimated_feq!(
         maxv[0..25],
         5,
@@ -173,4 +169,110 @@ fn check_node_scope_sine_oversampled() {
     // Full wave does not fit into the buffer at 1ms for 512 samples
     assert_float_eq!(max, 0.9996);
     assert_float_eq!(min, -0.5103);
+}
+
+#[test]
+fn check_node_scope_sine_threshold() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("sin", "sig")
+        .set_denorm("freq", 10.0)
+        .node_io("amp", "inp", "sig")
+        .set_denorm("att", 0.9)
+        .node_inp("scope", "in1")
+        .set_denorm("time", 100.0)
+        .set_atom("tsrc", SAtom::setting(1))
+        .set_denorm("thrsh", 1.0)
+        .place(&mut matrix, 0, 0)
+        .unwrap();
+    matrix.sync().unwrap();
+
+    wait_params_smooth(&mut node_exec);
+
+    // Expect a sine that starts at the beginning, because the
+    // at the beginning of the Scope state it is basically "triggered"
+    // by default. That means it will record one full buffer at startup:
+    let _res = run_for_ms(&mut node_exec, 1000.0);
+
+    let (maxv, _minv, max, min) = read_scope_buf(&matrix, 0);
+    assert_decimated_feq!(maxv[0..35], 5, vec![0.0115, 0.06666, 0.1214, 0.1758]);
+    assert_float_eq!(max, 0.8999);
+    assert_float_eq!(min, -0.8999);
+
+    // Expect getting a waveform that starts at the top:
+    node_pset_d(&mut matrix, "scope", 0, "thrsh", 0.9 - 0.0002);
+    wait_params_smooth(&mut node_exec);
+    let _res = run_for_ms(&mut node_exec, 1000.0);
+    let (maxv, _minv, max, min) = read_scope_buf(&matrix, 0);
+    // Confirm we are starting at the threshold top:
+    assert_decimated_feq!(maxv[0..35], 5, vec![0.8999, 0.8988, 0.8942, 0.8864]);
+    assert_float_eq!(max, 0.8999);
+    assert_float_eq!(min, -0.8999);
+
+    // Expect frozen waveform:
+    node_pset_d(&mut matrix, "scope", 0, "thrsh", 1.0);
+    wait_params_smooth(&mut node_exec);
+    let _res = run_for_ms(&mut node_exec, 1000.0);
+
+    let (maxv, _minv, max, min) = read_scope_buf(&matrix, 0);
+    assert_decimated_feq!(maxv[0..35], 5, vec![0.8999, 0.8988, 0.8942, 0.8864]);
+    assert_float_eq!(max, 0.8999);
+    assert_float_eq!(min, -0.8999);
+}
+
+#[test]
+fn check_node_scope_sine_ext_trig() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("sin", "sig")
+        .set_denorm("freq", 10.0)
+        .node_io("amp", "inp", "sig")
+        .set_denorm("att", 0.9)
+        .node_inp("scope", "in1")
+        .set_denorm("time", 100.0)
+        .set_atom("tsrc", SAtom::setting(2))
+        .set_denorm("thrsh", 0.0)
+        .place(&mut matrix, 0, 0)
+        .unwrap();
+    matrix.sync().unwrap();
+
+    wait_params_smooth(&mut node_exec);
+
+    // Expect a sine that starts at the beginning, because the
+    // at the beginning of the Scope state it is basically "triggered"
+    // by default. That means it will record one full buffer at startup:
+    let _res = run_for_ms(&mut node_exec, 1000.0);
+    let (maxv, _minv, max, min) = read_scope_buf(&matrix, 0);
+    assert_decimated_feq!(maxv[0..35], 5, vec![0.0115, 0.06666, 0.1214, 0.1758]);
+    assert_float_eq!(max, 0.8999);
+    assert_float_eq!(min, -0.8999);
+
+    // Expect the buffer to not change:
+    let _res = run_for_ms(&mut node_exec, 1000.0);
+    let (maxv, _minv, max, min) = read_scope_buf(&matrix, 0);
+    assert_decimated_feq!(maxv[0..35], 5, vec![0.0115, 0.06666, 0.1214, 0.1758]);
+    assert_float_eq!(max, 0.8999);
+    assert_float_eq!(min, -0.8999);
+
+    // Apply external trigger and expect the buffer to change:
+    node_pset_d(&mut matrix, "scope", 0, "trig", 1.0);
+    wait_params_smooth(&mut node_exec);
+    let _res = run_for_ms(&mut node_exec, 1000.0);
+    let (maxv, _minv, max, min) = read_scope_buf(&matrix, 0);
+    assert_decimated_feq!(maxv[0..35], 5, vec![0.7325241, 0.7631615, 0.7909356, 0.8157421]);
+    assert_float_eq!(max, 0.8999);
+    assert_float_eq!(min, -0.8999);
+
+    // Expect the buffer to not change, because the trigger has not reset/changed:
+    let _res = run_for_ms(&mut node_exec, 1000.0);
+    let (maxv, _minv, max, min) = read_scope_buf(&matrix, 0);
+    assert_decimated_feq!(maxv[0..35], 5, vec![0.7325241, 0.7631615, 0.7909356, 0.8157421]);
+    assert_float_eq!(max, 0.8999);
+    assert_float_eq!(min, -0.8999);
 }

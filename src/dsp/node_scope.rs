@@ -154,7 +154,7 @@ impl DspNode for Scope {
         let sample_time = 1.0 / self.srate_ms;
         let threshold = denorm::Scope::thrsh(thrsh, 0);
 
-        self.trig.set_threshold(threshold, threshold + 0.001);
+        self.trig.set_threshold(threshold, threshold + 0.0001);
 
         let trigger_input = if tsrc.i() == 2 { trig } else { in1 };
         let trigger_disabled = tsrc.i() == 0;
