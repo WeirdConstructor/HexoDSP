@@ -406,7 +406,23 @@ pub fn pset_n(matrix: &mut Matrix, nid: NodeId, parm: &str, v_norm: f32) {
 }
 
 #[allow(unused)]
+pub fn node_pset_n(matrix: &mut Matrix, node: &str, instance: usize, parm: &str, v_norm: f32) {
+    let nid = NodeId::from_str(node).to_instance(instance);
+    assert!(nid != NodeId::Nop);
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param(p, SAtom::param(v_norm));
+}
+
+#[allow(unused)]
 pub fn pset_d(matrix: &mut Matrix, nid: NodeId, parm: &str, v_denorm: f32) {
+    let p = nid.inp_param(parm).unwrap();
+    matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
+}
+
+#[allow(unused)]
+pub fn node_pset_d(matrix: &mut Matrix, node: &str, instance: usize, parm: &str, v_denorm: f32) {
+    let nid = NodeId::from_str(node).to_instance(instance);
+    assert!(nid != NodeId::Nop);
     let p = nid.inp_param(parm).unwrap();
     matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
 }
