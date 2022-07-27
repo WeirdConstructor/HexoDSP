@@ -741,7 +741,7 @@ impl CustomTrigger {
     /// surpassed the high threshold and has not fallen below low threshold yet.
     #[inline]
     pub fn check_trigger(&mut self, input: f32) -> bool {
-//        println!("TRIG CHECK: {} <> {}", input, self.high_thres);
+        //        println!("TRIG CHECK: {} <> {}", input, self.high_thres);
         if self.triggered {
             if input <= self.low_thres {
                 self.triggered = false;

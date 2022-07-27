@@ -522,6 +522,8 @@ mod node_rndwk;
 #[allow(non_upper_case_globals)]
 mod node_sampl;
 #[allow(non_upper_case_globals)]
+mod node_scope;
+#[allow(non_upper_case_globals)]
 mod node_sfilter;
 #[allow(non_upper_case_globals)]
 mod node_sin;
@@ -535,8 +537,6 @@ mod node_tseq;
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
-#[allow(non_upper_case_globals)]
-mod node_scope;
 
 pub mod biquad;
 pub mod dattorro;
@@ -573,13 +573,13 @@ use crate::fa_quant;
 use crate::fa_sampl_dclick;
 use crate::fa_sampl_dir;
 use crate::fa_sampl_pmode;
+use crate::fa_scope_tsrc;
 use crate::fa_sfilter_type;
 use crate::fa_smap_clip;
 use crate::fa_smap_mode;
 use crate::fa_test_s;
 use crate::fa_tseq_cmode;
 use crate::fa_vosc_ovrsmpl;
-use crate::fa_scope_tsrc;
 
 use node_ad::Ad;
 use node_allp::AllP;
@@ -601,6 +601,7 @@ use node_pverb::PVerb;
 use node_quant::Quant;
 use node_rndwk::RndWk;
 use node_sampl::Sampl;
+use node_scope::Scope;
 use node_sfilter::SFilter;
 use node_sin::Sin;
 use node_smap::SMap;
@@ -608,7 +609,6 @@ use node_test::Test;
 use node_tseq::TSeq;
 use node_tslfo::TsLFO;
 use node_vosc::VOsc;
-use node_scope::Scope;
 
 pub const MIDI_MAX_FREQ: f32 = 13289.75;
 

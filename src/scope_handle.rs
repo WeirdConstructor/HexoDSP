@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::SCOPE_SAMPLES;
-use crate::util::{AtomicFloatPair, AtomicFloat};
+use crate::util::{AtomicFloat, AtomicFloatPair};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
