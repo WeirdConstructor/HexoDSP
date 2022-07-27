@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 const SMOOTHING_TIME_MS: f32 = 10.0;
 
@@ -149,6 +149,68 @@ impl From<f32> for AtomicFloat {
 
 impl From<AtomicFloat> for f32 {
     fn from(value: AtomicFloat) -> Self {
+        value.get()
+    }
+}
+
+/// The AtomicFloatPair can store two `f32` numbers atomically.
+///
+/// This is useful for storing eg. min and max values of a sampled signal.
+pub struct AtomicFloatPair {
+    atomic: AtomicU64,
+}
+
+impl AtomicFloatPair {
+    /// New atomic float with initial value `value`.
+    pub fn new(v: (f32, f32)) -> AtomicFloatPair {
+        AtomicFloatPair {
+            atomic: AtomicU64::new(((v.0.to_bits() as u64) << 32) | (v.1.to_bits() as u64)),
+        }
+    }
+
+    /// Get the current value of the atomic float.
+    #[inline]
+    pub fn get(&self) -> (f32, f32) {
+        let v = self.atomic.load(Ordering::Relaxed);
+        (f32::from_bits((v >> 32 & 0xFFFFFFFF) as u32), f32::from_bits((v & 0xFFFFFFFF) as u32))
+    }
+
+    /// Set the value of the atomic float to `value`.
+    #[inline]
+    pub fn set(&self, v: (f32, f32)) {
+        let v = ((v.0.to_bits() as u64) << 32) | (v.1.to_bits()) as u64;
+        self.atomic.store(v, Ordering::Relaxed)
+    }
+}
+
+impl Default for AtomicFloatPair {
+    fn default() -> Self {
+        AtomicFloatPair::new((0.0, 0.0))
+    }
+}
+
+impl std::fmt::Debug for AtomicFloatPair {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let v = self.get();
+        write!(f, "({}, {})", v.0, v.1)
+    }
+}
+
+impl std::fmt::Display for AtomicFloatPair {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let v = self.get();
+        write!(f, "({}, {})", v.0, v.1)
+    }
+}
+
+impl From<(f32, f32)> for AtomicFloatPair {
+    fn from(value: (f32, f32)) -> Self {
+        AtomicFloatPair::new((value.0, value.1))
+    }
+}
+
+impl From<AtomicFloatPair> for (f32, f32) {
+    fn from(value: AtomicFloatPair) -> Self {
         value.get()
     }
 }

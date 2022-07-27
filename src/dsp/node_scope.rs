@@ -35,6 +35,7 @@ pub struct Scope {
     idx: usize,
     frame_time: f32,
     srate_ms: f32,
+    cur_mm: Box<[(f32, f32); 3]>,
     trig: CustomTrigger,
 }
 
@@ -45,6 +46,7 @@ impl Scope {
             idx: 0,
             srate_ms: 44.1,
             frame_time: 0.0,
+            cur_mm: Box::new([(0.0, 0.0); 3]),
             trig: CustomTrigger::new(0.0, 0.0001),
         }
     }
@@ -64,7 +66,7 @@ impl Scope {
         "Scope gain2\nVisual amplification/attenuation of the signal input 2.\nRange: (0..1)\n";
     pub const gain3: &'static str =
         "Scope gain3\nVisual amplification/attenuation of the signal input 3.\nRange: (0..1)\n";
-    pub const tsrc: &'static str = "Scope tsrc\nTriggering allows you to capture fast signals or pinning fast waveforms into the scope view for better inspection.\nRange: (-1..1)\n";
+    pub const tsrc: &'static str = "Scope tsrc\nTriggering allows you to capture fast signals or pinning fast waveforms into the scope view for better inspection. You can let the scope freeze and manually recapture waveforms by setting 'tsrc' to 'Extern' and hitting the 'trig' button manually.\nRange: (-1..1)\n";
     pub const DESC: &'static str = r#"Signal Oscilloscope Probe
 
 This is a signal oscilloscope probe node, you can capture up to 3 signals. You can enable internal or external triggering for capturing signals or pinning fast waveforms.
@@ -76,13 +78,15 @@ in record up to 24 signals for displaying them in the scope view.
 The received signal will be forwarded to the GUI and you can inspect
 the waveform there.
 
-You can enable an internal trigger with the 'tsrc'. The 'thrsh' parameter
-is the trigger detection parameter. That means, if your signal passes that
-trigger from negative to positive, the signal recording will be
-reset to that point.
+You can enable an internal trigger with the 'tsrc' setting set to 'Intern'.
+'Intern' here means that the signal input 1 'in1' is used as trigger signal.
+The 'thrsh' parameter is the trigger detection parameter. That means, if your
+signal passes that threshold in negative to positive direction, the signal
+recording will be reset to that point.
 
 You can also route in an external trigger to capture signals with the 'trig'
-input and 'tsrc' set to 'Extern'.
+input and 'tsrc' set to 'Extern'. Of course you can also hit the 'trig' button
+manually to recapture a waveform.
 
 The inputs 'off1', 'off2' and 'off3' define a vertical offset of the signal
 waveform in the scope view. Use 'gain1', 'gain2' and 'gain3' for scaling
@@ -111,30 +115,34 @@ impl DspNode for Scope {
         ctx: &mut T,
         _ectx: &mut NodeExecContext,
         nctx: &NodeContext,
-        _atoms: &[SAtom],
+        atoms: &[SAtom],
         inputs: &[ProcBuf],
         _outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{denorm, inp};
+        use crate::dsp::{at, denorm, inp};
 
         let in1 = inp::Scope::in1(inputs);
         let in2 = inp::Scope::in2(inputs);
         let in3 = inp::Scope::in3(inputs);
         let time = inp::Scope::time(inputs);
         let thrsh = inp::Scope::thrsh(inputs);
+        let trig = inp::Scope::trig(inputs);
+        let tsrc = at::Scope::tsrc(atoms);
         let inputs = [in1, in2, in3];
 
         self.handle.set_active_from_mask(nctx.in_connected);
 
-        let time = denorm::Scope::time(time, 0);
+        let time = denorm::Scope::time(time, 0).clamp(0.1, 1000.0 * 300.0);
         let samples_per_block = (time * self.srate_ms) / SCOPE_SAMPLES as f32;
         let time_per_block = time / SCOPE_SAMPLES as f32;
         let sample_time = 1.0 / self.srate_ms;
         let threshold = denorm::Scope::thrsh(thrsh, 0);
+
         self.trig.set_threshold(threshold, threshold + 0.001);
 
-        let trigger_input = in1;
+        let trigger_input = if tsrc.i() == 2 { trig } else { in1 };
+        let trigger_disabled = tsrc.i() == 0;
 
         //d// println!("TIME time={}; st={}; tpb={}; frame_time={}", time, sample_time, time_per_block, self.frame_time);
         if samples_per_block < 1.0 {
@@ -144,28 +152,39 @@ impl DspNode for Scope {
                 if self.idx < SCOPE_SAMPLES {
                     for (i, input) in inputs.iter().enumerate() {
                         let in_val = input.read(frame);
-                        self.handle.write_copies(i, self.idx, copy_count, in_val);
+                        self.handle.write_oversampled(i, self.idx, copy_count, in_val);
                     }
 
                     self.idx = self.idx.saturating_add(copy_count);
                 }
 
-                if self.idx >= SCOPE_SAMPLES && self.trig.check_trigger(trigger_input.read(frame)) {
-                    self.frame_time = 0.0;
-                    self.idx = 0;
+                if self.idx >= SCOPE_SAMPLES {
+                    if self.trig.check_trigger(trigger_input.read(frame)) {
+                        self.frame_time = 0.0;
+                        self.idx = 0;
+                    } else if trigger_disabled {
+                        self.frame_time = 0.0;
+                        self.idx = 0;
+                    }
                 }
             }
         } else {
-//            let samples_per_block = samples_per_block as usize;
+            let cur_mm = self.cur_mm.as_mut();
+            //            let samples_per_block = samples_per_block as usize;
 
             for frame in 0..ctx.nframes() {
                 if self.idx < SCOPE_SAMPLES {
-                    if self.frame_time >= time_per_block {
-                        for (i, input) in inputs.iter().enumerate() {
-                            let in_val = input.read(frame);
-                            self.handle.write(i, self.idx, in_val);
-                        }
+                    for (i, input) in inputs.iter().enumerate() {
+                        let in_val = input.read(frame);
+                        cur_mm[i].0 = cur_mm[i].0.max(in_val);
+                        cur_mm[i].1 = cur_mm[i].1.min(in_val);
+                    }
 
+                    if self.frame_time >= time_per_block {
+                        for i in 0..inputs.len() {
+                            self.handle.write(i, self.idx, cur_mm[i]);
+                        }
+                        *cur_mm = [(-99999.0, 99999.0); 3];
                         self.idx = self.idx.saturating_add(1);
                         self.frame_time -= time_per_block;
                     }
@@ -173,9 +192,15 @@ impl DspNode for Scope {
                     self.frame_time += sample_time;
                 }
 
-                if self.idx >= SCOPE_SAMPLES && self.trig.check_trigger(trigger_input.read(frame)) {
-                    self.frame_time = 0.0;
-                    self.idx = 0;
+                if self.idx >= SCOPE_SAMPLES {
+                    if self.trig.check_trigger(trigger_input.read(frame)) {
+                        *cur_mm = [(-99999.0, 99999.0); 3];
+                        self.frame_time = 0.0;
+                        self.idx = 0;
+                    } else if trigger_disabled {
+                        *cur_mm = [(-99999.0, 99999.0); 3];
+                        self.idx = 0;
+                    }
                 }
             }
         }

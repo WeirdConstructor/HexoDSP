@@ -1437,7 +1437,7 @@ macro_rules! node_list {
                (9  gain1 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
                (10 gain2 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
                (11 gain3 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
-               {12 0 tsrc  setting(0) mode fa_scope_tsrc 0 1},
+               {12 0 tsrc  setting(0) mode fa_scope_tsrc 0 2},
             ad   => Ad   UIType::Generic UICategory::Mod
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
