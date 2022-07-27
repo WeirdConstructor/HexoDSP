@@ -12,3 +12,5 @@ the cubic interpolation and tested it seperately now.
 to the adjacent cells.
 * Feature: Added the MatrixCellChain abstraction for easy creation of DSP
 chains on the hexagonal Matrix.
+* Feature: Added Scope DSP node and NodeConfigurator/Matrix API for retrieving
+the scope handles for access to it's capture buffers.
