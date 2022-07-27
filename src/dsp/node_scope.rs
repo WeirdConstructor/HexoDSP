@@ -135,15 +135,18 @@ impl DspNode for Scope {
         self.handle.set_offs_gain(
             0,
             denorm::Scope::off1(inp::Scope::off1(inputs), 0),
-            denorm::Scope::gain1(inp::Scope::gain1(inputs), 0));
+            denorm::Scope::gain1(inp::Scope::gain1(inputs), 0),
+        );
         self.handle.set_offs_gain(
             1,
             denorm::Scope::off2(inp::Scope::off2(inputs), 0),
-            denorm::Scope::gain2(inp::Scope::gain2(inputs), 0));
+            denorm::Scope::gain2(inp::Scope::gain2(inputs), 0),
+        );
         self.handle.set_offs_gain(
             2,
             denorm::Scope::off3(inp::Scope::off3(inputs), 0),
-            denorm::Scope::gain3(inp::Scope::gain3(inputs), 0));
+            denorm::Scope::gain3(inp::Scope::gain3(inputs), 0),
+        );
 
         let time = denorm::Scope::time(time, 0).clamp(0.1, 1000.0 * 300.0);
         let samples_per_block = (time * self.srate_ms) / SCOPE_SAMPLES as f32;
@@ -155,6 +158,8 @@ impl DspNode for Scope {
 
         let trigger_input = if tsrc.i() == 2 { trig } else { in1 };
         let trigger_disabled = tsrc.i() == 0;
+
+        self.handle.set_threshold(if trigger_disabled { None } else { Some(threshold) });
 
         //d// println!("TIME time={}; st={}; tpb={}; frame_time={}", time, sample_time, time_per_block, self.frame_time);
         if samples_per_block < 1.0 {

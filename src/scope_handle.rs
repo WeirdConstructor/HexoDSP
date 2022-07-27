@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::SCOPE_SAMPLES;
-use crate::util::AtomicFloatPair;
+use crate::util::{AtomicFloatPair, AtomicFloat};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -12,6 +12,7 @@ pub struct ScopeHandle {
     bufs: [Vec<AtomicFloatPair>; 3],
     active: [AtomicBool; 3],
     offs_gain: [AtomicFloatPair; 3],
+    threshold: (AtomicBool, AtomicFloat),
 }
 
 impl ScopeHandle {
@@ -30,6 +31,7 @@ impl ScopeHandle {
                 AtomicFloatPair::default(),
                 AtomicFloatPair::default(),
             ],
+            threshold: (AtomicBool::new(false), AtomicFloat::default()),
         })
     }
 
@@ -46,6 +48,23 @@ impl ScopeHandle {
 
     pub fn get_offs_gain(&self, buf_idx: usize) -> (f32, f32) {
         self.offs_gain[buf_idx % 3].get()
+    }
+
+    pub fn set_threshold(&self, thresh: Option<f32>) {
+        if let Some(t) = thresh {
+            self.threshold.1.set(t);
+            self.threshold.0.store(true, Ordering::Relaxed);
+        } else {
+            self.threshold.0.store(false, Ordering::Relaxed);
+        }
+    }
+
+    pub fn get_threshold(&self) -> Option<f32> {
+        if self.threshold.0.load(Ordering::Relaxed) {
+            Some(self.threshold.1.get())
+        } else {
+            None
+        }
     }
 
     pub fn write(&self, buf_idx: usize, idx: usize, v: (f32, f32)) {
