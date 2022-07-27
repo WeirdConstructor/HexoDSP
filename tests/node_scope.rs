@@ -138,7 +138,6 @@ fn check_node_scope_sine_2hz() {
     assert_float_eq!(min, -1.0);
 }
 
-
 #[test]
 fn check_node_scope_sine_oversampled() {
     let (node_conf, mut node_exec) = new_node_engine();
@@ -164,18 +163,10 @@ fn check_node_scope_sine_oversampled() {
     assert_decimated_feq!(
         maxv[0..25],
         5,
+        // We expect multiple copies of the same sample at the
+        // time resolution of 1 millisecond.
         vec![
-            0.4506,
-            0.4506,
-            0.4506,
-            0.3938,
-            0.3938,
-            0.3354,
-            0.3354,
-            0.2150,
-            0.2150,
-            0.1534,
-            0.1534,
+            0.4506, 0.4506, 0.4506, 0.3938, 0.3938, 0.3354, 0.3354, 0.2150, 0.2150, 0.1534, 0.1534,
             0.1534,
         ]
     );
