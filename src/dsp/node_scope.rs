@@ -129,9 +129,21 @@ impl DspNode for Scope {
         let thrsh = inp::Scope::thrsh(inputs);
         let trig = inp::Scope::trig(inputs);
         let tsrc = at::Scope::tsrc(atoms);
-        let inputs = [in1, in2, in3];
+        let input_bufs = [in1, in2, in3];
 
         self.handle.set_active_from_mask(nctx.in_connected);
+        self.handle.set_offs_gain(
+            0,
+            denorm::Scope::off1(inp::Scope::off1(inputs), 0),
+            denorm::Scope::gain1(inp::Scope::gain1(inputs), 0));
+        self.handle.set_offs_gain(
+            1,
+            denorm::Scope::off2(inp::Scope::off2(inputs), 0),
+            denorm::Scope::gain2(inp::Scope::gain2(inputs), 0));
+        self.handle.set_offs_gain(
+            2,
+            denorm::Scope::off3(inp::Scope::off3(inputs), 0),
+            denorm::Scope::gain3(inp::Scope::gain3(inputs), 0));
 
         let time = denorm::Scope::time(time, 0).clamp(0.1, 1000.0 * 300.0);
         let samples_per_block = (time * self.srate_ms) / SCOPE_SAMPLES as f32;
@@ -150,7 +162,7 @@ impl DspNode for Scope {
 
             for frame in 0..ctx.nframes() {
                 if self.idx < SCOPE_SAMPLES {
-                    for (i, input) in inputs.iter().enumerate() {
+                    for (i, input) in input_bufs.iter().enumerate() {
                         let in_val = input.read(frame);
                         self.handle.write_oversampled(i, self.idx, copy_count, in_val);
                     }
@@ -174,14 +186,14 @@ impl DspNode for Scope {
 
             for frame in 0..ctx.nframes() {
                 if self.idx < SCOPE_SAMPLES {
-                    for (i, input) in inputs.iter().enumerate() {
+                    for (i, input) in input_bufs.iter().enumerate() {
                         let in_val = input.read(frame);
                         cur_mm[i].0 = cur_mm[i].0.max(in_val);
                         cur_mm[i].1 = cur_mm[i].1.min(in_val);
                     }
 
                     if self.frame_time >= time_per_block {
-                        for i in 0..inputs.len() {
+                        for i in 0..input_bufs.len() {
                             self.handle.write(i, self.idx, cur_mm[i]);
                         }
                         *cur_mm = [(-99999.0, 99999.0); 3];

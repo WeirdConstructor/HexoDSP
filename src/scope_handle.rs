@@ -11,6 +11,7 @@ use std::sync::Arc;
 pub struct ScopeHandle {
     bufs: [Vec<AtomicFloatPair>; 3],
     active: [AtomicBool; 3],
+    offs_gain: [AtomicFloatPair; 3],
 }
 
 impl ScopeHandle {
@@ -24,6 +25,11 @@ impl ScopeHandle {
         Arc::new(Self {
             bufs: [v1, v2, v3],
             active: [AtomicBool::new(false), AtomicBool::new(false), AtomicBool::new(false)],
+            offs_gain: [
+                AtomicFloatPair::default(),
+                AtomicFloatPair::default(),
+                AtomicFloatPair::default(),
+            ],
         })
     }
 
@@ -32,6 +38,14 @@ impl ScopeHandle {
         for i in idx..end {
             self.bufs[buf_idx % 3][i % SCOPE_SAMPLES].set((v, v));
         }
+    }
+
+    pub fn set_offs_gain(&self, buf_idx: usize, offs: f32, gain: f32) {
+        self.offs_gain[buf_idx % 3].set((offs, gain));
+    }
+
+    pub fn get_offs_gain(&self, buf_idx: usize) -> (f32, f32) {
+        self.offs_gain[buf_idx % 3].get()
     }
 
     pub fn write(&self, buf_idx: usize, idx: usize, v: (f32, f32)) {
