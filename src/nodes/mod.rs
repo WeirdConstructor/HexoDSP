@@ -8,6 +8,7 @@ pub const SCOPE_SAMPLES: usize = 512;
 pub const MAX_INPUTS: usize = 32;
 pub const MAX_SMOOTHERS: usize = 36 + 4; // 6 * 6 modulator inputs + 4 UI Knobs
 pub const MAX_AVAIL_TRACKERS: usize = 128;
+pub const MAX_AVAIL_CODE_ENGINES: usize = 32;
 pub const MAX_FB_DELAYS: usize = 256; // 256 feedback delays, thats roughly 1.2MB RAM
 pub const FB_DELAY_TIME_US: usize = 3140; // 3.14ms (should be enough for MAX_BLOCK_SIZE)
                                           // This means, until 384000 sample rate the times are accurate.

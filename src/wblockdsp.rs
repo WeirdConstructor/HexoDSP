@@ -24,9 +24,13 @@ pub struct CodeEngine {
     dsp_ctx: Rc<RefCell<DSPNodeContext>>,
     lib: Rc<RefCell<DSPNodeTypeLibrary>>,
     update_prod: Producer<CodeUpdateMsg>,
-    update_cons: Option<Consumer<CodeUpdateMsg>>,
     return_cons: Consumer<CodeReturnMsg>,
-    return_prod: Option<Producer<CodeReturnMsg>>,
+}
+
+impl Clone for CodeEngine {
+    fn clone(&self) -> Self {
+        CodeEngine::new()
+    }
 }
 
 impl CodeEngine {
@@ -42,8 +46,6 @@ impl CodeEngine {
             lib,
             dsp_ctx: DSPNodeContext::new_ref(),
             update_prod,
-            update_cons: Some(update_cons),
-            return_prod: Some(return_prod),
             return_cons,
         }
     }
@@ -75,15 +77,17 @@ impl CodeEngine {
         }
     }
 
-    pub fn get_backend(&mut self) -> Option<CodeEngineBackend> {
-        if let Some(update_cons) = self.update_cons.take() {
-            if let Some(return_prod) = self.return_prod.take() {
-                let function = get_nop_function(self.lib.clone(), self.dsp_ctx.clone());
-                return Some(CodeEngineBackend::new(function, update_cons, return_prod));
-            }
-        }
+    pub fn get_backend(&mut self) -> CodeEngineBackend {
+        let rb = RingBuffer::new(MAX_RINGBUF_SIZE);
+        let (update_prod, update_cons) = rb.split();
+        let rb = RingBuffer::new(MAX_RINGBUF_SIZE);
+        let (return_prod, return_cons) = rb.split();
 
-        None
+        self.update_prod = update_prod;
+        self.return_cons = return_cons;
+
+        let function = get_nop_function(self.lib.clone(), self.dsp_ctx.clone());
+        CodeEngineBackend::new(function, update_cons, return_prod)
     }
 }
 

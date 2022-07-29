@@ -4,7 +4,7 @@
 
 use super::{
     FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_TRACKERS,
-    MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
+    MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX, MAX_AVAIL_CODE_ENGINES
 };
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
@@ -182,6 +182,9 @@ pub struct NodeConfigurator {
     pub(crate) trackers: Vec<Tracker>,
     /// Holding the scope buffers:
     pub(crate) scopes: Vec<Arc<ScopeHandle>>,
+    /// Holding the WBlockDSP code engine backends:
+    #[cfg(feature = "wblockdsp")]
+    pub(crate) code_engines: Vec<CodeEngine>,
     /// The shared parts of the [NodeConfigurator]
     /// and the [crate::nodes::NodeExecutor].
     pub(crate) shared: SharedNodeConf,
@@ -287,6 +290,7 @@ impl NodeConfigurator {
                 atom_values: std::collections::HashMap::new(),
                 node2idx: HashMap::new(),
                 trackers: vec![Tracker::new(); MAX_AVAIL_TRACKERS],
+                code_engines: vec![CodeEngine::new(); MAX_AVAIL_CODE_ENGINES],
                 scopes,
             },
             shared_exec,

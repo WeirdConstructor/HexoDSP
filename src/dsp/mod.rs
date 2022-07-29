@@ -537,6 +537,8 @@ mod node_tseq;
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
+#[allow(non_upper_case_globals)]
+mod node_code;
 
 pub mod biquad;
 pub mod dattorro;
@@ -607,6 +609,7 @@ use node_sin::Sin;
 use node_smap::SMap;
 use node_test::Test;
 use node_tseq::TSeq;
+use node_code::Code;
 use node_tslfo::TsLFO;
 use node_vosc::VOsc;
 
@@ -1367,11 +1370,21 @@ macro_rules! node_list {
                [9  gat4]
                [10 gat5]
                [11 gat6],
+            code => Code UIType::Generic UICategory::Signal
+               (0 in1   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (1 in2   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (2 alpha n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (3 beta  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (4 delta n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (5 gamma n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               [0 sig]
+               [1 sig1]
+               [2 sig2],
             sampl => Sampl UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit  r_fq  f_def    stp_d -1.0, 0.564713133, 440.0)
-               (1 trig  n_id       n_id   r_id  f_def    stp_d -1.0, 1.0, 0.0)
-               (2 offs  n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 0.0)
-               (3 len   n_id       n_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
+               (1 trig  n_id       d_id   r_id  f_def    stp_d -1.0, 1.0, 0.0)
+               (2 offs  n_id       d_id   r_id  f_def    stp_d  0.0, 1.0, 0.0)
+               (3 len   n_id       d_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
                (4 dcms  n_declick  d_declick r_dc_ms f_ms   stp_m  0.0, 1.0, 3.0)
                (5 det   n_det      d_det  r_det f_det    stp_f -0.2, 0.2, 0.0)
                {6 0 sample  audio_unloaded("")   sample f_def 0 0}
