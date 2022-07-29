@@ -8,8 +8,8 @@ description = "Comprehensive DSP graph and synthesis library for developing a mo
 keywords    = ["audio", "music", "real-time", "synthesis", "synthesizer", "dsp", "sound"]
 categories  = ["multimedia::audio", "multimedia", "algorithms", "mathematics"]
 
-#[features]
-#default = [ "hexotk" ]
+[features]
+default = [ "wblockdsp" ]
 
 [dependencies]
 serde         = { version = "1.0", features = ["derive"] }
@@ -19,6 +19,7 @@ triple_buffer = "5.0.6"
 lazy_static   = "1.4.0"
 hound         = "3.4.0"
 num-traits    = "0.2.14"
+wblockdsp     = { path = "../wblockdsp", optional = true }
 
 [dev-dependencies]
 num-complex = "0.2"

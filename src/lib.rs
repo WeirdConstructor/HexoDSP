@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
@@ -314,6 +314,8 @@ pub mod monitor;
 pub mod nodes;
 pub mod sample_lib;
 pub mod scope_handle;
+#[cfg(feature="wblockdsp")]
+pub mod wblockdsp;
 mod util;
 
 pub use cell_dir::CellDir;

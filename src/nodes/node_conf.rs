@@ -13,6 +13,8 @@ use crate::nodes::drop_thread::DropThread;
 use crate::util::AtomicFloat;
 use crate::SampleLibrary;
 use crate::ScopeHandle;
+#[cfg(feature = "wblockdsp")]
+use crate::wblockdsp::CodeEngine;
 
 use ringbuf::{Producer, RingBuffer};
 use std::collections::HashMap;
@@ -254,6 +256,8 @@ impl SharedNodeConf {
                 graph_update_con: rb_graph_con,
                 graph_drop_prod: rb_drop_prod,
                 monitor_backend,
+                #[cfg(feature = "wblockdsp")]
+                code_backend: None, // TODO: FILL THIS!
             },
         )
     }
