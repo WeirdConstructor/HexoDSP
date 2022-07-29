@@ -36,9 +36,9 @@ impl Clone for CodeEngine {
 impl CodeEngine {
     pub fn new() -> Self {
         let rb = RingBuffer::new(MAX_RINGBUF_SIZE);
-        let (update_prod, update_cons) = rb.split();
+        let (update_prod, _update_cons) = rb.split();
         let rb = RingBuffer::new(MAX_RINGBUF_SIZE);
-        let (return_prod, return_cons) = rb.split();
+        let (_return_prod, return_cons) = rb.split();
 
         let lib = get_default_library();
 

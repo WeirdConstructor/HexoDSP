@@ -4,12 +4,14 @@
 
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
+#[cfg(feature = "wblockdsp")]
 use crate::wblockdsp::CodeEngineBackend;
 
 use crate::dsp::MAX_BLOCK_SIZE;
 
 /// A WBlockDSP code execution node for JIT'ed DSP code
 pub struct Code {
+    #[cfg(feature = "wblockdsp")]
     backend: Option<Box<CodeEngineBackend>>,
     srate: f64,
 }
@@ -29,11 +31,13 @@ impl Clone for Code {
 impl Code {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
+            #[cfg(feature = "wblockdsp")]
             backend: None,
             srate: 48000.0,
         }
     }
 
+    #[cfg(feature = "wblockdsp")]
     pub fn set_backend(&mut self, backend: CodeEngineBackend) {
         self.backend = Some(Box::new(backend));
     }
@@ -64,12 +68,14 @@ impl DspNode for Code {
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate = srate as f64;
+        #[cfg(feature = "wblockdsp")]
         if let Some(backend) = self.backend.as_mut() {
             backend.set_sample_rate(srate);
         }
     }
 
     fn reset(&mut self) {
+        #[cfg(feature = "wblockdsp")]
         if let Some(backend) = self.backend.as_mut() {
             backend.clear();
         }
@@ -91,19 +97,22 @@ impl DspNode for Code {
 //        let trig = inp::TSeq::trig(inputs);
 //        let cmode = at::TSeq::cmode(atoms);
 
-        let backend = if let Some(backend) = &mut self.backend {
-            backend
-        } else {
-            return;
-        };
+        #[cfg(feature = "wblockdsp")]
+        {
+            let backend = if let Some(backend) = &mut self.backend {
+                backend
+            } else {
+                return;
+            };
 
-        backend.process_updates();
+            backend.process_updates();
 
-        for frame in 0..ctx.nframes() {
-            let (s1, s2, ret) = backend.process(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            for frame in 0..ctx.nframes() {
+                let (s1, s2, ret) = backend.process(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            }
+
+            ctx_vals[0].set(0.0);
+            ctx_vals[1].set(0.0);
         }
-
-        ctx_vals[0].set(0.0);
-        ctx_vals[1].set(0.0);
     }
 }

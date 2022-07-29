@@ -290,6 +290,7 @@ impl NodeConfigurator {
                 atom_values: std::collections::HashMap::new(),
                 node2idx: HashMap::new(),
                 trackers: vec![Tracker::new(); MAX_AVAIL_TRACKERS],
+                #[cfg(feature = "wblockdsp")]
                 code_engines: vec![CodeEngine::new(); MAX_AVAIL_CODE_ENGINES],
                 scopes,
             },
@@ -691,6 +692,14 @@ impl NodeConfigurator {
                 let tracker_idx = ni.instance();
                 if let Some(trk) = self.trackers.get_mut(tracker_idx) {
                     node.set_backend(trk.get_backend());
+                }
+            }
+
+            #[cfg(feature = "wblockdsp")]
+            if let Node::Code { node } = &mut node {
+                let code_idx = ni.instance();
+                if let Some(cod) = self.code_engines.get_mut(code_idx) {
+                    node.set_backend(cod.get_backend());
                 }
             }
 
