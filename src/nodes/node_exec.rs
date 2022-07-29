@@ -9,8 +9,6 @@ use super::{
 use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
 use crate::util::{AtomicFloat, Smoother};
-#[cfg(feature = "wblockdsp")]
-use crate::wblockdsp::CodeEngineBackend;
 
 use crate::log;
 use std::io::Write;
@@ -83,9 +81,6 @@ pub(crate) struct SharedNodeExec {
     pub(crate) graph_drop_prod: Producer<DropMsg>,
     /// For sending feedback to the frontend thread.
     pub(crate) monitor_backend: MonitorBackend,
-    /// For handing over the [crate::wblockdsp::CodeEngineBackend]
-    #[cfg(feature = "wblockdsp")]
-    pub(crate) code_backend: Option<Box<CodeEngineBackend>>,
 }
 
 /// Contains audio driver context informations. Such as the number
@@ -173,40 +168,24 @@ impl Default for FeedbackBuffer {
 /// This is used for instance to implement the feedbackd delay nodes.
 pub struct NodeExecContext {
     pub feedback_delay_buffers: Vec<FeedbackBuffer>,
-    #[cfg(feature = "wblockdsp")]
-    pub code_backend: Option<Box<CodeEngineBackend>>,
 }
 
 impl NodeExecContext {
     fn new() -> Self {
         let mut fbdb = vec![];
         fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
-        Self {
-            feedback_delay_buffers: fbdb,
-            #[cfg(feature = "wblockdsp")]
-            code_backend: None
-        }
+        Self { feedback_delay_buffers: fbdb }
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
         for b in self.feedback_delay_buffers.iter_mut() {
             b.set_sample_rate(srate);
         }
-
-        #[cfg(feature = "wblockdsp")]
-        if let Some(code_backend) = self.code_backend.as_mut() {
-            code_backend.set_sample_rate(srate);
-        }
     }
 
     fn clear(&mut self) {
         for b in self.feedback_delay_buffers.iter_mut() {
             b.clear();
-        }
-
-        #[cfg(feature = "wblockdsp")]
-        if let Some(code_backend) = self.code_backend.as_mut() {
-            code_backend.clear();
         }
     }
 }

@@ -256,8 +256,6 @@ impl SharedNodeConf {
                 graph_update_con: rb_graph_con,
                 graph_drop_prod: rb_drop_prod,
                 monitor_backend,
-                #[cfg(feature = "wblockdsp")]
-                code_backend: None, // TODO: FILL THIS!
             },
         )
     }
