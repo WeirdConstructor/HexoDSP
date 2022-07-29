@@ -96,6 +96,7 @@ impl DspNode for Code {
 //        let clock = inp::TSeq::clock(inputs);
 //        let trig = inp::TSeq::trig(inputs);
 //        let cmode = at::TSeq::cmode(atoms);
+        let out = out::Code::sig(outputs);
 
         #[cfg(feature = "wblockdsp")]
         {
@@ -109,6 +110,7 @@ impl DspNode for Code {
 
             for frame in 0..ctx.nframes() {
                 let (s1, s2, ret) = backend.process(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+                out.write(frame, ret);
             }
 
             ctx_vals[0].set(0.0);

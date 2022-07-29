@@ -3,18 +3,18 @@
 // See README.md and COPYING for details.
 
 use super::{
-    FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_TRACKERS,
-    MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX, MAX_AVAIL_CODE_ENGINES
+    FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES,
+    MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
 use crate::util::AtomicFloat;
-use crate::SampleLibrary;
-use crate::ScopeHandle;
 #[cfg(feature = "wblockdsp")]
 use crate::wblockdsp::CodeEngine;
+use crate::SampleLibrary;
+use crate::ScopeHandle;
 
 use ringbuf::{Producer, RingBuffer};
 use std::collections::HashMap;
@@ -700,6 +700,19 @@ impl NodeConfigurator {
                 let code_idx = ni.instance();
                 if let Some(cod) = self.code_engines.get_mut(code_idx) {
                     node.set_backend(cod.get_backend());
+                    use wblockdsp::build::*;
+                    cod.upload(stmts(&[
+                        assign(
+                            "*phase",
+                            op_add(var("*phase"), op_mul(literal(440.0), var("israte"))),
+                        ),
+                        _if(
+                            op_gt(var("*phase"), literal(1.0)),
+                            assign("*phase", op_sub(var("*phase"), literal(1.0))),
+                            None,
+                        ),
+                        var("*phase"),
+                    ]));
                 }
             }
 

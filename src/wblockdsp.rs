@@ -42,20 +42,10 @@ impl CodeEngine {
 
         let lib = get_default_library();
 
-        Self {
-            lib,
-            dsp_ctx: DSPNodeContext::new_ref(),
-            update_prod,
-            return_cons,
-        }
+        Self { lib, dsp_ctx: DSPNodeContext::new_ref(), update_prod, return_cons }
     }
 
-    pub fn upload(
-        &mut self,
-        code_instance: usize,
-        ast: Box<ASTNode>,
-    ) -> Result<(), JITCompileError> {
-
+    pub fn upload(&mut self, ast: Box<ASTNode>) -> Result<(), JITCompileError> {
         let jit = JIT::new(self.lib.clone(), self.dsp_ctx.clone());
         let fun = jit.compile(ASTFun::new(ast))?;
         self.update_prod.push(CodeUpdateMsg::UpdateFun(fun));
@@ -97,7 +87,6 @@ impl Drop for CodeEngine {
     }
 }
 
-
 pub struct CodeEngineBackend {
     sample_rate: f32,
     function: Box<DSPFunction>,
@@ -106,7 +95,11 @@ pub struct CodeEngineBackend {
 }
 
 impl CodeEngineBackend {
-    fn new(function: Box<DSPFunction>, update_cons: Consumer<CodeUpdateMsg>, return_prod: Producer<CodeReturnMsg>) -> Self {
+    fn new(
+        function: Box<DSPFunction>,
+        update_cons: Consumer<CodeUpdateMsg>,
+        return_prod: Producer<CodeReturnMsg>,
+    ) -> Self {
         Self { sample_rate: 0.0, function, update_cons, return_prod }
     }
 
