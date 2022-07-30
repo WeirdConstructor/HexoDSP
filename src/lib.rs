@@ -167,7 +167,7 @@ let (out_l, out_r) = node_exec.test_run(0.11, true);
 
 ## State of Development
 
-As of 2021-05-18: The architecture and it's functionality have been mostly
+As of 2022-07-30: The architecture and it's functionality have been mostly
 feature complete by now. The only part that is still lacking is the collection
 of modules/nodes, this is the area of current development. Adding lots of
 nodes.
