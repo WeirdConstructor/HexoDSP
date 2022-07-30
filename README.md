@@ -7,7 +7,7 @@ synthesizer [HexoSynth](https://github.com/WeirdConstructor/HexoSynth).
 
 It's aimed to provide a toolkit for everyone who wants to develop
 a synthesizer in Rust. You can use it to quickly define a DSP graph
-that you can change at runtime. It comes with a large collection
+that you can change at runtime. It comes with a (growing) collection
 of already developed DSP modules/nodes, such as oscillators, filters,
 amplifiers, envelopes and sequencers.
 
@@ -15,14 +15,20 @@ The DSP graph API also provides multiple kinds of feedback to track what the
 signals in the DSP threads look like. From monitoring the inputs and outputs of
 single nodes to get the current output value of all nodes.
 
+There is also an (optional) JIT compiler for defining custom pieces of DSP code
+that runs at native speed in a DSP graph module/node.
+
 Here a short list of features:
 
-* Runtime changeable DSP graph
-* Serialization and loading of the DSP graph and the parameters
-* Full monitoring and feedback introspection into the running DSP graph
-* Provides a wide variety of modules
-* Extensible framework for quickly developing new nodes at compile time
-* A comprehensive automated test suite
+* Runtime changeable DSP graph.
+* Serialization and loading of the DSP graph and the parameters.
+* Full monitoring and feedback introspection into the running DSP graph.
+* Provides a wide variety of modules.
+* (Optional) JIT (Just In Time) compiled custom DSP code for integrating your own
+DSP algorithms at runtime. One possible frontend language is the visual
+"BlockCode" programming language in HexoSynth.
+* Extensible framework for quickly adding new nodes to HexoDSP.
+* A comprehensive automated test suite covering all modules in HexoDSP.
 
 And following DSP nodes:
 
@@ -40,6 +46,7 @@ And following DSP nodes:
 | Signal  | PVerb       | Reverb node, based on Dattorros plate reverb algorithm |
 | Signal  | AllP        | All-Pass filter based on internal delay line feedback |
 | Signal  | Comb        | Comb filter |
+| Signal  | Code        | JIT (Just In Time) compiled piece of custom DSP code. |
 | N-\>M   | Mix3        | 3 channel mixer |
 | N-\>M   | Mux9        | 9 channel to 1 output multiplexer/switch |
 | Ctrl    | SMap        | Simple control signal mapper |
