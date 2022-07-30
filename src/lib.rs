@@ -316,6 +316,7 @@ pub mod sample_lib;
 pub mod scope_handle;
 #[cfg(feature="wblockdsp")]
 pub mod wblockdsp;
+pub mod blocklang;
 mod util;
 
 pub use cell_dir::CellDir;
