@@ -11,7 +11,7 @@ use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
 use crate::util::AtomicFloat;
-#[cfg(feature = "wblockdsp")]
+#[cfg(feature = "synfx-dsp-jit")]
 use crate::wblockdsp::CodeEngine;
 use crate::SampleLibrary;
 use crate::ScopeHandle;
@@ -183,7 +183,7 @@ pub struct NodeConfigurator {
     /// Holding the scope buffers:
     pub(crate) scopes: Vec<Arc<ScopeHandle>>,
     /// Holding the WBlockDSP code engine backends:
-    #[cfg(feature = "wblockdsp")]
+    #[cfg(feature = "synfx-dsp-jit")]
     pub(crate) code_engines: Vec<CodeEngine>,
     /// The shared parts of the [NodeConfigurator]
     /// and the [crate::nodes::NodeExecutor].
@@ -290,7 +290,7 @@ impl NodeConfigurator {
                 atom_values: std::collections::HashMap::new(),
                 node2idx: HashMap::new(),
                 trackers: vec![Tracker::new(); MAX_AVAIL_TRACKERS],
-                #[cfg(feature = "wblockdsp")]
+                #[cfg(feature = "synfx-dsp-jit")]
                 code_engines: vec![CodeEngine::new(); MAX_AVAIL_CODE_ENGINES],
                 scopes,
             },
@@ -695,12 +695,12 @@ impl NodeConfigurator {
                 }
             }
 
-            #[cfg(feature = "wblockdsp")]
+            #[cfg(feature = "synfx-dsp-jit")]
             if let Node::Code { node } = &mut node {
                 let code_idx = ni.instance();
                 if let Some(cod) = self.code_engines.get_mut(code_idx) {
                     node.set_backend(cod.get_backend());
-                    use wblockdsp::build::*;
+                    use synfx_dsp_jit::build::*;
                     cod.upload(stmts(&[
                         assign(
                             "*phase",

@@ -964,6 +964,10 @@ impl BlockFun {
         }
     }
 
+    pub fn block_language(&self) -> Rc<RefCell<BlockLanguage>> {
+        self.language.clone()
+    }
+
     pub fn block_ref(&self, id: usize, x: i64, y: i64) -> Option<&Block> {
         let area = self.areas.get(id)?;
         area.ref_at(x, y)

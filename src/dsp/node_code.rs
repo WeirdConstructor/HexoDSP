@@ -4,14 +4,14 @@
 
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-#[cfg(feature = "wblockdsp")]
+#[cfg(feature = "synfx-dsp-jit")]
 use crate::wblockdsp::CodeEngineBackend;
 
 use crate::dsp::MAX_BLOCK_SIZE;
 
 /// A WBlockDSP code execution node for JIT'ed DSP code
 pub struct Code {
-    #[cfg(feature = "wblockdsp")]
+    #[cfg(feature = "synfx-dsp-jit")]
     backend: Option<Box<CodeEngineBackend>>,
     srate: f64,
 }
@@ -31,13 +31,13 @@ impl Clone for Code {
 impl Code {
     pub fn new(_nid: &NodeId) -> Self {
         Self {
-            #[cfg(feature = "wblockdsp")]
+            #[cfg(feature = "synfx-dsp-jit")]
             backend: None,
             srate: 48000.0,
         }
     }
 
-    #[cfg(feature = "wblockdsp")]
+    #[cfg(feature = "synfx-dsp-jit")]
     pub fn set_backend(&mut self, backend: CodeEngineBackend) {
         self.backend = Some(Box::new(backend));
     }
@@ -68,14 +68,14 @@ impl DspNode for Code {
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate = srate as f64;
-        #[cfg(feature = "wblockdsp")]
+        #[cfg(feature = "synfx-dsp-jit")]
         if let Some(backend) = self.backend.as_mut() {
             backend.set_sample_rate(srate);
         }
     }
 
     fn reset(&mut self) {
-        #[cfg(feature = "wblockdsp")]
+        #[cfg(feature = "synfx-dsp-jit")]
         if let Some(backend) = self.backend.as_mut() {
             backend.clear();
         }
@@ -98,7 +98,7 @@ impl DspNode for Code {
 //        let cmode = at::TSeq::cmode(atoms);
         let out = out::Code::sig(outputs);
 
-        #[cfg(feature = "wblockdsp")]
+        #[cfg(feature = "synfx-dsp-jit")]
         {
             let backend = if let Some(backend) = &mut self.backend {
                 backend

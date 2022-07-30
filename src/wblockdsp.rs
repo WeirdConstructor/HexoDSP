@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use wblockdsp::*;
+use synfx_dsp_jit::*;
 
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::cell::RefCell;
@@ -40,7 +40,7 @@ impl CodeEngine {
         let rb = RingBuffer::new(MAX_RINGBUF_SIZE);
         let (_return_prod, return_cons) = rb.split();
 
-        let lib = get_default_library();
+        let lib = get_standard_library();
 
         Self { lib, dsp_ctx: DSPNodeContext::new_ref(), update_prod, return_cons }
     }

@@ -9,7 +9,7 @@ keywords    = ["audio", "music", "real-time", "synthesis", "synthesizer", "dsp",
 categories  = ["multimedia::audio", "multimedia", "algorithms", "mathematics"]
 
 [features]
-default = [ "wblockdsp" ]
+default = [ "synfx-dsp-jit" ]
 
 [dependencies]
 serde         = { version = "1.0", features = ["derive"] }
@@ -19,7 +19,7 @@ triple_buffer = "5.0.6"
 lazy_static   = "1.4.0"
 hound         = "3.4.0"
 num-traits    = "0.2.14"
-wblockdsp     = { path = "../wblockdsp", optional = true }
+synfx-dsp-jit = { path = "../synfx-dsp-jit", optional = true }
 
 [dev-dependencies]
 num-complex = "0.2"
