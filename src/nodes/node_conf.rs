@@ -8,6 +8,7 @@ use super::{
 };
 use crate::blocklang::*;
 use crate::blocklang_def;
+use crate::block_compiler::Block2JITCompiler;
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
@@ -699,6 +700,9 @@ impl NodeConfigurator {
             if let Ok(block_fun) = block_fun.lock() {
                 if *generation != block_fun.generation() {
                     *generation = block_fun.generation();
+                    let mut compiler = Block2JITCompiler::new();
+                    compiler.compile(&block_fun);
+
                     // let ast = block_compiler::compile(block_fun);
                     if let Some(cod) = self.code_engines.get_mut(id) {
                         use synfx_dsp_jit::build::*;

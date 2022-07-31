@@ -325,6 +325,7 @@ pub mod scope_handle;
 pub mod wblockdsp;
 pub mod blocklang;
 pub mod blocklang_def;
+mod block_compiler;
 mod util;
 
 pub use cell_dir::CellDir;
