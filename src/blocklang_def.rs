@@ -202,6 +202,18 @@ pub fn setup_hxdsp_block_language() -> Rc<RefCell<BlockLanguage>> {
         color:          8,
     });
 
+    lang.define(BlockType {
+        category:       "arithmetics".to_string(),
+        name:           "/%".to_string(),
+        rows:           2,
+        inputs:         vec![Some("a".to_string()), Some("b".to_string())],
+        outputs:        vec![Some("div".to_string()), Some("rem".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "Computes the integer division and remainder of a / b".to_string(),
+        color:          8,
+    });
+
     for fun_name in &["+", "-", "*", "/"] {
         lang.define(BlockType {
             category:       "arithmetics".to_string(),

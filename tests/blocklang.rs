@@ -32,13 +32,21 @@ fn check_blocklang_1() {
         block_fun.instanciate_at(0, 2, 0, "set", Some("&sig1".to_string()));
 
         block_fun.instanciate_at(0, 3, 0, "get", Some("in1".to_string()));
-        block_fun.instanciate_at(0, 3, 1, "get", Some("in1".to_string()));
+        block_fun.instanciate_at(0, 3, 1, "get", Some("in2".to_string()));
         block_fun.instanciate_at(0, 4, 0, "-", None);
         block_fun.instanciate_at(0, 5, 0, "->3", None);
         block_fun.instanciate_at(0, 6, 1, "set", Some("*a".to_string()));
         block_fun.instanciate_at(0, 6, 2, "set", Some("x".to_string()));
         block_fun.instanciate_at(0, 6, 0, "->", None);
         block_fun.instanciate_at(0, 7, 0, "->2", None);
+
+        block_fun.instanciate_at(0, 0, 3, "get", Some("in1".to_string()));
+        block_fun.instanciate_at(0, 0, 4, "get", Some("in2".to_string()));
+        block_fun.instanciate_at(0, 1, 3, "/%", None);
+        block_fun.instanciate_at(0, 2, 3, "->", None);
+        block_fun.instanciate_at(0, 3, 3, "/%", None);
+        block_fun.instanciate_at(0, 4, 3, "set", Some("&sig2".to_string()));
+        block_fun.instanciate_at(0, 4, 4, "set", Some("*ap".to_string()));
     }
 
     matrix.check_block_function(0);

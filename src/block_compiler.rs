@@ -123,6 +123,26 @@ impl Block2JITCompiler {
     }
 
     pub fn trans2bjit(&self, node: &ASTNodeRef) -> Result<BlkASTRef, BlkJITCompileError> {
+        // TODO: Deal with multiple outputs.
+        // If we encounter a node with multiple outputs, assign each output
+        // to a temporary variable and save that.
+        // Store the name of the temporary in a id+output mapping.
+        // => XXX
+        // That means: If we have a single output, things are easy, just plug them into
+        //             the JIT ast:
+        //                  outer(inner())
+        //             But if we have multiple outputs:
+        //                  assign(a = inner())
+        //                  assign(b = %1)
+        //                  outer_x(a)
+        //                  outer_y(b)
+
+        // TODO: Filter out -> nodes from the AST
+        // TODO: For ->2 and ->3, save the input in some variable
+        //       and reserve a id+output variable for this.
+
+        // XXX: SSA form of cranelift should take care of the rest!
+
         match &node.0.borrow().typ[..] {
             "<r>" => {
                 if let Some(first) = node.first_child_ref() {
@@ -172,6 +192,9 @@ impl Block2JITCompiler {
                     childs.push(child);
                     i += 1;
                 }
+
+                // TODO: Reorder the childs/arguments according to the input
+                //       order in the BlockLanguage
 
                 Ok(BlkASTNode::new_node(
                     node.0.borrow().id,
