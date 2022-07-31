@@ -902,6 +902,40 @@ impl BlockLanguage {
         identifiers
     }
 
+    pub fn get_type_outputs(&self, typ: &str) -> Option<&[Option<String>]> {
+        let typ = self.types.get(typ)?;
+        Some(&typ.outputs)
+    }
+
+    pub fn get_output_name_at_index(&self, typ: &str, idx: usize) -> Option<String> {
+        let outs = self.get_type_outputs(typ)?;
+        let mut i = 0;
+        for o in outs.iter() {
+            if let Some(outname) = o {
+                if i == idx {
+                    return Some(outname.to_string());
+                }
+                i += 1;
+            }
+        }
+
+        None
+    }
+
+    pub fn type_output_count(&self, typ: &str) -> usize {
+        let mut cnt = 0;
+
+        if let Some(outs) = self.get_type_outputs(typ) {
+            for o in outs.iter() {
+                if o.is_some() {
+                    cnt += 1;
+                }
+            }
+        }
+
+        cnt
+    }
+
     pub fn get_type_list(&self) -> Vec<(String, String, BlockUserInput)> {
         let mut out = vec![];
         for (_, typ) in &self.types {

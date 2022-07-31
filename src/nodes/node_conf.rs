@@ -700,7 +700,7 @@ impl NodeConfigurator {
             if let Ok(block_fun) = block_fun.lock() {
                 if *generation != block_fun.generation() {
                     *generation = block_fun.generation();
-                    let mut compiler = Block2JITCompiler::new();
+                    let mut compiler = Block2JITCompiler::new(block_fun.block_language());
                     compiler.compile(&block_fun);
 
                     // let ast = block_compiler::compile(block_fun);

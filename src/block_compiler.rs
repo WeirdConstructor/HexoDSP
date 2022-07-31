@@ -99,6 +99,9 @@ enum BlkASTNode {
         lbl: String,
         childs: Vec<(Option<String>, BlkASTRef)>,
     },
+    Literal {
+        value: f64,
+    }
 }
 
 impl BlkASTNode {
@@ -107,14 +110,16 @@ impl BlkASTNode {
 
         if let Some(inp) = inp {
             indent_str += &format!("{}<= ", inp);
+        } else {
+            indent_str += "<= ";
         }
 
         match self {
             BlkASTNode::Root { child } => {
-                format!("{}* Root\n", indent_str) + &child.borrow().dump(indent + 1, None)
+                format!("{}Root\n", indent_str) + &child.borrow().dump(indent + 1, None)
             }
             BlkASTNode::Area { childs } => {
-                let mut s = format!("{}* Area\n", indent_str);
+                let mut s = format!("{}Area\n", indent_str);
                 for c in childs.iter() {
                     s += &c.borrow().dump(indent + 1, None);
                 }
@@ -126,14 +131,14 @@ impl BlkASTNode {
             BlkASTNode::Get { id, use_count, var } => {
                 format!("{}get '{}' (id={}, use={})\n", indent_str, var, id, use_count)
             }
+            BlkASTNode::Literal { value } => {
+                format!("{}{}\n", indent_str, value)
+            }
             BlkASTNode::Node { id, out, use_count, typ, lbl, childs } => {
                 let lbl = if *typ == *lbl { "".to_string() } else { format!("[{}]", lbl) };
 
                 let mut s = if let Some(out) = out {
-                    format!(
-                        "{}{}{} (id={}/{}, use={})\n",
-                        indent_str, typ, lbl, id, out, use_count
-                    )
+                    format!("{}{}{} (id={}/{}, use={})\n", indent_str, typ, lbl, id, out, use_count)
                 } else {
                     format!("{}{}{} (id={}, use={})\n", indent_str, typ, lbl, id, use_count)
                 };
@@ -161,6 +166,14 @@ impl BlkASTNode {
         Rc::new(RefCell::new(BlkASTNode::Get { id, var: var.to_string(), use_count: 1 }))
     }
 
+    pub fn new_literal(val: &str) -> Result<BlkASTRef, BlkJITCompileError> {
+        if let Ok(value) = val.parse::<f64>() {
+            Ok(Rc::new(RefCell::new(BlkASTNode::Literal { value })))
+        } else {
+            Err(BlkJITCompileError::BadLiteralNumber(val.to_string()))
+        }
+    }
+
     pub fn new_node(
         id: usize,
         out: Option<String>,
@@ -183,10 +196,17 @@ impl BlkASTNode {
 pub enum BlkJITCompileError {
     UnknownError,
     BadTree(ASTNodeRef),
+    NoOutputAtIdx(String, usize),
+    ASTMissingOutputLabel(usize),
+    NoTmpVarForOutput(usize, String),
+    BadLiteralNumber(String),
 }
 
 pub struct Block2JITCompiler {
     id_node_map: HashMap<usize, BlkASTRef>,
+    idout_var_map: HashMap<String, String>,
+    lang: Rc<RefCell<BlockLanguage>>,
+    tmpvar_counter: usize,
 }
 
 // 1. compile the weird tree into a graph
@@ -194,12 +214,25 @@ pub struct Block2JITCompiler {
 //   - add a use count to each node, so that we know when to make temporary variables
 
 impl Block2JITCompiler {
-    pub fn new() -> Self {
-        Self { id_node_map: HashMap::new() }
+    pub fn new(lang: Rc<RefCell<BlockLanguage>>) -> Self {
+        Self { id_node_map: HashMap::new(), idout_var_map: HashMap::new(), lang, tmpvar_counter: 0 }
+    }
+
+    pub fn next_tmpvar_name(&mut self, extra: &str) -> String {
+        self.tmpvar_counter += 1;
+        format!("_tmp{}_{}_", self.tmpvar_counter, extra)
+    }
+
+    pub fn store_idout_var(&mut self, id: usize, out: &str, v: &str) {
+        self.idout_var_map.insert(format!("{}/{}", id, out), v.to_string());
+    }
+
+    pub fn get_var_for_idout(&self, id: usize, out: &str) -> Option<&str> {
+        self.idout_var_map.get(&format!("{}/{}", id, out)).map(|s| &s[..])
     }
 
     pub fn trans2bjit(
-        &self,
+        &mut self,
         node: &ASTNodeRef,
         my_out: Option<String>,
     ) -> Result<BlkASTRef, BlkJITCompileError> {
@@ -223,16 +256,19 @@ impl Block2JITCompiler {
 
         // XXX: SSA form of cranelift should take care of the rest!
 
-        match &node.0.borrow().typ[..] {
-            "<r>" => {
-                if let Some((_in, out, first)) = node.first_child() {
-                    let out = if out.len() > 0 { Some(out) } else { None };
-                    let child = self.trans2bjit(&first, out)?;
-                    Ok(BlkASTNode::new_root(child))
-                } else {
-                    Err(BlkJITCompileError::BadTree(node.clone()))
-                }
+        let id = node.0.borrow().id;
+
+        if let Some(out) = &my_out {
+            if let Some(tmpvar) = self.get_var_for_idout(id, out) {
+                return Ok(BlkASTNode::new_get(0, tmpvar));
             }
+        } else {
+            if let Some(tmpvar) = self.get_var_for_idout(id, "") {
+                return Ok(BlkASTNode::new_get(0, tmpvar));
+            }
+        }
+
+        match &node.0.borrow().typ[..] {
             "<a>" => {
                 let mut childs = vec![];
 
@@ -246,16 +282,19 @@ impl Block2JITCompiler {
 
                 Ok(BlkASTNode::new_area(childs))
             }
-            "<res>" => {
-                // TODO: handle results properly, like remembering the most recent result
-                // and append it to the end of the statements block. so that a temporary
-                // variable is created.
+            // TODO: handle results properly, like remembering the most recent result
+            // and append it to the end of the statements block. so that a temporary
+            // variable is created.
+            "<r>" | "->" | "<res>" => {
                 if let Some((_in, out, first)) = node.first_child() {
                     let out = if out.len() > 0 { Some(out) } else { None };
                     self.trans2bjit(&first, out)
                 } else {
                     Err(BlkJITCompileError::BadTree(node.clone()))
                 }
+            }
+            "value" => {
+                Ok(BlkASTNode::new_literal(&node.0.borrow().lbl)?)
             }
             "set" => {
                 if let Some((_in, out, first)) = node.first_child() {
@@ -266,7 +305,22 @@ impl Block2JITCompiler {
                     Err(BlkJITCompileError::BadTree(node.clone()))
                 }
             }
-            "get" => Ok(BlkASTNode::new_get(node.0.borrow().id, &node.0.borrow().lbl)),
+            "get" => Ok(BlkASTNode::new_get(id, &node.0.borrow().lbl)),
+            "->2" | "->3" => {
+                if let Some((_in, out, first)) = node.first_child() {
+                    let out = if out.len() > 0 { Some(out) } else { None };
+                    let mut area = vec![];
+                    let tmp_var = self.next_tmpvar_name("");
+                    let expr = self.trans2bjit(&first, out)?;
+                    area.push(BlkASTNode::new_set(&tmp_var, expr));
+                    area.push(BlkASTNode::new_get(0, &tmp_var));
+                    self.store_idout_var(id, "", &tmp_var);
+                    Ok(BlkASTNode::new_area(area))
+
+                } else {
+                    Err(BlkJITCompileError::BadTree(node.clone()))
+                }
+            }
             optype => {
                 let mut childs = vec![];
 
@@ -283,30 +337,64 @@ impl Block2JITCompiler {
                     i += 1;
                 }
 
-                // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-                // TODO: Check here if the optype has multiple outputs.
-                //       when it has, make a sub-collection of statements
-                //       and make temporary variables with ::Set
-                //       then return the output with a final ::Get to the
-                //       output "my_out".
-                //       If no output is given in "my_out" it's an error!
-                //""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
                 // TODO: Reorder the childs/arguments according to the input
                 //       order in the BlockLanguage
 
-                Ok(BlkASTNode::new_node(
-                    node.0.borrow().id,
-                    my_out,
-                    &node.0.borrow().typ,
-                    &node.0.borrow().lbl,
-                    childs,
-                ))
+                let cnt = self.lang.borrow().type_output_count(optype);
+                if cnt > 1 {
+                    let mut area = vec![];
+                    area.push(BlkASTNode::new_node(
+                        id,
+                        my_out.clone(),
+                        &node.0.borrow().typ,
+                        &node.0.borrow().lbl,
+                        childs,
+                    ));
+
+                    for i in 0..cnt {
+                        let oname = self.lang.borrow().get_output_name_at_index(optype, i);
+                        if let Some(oname) = oname {
+                            let tmp_var = self.next_tmpvar_name(&oname);
+
+                            area.push(BlkASTNode::new_set(
+                                &tmp_var,
+                                BlkASTNode::new_get(0, &format!("%{}", i)),
+                            ));
+                            self.store_idout_var(
+                                id,
+                                &oname,
+                                &tmp_var,
+                            );
+                        } else {
+                            return Err(BlkJITCompileError::NoOutputAtIdx(optype.to_string(), i));
+                        }
+                    }
+
+                    if let Some(out) = &my_out {
+                        if let Some(tmpvar) = self.get_var_for_idout(id, out) {
+                            area.push(BlkASTNode::new_get(0, tmpvar));
+                        } else {
+                            return Err(BlkJITCompileError::NoTmpVarForOutput(id, out.to_string()));
+                        }
+                    } else {
+                        return Err(BlkJITCompileError::ASTMissingOutputLabel(id));
+                    }
+
+                    Ok(BlkASTNode::new_area(area))
+                } else {
+                    Ok(BlkASTNode::new_node(
+                        id,
+                        my_out,
+                        &node.0.borrow().typ,
+                        &node.0.borrow().lbl,
+                        childs,
+                    ))
+                }
             }
         }
     }
 
-    pub fn compile(&self, fun: &BlockFun) -> Result<ASTNode, BlkJITCompileError> {
+    pub fn compile(&mut self, fun: &BlockFun) -> Result<ASTNode, BlkJITCompileError> {
         let tree = fun.generate_tree::<ASTNodeRef>("zero").unwrap();
         println!("{}", tree.walk_dump("", "", 0));
 
