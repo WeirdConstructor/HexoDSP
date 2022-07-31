@@ -10,6 +10,7 @@ pub use crate::nodes::MinMaxMonitorSamples;
 use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES};
 pub use crate::CellDir;
 use crate::ScopeHandle;
+use crate::blocklang::BlockFun;
 
 use std::collections::{HashMap, HashSet};
 
@@ -578,18 +579,35 @@ impl Matrix {
         self.config.filtered_out_fb_for(ni, out)
     }
 
+    /// Retrieve the oscilloscope handle for the scope index `scope`.
     pub fn get_pattern_data(&self, tracker_id: usize) -> Option<Arc<Mutex<PatternData>>> {
         self.config.get_pattern_data(tracker_id)
     }
 
+    /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.
     pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
         self.config.get_scope_handle(scope)
     }
 
-    /// Checks if pattern data updates need to be sent to the
-    /// DSP thread.
+    /// Checks if there are any updates to send for the pattern data that belongs to the
+    /// tracker `tracker_id`. Call this repeatedly, eg. once per frame in a GUI, in case the user
+    /// modified the pattern data. It will make sure that the modifications are sent to the
+    /// audio thread.
     pub fn check_pattern_data(&mut self, tracker_id: usize) {
         self.config.check_pattern_data(tracker_id)
+    }
+
+    /// Checks the block function for the id `id`. If the block function did change,
+    /// updates are then sent to the audio thread.
+    /// See also [get_block_function].
+    pub fn check_block_function(&mut self, id: usize) {
+        self.config.check_block_function(id)
+    }
+
+    /// Retrieve a handle to the block function `id`. In case you modify the block function,
+    /// make sure to call [check_block_function].
+    pub fn get_block_function(&mut self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
+        self.config.get_block_function(id)
     }
 
     /// Saves the state of the hexagonal grid layout.

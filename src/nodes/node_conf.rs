@@ -6,6 +6,8 @@ use super::{
     FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES,
     MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
 };
+use crate::blocklang::*;
+use crate::blocklang_def;
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
@@ -185,6 +187,10 @@ pub struct NodeConfigurator {
     /// Holding the WBlockDSP code engine backends:
     #[cfg(feature = "synfx-dsp-jit")]
     pub(crate) code_engines: Vec<CodeEngine>,
+    /// Holds the block functions that are JIT compiled to DSP code
+    /// for the `Code` nodes. The code is then sent via the [CodeEngine]
+    /// in [check_block_function].
+    pub(crate) block_functions: Vec<(u64, Arc<Mutex<BlockFun>>)>,
     /// The shared parts of the [NodeConfigurator]
     /// and the [crate::nodes::NodeExecutor].
     pub(crate) shared: SharedNodeConf,
@@ -274,6 +280,12 @@ impl NodeConfigurator {
         let mut scopes = vec![];
         scopes.resize_with(MAX_SCOPES, || ScopeHandle::new_shared());
 
+        let lang = blocklang_def::setup_hxdsp_block_language();
+        let mut block_functions = vec![];
+        block_functions.resize_with(MAX_AVAIL_CODE_ENGINES, || {
+            (0, Arc::new(Mutex::new(BlockFun::new(lang.clone()))))
+        });
+
         (
             NodeConfigurator {
                 nodes,
@@ -292,6 +304,7 @@ impl NodeConfigurator {
                 trackers: vec![Tracker::new(); MAX_AVAIL_TRACKERS],
                 #[cfg(feature = "synfx-dsp-jit")]
                 code_engines: vec![CodeEngine::new(); MAX_AVAIL_CODE_ENGINES],
+                block_functions,
                 scopes,
             },
             shared_exec,
@@ -652,10 +665,12 @@ impl NodeConfigurator {
         }
     }
 
+    /// Retrieve the oscilloscope handle for the scope index `scope`.
     pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
         self.scopes.get(scope).cloned()
     }
 
+    /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.
     pub fn get_pattern_data(&self, tracker_id: usize) -> Option<Arc<Mutex<PatternData>>> {
         if tracker_id >= self.trackers.len() {
             return None;
@@ -664,12 +679,51 @@ impl NodeConfigurator {
         Some(self.trackers[tracker_id].data())
     }
 
+    /// Checks if there are any updates to send for the pattern data that belongs to the
+    /// tracker `tracker_id`. Call this repeatedly, eg. once per frame in a GUI, in case the user
+    /// modified the pattern data. It will make sure that the modifications are sent to the
+    /// audio thread.
     pub fn check_pattern_data(&mut self, tracker_id: usize) {
         if tracker_id >= self.trackers.len() {
             return;
         }
 
         self.trackers[tracker_id].send_one_update();
+    }
+
+    /// Checks the block function for the id `id`. If the block function did change,
+    /// updates are then sent to the audio thread.
+    /// See also [get_block_function].
+    pub fn check_block_function(&mut self, id: usize) {
+        if let Some((generation, block_fun)) = self.block_functions.get_mut(id) {
+            if let Ok(block_fun) = block_fun.lock() {
+                if *generation != block_fun.generation() {
+                    *generation = block_fun.generation();
+                    // let ast = block_compiler::compile(block_fun);
+                    if let Some(cod) = self.code_engines.get_mut(id) {
+                        use synfx_dsp_jit::build::*;
+                        cod.upload(stmts(&[
+                            assign(
+                                "*phase",
+                                op_add(var("*phase"), op_mul(literal(440.0), var("israte"))),
+                            ),
+                            _if(
+                                op_gt(var("*phase"), literal(1.0)),
+                                assign("*phase", op_sub(var("*phase"), literal(1.0))),
+                                None,
+                            ),
+                            var("*phase"),
+                        ]));
+                    }
+                }
+            }
+        }
+    }
+
+    /// Retrieve a handle to the block function `id`. In case you modify the block function,
+    /// make sure to call [check_block_function].
+    pub fn get_block_function(&mut self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
+        self.block_functions.get(id).map(|pair| pair.1.clone())
     }
 
     pub fn delete_nodes(&mut self) {
