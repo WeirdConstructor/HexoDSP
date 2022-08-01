@@ -5,9 +5,8 @@
 mod common;
 use common::*;
 
-#[test]
-fn check_blocklang_1() {
-    let (node_conf, mut node_exec) = new_node_engine();
+fn setup() -> (Matrix, NodeExecutor) {
+    let (node_conf, node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
     let mut chain = MatrixCellChain::new(CellDir::B);
@@ -20,7 +19,45 @@ fn check_blocklang_1() {
         .unwrap();
     matrix.sync().unwrap();
 
-    let code = NodeId::Code(0);
+    (matrix, node_exec)
+}
+
+#[test]
+fn check_blocklang_1() {
+    let (mut matrix, mut node_exec) = setup();
+
+    let block_fun = matrix.get_block_function(0).expect("block fun exists");
+    {
+        let mut block_fun = block_fun.lock().expect("matrix lock");
+        block_fun.instanciate_at(0, 0, 1, "value", Some("0.3".to_string()));
+//        block_fun.instanciate_at(0, 1, 1, "set", Some("&sig1".to_string()));
+    }
+
+    matrix.check_block_function(0).expect("no compile error");
+
+    let res = run_for_ms(&mut node_exec, 25.0);
+    println!("RES: {:?}", res.1);
+    assert_decimated_feq!(
+        res.0,
+        50,
+        vec![
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+        ]
+    );
+}
+#[test]
+fn check_blocklang_2() {
+    let (mut matrix, mut node_exec) = setup();
 
     let block_fun = matrix.get_block_function(0).expect("block fun exists");
     {
@@ -55,7 +92,7 @@ fn check_blocklang_1() {
         block_fun.instanciate_at(0, 4, 4, "set", Some("*ap".to_string()));
     }
 
-    matrix.check_block_function(0);
+    matrix.check_block_function(0).expect("no compile error");
 
     let res = run_for_ms(&mut node_exec, 25.0);
     assert_decimated_feq!(

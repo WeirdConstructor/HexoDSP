@@ -72,13 +72,10 @@ impl ASTNodeRef {
     }
 }
 
-type BlkASTRef = Rc<RefCell<BlkASTNode>>;
+type BlkASTRef = Rc<BlkASTNode>;
 
 #[derive(Debug, Clone)]
 enum BlkASTNode {
-    Root {
-        child: BlkASTRef,
-    },
     Area {
         childs: Vec<BlkASTRef>,
     },
@@ -88,13 +85,11 @@ enum BlkASTNode {
     },
     Get {
         id: usize,
-        use_count: usize,
         var: String,
     },
     Node {
         id: usize,
         out: Option<String>,
-        use_count: usize,
         typ: String,
         lbl: String,
         childs: Vec<(Option<String>, BlkASTRef)>,
@@ -115,60 +110,53 @@ impl BlkASTNode {
         }
 
         match self {
-            BlkASTNode::Root { child } => {
-                format!("{}Root\n", indent_str) + &child.borrow().dump(indent + 1, None)
-            }
             BlkASTNode::Area { childs } => {
                 let mut s = format!("{}Area\n", indent_str);
                 for c in childs.iter() {
-                    s += &c.borrow().dump(indent + 1, None);
+                    s += &c.dump(indent + 1, None);
                 }
                 s
             }
             BlkASTNode::Set { var, expr } => {
-                format!("{}set '{}'=\n", indent_str, var) + &expr.borrow().dump(indent + 1, None)
+                format!("{}set '{}'=\n", indent_str, var) + &expr.dump(indent + 1, None)
             }
-            BlkASTNode::Get { id, use_count, var } => {
-                format!("{}get '{}' (id={}, use={})\n", indent_str, var, id, use_count)
+            BlkASTNode::Get { id, var } => {
+                format!("{}get '{}' (id={})\n", indent_str, var, id)
             }
             BlkASTNode::Literal { value } => {
                 format!("{}{}\n", indent_str, value)
             }
-            BlkASTNode::Node { id, out, use_count, typ, lbl, childs } => {
+            BlkASTNode::Node { id, out, typ, lbl, childs } => {
                 let lbl = if *typ == *lbl { "".to_string() } else { format!("[{}]", lbl) };
 
                 let mut s = if let Some(out) = out {
-                    format!("{}{}{} (id={}/{}, use={})\n", indent_str, typ, lbl, id, out, use_count)
+                    format!("{}{}{} (id={}/{})\n", indent_str, typ, lbl, id, out)
                 } else {
-                    format!("{}{}{} (id={}, use={})\n", indent_str, typ, lbl, id, use_count)
+                    format!("{}{}{} (id={})\n", indent_str, typ, lbl, id)
                 };
                 for (inp, c) in childs.iter() {
-                    s += &format!("{}", c.borrow().dump(indent + 1, inp.as_ref().map(|s| &s[..])));
+                    s += &format!("{}", c.dump(indent + 1, inp.as_ref().map(|s| &s[..])));
                 }
                 s
             }
         }
     }
 
-    pub fn new_root(child: BlkASTRef) -> BlkASTRef {
-        Rc::new(RefCell::new(BlkASTNode::Root { child }))
-    }
-
     pub fn new_area(childs: Vec<BlkASTRef>) -> BlkASTRef {
-        Rc::new(RefCell::new(BlkASTNode::Area { childs }))
+        Rc::new(BlkASTNode::Area { childs })
     }
 
     pub fn new_set(var: &str, expr: BlkASTRef) -> BlkASTRef {
-        Rc::new(RefCell::new(BlkASTNode::Set { var: var.to_string(), expr }))
+        Rc::new(BlkASTNode::Set { var: var.to_string(), expr })
     }
 
     pub fn new_get(id: usize, var: &str) -> BlkASTRef {
-        Rc::new(RefCell::new(BlkASTNode::Get { id, var: var.to_string(), use_count: 1 }))
+        Rc::new(BlkASTNode::Get { id, var: var.to_string() })
     }
 
     pub fn new_literal(val: &str) -> Result<BlkASTRef, BlkJITCompileError> {
         if let Ok(value) = val.parse::<f64>() {
-            Ok(Rc::new(RefCell::new(BlkASTNode::Literal { value })))
+            Ok(Rc::new(BlkASTNode::Literal { value }))
         } else {
             Err(BlkJITCompileError::BadLiteralNumber(val.to_string()))
         }
@@ -181,14 +169,13 @@ impl BlkASTNode {
         lbl: &str,
         childs: Vec<(Option<String>, BlkASTRef)>,
     ) -> BlkASTRef {
-        Rc::new(RefCell::new(BlkASTNode::Node {
+        Rc::new(BlkASTNode::Node {
             id,
             out,
             typ: typ.to_string(),
             lbl: lbl.to_string(),
-            use_count: 1,
             childs,
-        }))
+        })
     }
 }
 
@@ -236,26 +223,6 @@ impl Block2JITCompiler {
         node: &ASTNodeRef,
         my_out: Option<String>,
     ) -> Result<BlkASTRef, BlkJITCompileError> {
-        // TODO: Deal with multiple outputs.
-        // If we encounter a node with multiple outputs, assign each output
-        // to a temporary variable and save that.
-        // Store the name of the temporary in a id+output mapping.
-        // => XXX
-        // That means: If we have a single output, things are easy, just plug them into
-        //             the JIT ast:
-        //                  outer(inner())
-        //             But if we have multiple outputs:
-        //                  assign(a = inner())
-        //                  assign(b = %1)
-        //                  outer_x(a)
-        //                  outer_y(b)
-
-        // TODO: Filter out -> nodes from the AST
-        // TODO: For ->2 and ->3, save the input in some variable
-        //       and reserve a id+output variable for this.
-
-        // XXX: SSA form of cranelift should take care of the rest!
-
         let id = node.0.borrow().id;
 
         if let Some(out) = &my_out {
@@ -394,13 +361,40 @@ impl Block2JITCompiler {
         }
     }
 
-    pub fn compile(&mut self, fun: &BlockFun) -> Result<ASTNode, BlkJITCompileError> {
+    pub fn bjit2jit(&mut self, ast: &BlkASTRef) -> Result<Box<ASTNode>, BlkJITCompileError> {
+        use synfx_dsp_jit::build::*;
+
+        match &**ast {
+            BlkASTNode::Area { childs } => {
+                let mut stmt = vec![];
+                for c in childs.iter() {
+                    stmt.push(self.bjit2jit(&c)?);
+                }
+                Ok(stmts(&stmt[..]))
+            },
+            BlkASTNode::Set { var, expr } => {
+                let e = self.bjit2jit(&expr)?;
+                Ok(assign(var, e))
+            }
+            BlkASTNode::Get { id, var: varname } => {
+                Ok(var(varname))
+            },
+            BlkASTNode::Node { id, out, typ, lbl, childs } => {
+                Err(BlkJITCompileError::UnknownError)
+            }
+            BlkASTNode::Literal { value } => {
+                Ok(literal(*value))
+            }
+        }
+    }
+
+    pub fn compile(&mut self, fun: &BlockFun) -> Result<Box<ASTNode>, BlkJITCompileError> {
         let tree = fun.generate_tree::<ASTNodeRef>("zero").unwrap();
         println!("{}", tree.walk_dump("", "", 0));
 
-        let blkast = self.trans2bjit(&tree, None);
-        println!("R: {}", blkast.unwrap().borrow().dump(0, None));
+        let blkast = self.trans2bjit(&tree, None)?;
+        println!("R: {}", blkast.dump(0, None));
 
-        Err(BlkJITCompileError::UnknownError)
+        self.bjit2jit(&blkast)
     }
 }

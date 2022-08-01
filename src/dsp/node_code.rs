@@ -110,6 +110,7 @@ impl DspNode for Code {
 
             for frame in 0..ctx.nframes() {
                 let (s1, s2, ret) = backend.process(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+                println!("OUT: {}", ret);
                 out.write(frame, ret);
             }
 

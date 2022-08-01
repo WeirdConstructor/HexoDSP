@@ -11,6 +11,7 @@ use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_
 pub use crate::CellDir;
 use crate::ScopeHandle;
 use crate::blocklang::BlockFun;
+use crate::block_compiler::BlkJITCompileError;
 
 use std::collections::{HashMap, HashSet};
 
@@ -600,7 +601,7 @@ impl Matrix {
     /// Checks the block function for the id `id`. If the block function did change,
     /// updates are then sent to the audio thread.
     /// See also [get_block_function].
-    pub fn check_block_function(&mut self, id: usize) {
+    pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
         self.config.check_block_function(id)
     }
 

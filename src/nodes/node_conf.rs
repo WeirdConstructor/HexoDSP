@@ -8,7 +8,7 @@ use super::{
 };
 use crate::blocklang::*;
 use crate::blocklang_def;
-use crate::block_compiler::Block2JITCompiler;
+use crate::block_compiler::{Block2JITCompiler, BlkJITCompileError};
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
@@ -695,33 +695,36 @@ impl NodeConfigurator {
     /// Checks the block function for the id `id`. If the block function did change,
     /// updates are then sent to the audio thread.
     /// See also [get_block_function].
-    pub fn check_block_function(&mut self, id: usize) {
+    pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
         if let Some((generation, block_fun)) = self.block_functions.get_mut(id) {
             if let Ok(block_fun) = block_fun.lock() {
                 if *generation != block_fun.generation() {
                     *generation = block_fun.generation();
                     let mut compiler = Block2JITCompiler::new(block_fun.block_language());
-                    compiler.compile(&block_fun);
+                    let ast = compiler.compile(&block_fun)?;
 
                     // let ast = block_compiler::compile(block_fun);
                     if let Some(cod) = self.code_engines.get_mut(id) {
                         use synfx_dsp_jit::build::*;
-                        cod.upload(stmts(&[
-                            assign(
-                                "*phase",
-                                op_add(var("*phase"), op_mul(literal(440.0), var("israte"))),
-                            ),
-                            _if(
-                                op_gt(var("*phase"), literal(1.0)),
-                                assign("*phase", op_sub(var("*phase"), literal(1.0))),
-                                None,
-                            ),
-                            var("*phase"),
-                        ]));
+                        cod.upload(ast);
+//                        stmts(&[
+//                            assign(
+//                                "*phase",
+//                                op_add(var("*phase"), op_mul(literal(440.0), var("israte"))),
+//                            ),
+//                            _if(
+//                                op_gt(var("*phase"), literal(1.0)),
+//                                assign("*phase", op_sub(var("*phase"), literal(1.0))),
+//                                None,
+//                            ),
+//                            var("*phase"),
+//                        ]));
                     }
                 }
             }
         }
+
+        Ok(())
     }
 
     /// Retrieve a handle to the block function `id`. In case you modify the block function,
