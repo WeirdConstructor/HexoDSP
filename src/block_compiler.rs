@@ -398,3 +398,66 @@ impl Block2JITCompiler {
         self.bjit2jit(&blkast)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    macro_rules! assert_float_eq {
+        ($a:expr, $b:expr) => {
+            if ($a - $b).abs() > 0.0001 {
+                panic!(
+                    r#"assertion failed: `(left == right)`
+      left: `{:?}`,
+     right: `{:?}`"#,
+                    $a, $b
+                )
+            }
+        };
+    }
+
+    use synfx_dsp_jit::{get_standard_library, DSPNodeContext, JIT, ASTFun, DSPFunction};
+
+    fn new_jit_fun<F: FnMut(&mut BlockFun)>(mut f: F) -> (Rc<RefCell<DSPNodeContext>>, Box<DSPFunction>) {
+        use crate::block_compiler::{BlkJITCompileError, Block2JITCompiler};
+        use crate::blocklang::BlockFun;
+        use crate::blocklang_def;
+
+        let lang = blocklang_def::setup_hxdsp_block_language();
+        let mut bf = BlockFun::new(lang.clone());
+
+        f(&mut bf);
+
+        let mut compiler = Block2JITCompiler::new(bf.block_language());
+        let ast = compiler.compile(&bf).expect("blk2jit compiles");
+        let lib = get_standard_library();
+        let ctx = DSPNodeContext::new_ref();
+        let jit = JIT::new(lib, ctx.clone());
+        let mut fun = jit.compile(ASTFun::new(ast)).expect("jit compiles");
+
+        fun.init(44100.0, None);
+
+        (ctx, fun)
+    }
+
+
+    #[test]
+    fn check_blocklang_sig1() {
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.3".to_string())).unwrap();
+            bf.instanciate_at(0, 1, 1, "set", Some("&sig1".to_string())).unwrap();
+            bf.instanciate_at(0, 0, 2, "value", Some("-0.3".to_string())).unwrap();
+            bf.instanciate_at(0, 1, 2, "set", Some("&sig2".to_string())).unwrap();
+            bf.instanciate_at(0, 0, 3, "value", Some("-1.3".to_string())).unwrap();
+        });
+
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+
+        assert_float_eq!(s1, 0.3);
+        assert_float_eq!(s2, -0.3);
+        assert_float_eq!(ret, -1.3);
+
+        ctx.borrow_mut().free();
+    }
+
+}
