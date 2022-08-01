@@ -92,11 +92,17 @@ impl DspNode for Code {
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{at, denorm, inp, out};
+        use crate::dsp::{at, denorm, inp, out, out_idx};
 //        let clock = inp::TSeq::clock(inputs);
 //        let trig = inp::TSeq::trig(inputs);
 //        let cmode = at::TSeq::cmode(atoms);
         let out = out::Code::sig(outputs);
+        let out_i = out_idx::Code::sig1();
+        let (sig, sig1) = outputs.split_at_mut(out_i);
+        let (sig1, sig2) = sig1.split_at_mut(1);
+        let sig = &mut sig[0];
+        let sig1 = &mut sig1[0];
+        let sig2 = &mut sig2[0];
 
         #[cfg(feature = "synfx-dsp-jit")]
         {
@@ -110,8 +116,9 @@ impl DspNode for Code {
 
             for frame in 0..ctx.nframes() {
                 let (s1, s2, ret) = backend.process(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-                println!("OUT: {}", ret);
-                out.write(frame, ret);
+                sig.write(frame, ret);
+                sig1.write(frame, s1);
+                sig2.write(frame, s2);
             }
 
             ctx_vals[0].set(0.0);

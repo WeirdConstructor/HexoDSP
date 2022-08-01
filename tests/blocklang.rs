@@ -30,31 +30,28 @@ fn check_blocklang_1() {
     {
         let mut block_fun = block_fun.lock().expect("matrix lock");
         block_fun.instanciate_at(0, 0, 1, "value", Some("0.3".to_string()));
-//        block_fun.instanciate_at(0, 1, 1, "set", Some("&sig1".to_string()));
+        block_fun.instanciate_at(0, 1, 1, "set", Some("&sig1".to_string()));
     }
 
     matrix.check_block_function(0).expect("no compile error");
 
     let res = run_for_ms(&mut node_exec, 25.0);
-    println!("RES: {:?}", res.1);
-    assert_decimated_feq!(
-        res.0,
-        50,
-        vec![
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-        ]
-    );
+    assert_decimated_feq!(res.0, 50, vec![0.3; 10]);
 }
+
+
+// XXX: Test case with 3 outputs, where the first output writes a value used
+//   by the computation after the first but before the third output.
+/*
+    0.3 ->3  set a
+             => ->    + set b
+                get a
+             => ->    - set a
+                get b 
+    get a +
+    get b
+*/
+
 #[test]
 fn check_blocklang_2() {
     let (mut matrix, mut node_exec) = setup();
@@ -95,21 +92,5 @@ fn check_blocklang_2() {
     matrix.check_block_function(0).expect("no compile error");
 
     let res = run_for_ms(&mut node_exec, 25.0);
-    assert_decimated_feq!(
-        res.0,
-        50,
-        vec![
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-            0.1,
-        ]
-    );
+    assert_decimated_feq!(res.0, 50, vec![0.2; 100]);
 }
