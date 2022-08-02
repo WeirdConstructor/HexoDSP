@@ -709,18 +709,6 @@ impl NodeConfigurator {
                     if let Some(cod) = self.code_engines.get_mut(id) {
                         use synfx_dsp_jit::build::*;
                         cod.upload(ast);
-//                        stmts(&[
-//                            assign(
-//                                "*phase",
-//                                op_add(var("*phase"), op_mul(literal(440.0), var("israte"))),
-//                            ),
-//                            _if(
-//                                op_gt(var("*phase"), literal(1.0)),
-//                                assign("*phase", op_sub(var("*phase"), literal(1.0))),
-//                                None,
-//                            ),
-//                            var("*phase"),
-//                        ]));
                     }
                 }
             }
@@ -763,19 +751,6 @@ impl NodeConfigurator {
                 let code_idx = ni.instance();
                 if let Some(cod) = self.code_engines.get_mut(code_idx) {
                     node.set_backend(cod.get_backend());
-                    use synfx_dsp_jit::build::*;
-                    cod.upload(stmts(&[
-                        assign(
-                            "*phase",
-                            op_add(var("*phase"), op_mul(literal(440.0), var("israte"))),
-                        ),
-                        _if(
-                            op_gt(var("*phase"), literal(1.0)),
-                            assign("*phase", op_sub(var("*phase"), literal(1.0))),
-                            None,
-                        ),
-                        var("*phase"),
-                    ]));
                 }
             }
 
