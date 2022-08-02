@@ -184,6 +184,8 @@ pub enum BlkJITCompileError {
     NodeWithoutID(String),
     UnknownType(String),
     TooManyInputs(String, usize),
+    WrongNumberOfChilds(String, usize, usize),
+    UnassignedInput(String, usize, String),
 }
 
 pub struct Block2JITCompiler {
@@ -384,10 +386,38 @@ impl Block2JITCompiler {
                             return Err(BlkJITCompileError::TooManyInputs(typ.to_string(), *id));
                         }
 
-                        for input_name in inputs.iter() {
+                        if inputs.len() > 0 && inputs[0] == Some("".to_string()) {
+                            // We assume all inputs are unnamed:
+                            if inputs.len() != childs.len() {
+                                return Err(BlkJITCompileError::WrongNumberOfChilds(
+                                    typ.to_string(),
+                                    *id,
+                                    childs.len(),
+                                ));
+                            }
+
                             for (inp, c) in childs.iter() {
-                                if inp == input_name {
-                                    args.push(self.bjit2jit(&c)?);
+                                args.push(self.bjit2jit(&c)?);
+                            }
+                        } else {
+                            // We assume all inputs are named:
+                            for input_name in inputs.iter() {
+                                let mut found = false;
+                                for (inp, c) in childs.iter() {
+                                    println!("FOFOFO '{:?}' = '{:?}'", inp, input_name);
+                                    if inp == input_name {
+                                        args.push(self.bjit2jit(&c)?);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                if !found {
+                                    return Err(BlkJITCompileError::UnassignedInput(
+                                        typ.to_string(),
+                                        *id,
+                                        format!("{:?}", input_name),
+                                    ));
                                 }
                             }
                         }
@@ -395,7 +425,29 @@ impl Block2JITCompiler {
                         return Err(BlkJITCompileError::UnknownType(typ.to_string()));
                     }
 
-                    Ok(call(typ, *id as u64, &args[..]))
+                    match &typ[..] {
+                        "+" | "*" | "-" | "/" => {
+                            if args.len() != 2 {
+                                return Err(BlkJITCompileError::WrongNumberOfChilds(
+                                    typ.to_string(),
+                                    *id,
+                                    args.len(),
+                                ));
+                            }
+
+                            let a = args.remove(0);
+                            let b = args.remove(0);
+
+                            match &typ[..] {
+                                "+" => Ok(op_add(a, b)),
+                                "*" => Ok(op_mul(a, b)),
+                                "-" => Ok(op_sub(a, b)),
+                                "/" => Ok(op_div(a, b)),
+                                _ => Err(BlkJITCompileError::UnknownType(typ.to_string())),
+                            }
+                        }
+                        _ => Ok(call(typ, *id as u64, &args[..])),
+                    }
                 }
             },
             BlkASTNode::Literal { value } => Ok(literal(*value)),
@@ -505,6 +557,72 @@ mod test {
         let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
         assert_float_eq!(ret, 0.05);
 
+        ctx.borrow_mut().free();
+    }
+
+    #[test]
+    fn check_blocklang_arithmetics() {
+        // Check + and *
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.50".to_string()));
+            bf.instanciate_at(0, 0, 2, "value", Some("0.01".to_string()));
+            bf.instanciate_at(0, 1, 1, "+", None);
+            bf.shift_port(0, 1, 1, 1, true);
+            bf.instanciate_at(0, 1, 3, "value", Some("2.0".to_string()));
+            bf.instanciate_at(0, 2, 2, "*", None);
+        });
+
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        assert_float_eq!(ret, 1.02);
+        ctx.borrow_mut().free();
+
+        // Check - and /
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.50".to_string()));
+            bf.instanciate_at(0, 0, 2, "value", Some("0.01".to_string()));
+            bf.instanciate_at(0, 1, 1, "-", None);
+            bf.shift_port(0, 1, 1, 1, true);
+            bf.instanciate_at(0, 1, 3, "value", Some("2.0".to_string()));
+            bf.instanciate_at(0, 2, 2, "/", None);
+        });
+
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        assert_float_eq!(ret, (0.5 - 0.01) / 2.0);
+        ctx.borrow_mut().free();
+
+        // Check swapping inputs of "-"
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.50".to_string()));
+            bf.instanciate_at(0, 0, 2, "value", Some("0.01".to_string()));
+            bf.instanciate_at(0, 1, 1, "-", None);
+            bf.shift_port(0, 1, 1, 1, false);
+        });
+
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        assert_float_eq!(ret, 0.01 - 0.5);
+        ctx.borrow_mut().free();
+
+        // Check swapping inputs of "/"
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.50".to_string()));
+            bf.instanciate_at(0, 0, 2, "value", Some("0.01".to_string()));
+            bf.instanciate_at(0, 1, 1, "/", None);
+            bf.shift_port(0, 1, 1, 1, false);
+        });
+
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        assert_float_eq!(ret, 0.01 / 0.5);
+        ctx.borrow_mut().free();
+
+        // Check division of 0.0
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.50".to_string()));
+            bf.instanciate_at(0, 0, 2, "value", Some("0.0".to_string()));
+            bf.instanciate_at(0, 1, 1, "/", None);
+        });
+
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        assert_float_eq!(ret, 0.5 / 0.0);
         ctx.borrow_mut().free();
     }
 }
