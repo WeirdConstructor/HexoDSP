@@ -907,15 +907,21 @@ impl BlockLanguage {
         Some(&typ.outputs)
     }
 
+    pub fn get_type_inputs(&self, typ: &str) -> Option<&[Option<String>]> {
+        let typ = self.types.get(typ)?;
+        Some(&typ.inputs)
+    }
+
     pub fn get_output_name_at_index(&self, typ: &str, idx: usize) -> Option<String> {
-        let outs = self.get_type_outputs(typ)?;
-        let mut i = 0;
-        for o in outs.iter() {
-            if let Some(outname) = o {
-                if i == idx {
-                    return Some(outname.to_string());
+        if let Some(outs) = self.get_type_outputs(typ) {
+            let mut i = 0;
+            for o in outs.iter() {
+                if let Some(outname) = o {
+                    if i == idx {
+                        return Some(outname.to_string());
+                    }
+                    i += 1;
                 }
-                i += 1;
             }
         }
 

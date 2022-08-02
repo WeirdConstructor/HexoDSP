@@ -45,6 +45,10 @@ impl CodeEngine {
         Self { lib, dsp_ctx: DSPNodeContext::new_ref(), update_prod, return_cons }
     }
 
+    pub fn get_lib(&self) -> Rc<RefCell<DSPNodeTypeLibrary>> {
+        self.lib.clone()
+    }
+
     pub fn upload(&mut self, ast: Box<ASTNode>) -> Result<(), JITCompileError> {
         let jit = JIT::new(self.lib.clone(), self.dsp_ctx.clone());
         let fun = jit.compile(ASTFun::new(ast))?;

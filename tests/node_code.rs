@@ -38,3 +38,4 @@ fn check_node_code_1() {
     let res = run_for_ms(&mut node_exec, 25.0);
     assert_decimated_feq!(res.0, 50, vec![0.3; 10]);
 }
+

@@ -96,7 +96,7 @@ enum BlkASTNode {
     },
     Literal {
         value: f64,
-    }
+    },
 }
 
 impl BlkASTNode {
@@ -169,13 +169,7 @@ impl BlkASTNode {
         lbl: &str,
         childs: Vec<(Option<String>, BlkASTRef)>,
     ) -> BlkASTRef {
-        Rc::new(BlkASTNode::Node {
-            id,
-            out,
-            typ: typ.to_string(),
-            lbl: lbl.to_string(),
-            childs,
-        })
+        Rc::new(BlkASTNode::Node { id, out, typ: typ.to_string(), lbl: lbl.to_string(), childs })
     }
 }
 
@@ -187,6 +181,9 @@ pub enum BlkJITCompileError {
     ASTMissingOutputLabel(usize),
     NoTmpVarForOutput(usize, String),
     BadLiteralNumber(String),
+    NodeWithoutID(String),
+    UnknownType(String),
+    TooManyInputs(String, usize),
 }
 
 pub struct Block2JITCompiler {
@@ -260,9 +257,7 @@ impl Block2JITCompiler {
                     Err(BlkJITCompileError::BadTree(node.clone()))
                 }
             }
-            "value" => {
-                Ok(BlkASTNode::new_literal(&node.0.borrow().lbl)?)
-            }
+            "value" => Ok(BlkASTNode::new_literal(&node.0.borrow().lbl)?),
             "set" => {
                 if let Some((_in, out, first)) = node.first_child() {
                     let out = if out.len() > 0 { Some(out) } else { None };
@@ -283,7 +278,6 @@ impl Block2JITCompiler {
                     area.push(BlkASTNode::new_get(0, &tmp_var));
                     self.store_idout_var(id, "", &tmp_var);
                     Ok(BlkASTNode::new_area(area))
-
                 } else {
                     Err(BlkJITCompileError::BadTree(node.clone()))
                 }
@@ -327,11 +321,7 @@ impl Block2JITCompiler {
                                 &tmp_var,
                                 BlkASTNode::new_get(0, &format!("%{}", i)),
                             ));
-                            self.store_idout_var(
-                                id,
-                                &oname,
-                                &tmp_var,
-                            );
+                            self.store_idout_var(id, &oname, &tmp_var);
                         } else {
                             return Err(BlkJITCompileError::NoOutputAtIdx(optype.to_string(), i));
                         }
@@ -371,20 +361,44 @@ impl Block2JITCompiler {
                     stmt.push(self.bjit2jit(&c)?);
                 }
                 Ok(stmts(&stmt[..]))
-            },
+            }
             BlkASTNode::Set { var, expr } => {
                 let e = self.bjit2jit(&expr)?;
                 Ok(assign(var, e))
             }
-            BlkASTNode::Get { id, var: varname } => {
-                Ok(var(varname))
+            BlkASTNode::Get { id, var: varname } => Ok(var(varname)),
+            BlkASTNode::Node { id, out, typ, lbl, childs } => match &typ[..] {
+                "if" => Err(BlkJITCompileError::UnknownError),
+                "zero" => Ok(literal(0.0)),
+                node => {
+                    if *id == 0 {
+                        return Err(BlkJITCompileError::NodeWithoutID(typ.to_string()));
+                    }
+
+                    let lang = self.lang.clone();
+
+                    let mut args = vec![];
+
+                    if let Some(inputs) = lang.borrow().get_type_inputs(typ) {
+                        if childs.len() > inputs.len() {
+                            return Err(BlkJITCompileError::TooManyInputs(typ.to_string(), *id));
+                        }
+
+                        for input_name in inputs.iter() {
+                            for (inp, c) in childs.iter() {
+                                if inp == input_name {
+                                    args.push(self.bjit2jit(&c)?);
+                                }
+                            }
+                        }
+                    } else {
+                        return Err(BlkJITCompileError::UnknownType(typ.to_string()));
+                    }
+
+                    Ok(call(typ, *id as u64, &args[..]))
+                }
             },
-            BlkASTNode::Node { id, out, typ, lbl, childs } => {
-                Err(BlkJITCompileError::UnknownError)
-            }
-            BlkASTNode::Literal { value } => {
-                Ok(literal(*value))
-            }
+            BlkASTNode::Literal { value } => Ok(literal(*value)),
         }
     }
 
@@ -416,21 +430,23 @@ mod test {
         };
     }
 
-    use synfx_dsp_jit::{get_standard_library, DSPNodeContext, JIT, ASTFun, DSPFunction};
+    use synfx_dsp_jit::{get_standard_library, ASTFun, DSPFunction, DSPNodeContext, JIT};
 
-    fn new_jit_fun<F: FnMut(&mut BlockFun)>(mut f: F) -> (Rc<RefCell<DSPNodeContext>>, Box<DSPFunction>) {
+    fn new_jit_fun<F: FnMut(&mut BlockFun)>(
+        mut f: F,
+    ) -> (Rc<RefCell<DSPNodeContext>>, Box<DSPFunction>) {
         use crate::block_compiler::{BlkJITCompileError, Block2JITCompiler};
         use crate::blocklang::BlockFun;
         use crate::blocklang_def;
 
-        let lang = blocklang_def::setup_hxdsp_block_language();
+        let lib = get_standard_library();
+        let lang = blocklang_def::setup_hxdsp_block_language(lib.clone());
         let mut bf = BlockFun::new(lang.clone());
 
         f(&mut bf);
 
         let mut compiler = Block2JITCompiler::new(bf.block_language());
         let ast = compiler.compile(&bf).expect("blk2jit compiles");
-        let lib = get_standard_library();
         let ctx = DSPNodeContext::new_ref();
         let jit = JIT::new(lib, ctx.clone());
         let mut fun = jit.compile(ASTFun::new(ast)).expect("jit compiles");
@@ -439,7 +455,6 @@ mod test {
 
         (ctx, fun)
     }
-
 
     #[test]
     fn check_blocklang_sig1() {
@@ -460,4 +475,36 @@ mod test {
         ctx.borrow_mut().free();
     }
 
+    #[test]
+    fn check_blocklang_accum_shift() {
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 1, 1, "accum", None);
+            bf.shift_port(0, 1, 1, 1, false);
+            bf.instanciate_at(0, 0, 2, "value", Some("0.01".to_string()));
+            bf.instanciate_at(0, 0, 1, "get", Some("*reset".to_string()));
+        });
+
+        fun.exec_2in_2out(0.0, 0.0);
+        fun.exec_2in_2out(0.0, 0.0);
+        fun.exec_2in_2out(0.0, 0.0);
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        assert_float_eq!(ret, 0.04);
+
+        let reset_idx = ctx.borrow().get_persistent_variable_index_by_name("*reset").unwrap();
+        fun.access_persistent_var(reset_idx).map(|reset| *reset = 1.0);
+
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        assert_float_eq!(ret, 0.0);
+
+        fun.access_persistent_var(reset_idx).map(|reset| *reset = 0.0);
+
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
+        assert_float_eq!(ret, 0.05);
+
+        ctx.borrow_mut().free();
+    }
 }

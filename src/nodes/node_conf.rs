@@ -281,7 +281,9 @@ impl NodeConfigurator {
         let mut scopes = vec![];
         scopes.resize_with(MAX_SCOPES, || ScopeHandle::new_shared());
 
-        let lang = blocklang_def::setup_hxdsp_block_language();
+        let code_engines = vec![CodeEngine::new(); MAX_AVAIL_CODE_ENGINES];
+
+        let lang = blocklang_def::setup_hxdsp_block_language(code_engines[0].get_lib());
         let mut block_functions = vec![];
         block_functions.resize_with(MAX_AVAIL_CODE_ENGINES, || {
             (0, Arc::new(Mutex::new(BlockFun::new(lang.clone()))))
@@ -304,7 +306,7 @@ impl NodeConfigurator {
                 node2idx: HashMap::new(),
                 trackers: vec![Tracker::new(); MAX_AVAIL_TRACKERS],
                 #[cfg(feature = "synfx-dsp-jit")]
-                code_engines: vec![CodeEngine::new(); MAX_AVAIL_CODE_ENGINES],
+                code_engines,
                 block_functions,
                 scopes,
             },
