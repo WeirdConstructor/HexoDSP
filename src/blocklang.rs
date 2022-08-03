@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 
+use serde_json::{json, Value};
+
 pub trait BlockView {
     fn rows(&self) -> usize;
     fn contains(&self, idx: usize) -> Option<usize>;
@@ -805,6 +807,33 @@ impl BlockArea {
 
         true
     }
+
+    pub fn serialize(&self) -> Value {
+        let mut v = json!({});
+
+        v
+    }
+
+    pub fn deserialize(s: &str) -> Result<Box<BlockArea>, serde_json::Error> {
+        let v: Value = serde_json::from_str(s)?;
+
+        let blocks = HashMap::new();
+        let size = (0, 0);
+        let auto_shrink = false;
+        let header = "".to_string();
+
+        let mut ba = Box::new(BlockArea {
+            blocks,
+            origin_map: HashMap::new(),
+            size,
+            auto_shrink,
+            header,
+        });
+
+        ba.update_origin_map();
+
+        Ok(ba)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -972,6 +1001,38 @@ pub enum BlockDSPError {
 pub struct BlockFunSnapshot {
     areas: Vec<Box<BlockArea>>,
     cur_id: usize,
+}
+
+impl BlockFunSnapshot {
+    pub fn serialize(&self) -> String {
+        let mut v = json!({
+            "VERSION": 1,
+        });
+
+        v["current_block_id_counter"] = self.cur_id.into();
+
+        let mut areas = json!([]);
+        if let Value::Array(areas) = &mut areas {
+            for area in self.areas.iter() {
+                areas.push(area.serialize());
+            }
+        }
+
+        v["areas"] = areas;
+
+        v.to_string()
+    }
+
+    pub fn deserialize(s: &str) -> Result<BlockFunSnapshot, serde_json::Error> {
+        let v: Value = serde_json::from_str(s)?;
+
+        let mut areas = vec![];
+
+        Ok(BlockFunSnapshot {
+            areas,
+            cur_id: v["current_block_id_counter"].as_i64().unwrap_or(0) as usize,
+        })
+    }
 }
 
 #[derive(Debug, Clone)]
