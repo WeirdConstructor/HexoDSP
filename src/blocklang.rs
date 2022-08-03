@@ -177,6 +177,91 @@ impl Block {
             }
         }
     }
+
+    /// Serializes this [Block] into a [Value]. Called by [BlockArea::serialize].
+    pub fn serialize(&self) -> Value {
+        let mut inputs = json!([]);
+        let mut outputs = json!([]);
+
+        if let Value::Array(inputs) = &mut inputs {
+            for p in self.inputs.iter() {
+                inputs.push(json!(p));
+            }
+        }
+
+        if let Value::Array(outputs) = &mut outputs {
+            for p in self.outputs.iter() {
+                outputs.push(json!(p));
+            }
+        }
+
+        let c0 = if let Some(c) = self.contains.0 { c.into() } else { Value::Null };
+        let c1 = if let Some(c) = self.contains.1 { c.into() } else { Value::Null };
+        let mut contains = json!([c0, c1]);
+        json!({
+            "id": self.id as i64,
+            "rows": self.rows as i64,
+            "contains": contains,
+            "expanded": self.expanded,
+            "typ": self.typ,
+            "lbl": self.lbl,
+            "color": self.color,
+            "inputs": inputs,
+            "outputs": outputs,
+
+        })
+    }
+
+    /// Deserializes this [Block] from a [Value]. Called by [BlockArea::deserialize].
+    pub fn deserialize(v: &Value) -> Result<Box<Block>, serde_json::Error> {
+        let mut inputs = vec![];
+        let mut outputs = vec![];
+
+        let inps = &v["inputs"];
+        if let Value::Array(inps) = inps {
+            for v in inps.iter() {
+                inputs.push(if v.is_string() {
+                    Some(v.as_str().unwrap_or("").to_string())
+                } else {
+                    None
+                })
+            }
+        }
+
+        let outs = &v["outputs"];
+        if let Value::Array(outs) = outs {
+            for v in outs.iter() {
+                outputs.push(if v.is_string() {
+                    Some(v.as_str().unwrap_or("").to_string())
+                } else {
+                    None
+                })
+            }
+        }
+
+        Ok(Box::new(Block {
+            id: v["id"].as_i64().unwrap_or(0) as usize,
+            rows: v["rows"].as_i64().unwrap_or(0) as usize,
+            contains: (
+                if v["contains"][0].is_i64() {
+                    Some(v["contains"][0].as_i64().unwrap_or(0) as usize)
+                } else {
+                    None
+                },
+                if v["contains"][1].is_i64() {
+                    Some(v["contains"][1].as_i64().unwrap_or(0) as usize)
+                } else {
+                    None
+                },
+            ),
+            expanded: v["expanded"].as_bool().unwrap_or(true),
+            typ: v["typ"].as_str().unwrap_or("?").to_string(),
+            lbl: v["lbl"].as_str().unwrap_or("?").to_string(),
+            inputs,
+            outputs,
+            color: v["color"].as_i64().unwrap_or(0) as usize,
+        }))
+    }
 }
 
 impl BlockView for Block {
@@ -808,27 +893,54 @@ impl BlockArea {
         true
     }
 
+    /// Serializes this [BlockArea] to a JSON [Value].
+    /// Usually called by [BlockFunSnapshot::serialize].
     pub fn serialize(&self) -> Value {
-        let mut v = json!({});
+        let mut v = json!({
+            "size": [self.size.0 as i64, self.size.1 as i64],
+            "header": self.header,
+            "auto_shrink": self.auto_shrink,
+        });
+
+        let mut blks = json!([]);
+        if let Value::Array(blks) = &mut blks {
+            for ((x, y), b) in self.blocks.iter() {
+                blks.push(json!({
+                    "x": x,
+                    "y": y,
+                    "block": b.serialize(),
+                }));
+            }
+        }
+
+        v["blocks"] = blks;
 
         v
     }
 
-    pub fn deserialize(s: &str) -> Result<Box<BlockArea>, serde_json::Error> {
-        let v: Value = serde_json::from_str(s)?;
+    /// Deserializes a from a JSON [Value].
+    /// Usually called by [BlockFunSnapshot::deserialize].
+    pub fn deserialize(v: &Value) -> Result<Box<BlockArea>, serde_json::Error> {
+        let mut blocks = HashMap::new();
 
-        let blocks = HashMap::new();
-        let size = (0, 0);
-        let auto_shrink = false;
-        let header = "".to_string();
+        let blks = &v["blocks"];
+        if let Value::Array(blks) = blks {
+            for b in blks.iter() {
+                let x = b["x"].as_i64().unwrap_or(0);
+                let y = b["y"].as_i64().unwrap_or(0);
+                blocks.insert((x, y), Block::deserialize(&b["block"])?);
+            }
+        }
 
-        let mut ba = Box::new(BlockArea {
-            blocks,
-            origin_map: HashMap::new(),
-            size,
-            auto_shrink,
-            header,
-        });
+        let size = (
+            v["size"][0].as_i64().unwrap_or(0) as usize,
+            v["size"][1].as_i64().unwrap_or(0) as usize,
+        );
+        let auto_shrink = v["auto_shrink"].as_bool().unwrap_or(true);
+        let header = v["header"].as_str().unwrap_or("").to_string();
+
+        let mut ba =
+            Box::new(BlockArea { blocks, origin_map: HashMap::new(), size, auto_shrink, header });
 
         ba.update_origin_map();
 
@@ -1026,10 +1138,17 @@ impl BlockFunSnapshot {
     pub fn deserialize(s: &str) -> Result<BlockFunSnapshot, serde_json::Error> {
         let v: Value = serde_json::from_str(s)?;
 
-        let mut areas = vec![];
+        let mut a = vec![];
+
+        let areas = &v["areas"];
+        if let Value::Array(areas) = areas {
+            for v in areas.iter() {
+                a.push(BlockArea::deserialize(v)?);
+            }
+        }
 
         Ok(BlockFunSnapshot {
-            areas,
+            areas: a,
             cur_id: v["current_block_id_counter"].as_i64().unwrap_or(0) as usize,
         })
     }
@@ -1686,3 +1805,24 @@ impl BlockCodeView for BlockFun {
         self.generation
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn check_blockfun_serialize_empty() {
+        let dsp_lib = synfx_dsp_jit::get_standard_library();
+        let lang = crate::blocklang_def::setup_hxdsp_block_language(dsp_lib);
+        let mut bf = BlockFun::new(lang.clone());
+
+        let sn = bf.save_snapshot();
+        let serialized = sn.serialize();
+        assert_eq!(serialized, "{\"VERSION\":1,\"areas\":[{\"auto_shrink\":false,\"blocks\":[],\"header\":\"\",\"size\":[16,16]}],\"current_block_id_counter\":0}");
+
+        let sn = BlockFunSnapshot::deserialize(&serialized).expect("No deserialization error");
+        let mut bf2 = BlockFun::new(lang);
+        let bf2 = bf2.load_snapshot(&sn);
+    }
+}
+
