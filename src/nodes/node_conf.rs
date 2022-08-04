@@ -719,7 +719,7 @@ impl NodeConfigurator {
 
     /// Retrieve a handle to the block function `id`. In case you modify the block function,
     /// make sure to call [check_block_function].
-    pub fn get_block_function(&mut self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
+    pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
         self.block_functions.get(id).map(|pair| pair.1.clone())
     }
 

@@ -1116,7 +1116,7 @@ pub struct BlockFunSnapshot {
 }
 
 impl BlockFunSnapshot {
-    pub fn serialize(&self) -> String {
+    pub fn serialize(&self) -> Value {
         let mut v = json!({
             "VERSION": 1,
         });
@@ -1132,12 +1132,10 @@ impl BlockFunSnapshot {
 
         v["areas"] = areas;
 
-        v.to_string()
+        v
     }
 
-    pub fn deserialize(s: &str) -> Result<BlockFunSnapshot, serde_json::Error> {
-        let v: Value = serde_json::from_str(s)?;
-
+    pub fn deserialize(v: &Value) -> Result<BlockFunSnapshot, serde_json::Error> {
         let mut a = vec![];
 
         let areas = &v["areas"];
@@ -1182,6 +1180,10 @@ impl BlockFun {
             id_gen: BlockIDGenerator::new(),
             generation: 0,
         }
+    }
+
+    pub fn is_unset(&self) -> bool {
+        self.generation == 0
     }
 
     pub fn block_language(&self) -> Rc<RefCell<BlockLanguage>> {
@@ -1817,12 +1819,34 @@ mod test {
         let mut bf = BlockFun::new(lang.clone());
 
         let sn = bf.save_snapshot();
-        let serialized = sn.serialize();
+        let serialized = sn.serialize().to_string();
         assert_eq!(serialized, "{\"VERSION\":1,\"areas\":[{\"auto_shrink\":false,\"blocks\":[],\"header\":\"\",\"size\":[16,16]}],\"current_block_id_counter\":0}");
 
-        let sn = BlockFunSnapshot::deserialize(&serialized).expect("No deserialization error");
+        let v: Value = serde_json::from_str(&serialized).unwrap();
+        let sn = BlockFunSnapshot::deserialize(&v).expect("No deserialization error");
         let mut bf2 = BlockFun::new(lang);
         let bf2 = bf2.load_snapshot(&sn);
     }
-}
 
+    #[test]
+    fn check_blockfun_serialize_1() {
+        let dsp_lib = synfx_dsp_jit::get_standard_library();
+        let lang = crate::blocklang_def::setup_hxdsp_block_language(dsp_lib);
+        let mut bf = BlockFun::new(lang.clone());
+
+        bf.instanciate_at(0, 0, 0, "+", None);
+
+        let sn = bf.save_snapshot();
+        let serialized = sn.serialize().to_string();
+        assert_eq!(serialized,
+        "{\"VERSION\":1,\"areas\":[{\"auto_shrink\":false,\"blocks\":[{\"block\":{\"color\":4,\"contains\":[null,null],\"expanded\":true,\"id\":1,\"inputs\":[\"\",\"\"],\"lbl\":\"+\",\"outputs\":[\"\"],\"rows\":2,\"typ\":\"+\"},\"x\":0,\"y\":0}],\"header\":\"\",\"size\":[16,16]}],\"current_block_id_counter\":1}");
+
+        let v: Value = serde_json::from_str(&serialized).unwrap();
+        let sn = BlockFunSnapshot::deserialize(&v).expect("No deserialization error");
+        let mut bf2 = BlockFun::new(lang);
+        bf2.load_snapshot(&sn);
+
+        let bv = bf2.block_at(0, 0, 0).unwrap();
+        assert!(bv.has_input(0));
+    }
+}

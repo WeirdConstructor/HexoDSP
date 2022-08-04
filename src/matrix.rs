@@ -10,7 +10,7 @@ pub use crate::nodes::MinMaxMonitorSamples;
 use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES};
 pub use crate::CellDir;
 use crate::ScopeHandle;
-use crate::blocklang::BlockFun;
+use crate::blocklang::{BlockFun, BlockFunSnapshot};
 use crate::block_compiler::BlkJITCompileError;
 
 use std::collections::{HashMap, HashSet};
@@ -607,7 +607,7 @@ impl Matrix {
 
     /// Retrieve a handle to the block function `id`. In case you modify the block function,
     /// make sure to call [check_block_function].
-    pub fn get_block_function(&mut self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
+    pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
         self.config.get_block_function(id)
     }
 
@@ -845,9 +845,21 @@ impl Matrix {
             tracker_id += 1;
         }
 
+        let mut block_funs: Vec<Option<BlockFunSnapshot>> = vec![];
+        let mut bf_id = 0;
+        while let Some(bf) = self.get_block_function(bf_id) {
+            block_funs.push(if bf.lock().unwrap().is_unset() {
+                None
+            } else {
+                Some(bf.lock().unwrap().save_snapshot())
+            });
+
+            bf_id += 1;
+        }
+
         let properties = self.properties.iter().map(|(k, v)| (k.to_string(), v.clone())).collect();
 
-        MatrixRepr { cells, params, atoms, patterns, properties, version: 2 }
+        MatrixRepr { cells, params, atoms, patterns, block_funs, properties, version: 2 }
     }
 
     /// Loads the matrix from a previously my [Matrix::to_repr]
@@ -875,6 +887,14 @@ impl Matrix {
             if let Some(pat) = pat {
                 if let Some(pd) = self.get_pattern_data(tracker_id) {
                     pd.lock().unwrap().from_repr(pat);
+                }
+            }
+        }
+
+        for (bf_id, block_fun) in repr.block_funs.iter().enumerate() {
+            if let Some(block_fun) = block_fun {
+                if let Some(bf) = self.get_block_function(bf_id) {
+                    bf.lock().unwrap().load_snapshot(block_fun);
                 }
             }
         }
