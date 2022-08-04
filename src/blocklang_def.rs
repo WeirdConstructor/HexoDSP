@@ -12,20 +12,20 @@ pub fn setup_hxdsp_block_language(
 ) -> Rc<RefCell<BlockLanguage>> {
     let mut lang = BlockLanguage::new();
 
-    lang.define(BlockType {
-        category: "source".to_string(),
-        name: "phse".to_string(),
-        rows: 1,
-        inputs: vec![Some("f".to_string())],
-        outputs: vec![Some("".to_string())],
-        area_count: 0,
-        user_input: BlockUserInput::None,
-        description:
-            "A phasor, returns a saw tooth wave to scan through things or use as modulator."
-                .to_string(),
-        color: 2,
-    });
-
+//    lang.define(BlockType {
+//        category: "source".to_string(),
+//        name: "phse".to_string(),
+//        rows: 1,
+//        inputs: vec![Some("f".to_string())],
+//        outputs: vec![Some("".to_string())],
+//        area_count: 0,
+//        user_input: BlockUserInput::None,
+//        description:
+//            "A phasor, returns a saw tooth wave to scan through things or use as modulator."
+//                .to_string(),
+//        color: 2,
+//    });
+//
     lang.define(BlockType {
         category: "literals".to_string(),
         name: "zero".to_string(),
@@ -198,17 +198,17 @@ pub fn setup_hxdsp_block_language(
     //        color:          8,
     //    });
 
-    lang.define(BlockType {
-        category: "arithmetics".to_string(),
-        name: "/%".to_string(),
-        rows: 2,
-        inputs: vec![Some("a".to_string()), Some("b".to_string())],
-        outputs: vec![Some("div".to_string()), Some("rem".to_string())],
-        area_count: 0,
-        user_input: BlockUserInput::None,
-        description: "Computes the integer division and remainder of a / b".to_string(),
-        color: 8,
-    });
+//    lang.define(BlockType {
+//        category: "arithmetics".to_string(),
+//        name: "/%".to_string(),
+//        rows: 2,
+//        inputs: vec![Some("a".to_string()), Some("b".to_string())],
+//        outputs: vec![Some("div".to_string()), Some("rem".to_string())],
+//        area_count: 0,
+//        user_input: BlockUserInput::None,
+//        description: "Computes the integer division and remainder of a / b".to_string(),
+//        color: 8,
+//    });
 
     for fun_name in &["+", "-", "*", "/"] {
         lang.define(BlockType {
