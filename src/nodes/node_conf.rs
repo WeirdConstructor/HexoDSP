@@ -6,9 +6,9 @@ use super::{
     FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES,
     MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
 };
+use crate::block_compiler::{BlkJITCompileError, Block2JITCompiler};
 use crate::blocklang::*;
 use crate::blocklang_def;
-use crate::block_compiler::{Block2JITCompiler, BlkJITCompileError};
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
@@ -708,7 +708,10 @@ impl NodeConfigurator {
                     // let ast = block_compiler::compile(block_fun);
                     if let Some(cod) = self.code_engines.get_mut(id) {
                         use synfx_dsp_jit::build::*;
-                        cod.upload(ast);
+                        match cod.upload(ast) {
+                            Err(e) => return Err(BlkJITCompileError::JITCompileError(e)),
+                            Ok(()) => (),
+                        }
                     }
                 }
             }

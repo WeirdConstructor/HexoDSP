@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::blocklang::*;
-use synfx_dsp_jit::ASTNode;
+use synfx_dsp_jit::{ASTNode, JITCompileError};
 
 #[derive(Debug)]
 struct JASTNode {
@@ -186,6 +186,7 @@ pub enum BlkJITCompileError {
     TooManyInputs(String, usize),
     WrongNumberOfChilds(String, usize, usize),
     UnassignedInput(String, usize, String),
+    JITCompileError(JITCompileError),
 }
 
 pub struct Block2JITCompiler {
@@ -251,7 +252,19 @@ impl Block2JITCompiler {
             // TODO: handle results properly, like remembering the most recent result
             // and append it to the end of the statements block. so that a temporary
             // variable is created.
-            "<r>" | "->" | "<res>" => {
+            "<r>" => {
+                if let Some((_in, out, first)) = node.first_child() {
+                    let out = if out.len() > 0 { Some(out) } else { None };
+                    let childs = vec![
+                        self.trans2bjit(&first, out)?,
+                        BlkASTNode::new_get(0, "_res_")
+                    ];
+                    Ok(BlkASTNode::new_area(childs))
+                } else {
+                    Err(BlkJITCompileError::BadTree(node.clone()))
+                }
+            }
+            "->" => {
                 if let Some((_in, out, first)) = node.first_child() {
                     let out = if out.len() > 0 { Some(out) } else { None };
                     self.trans2bjit(&first, out)
@@ -260,11 +273,15 @@ impl Block2JITCompiler {
                 }
             }
             "value" => Ok(BlkASTNode::new_literal(&node.0.borrow().lbl)?),
-            "set" => {
+            "set" | "<res>" => {
                 if let Some((_in, out, first)) = node.first_child() {
                     let out = if out.len() > 0 { Some(out) } else { None };
                     let expr = self.trans2bjit(&first, out)?;
-                    Ok(BlkASTNode::new_set(&node.0.borrow().lbl, expr))
+                    if &node.0.borrow().typ[..] == "<res>" {
+                        Ok(BlkASTNode::new_set("_res_", expr))
+                    } else {
+                        Ok(BlkASTNode::new_set(&node.0.borrow().lbl, expr))
+                    }
                 } else {
                     Err(BlkJITCompileError::BadTree(node.clone()))
                 }
@@ -306,16 +323,30 @@ impl Block2JITCompiler {
                 let cnt = self.lang.borrow().type_output_count(optype);
                 if cnt > 1 {
                     let mut area = vec![];
-                    area.push(BlkASTNode::new_node(
-                        id,
-                        my_out.clone(),
-                        &node.0.borrow().typ,
-                        &node.0.borrow().lbl,
-                        childs,
-                    ));
 
-                    for i in 0..cnt {
+                    let oname = self.lang.borrow().get_output_name_at_index(optype, 0);
+
+                    if let Some(oname) = oname {
+                        let tmp_var = self.next_tmpvar_name(&oname);
+
+                        area.push(BlkASTNode::new_set(
+                            &tmp_var,
+                            BlkASTNode::new_node(
+                                id,
+                                my_out.clone(),
+                                &node.0.borrow().typ,
+                                &node.0.borrow().lbl,
+                                childs,
+                            ),
+                        ));
+                        self.store_idout_var(id, &oname, &tmp_var);
+                    } else {
+                        return Err(BlkJITCompileError::NoOutputAtIdx(optype.to_string(), 0));
+                    }
+
+                    for i in 1..cnt {
                         let oname = self.lang.borrow().get_output_name_at_index(optype, i);
+
                         if let Some(oname) = oname {
                             let tmp_var = self.next_tmpvar_name(&oname);
 
@@ -323,6 +354,7 @@ impl Block2JITCompiler {
                                 &tmp_var,
                                 BlkASTNode::new_get(0, &format!("%{}", i)),
                             ));
+
                             self.store_idout_var(id, &oname, &tmp_var);
                         } else {
                             return Err(BlkJITCompileError::NoOutputAtIdx(optype.to_string(), i));
@@ -623,6 +655,98 @@ mod test {
 
         let (s1, s2, ret) = fun.exec_2in_2out(0.0, 0.0);
         assert_float_eq!(ret, 0.5 / 0.0);
+        ctx.borrow_mut().free();
+    }
+
+    #[test]
+    fn check_blocklang_divrem() {
+        // &sig1 on second output:
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.3".to_string())).unwrap();
+            bf.instanciate_at(0, 0, 2, "value", Some("-0.4".to_string())).unwrap();
+            bf.instanciate_at(0, 1, 1, "/%", None);
+            bf.instanciate_at(0, 2, 2, "set", Some("&sig1".to_string())).unwrap();
+        });
+
+        let (s1, _, ret) = fun.exec_2in_2out(0.0, 0.0);
+
+        assert_float_eq!(s1, 0.3);
+        assert_float_eq!(ret, -0.75);
+        ctx.borrow_mut().free();
+
+        // &sig1 on first output:
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.3".to_string())).unwrap();
+            bf.instanciate_at(0, 0, 2, "value", Some("-0.4".to_string())).unwrap();
+            bf.instanciate_at(0, 1, 1, "/%", None);
+            bf.instanciate_at(0, 2, 1, "set", Some("&sig1".to_string())).unwrap();
+        });
+
+        let (s1, _, ret) = fun.exec_2in_2out(0.0, 0.0);
+
+        assert_float_eq!(ret, 0.3);
+        assert_float_eq!(s1, -0.75);
+        ctx.borrow_mut().free();
+
+        // &sig1 on second output, but swapped outputs:
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.3".to_string())).unwrap();
+            bf.instanciate_at(0, 0, 2, "value", Some("-0.4".to_string())).unwrap();
+            bf.instanciate_at(0, 1, 1, "/%", None);
+            bf.instanciate_at(0, 2, 2, "set", Some("&sig1".to_string())).unwrap();
+            bf.shift_port(0, 1, 1, 0, true);
+        });
+
+        let (s1, _, ret) = fun.exec_2in_2out(0.0, 0.0);
+
+        assert_float_eq!(ret, 0.3);
+        assert_float_eq!(s1, -0.75);
+        ctx.borrow_mut().free();
+
+        // &sig1 on first output, but swapped outputs:
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.3".to_string())).unwrap();
+            bf.instanciate_at(0, 0, 2, "value", Some("-0.4".to_string())).unwrap();
+            bf.instanciate_at(0, 1, 1, "/%", None);
+            bf.instanciate_at(0, 2, 1, "set", Some("&sig1".to_string())).unwrap();
+            bf.shift_port(0, 1, 1, 0, true);
+        });
+
+        let (s1, _, ret) = fun.exec_2in_2out(0.0, 0.0);
+
+        assert_float_eq!(s1, 0.3);
+        assert_float_eq!(ret, -0.75);
+        ctx.borrow_mut().free();
+
+        // &sig1 on first output, but swapped inputs:
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.3".to_string())).unwrap();
+            bf.instanciate_at(0, 0, 2, "value", Some("-0.4".to_string())).unwrap();
+            bf.instanciate_at(0, 1, 1, "/%", None);
+            bf.instanciate_at(0, 2, 1, "set", Some("&sig1".to_string())).unwrap();
+            bf.shift_port(0, 1, 1, 0, false);
+        });
+
+        let (s1, _, ret) = fun.exec_2in_2out(0.0, 0.0);
+
+        assert_float_eq!(s1, -1.33333);
+        assert_float_eq!(ret, -0.1);
+        ctx.borrow_mut().free();
+
+        // &sig1 on first output, but swapped inputs and outputs:
+        let (ctx, mut fun) = new_jit_fun(|bf| {
+            bf.instanciate_at(0, 0, 1, "value", Some("0.3".to_string())).unwrap();
+            bf.instanciate_at(0, 0, 2, "value", Some("-0.4".to_string())).unwrap();
+            bf.instanciate_at(0, 1, 1, "/%", None);
+            bf.instanciate_at(0, 2, 1, "set", Some("&sig1".to_string())).unwrap();
+            bf.shift_port(0, 1, 1, 0, false);
+            bf.shift_port(0, 1, 1, 0, true);
+        });
+
+        let (s1, _, ret) = fun.exec_2in_2out(0.0, 0.0);
+
+        assert_float_eq!(ret, -1.33333);
+        assert_float_eq!(s1, -0.1);
         ctx.borrow_mut().free();
     }
 }
