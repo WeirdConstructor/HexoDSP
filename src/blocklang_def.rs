@@ -5,8 +5,10 @@
 use crate::blocklang::{BlockLanguage, BlockType, BlockUserInput};
 use std::cell::RefCell;
 use std::rc::Rc;
+#[cfg(feature = "synfx-dsp-jit")]
 use synfx_dsp_jit::DSPNodeTypeLibrary;
 
+#[cfg(feature = "synfx-dsp-jit")]
 pub fn setup_hxdsp_block_language(
     dsp_lib: Rc<RefCell<DSPNodeTypeLibrary>>,
 ) -> Rc<RefCell<BlockLanguage>> {

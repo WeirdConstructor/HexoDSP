@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::helpers;
+use synfx_dsp;
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
@@ -21,12 +21,12 @@ macro_rules! fa_comb_mode {
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Comb {
-    comb: Box<helpers::Comb>,
+    comb: Box<synfx_dsp::Comb>,
 }
 
 impl Comb {
     pub fn new(_nid: &NodeId) -> Self {
-        Self { comb: Box::new(helpers::Comb::new()) }
+        Self { comb: Box::new(synfx_dsp::Comb::new()) }
     }
 
     pub const inp: &'static str = "Comb inp\nThe signal input for the comb filter.\nRange: (-1..1)";

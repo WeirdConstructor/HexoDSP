@@ -4,8 +4,10 @@
 
 mod common;
 use common::*;
+#[cfg(feature="synfx-dsp-jit")]
 use hexodsp::wblockdsp::*;
 
+#[cfg(feature="synfx-dsp-jit")]
 #[test]
 fn check_wblockdsp_init() {
     let mut engine = CodeEngine::new();
@@ -13,6 +15,7 @@ fn check_wblockdsp_init() {
     let backend = engine.get_backend();
 }
 
+#[cfg(feature="synfx-dsp-jit")]
 #[test]
 fn check_wblockdsp_code_node() {
     let (node_conf, mut node_exec) = new_node_engine();

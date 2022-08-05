@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::blocklang::*;
+#[cfg(feature = "synfx-dsp-jit")]
 use synfx_dsp_jit::{ASTNode, JITCompileError};
 
 #[derive(Debug)]
@@ -176,6 +177,7 @@ impl BlkASTNode {
 #[derive(Debug, Clone)]
 pub enum BlkJITCompileError {
     UnknownError,
+    NoSynfxDSPJit,
     BadTree(ASTNodeRef),
     NoOutputAtIdx(String, usize),
     ASTMissingOutputLabel(usize),
@@ -186,6 +188,7 @@ pub enum BlkJITCompileError {
     TooManyInputs(String, usize),
     WrongNumberOfChilds(String, usize, usize),
     UnassignedInput(String, usize, String),
+    #[cfg(feature = "synfx-dsp-jit")]
     JITCompileError(JITCompileError),
 }
 
@@ -199,6 +202,11 @@ pub struct Block2JITCompiler {
 // 1. compile the weird tree into a graph
 //   - make references where IDs go
 //   - add a use count to each node, so that we know when to make temporary variables
+
+#[cfg(not(feature = "synfx-dsp-jit"))]
+enum ASTNode {
+    NoSynfxDSPJit
+}
 
 impl Block2JITCompiler {
     pub fn new(lang: Rc<RefCell<BlockLanguage>>) -> Self {
@@ -255,10 +263,8 @@ impl Block2JITCompiler {
             "<r>" => {
                 if let Some((_in, out, first)) = node.first_child() {
                     let out = if out.len() > 0 { Some(out) } else { None };
-                    let childs = vec![
-                        self.trans2bjit(&first, out)?,
-                        BlkASTNode::new_get(0, "_res_")
-                    ];
+                    let childs =
+                        vec![self.trans2bjit(&first, out)?, BlkASTNode::new_get(0, "_res_")];
                     Ok(BlkASTNode::new_area(childs))
                 } else {
                     Err(BlkJITCompileError::BadTree(node.clone()))
@@ -385,6 +391,7 @@ impl Block2JITCompiler {
         }
     }
 
+    #[cfg(feature = "synfx-dsp-jit")]
     pub fn bjit2jit(&mut self, ast: &BlkASTRef) -> Result<Box<ASTNode>, BlkJITCompileError> {
         use synfx_dsp_jit::build::*;
 
@@ -487,16 +494,24 @@ impl Block2JITCompiler {
     }
 
     pub fn compile(&mut self, fun: &BlockFun) -> Result<Box<ASTNode>, BlkJITCompileError> {
-        let tree = fun.generate_tree::<ASTNodeRef>("zero").unwrap();
-        println!("{}", tree.walk_dump("", "", 0));
+        #[cfg(feature = "synfx-dsp-jit")]
+        {
+            let tree = fun.generate_tree::<ASTNodeRef>("zero").unwrap();
+            println!("{}", tree.walk_dump("", "", 0));
 
-        let blkast = self.trans2bjit(&tree, None)?;
-        println!("R: {}", blkast.dump(0, None));
+            let blkast = self.trans2bjit(&tree, None)?;
+            println!("R: {}", blkast.dump(0, None));
 
-        self.bjit2jit(&blkast)
+            self.bjit2jit(&blkast)
+        }
+        #[cfg(not(feature = "synfx-dsp-jit"))]
+        {
+            Err(BlkJITCompileError::NoSynfxDSPJit)
+        }
     }
 }
 
+#[cfg(feature = "synfx-dsp-jit")]
 #[cfg(test)]
 mod test {
     use super::*;

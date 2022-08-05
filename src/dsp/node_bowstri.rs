@@ -2,8 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::biquad::Biquad;
-use crate::dsp::helpers::{DelayBuffer, FixedOnePole};
+use synfx_dsp::{DelayBuffer, FixedOnePole, Biquad};
 use crate::dsp::{
     denorm, denorm_offs, inp, out, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };

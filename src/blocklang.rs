@@ -1808,6 +1808,7 @@ impl BlockCodeView for BlockFun {
     }
 }
 
+#[cfg(feature = "synfx-dsp-jit")]
 #[cfg(test)]
 mod test {
     use super::*;
