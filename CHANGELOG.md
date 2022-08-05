@@ -14,3 +14,5 @@ to the adjacent cells.
 chains on the hexagonal Matrix.
 * Feature: Added Scope DSP node and NodeConfigurator/Matrix API for retrieving
 the scope handles for access to it's capture buffers.
+* Feature: Added WBlockDSP visual programming language utilizing the `synfx-dsp-jit` crate.
+* Change: Moved DSP code over to `synfx-dsp` crate.

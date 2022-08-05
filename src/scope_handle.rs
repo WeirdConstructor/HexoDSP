@@ -3,9 +3,9 @@
 // See README.md and COPYING for details.
 
 use crate::nodes::SCOPE_SAMPLES;
-use crate::util::{AtomicFloat, AtomicFloatPair};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use synfx_dsp::{AtomicFloat, AtomicFloatPair};
 
 #[derive(Debug)]
 pub struct ScopeHandle {

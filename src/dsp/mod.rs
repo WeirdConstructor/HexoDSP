@@ -497,6 +497,8 @@ mod node_bosc;
 #[allow(non_upper_case_globals)]
 mod node_bowstri;
 #[allow(non_upper_case_globals)]
+mod node_code;
+#[allow(non_upper_case_globals)]
 mod node_comb;
 #[allow(non_upper_case_globals)]
 mod node_cqnt;
@@ -538,8 +540,6 @@ mod node_tseq;
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
-#[allow(non_upper_case_globals)]
-mod node_code;
 
 mod satom;
 pub mod tracker;
@@ -547,8 +547,8 @@ pub mod tracker;
 use crate::nodes::NodeAudioContext;
 use crate::nodes::NodeExecContext;
 
-use crate::util::AtomicFloat;
 use std::sync::Arc;
+use synfx_dsp::AtomicFloat;
 
 pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 
@@ -564,7 +564,6 @@ use crate::fa_cqnt;
 use crate::fa_cqnt_omax;
 use crate::fa_cqnt_omin;
 use crate::fa_delay_mode;
-use synfx_dsp::fa_distort;
 use crate::fa_map_clip;
 use crate::fa_mux9_in_cnt;
 use crate::fa_noise_mode;
@@ -580,6 +579,7 @@ use crate::fa_smap_mode;
 use crate::fa_test_s;
 use crate::fa_tseq_cmode;
 use crate::fa_vosc_ovrsmpl;
+use synfx_dsp::fa_distort;
 
 use node_ad::Ad;
 use node_allp::AllP;
@@ -587,6 +587,7 @@ use node_amp::Amp;
 use node_biqfilt::BiqFilt;
 use node_bosc::BOsc;
 use node_bowstri::BowStri;
+use node_code::Code;
 use node_comb::Comb;
 use node_cqnt::CQnt;
 use node_delay::Delay;
@@ -607,7 +608,6 @@ use node_sin::Sin;
 use node_smap::SMap;
 use node_test::Test;
 use node_tseq::TSeq;
-use node_code::Code;
 use node_tslfo::TsLFO;
 use node_vosc::VOsc;
 

@@ -8,7 +8,8 @@ use super::{
 };
 use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
-use crate::util::{AtomicFloat, Smoother};
+use crate::util::Smoother;
+use synfx_dsp::AtomicFloat;
 
 use crate::log;
 use std::io::Write;

@@ -13,7 +13,6 @@ use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
-use crate::util::AtomicFloat;
 #[cfg(feature = "synfx-dsp-jit")]
 use crate::wblockdsp::CodeEngine;
 use crate::SampleLibrary;
@@ -23,6 +22,7 @@ use ringbuf::{Producer, RingBuffer};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use synfx_dsp::AtomicFloat;
 use triple_buffer::Output;
 
 /// A NodeInstance describes the input/output/atom ports of a Node
