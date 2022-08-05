@@ -197,11 +197,10 @@ impl Block {
 
         let c0 = if let Some(c) = self.contains.0 { c.into() } else { Value::Null };
         let c1 = if let Some(c) = self.contains.1 { c.into() } else { Value::Null };
-        let mut contains = json!([c0, c1]);
         json!({
             "id": self.id as i64,
             "rows": self.rows as i64,
-            "contains": contains,
+            "contains": json!([c0, c1]),
             "expanded": self.expanded,
             "typ": self.typ,
             "lbl": self.lbl,
@@ -343,12 +342,15 @@ impl BlockView for Block {
 #[derive(Debug)]
 pub struct BlockChain {
     /// The area ID this BlockChain was created from.
+    #[allow(dead_code)]
     area_id: usize,
     /// Stores the positions of the blocks of the chain inside the [BlockArea].
     blocks: HashSet<(i64, i64)>,
     /// Stores the positions of blocks that only have output ports.
+    #[allow(dead_code)]
     sources: HashSet<(i64, i64)>,
     /// Stores the positions of blocks that only have input ports.
+    #[allow(dead_code)]
     sinks: HashSet<(i64, i64)>,
     /// This field stores _loaded_ blocks from the [BlockArea]
     /// into this [BlockChain] for inserting or analyzing them.

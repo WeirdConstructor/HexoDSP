@@ -147,11 +147,6 @@ impl jack::NotificationHandler for Notifications {
         println!("JACK: freewheel mode is {}", if is_enabled { "on" } else { "off" });
     }
 
-    fn buffer_size(&mut self, _: &jack::Client, sz: jack::Frames) -> jack::Control {
-        println!("JACK: buffer size changed to {}", sz);
-        jack::Control::Continue
-    }
-
     fn sample_rate(&mut self, _: &jack::Client, srate: jack::Frames) -> jack::Control {
         println!("JACK: sample rate changed to {}", srate);
         let mut ne = self.node_exec.lock().unwrap();
@@ -214,16 +209,6 @@ impl jack::NotificationHandler for Notifications {
     fn xrun(&mut self, _: &jack::Client) -> jack::Control {
         println!("JACK: xrun occurred");
         jack::Control::Continue
-    }
-
-    fn latency(&mut self, _: &jack::Client, mode: jack::LatencyType) {
-        println!(
-            "JACK: {} latency has changed",
-            match mode {
-                jack::LatencyType::Capture => "capture",
-                jack::LatencyType::Playback => "playback",
-            }
-        );
     }
 }
 

@@ -24,7 +24,7 @@ synfx-dsp     = "0.5.1"
 
 [dev-dependencies]
 num-complex = "0.2"
-jack        = "0.6.6"
+jack        = "0.10.0"
 rustfft     = "6.0.0"
 cpal        = "0.13.5"
 anyhow      = "1.0.58"

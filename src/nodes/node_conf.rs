@@ -713,9 +713,7 @@ impl NodeConfigurator {
                     let mut compiler = Block2JITCompiler::new(block_fun.block_language());
                     let ast = compiler.compile(&block_fun)?;
 
-                    // let ast = block_compiler::compile(block_fun);
                     if let Some(cod) = self.code_engines.get_mut(id) {
-                        use synfx_dsp_jit::build::*;
                         match cod.upload(ast) {
                             Err(e) => return Err(BlkJITCompileError::JITCompileError(e)),
                             Ok(()) => (),

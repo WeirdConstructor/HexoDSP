@@ -5,6 +5,8 @@
 mod common;
 use common::*;
 
+use hexodsp::blocklang::BlockFun;
+
 fn setup() -> (Matrix, NodeExecutor) {
     let (node_conf, node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
@@ -22,6 +24,14 @@ fn setup() -> (Matrix, NodeExecutor) {
     (matrix, node_exec)
 }
 
+fn put_n(bf: &mut BlockFun, a: usize, x: i64, y: i64, s: &str) {
+    bf.instanciate_at(a, x, y, s, None).expect("no put error");
+}
+
+fn put_v(bf: &mut BlockFun, a: usize, x: i64, y: i64, s: &str, v: &str) {
+    bf.instanciate_at(a, x, y, s, Some(v.to_string())).expect("no put error");
+}
+
 #[test]
 fn check_node_code_1() {
     let (mut matrix, mut node_exec) = setup();
@@ -29,8 +39,8 @@ fn check_node_code_1() {
     let block_fun = matrix.get_block_function(0).expect("block fun exists");
     {
         let mut block_fun = block_fun.lock().expect("matrix lock");
-        block_fun.instanciate_at(0, 0, 1, "value", Some("0.3".to_string()));
-        block_fun.instanciate_at(0, 1, 1, "set", Some("&sig1".to_string()));
+        put_v(&mut block_fun, 0, 0, 1, "value", "0.3");
+        put_v(&mut block_fun, 0, 1, 1, "set", "&sig1");
     }
 
     matrix.check_block_function(0).expect("no compile error");
@@ -46,13 +56,13 @@ fn check_node_code_state() {
     let block_fun = matrix.get_block_function(0).expect("block fun exists");
     {
         let mut block_fun = block_fun.lock().expect("matrix lock");
-        block_fun.instanciate_at(0, 0, 2, "value", Some("220.0".to_string()));
-        block_fun.instanciate_at(0, 1, 2, "phase", None);
-        block_fun.instanciate_at(0, 1, 3, "value", Some("2.0".to_string()));
-        block_fun.instanciate_at(0, 2, 2, "*", None);
-        block_fun.instanciate_at(0, 3, 1, "-", None);
-        block_fun.instanciate_at(0, 2, 1, "value", Some("1.0".to_string()));
-        block_fun.instanciate_at(0, 4, 1, "set", Some("&sig1".to_string()));
+        put_v(&mut block_fun, 0, 0, 2, "value", "220.0");
+        put_n(&mut block_fun, 0, 1, 2, "phase");
+        put_v(&mut block_fun, 0, 1, 3, "value", "2.0");
+        put_n(&mut block_fun, 0, 2, 2, "*");
+        put_n(&mut block_fun, 0, 3, 1, "-");
+        put_v(&mut block_fun, 0, 2, 1, "value", "1.0");
+        put_v(&mut block_fun, 0, 4, 1, "set", "&sig1");
     }
 
     matrix.check_block_function(0).expect("no compile error");

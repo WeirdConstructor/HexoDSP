@@ -7,7 +7,7 @@ use crate::nodes::{NodeAudioContext, NodeExecContext};
 #[cfg(feature = "synfx-dsp-jit")]
 use crate::wblockdsp::CodeEngineBackend;
 
-use crate::dsp::MAX_BLOCK_SIZE;
+//use crate::dsp::MAX_BLOCK_SIZE;
 
 /// A WBlockDSP code execution node for JIT'ed DSP code
 pub struct Code {
@@ -87,17 +87,20 @@ impl DspNode for Code {
         ctx: &mut T,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        atoms: &[SAtom],
+        _atoms: &[SAtom],
         inputs: &[ProcBuf],
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{at, denorm, inp, out, out_idx};
-//        let clock = inp::TSeq::clock(inputs);
-//        let trig = inp::TSeq::trig(inputs);
-//        let cmode = at::TSeq::cmode(atoms);
-        let out = out::Code::sig(outputs);
+        use crate::dsp::{inp, out_idx};
+        let in1 = inp::Code::in1(inputs);
+        let in2 = inp::Code::in2(inputs);
+        let a = inp::Code::alpha(inputs);
+        let b = inp::Code::beta(inputs);
+        let d = inp::Code::delta(inputs);
+        let g = inp::Code::gamma(inputs);
         let out_i = out_idx::Code::sig1();
+
         let (sig, sig1) = outputs.split_at_mut(out_i);
         let (sig1, sig2) = sig1.split_at_mut(1);
         let sig = &mut sig[0];
@@ -114,15 +117,26 @@ impl DspNode for Code {
 
             backend.process_updates();
 
+            let mut ret = 0.0;
+            let mut s1 = 0.0;
+            #[allow(unused_assignments)]
+            let mut s2 = 0.0;
             for frame in 0..ctx.nframes() {
-                let (s1, s2, ret) = backend.process(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+                (s1, s2, ret) = backend.process(
+                    in1.read(frame),
+                    in2.read(frame),
+                    a.read(frame),
+                    b.read(frame),
+                    d.read(frame),
+                    g.read(frame),
+                );
                 sig.write(frame, ret);
                 sig1.write(frame, s1);
                 sig2.write(frame, s2);
             }
 
-            ctx_vals[0].set(0.0);
-            ctx_vals[1].set(0.0);
+            ctx_vals[0].set(ret);
+            ctx_vals[1].set(s1);
         }
     }
 }

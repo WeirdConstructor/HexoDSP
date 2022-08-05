@@ -6,11 +6,9 @@ use synfx_dsp_jit::*;
 
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 const MAX_RINGBUF_SIZE: usize = 128;
-const MAX_CONTEXTS: usize = 32;
 
 enum CodeUpdateMsg {
     UpdateFun(Box<DSPFunction>),
@@ -52,7 +50,7 @@ impl CodeEngine {
     pub fn upload(&mut self, ast: Box<ASTNode>) -> Result<(), JITCompileError> {
         let jit = JIT::new(self.lib.clone(), self.dsp_ctx.clone());
         let fun = jit.compile(ASTFun::new(ast))?;
-        self.update_prod.push(CodeUpdateMsg::UpdateFun(fun));
+        let _ = self.update_prod.push(CodeUpdateMsg::UpdateFun(fun));
 
         Ok(())
     }
@@ -146,7 +144,7 @@ impl CodeEngineBackend {
                 CodeUpdateMsg::UpdateFun(mut fun) => {
                     std::mem::swap(&mut self.function, &mut fun);
                     self.function.init(self.sample_rate as f64, Some(&fun));
-                    self.return_prod.push(CodeReturnMsg::DestroyFun(fun));
+                    let _ = self.return_prod.push(CodeReturnMsg::DestroyFun(fun));
                 }
             }
         }

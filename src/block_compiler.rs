@@ -193,7 +193,6 @@ pub enum BlkJITCompileError {
 }
 
 pub struct Block2JITCompiler {
-    id_node_map: HashMap<usize, BlkASTRef>,
     idout_var_map: HashMap<String, String>,
     lang: Rc<RefCell<BlockLanguage>>,
     tmpvar_counter: usize,
@@ -210,7 +209,7 @@ enum ASTNode {
 
 impl Block2JITCompiler {
     pub fn new(lang: Rc<RefCell<BlockLanguage>>) -> Self {
-        Self { id_node_map: HashMap::new(), idout_var_map: HashMap::new(), lang, tmpvar_counter: 0 }
+        Self { idout_var_map: HashMap::new(), lang, tmpvar_counter: 0 }
     }
 
     pub fn next_tmpvar_name(&mut self, extra: &str) -> String {
@@ -226,7 +225,7 @@ impl Block2JITCompiler {
         self.idout_var_map.get(&format!("{}/{}", id, out)).map(|s| &s[..])
     }
 
-    pub fn trans2bjit(
+    fn trans2bjit(
         &mut self,
         node: &ASTNodeRef,
         my_out: Option<String>,
@@ -392,7 +391,7 @@ impl Block2JITCompiler {
     }
 
     #[cfg(feature = "synfx-dsp-jit")]
-    pub fn bjit2jit(&mut self, ast: &BlkASTRef) -> Result<Box<ASTNode>, BlkJITCompileError> {
+    fn bjit2jit(&mut self, ast: &BlkASTRef) -> Result<Box<ASTNode>, BlkJITCompileError> {
         use synfx_dsp_jit::build::*;
 
         match &**ast {
@@ -407,11 +406,11 @@ impl Block2JITCompiler {
                 let e = self.bjit2jit(&expr)?;
                 Ok(assign(var, e))
             }
-            BlkASTNode::Get { id, var: varname } => Ok(var(varname)),
-            BlkASTNode::Node { id, out, typ, lbl, childs } => match &typ[..] {
+            BlkASTNode::Get { var: varname, .. } => Ok(var(varname)),
+            BlkASTNode::Node { id, typ, childs, .. } => match &typ[..] {
                 "if" => Err(BlkJITCompileError::UnknownError),
                 "zero" => Ok(literal(0.0)),
-                node => {
+                _ => {
                     if *id == 0 {
                         return Err(BlkJITCompileError::NodeWithoutID(typ.to_string()));
                     }
@@ -426,7 +425,6 @@ impl Block2JITCompiler {
                         }
 
                         if inputs.len() > 0 && inputs[0] == Some("".to_string()) {
-                            // We assume all inputs are unnamed:
                             if inputs.len() != childs.len() {
                                 return Err(BlkJITCompileError::WrongNumberOfChilds(
                                     typ.to_string(),
@@ -435,7 +433,8 @@ impl Block2JITCompiler {
                                 ));
                             }
 
-                            for (inp, c) in childs.iter() {
+                            // We assume all inputs are unnamed:
+                            for (_inp, c) in childs.iter() {
                                 args.push(self.bjit2jit(&c)?);
                             }
                         } else {
