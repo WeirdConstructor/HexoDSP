@@ -18,7 +18,8 @@ ringbuf       = "0.2.2"
 triple_buffer = "5.0.6"
 lazy_static   = "1.4.0"
 hound         = "3.4.0"
-num-traits    = "0.2.14"
+synfx-dsp     = "0.5.1"
+#synfx-dsp     = { git = "https://github.com/WeirdConstructor/synfx-dsp" }
 
 [dev-dependencies]
 num-complex = "0.2"

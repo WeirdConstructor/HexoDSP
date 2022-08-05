@@ -6,7 +6,7 @@ mod common;
 //use common::*;
 
 use hexodsp::d_pit;
-use hexodsp::dsp::helpers::Quantizer;
+use synfx_dsp::Quantizer;
 
 #[test]
 fn check_quant_pos_neg_exact() {

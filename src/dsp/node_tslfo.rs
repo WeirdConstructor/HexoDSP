@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use super::helpers::{TriSawLFO, Trigger};
+use synfx_dsp::{TriSawLFO, Trigger};
 use crate::dsp::{
     DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };

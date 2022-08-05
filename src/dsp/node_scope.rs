@@ -8,7 +8,7 @@
 // Copyright by Andrew Belt, 2021
 
 //use super::helpers::{sqrt4_to_pow4, TrigSignal, Trigger};
-use crate::dsp::helpers::CustomTrigger;
+use synfx_dsp::CustomTrigger;
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::SCOPE_SAMPLES;
 use crate::nodes::{NodeAudioContext, NodeExecContext};

@@ -200,14 +200,15 @@ the help documentation:
 For non trivial DSP nodes, the DSP code itself should be separate from it's `dsp/node_*.rs`
 file. That file should only care about interfacing the DSP code with HexoDSP, but not implement
 all the complicated DSP code. It's good practice to factor out the DSP code into
-a separate module or file.
+a separate module or file. It is preferable to add your custom DSP code to the `synfx-dsp`
+crate [synfx-dsp](https://github.com/WeirdConstructor/synfx-dsp).
 
-Look at `node_tslfo.rs` for instance. It wires up the `TriSawLFO` from `dsp/helpers.rs`
+Look at `node_tslfo.rs` for instance. It wires up the `TriSawLFO` from `synfx-dsp`
 to the HexoDSP node interface.
 
 ```ignore
     // node_tslfo.rs
-    use super::helpers::{TriSawLFO, Trigger};
+    use synfx_dsp::{TriSawLFO, Trigger};
 
     #[derive(Debug, Clone)]
     pub struct TsLFO {
@@ -233,7 +234,7 @@ to the HexoDSP node interface.
     }
 ```
 
-The code for `TriSawLFO` in `dsp/helpers.rs` is then independent and reusable else where.
+The code for `TriSawLFO` in `synfx-dsp` is then independent and reusable else where.
 
 ### Node Parameter/Inputs
 
@@ -538,9 +539,6 @@ mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
 
-pub mod biquad;
-pub mod dattorro;
-pub mod helpers;
 mod satom;
 pub mod tracker;
 
@@ -564,7 +562,7 @@ use crate::fa_cqnt;
 use crate::fa_cqnt_omax;
 use crate::fa_cqnt_omin;
 use crate::fa_delay_mode;
-use crate::fa_distort;
+use synfx_dsp::fa_distort;
 use crate::fa_map_clip;
 use crate::fa_mux9_in_cnt;
 use crate::fa_noise_mode;
@@ -1586,7 +1584,7 @@ fn rand_node_satisfies_spec(nid: NodeId, sel: RandNodeSelector) -> bool {
 }
 
 pub fn get_rand_node_id(count: usize, sel: RandNodeSelector) -> Vec<NodeId> {
-    let mut sm = crate::dsp::helpers::SplitMix64::new_time_seed();
+    let mut sm = synfx_dsp::SplitMix64::new_time_seed();
     let mut out = vec![];
 
     let mut cnt = 0;
@@ -1966,7 +1964,7 @@ macro_rules! make_node_info_enum {
                     1 => 0.05,
                     2 => 0.1,
                     // 0.25 just to protect against sine cancellation
-                    _ => crate::dsp::helpers::rand_01() * 0.25
+                    _ => synfx_dsp::rand_01() * 0.25
                 }
             }
 

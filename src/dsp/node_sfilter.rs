@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::helpers::{
+use synfx_dsp::{
     process_1pole_highpass, process_1pole_lowpass, process_1pole_tpt_highpass,
     process_1pole_tpt_lowpass, process_hal_chamberlin_svf, process_simper_svf,
     process_stilson_moog,

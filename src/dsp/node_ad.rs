@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use super::helpers::{sqrt4_to_pow4, TrigSignal, Trigger};
+use synfx_dsp::{sqrt4_to_pow4, TrigSignal, Trigger};
 use crate::dsp::{
     DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };

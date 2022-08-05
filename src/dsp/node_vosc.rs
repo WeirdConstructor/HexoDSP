@@ -2,8 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::biquad::Oversampling;
-use crate::dsp::helpers::{apply_distortion, VPSOscillator};
+use synfx_dsp::{Oversampling, apply_distortion, VPSOscillator};
 use crate::dsp::{
     DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };

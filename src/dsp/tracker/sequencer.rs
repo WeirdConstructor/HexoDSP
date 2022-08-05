@@ -4,7 +4,7 @@
 
 use super::MAX_COLS;
 use super::MAX_PATTERN_LEN;
-use crate::dsp::helpers::SplitMix64;
+use synfx_dsp::SplitMix64;
 
 pub struct PatternSequencer {
     rows: usize,

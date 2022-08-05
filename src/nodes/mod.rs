@@ -89,7 +89,7 @@ pub fn new_node_engine() -> (NodeConfigurator, NodeExecutor) {
 
     // XXX: This is one of the earliest and most consistent points
     //      in runtime to do this kind of initialization:
-    crate::dsp::helpers::init_cos_tab();
+    synfx_dsp::init_cos_tab();
 
     (nc, ne)
 }
