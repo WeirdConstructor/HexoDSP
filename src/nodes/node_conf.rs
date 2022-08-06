@@ -6,15 +6,13 @@ use super::{
     FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES,
     MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
 };
-use crate::block_compiler::{BlkJITCompileError, Block2JITCompiler};
-use crate::blocklang::*;
-use crate::blocklang_def;
+use crate::wblockdsp::*;
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
 #[cfg(feature = "synfx-dsp-jit")]
-use crate::wblockdsp::CodeEngine;
+use synfx_dsp_jit::engine::CodeEngine;
 use crate::SampleLibrary;
 use crate::ScopeHandle;
 
@@ -190,7 +188,7 @@ pub struct NodeConfigurator {
     pub(crate) code_engines: Vec<CodeEngine>,
     /// Holds the block functions that are JIT compiled to DSP code
     /// for the `Code` nodes. The code is then sent via the [CodeEngine]
-    /// in [check_block_function].
+    /// in [NodeConfigurator::check_block_function].
     #[cfg(feature = "synfx-dsp-jit")]
     pub(crate) block_functions: Vec<(u64, Arc<Mutex<BlockFun>>)>,
     /// The shared parts of the [NodeConfigurator]
@@ -284,9 +282,9 @@ impl NodeConfigurator {
 
         #[cfg(feature = "synfx-dsp-jit")]
         let (code_engines, block_functions) = {
-            let code_engines = vec![CodeEngine::new(); MAX_AVAIL_CODE_ENGINES];
+            let code_engines = vec![CodeEngine::new_stdlib(); MAX_AVAIL_CODE_ENGINES];
 
-            let lang = blocklang_def::setup_hxdsp_block_language(code_engines[0].get_lib());
+            let lang = setup_hxdsp_block_language(code_engines[0].get_lib());
             let mut block_functions = vec![];
             block_functions.resize_with(MAX_AVAIL_CODE_ENGINES, || {
                 (0, Arc::new(Mutex::new(BlockFun::new(lang.clone()))))
@@ -703,7 +701,7 @@ impl NodeConfigurator {
 
     /// Checks the block function for the id `id`. If the block function did change,
     /// updates are then sent to the audio thread.
-    /// See also [get_block_function].
+    /// See also [NodeConfigurator::get_block_function].
     pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
         #[cfg(feature = "synfx-dsp-jit")]
         if let Some((generation, block_fun)) = self.block_functions.get_mut(id) {
@@ -727,7 +725,7 @@ impl NodeConfigurator {
     }
 
     /// Retrieve a handle to the block function `id`. In case you modify the block function,
-    /// make sure to call [check_block_function].
+    /// make sure to call [NodeConfigurator::check_block_function].
     pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
         #[cfg(feature = "synfx-dsp-jit")]
         {

@@ -5,7 +5,7 @@
 mod common;
 use common::*;
 
-use hexodsp::blocklang::BlockFun;
+use hexodsp::wblockdsp::BlockFun;
 
 fn setup() -> (Matrix, NodeExecutor) {
     let (node_conf, node_exec) = new_node_engine();

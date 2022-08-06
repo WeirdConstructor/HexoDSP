@@ -1818,7 +1818,7 @@ mod test {
     #[test]
     fn check_blockfun_serialize_empty() {
         let dsp_lib = synfx_dsp_jit::get_standard_library();
-        let lang = crate::blocklang_def::setup_hxdsp_block_language(dsp_lib);
+        let lang = crate::wblockdsp::setup_hxdsp_block_language(dsp_lib);
         let mut bf = BlockFun::new(lang.clone());
 
         let sn = bf.save_snapshot();
@@ -1834,10 +1834,10 @@ mod test {
     #[test]
     fn check_blockfun_serialize_1() {
         let dsp_lib = synfx_dsp_jit::get_standard_library();
-        let lang = crate::blocklang_def::setup_hxdsp_block_language(dsp_lib);
+        let lang = crate::wblockdsp::setup_hxdsp_block_language(dsp_lib);
         let mut bf = BlockFun::new(lang.clone());
 
-        bf.instanciate_at(0, 0, 0, "+", None);
+        bf.instanciate_at(0, 0, 0, "+", None).unwrap();
 
         let sn = bf.save_snapshot();
         let serialized = sn.serialize().to_string();

@@ -321,11 +321,7 @@ pub mod monitor;
 pub mod nodes;
 pub mod sample_lib;
 pub mod scope_handle;
-#[cfg(feature="synfx-dsp-jit")]
 pub mod wblockdsp;
-pub mod blocklang;
-pub mod blocklang_def;
-mod block_compiler;
 mod util;
 
 pub use cell_dir::CellDir;

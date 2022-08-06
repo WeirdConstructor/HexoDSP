@@ -4,7 +4,7 @@
 
 use crate::dsp::{NodeId, ParamId, SAtom};
 use serde_json::{json, Value};
-use crate::blocklang::BlockFunSnapshot;
+use crate::wblockdsp::BlockFunSnapshot;
 
 #[derive(Debug, Clone, Copy)]
 pub struct CellRepr {

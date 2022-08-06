@@ -10,8 +10,7 @@ pub use crate::nodes::MinMaxMonitorSamples;
 use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES};
 pub use crate::CellDir;
 use crate::ScopeHandle;
-use crate::blocklang::{BlockFun, BlockFunSnapshot};
-use crate::block_compiler::BlkJITCompileError;
+use crate::wblockdsp::{BlockFun, BlockFunSnapshot, BlkJITCompileError};
 
 use std::collections::{HashMap, HashSet};
 
@@ -600,13 +599,13 @@ impl Matrix {
 
     /// Checks the block function for the id `id`. If the block function did change,
     /// updates are then sent to the audio thread.
-    /// See also [get_block_function].
+    /// See also [Matrix::get_block_function].
     pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
         self.config.check_block_function(id)
     }
 
     /// Retrieve a handle to the block function `id`. In case you modify the block function,
-    /// make sure to call [check_block_function].
+    /// make sure to call [Matrix::check_block_function].
     pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
         self.config.get_block_function(id)
     }

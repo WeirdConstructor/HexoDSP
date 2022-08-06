@@ -5,7 +5,7 @@
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 #[cfg(feature = "synfx-dsp-jit")]
-use crate::wblockdsp::CodeEngineBackend;
+use synfx_dsp_jit::engine::CodeEngineBackend;
 
 //use crate::dsp::MAX_BLOCK_SIZE;
 
