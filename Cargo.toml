@@ -18,9 +18,10 @@ ringbuf       = "0.2.2"
 triple_buffer = "5.0.6"
 lazy_static   = "1.4.0"
 hound         = "3.4.0"
-synfx-dsp-jit = { path = "../synfx-dsp-jit", optional = true }
-#synfx-dsp     = "0.5.1"
+synfx-dsp-jit = { git = "https://github.com/WeirdConstructor/synfx-dsp-jit", optional = true }
 synfx-dsp     = { git = "https://github.com/WeirdConstructor/synfx-dsp" }
+#synfx-dsp-jit = { path = "../synfx-dsp-jit", optional = true }
+#synfx-dsp     = "0.5.1"
 
 [dev-dependencies]
 num-complex = "0.2"

@@ -208,12 +208,8 @@ pub struct Block2JITCompiler {
     tmpvar_counter: usize,
 }
 
-// 1. compile the weird tree into a graph
-//   - make references where IDs go
-//   - add a use count to each node, so that we know when to make temporary variables
-
 #[cfg(not(feature = "synfx-dsp-jit"))]
-enum ASTNode {
+pub enum ASTNode {
     NoSynfxDSPJit
 }
 
