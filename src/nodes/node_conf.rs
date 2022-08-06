@@ -704,6 +704,11 @@ impl NodeConfigurator {
     /// See also [NodeConfigurator::get_block_function].
     pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
         #[cfg(feature = "synfx-dsp-jit")]
+        if let Some(cod) = self.code_engines.get_mut(id) {
+            cod.query_returns();
+        }
+
+        #[cfg(feature = "synfx-dsp-jit")]
         if let Some((generation, block_fun)) = self.block_functions.get_mut(id) {
             if let Ok(block_fun) = block_fun.lock() {
                 if *generation != block_fun.generation() {
