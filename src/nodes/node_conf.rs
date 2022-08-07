@@ -3,20 +3,24 @@
 // See README.md and COPYING for details.
 
 use super::{
-    FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_TRACKERS,
-    MAX_INPUTS, UNUSED_MONITOR_IDX,
+    FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES,
+    MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
 };
+use crate::wblockdsp::*;
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
-use crate::util::AtomicFloat;
+#[cfg(feature = "synfx-dsp-jit")]
+use synfx_dsp_jit::engine::CodeEngine;
 use crate::SampleLibrary;
+use crate::ScopeHandle;
 
 use ringbuf::{Producer, RingBuffer};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use synfx_dsp::AtomicFloat;
 use triple_buffer::Output;
 
 /// A NodeInstance describes the input/output/atom ports of a Node
@@ -177,6 +181,16 @@ pub struct NodeConfigurator {
     pub(crate) node2idx: HashMap<NodeId, usize>,
     /// Holding the tracker sequencers
     pub(crate) trackers: Vec<Tracker>,
+    /// Holding the scope buffers:
+    pub(crate) scopes: Vec<Arc<ScopeHandle>>,
+    /// Holding the WBlockDSP code engine backends:
+    #[cfg(feature = "synfx-dsp-jit")]
+    pub(crate) code_engines: Vec<CodeEngine>,
+    /// Holds the block functions that are JIT compiled to DSP code
+    /// for the `Code` nodes. The code is then sent via the [CodeEngine]
+    /// in [NodeConfigurator::check_block_function].
+    #[cfg(feature = "synfx-dsp-jit")]
+    pub(crate) block_functions: Vec<(u64, Arc<Mutex<BlockFun>>)>,
     /// The shared parts of the [NodeConfigurator]
     /// and the [crate::nodes::NodeExecutor].
     pub(crate) shared: SharedNodeConf,
@@ -263,6 +277,22 @@ impl NodeConfigurator {
 
         let (shared, shared_exec) = SharedNodeConf::new();
 
+        let mut scopes = vec![];
+        scopes.resize_with(MAX_SCOPES, || ScopeHandle::new_shared());
+
+        #[cfg(feature = "synfx-dsp-jit")]
+        let (code_engines, block_functions) = {
+            let code_engines = vec![CodeEngine::new_stdlib(); MAX_AVAIL_CODE_ENGINES];
+
+            let lang = setup_hxdsp_block_language(code_engines[0].get_lib());
+            let mut block_functions = vec![];
+            block_functions.resize_with(MAX_AVAIL_CODE_ENGINES, || {
+                (0, Arc::new(Mutex::new(BlockFun::new(lang.clone()))))
+            });
+
+            (code_engines, block_functions)
+        };
+
         (
             NodeConfigurator {
                 nodes,
@@ -279,6 +309,11 @@ impl NodeConfigurator {
                 atom_values: std::collections::HashMap::new(),
                 node2idx: HashMap::new(),
                 trackers: vec![Tracker::new(); MAX_AVAIL_TRACKERS],
+                #[cfg(feature = "synfx-dsp-jit")]
+                code_engines,
+                #[cfg(feature = "synfx-dsp-jit")]
+                block_functions,
+                scopes,
             },
             shared_exec,
         )
@@ -638,6 +673,12 @@ impl NodeConfigurator {
         }
     }
 
+    /// Retrieve the oscilloscope handle for the scope index `scope`.
+    pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
+        self.scopes.get(scope).cloned()
+    }
+
+    /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.
     pub fn get_pattern_data(&self, tracker_id: usize) -> Option<Arc<Mutex<PatternData>>> {
         if tracker_id >= self.trackers.len() {
             return None;
@@ -646,12 +687,59 @@ impl NodeConfigurator {
         Some(self.trackers[tracker_id].data())
     }
 
+    /// Checks if there are any updates to send for the pattern data that belongs to the
+    /// tracker `tracker_id`. Call this repeatedly, eg. once per frame in a GUI, in case the user
+    /// modified the pattern data. It will make sure that the modifications are sent to the
+    /// audio thread.
     pub fn check_pattern_data(&mut self, tracker_id: usize) {
         if tracker_id >= self.trackers.len() {
             return;
         }
 
         self.trackers[tracker_id].send_one_update();
+    }
+
+    /// Checks the block function for the id `id`. If the block function did change,
+    /// updates are then sent to the audio thread.
+    /// See also [NodeConfigurator::get_block_function].
+    pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
+        #[cfg(feature = "synfx-dsp-jit")]
+        if let Some(cod) = self.code_engines.get_mut(id) {
+            cod.query_returns();
+        }
+
+        #[cfg(feature = "synfx-dsp-jit")]
+        if let Some((generation, block_fun)) = self.block_functions.get_mut(id) {
+            if let Ok(block_fun) = block_fun.lock() {
+                if *generation != block_fun.generation() {
+                    *generation = block_fun.generation();
+                    let mut compiler = Block2JITCompiler::new(block_fun.block_language());
+                    let ast = compiler.compile(&block_fun)?;
+
+                    if let Some(cod) = self.code_engines.get_mut(id) {
+                        match cod.upload(ast) {
+                            Err(e) => return Err(BlkJITCompileError::JITCompileError(e)),
+                            Ok(()) => (),
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Retrieve a handle to the block function `id`. In case you modify the block function,
+    /// make sure to call [NodeConfigurator::check_block_function].
+    pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
+        #[cfg(feature = "synfx-dsp-jit")]
+        {
+            self.block_functions.get(id).map(|pair| pair.1.clone())
+        }
+        #[cfg(not(feature = "synfx-dsp-jit"))]
+        {
+            None
+        }
     }
 
     pub fn delete_nodes(&mut self) {
@@ -674,6 +762,20 @@ impl NodeConfigurator {
                 let tracker_idx = ni.instance();
                 if let Some(trk) = self.trackers.get_mut(tracker_idx) {
                     node.set_backend(trk.get_backend());
+                }
+            }
+
+            #[cfg(feature = "synfx-dsp-jit")]
+            if let Node::Code { node } = &mut node {
+                let code_idx = ni.instance();
+                if let Some(cod) = self.code_engines.get_mut(code_idx) {
+                    node.set_backend(cod.get_backend());
+                }
+            }
+
+            if let Node::Scope { node } = &mut node {
+                if let Some(handle) = self.scopes.get(ni.instance()) {
+                    node.set_scope_handle(handle.clone());
                 }
             }
 

@@ -2,8 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use super::dattorro::{DattorroReverb, DattorroReverbParams};
-use super::helpers::crossfade;
+use synfx_dsp::{DattorroReverb, DattorroReverbParams, crossfade};
 use crate::dsp::{denorm, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 

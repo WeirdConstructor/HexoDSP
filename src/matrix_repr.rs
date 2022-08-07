@@ -4,6 +4,7 @@
 
 use crate::dsp::{NodeId, ParamId, SAtom};
 use serde_json::{json, Value};
+use crate::wblockdsp::BlockFunSnapshot;
 
 #[derive(Debug, Clone, Copy)]
 pub struct CellRepr {
@@ -187,6 +188,7 @@ pub struct MatrixRepr {
     pub atoms: Vec<(ParamId, SAtom)>,
     pub patterns: Vec<Option<PatternRepr>>,
     pub properties: Vec<(String, SAtom)>,
+    pub block_funs: Vec<Option<BlockFunSnapshot>>,
     pub version: i64,
 }
 
@@ -289,8 +291,9 @@ impl MatrixRepr {
         let atoms = vec![];
         let patterns = vec![];
         let properties = vec![];
+        let block_funs = vec![];
 
-        Self { cells, params, atoms, patterns, properties, version: 2 }
+        Self { cells, params, atoms, patterns, block_funs, properties, version: 2 }
     }
 
     pub fn write_to_file(&mut self, filepath: &str) -> std::io::Result<()> {
@@ -398,6 +401,17 @@ impl MatrixRepr {
             }
         }
 
+        let block_funs = &v["block_funs"];
+        if let Value::Array(block_funs) = block_funs {
+            for p in block_funs.iter() {
+                m.block_funs.push(if p.is_object() {
+                    Some(BlockFunSnapshot::deserialize(&p)?)
+                } else {
+                    None
+                });
+            }
+        }
+
         Ok(m)
     }
 
@@ -467,6 +481,15 @@ impl MatrixRepr {
         }
 
         v["patterns"] = patterns;
+
+        let mut block_funs = json!([]);
+        if let Value::Array(block_funs) = &mut block_funs {
+            for p in self.block_funs.iter() {
+                block_funs.push(if let Some(p) = p { p.serialize() } else { Value::Null });
+            }
+        }
+
+        v["block_funs"] = block_funs;
 
         v.to_string()
     }

@@ -5,6 +5,7 @@
 pub use hexodsp::dsp::*;
 pub use hexodsp::matrix::*;
 pub use hexodsp::nodes::new_node_engine;
+pub use hexodsp::MatrixCellChain;
 pub use hexodsp::NodeExecutor;
 
 use hound;
@@ -393,20 +394,49 @@ macro_rules! assert_minmax_of_rms {
 }
 
 #[allow(unused)]
+pub fn wait_params_smooth(ne: &mut NodeExecutor) {
+    run_for_ms(ne, 15.0);
+}
+
+#[allow(unused)]
+pub fn node_pset_s(matrix: &mut Matrix, node: &str, instance: usize, parm: &str, set: i64) {
+    let nid = NodeId::from_str(node).to_instance(instance);
+    assert!(nid != NodeId::Nop);
+    let p = nid.inp_param(parm).expect("param exists");
+    matrix.set_param(p, SAtom::setting(set));
+}
+
+#[allow(unused)]
 pub fn pset_s(matrix: &mut Matrix, nid: NodeId, parm: &str, set: i64) {
-    let p = nid.inp_param(parm).unwrap();
+    let p = nid.inp_param(parm).expect("param exists");
     matrix.set_param(p, SAtom::setting(set));
 }
 
 #[allow(unused)]
 pub fn pset_n(matrix: &mut Matrix, nid: NodeId, parm: &str, v_norm: f32) {
-    let p = nid.inp_param(parm).unwrap();
+    let p = nid.inp_param(parm).expect("param exists");
+    matrix.set_param(p, SAtom::param(v_norm));
+}
+
+#[allow(unused)]
+pub fn node_pset_n(matrix: &mut Matrix, node: &str, instance: usize, parm: &str, v_norm: f32) {
+    let nid = NodeId::from_str(node).to_instance(instance);
+    assert!(nid != NodeId::Nop);
+    let p = nid.inp_param(parm).expect("param exists");
     matrix.set_param(p, SAtom::param(v_norm));
 }
 
 #[allow(unused)]
 pub fn pset_d(matrix: &mut Matrix, nid: NodeId, parm: &str, v_denorm: f32) {
-    let p = nid.inp_param(parm).unwrap();
+    let p = nid.inp_param(parm).expect("param exists");
+    matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
+}
+
+#[allow(unused)]
+pub fn node_pset_d(matrix: &mut Matrix, node: &str, instance: usize, parm: &str, v_denorm: f32) {
+    let nid = NodeId::from_str(node).to_instance(instance);
+    assert!(nid != NodeId::Nop);
+    let p = nid.inp_param(parm).expect("param exists");
     matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
 }
 
@@ -418,9 +448,9 @@ pub fn pset_n_wait(
     parm: &str,
     v_norm: f32,
 ) {
-    let p = nid.inp_param(parm).unwrap();
+    let p = nid.inp_param(parm).expect("param exists");
     matrix.set_param(p, SAtom::param(v_norm));
-    run_for_ms(ne, 15.0);
+    wait_params_smooth(ne);
 }
 
 #[allow(unused)]
@@ -431,14 +461,14 @@ pub fn pset_d_wait(
     parm: &str,
     v_denorm: f32,
 ) {
-    let p = nid.inp_param(parm).unwrap();
+    let p = nid.inp_param(parm).expect("param exists");
     matrix.set_param(p, SAtom::param(p.norm(v_denorm)));
-    run_for_ms(ne, 15.0);
+    wait_params_smooth(ne);
 }
 
 #[allow(unused)]
 pub fn pset_mod(matrix: &mut Matrix, nid: NodeId, parm: &str, modamt: f32) {
-    let p = nid.inp_param(parm).unwrap();
+    let p = nid.inp_param(parm).expect("param exists");
     matrix.set_param_modamt(p, Some(modamt));
 }
 
@@ -452,7 +482,7 @@ pub fn pset_mod_wait(
 ) {
     let p = nid.inp_param(parm).unwrap();
     matrix.set_param_modamt(p, Some(modamt));
-    run_for_ms(ne, 15.0);
+    wait_params_smooth(ne);
 }
 
 #[allow(dead_code)]

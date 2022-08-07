@@ -1,6 +1,5 @@
 # hexodsp
 
-
 ## HexoDSP - Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth.
 
 This project contains the complete DSP backend of the modular
@@ -8,7 +7,7 @@ synthesizer [HexoSynth](https://github.com/WeirdConstructor/HexoSynth).
 
 It's aimed to provide a toolkit for everyone who wants to develop
 a synthesizer in Rust. You can use it to quickly define a DSP graph
-that you can change at runtime. It comes with a large collection
+that you can change at runtime. It comes with a (growing) collection
 of already developed DSP modules/nodes, such as oscillators, filters,
 amplifiers, envelopes and sequencers.
 
@@ -16,14 +15,50 @@ The DSP graph API also provides multiple kinds of feedback to track what the
 signals in the DSP threads look like. From monitoring the inputs and outputs of
 single nodes to get the current output value of all nodes.
 
+There is also an (optional) JIT compiler for defining custom pieces of DSP code
+that runs at native speed in a DSP graph module/node.
+
 Here a short list of features:
 
-* Runtime changeable DSP graph
-* Serialization and loading of the DSP graph and the parameters
-* Full monitoring and feedback introspection into the running DSP graph
-* Provides a wide variety of modules
-* Extensible framework for quickly developing new nodes at compile time
-* A comprehensive automated test suite
+* Runtime changeable DSP graph.
+* Serialization and loading of the DSP graph and the parameters.
+* Full monitoring and feedback introspection into the running DSP graph.
+* Provides a wide variety of modules.
+* (Optional) JIT (Just In Time) compiled custom DSP code for integrating your own
+DSP algorithms at runtime. One possible frontend language is the visual
+"BlockCode" programming language in HexoSynth.
+* Extensible framework for quickly adding new nodes to HexoDSP.
+* A comprehensive automated test suite covering all modules in HexoDSP.
+
+And following DSP nodes:
+
+| Category | Name | Function |
+|-|-|-|
+| IO Util | Out         | Audio output (to DAW or Jack) |
+| Osc     | Sampl       | Sample player |
+| Osc     | Sin         | Sine oscillator |
+| Osc     | BOsc        | Basic bandlimited waveform oscillator (waveforms: Sin, Tri, Saw, Pulse/Square) |
+| Osc     | VOsc        | Vector phase shaping oscillator |
+| Osc     | Noise       | Noise oscillator |
+| Signal  | Amp         | Amplifier/Attenuator |
+| Signal  | SFilter     | Simple collection of filters, useable for synthesis |
+| Signal  | Delay       | Single tap signal delay |
+| Signal  | PVerb       | Reverb node, based on Dattorros plate reverb algorithm |
+| Signal  | AllP        | All-Pass filter based on internal delay line feedback |
+| Signal  | Comb        | Comb filter |
+| Signal  | Code        | JIT (Just In Time) compiled piece of custom DSP code. |
+| N-\>M   | Mix3        | 3 channel mixer |
+| N-\>M   | Mux9        | 9 channel to 1 output multiplexer/switch |
+| Ctrl    | SMap        | Simple control signal mapper |
+| Ctrl    | Map         | Control signal mapper |
+| Ctrl    | CQnt        | Control signal pitch quantizer |
+| Ctrl    | Quant       | Pitch signal quantizer |
+| Mod     | TSeq        | Tracker/pattern sequencer |
+| Mod     | Ad          | Attack-Decay envelope |
+| Mod     | TsLFO       | Tri/Saw waveform low frequency oscillator (LFO) |
+| Mod     | RndWk       | Random walker, a Sample & Hold noise generator |
+| IO Util | FbWr / FbRd | Utility modules for feedback in patches |
+| IO Util | Scope       | Oscilloscope for up to 3 channels |
 
 ### API Examples
 
@@ -74,9 +109,9 @@ This is a short overview of the API provided by the
 hexagonal Matrix API, which is the primary API used
 inside [HexoSynth](https://github.com/WeirdConstructor/HexoSynth).
 
-This only showcases the non-realtime generation of audio
-samples. For a real time application of this library please
-refer to the examples that come with this library.
+This only showcases the direct generation of audio samples, without any audio
+device playing it. For a real time application of this library please refer to
+the examples that come with this library.
 
 ```rust
 use hexodsp::*;
@@ -84,13 +119,16 @@ use hexodsp::*;
 let (node_conf, mut node_exec) = new_node_engine();
 let mut matrix = Matrix::new(node_conf, 3, 3);
 
-
 let sin = NodeId::Sin(0);
 let amp = NodeId::Amp(0);
+let out = NodeId::Out(0);
 matrix.place(0, 0, Cell::empty(sin)
                    .out(None, None, sin.out("sig")));
 matrix.place(0, 1, Cell::empty(amp)
-                   .input(amp.inp("inp"), None, None));
+                   .input(amp.inp("inp"), None, None)
+                   .out(None, None, amp.out("sig")));
+matrix.place(0, 2, Cell::empty(out)
+                   .input(out.inp("inp"), None, None));
 matrix.sync().unwrap();
 
 let gain_p = amp.inp_param("gain").unwrap();
@@ -101,9 +139,33 @@ let (out_l, out_r) = node_exec.test_run(0.11, true);
 // samples now.
 ```
 
+#### Simplified Hexagonal Matrix API
+
+There is also a simplified version for easier setup of DSP chains
+on the hexagonal grid, using the [crate::MatrixCellChain] abstraction:
+
+```rust
+use hexodsp::*;
+
+let (node_conf, mut node_exec) = new_node_engine();
+let mut matrix = Matrix::new(node_conf, 3, 3);
+let mut chain = MatrixCellChain::new(CellDir::B);
+
+chain.node_out("sin", "sig")
+    .node_io("amp", "inp", "sig")
+    .set_atom("gain", SAtom::param(0.25))
+    .node_inp("out", "ch1")
+    .place(&mut matrix, 0, 0);
+matrix.sync().unwrap();
+
+let (out_l, out_r) = node_exec.test_run(0.11, true);
+// out_l and out_r contain two channels of audio
+// samples now.
+```
+
 ### State of Development
 
-As of 2021-05-18: The architecture and it's functionality have been mostly
+As of 2022-07-30: The architecture and it's functionality have been mostly
 feature complete by now. The only part that is still lacking is the collection
 of modules/nodes, this is the area of current development. Adding lots of
 nodes.
@@ -158,6 +220,9 @@ The projects is still young, and I currently don't have that much time to
 devote for project coordination. So please don't be offended if your issue rots
 in the GitHub issue tracker, or your pull requests is left dangling around
 for ages.
+
+If you want to contribute new DSP nodes/modules to HexoDSP/HexoSynth,
+please look into the guide at the start of the [crate::dsp] module.
 
 I might merge pull requests if I find the time and think that the contributions
 are in line with my vision.

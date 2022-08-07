@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
@@ -9,6 +9,8 @@ pub use crate::monitor::MON_SIG_CNT;
 pub use crate::nodes::MinMaxMonitorSamples;
 use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES};
 pub use crate::CellDir;
+use crate::ScopeHandle;
+use crate::wblockdsp::{BlockFun, BlockFunSnapshot, BlkJITCompileError};
 
 use std::collections::{HashMap, HashSet};
 
@@ -149,6 +151,10 @@ impl Cell {
         self.out3 = None;
     }
 
+    pub fn set_node_id_keep_ios(&mut self, node_id: NodeId) {
+        self.node_id = node_id;
+    }
+
     pub fn label<'a>(&self, buf: &'a mut [u8]) -> Option<&'a str> {
         use std::io::Write;
         let mut cur = std::io::Cursor::new(buf);
@@ -261,6 +267,40 @@ impl Cell {
         }
     }
 
+    /// This is a helper function to quickly set an input by name and direction.
+    ///
+    ///```
+    /// use hexodsp::*;
+    ///
+    /// let mut cell = Cell::empty(NodeId::Sin(0));
+    /// cell.set_input_by_name("freq", CellDir::T).unwrap();
+    ///```
+    pub fn set_input_by_name(&mut self, name: &str, dir: CellDir) -> Result<(), ()> {
+        if let Some(idx) = self.node_id.inp(name) {
+            self.set_io_dir(dir, idx as usize);
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+
+    /// This is a helper function to quickly set an output by name and direction.
+    ///
+    ///```
+    /// use hexodsp::*;
+    ///
+    /// let mut cell = Cell::empty(NodeId::Sin(0));
+    /// cell.set_output_by_name("sig", CellDir::B).unwrap();
+    ///```
+    pub fn set_output_by_name(&mut self, name: &str, dir: CellDir) -> Result<(), ()> {
+        if let Some(idx) = self.node_id.out(name) {
+            self.set_io_dir(dir, idx as usize);
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+
     pub fn input(mut self, i1: Option<u8>, i2: Option<u8>, i3: Option<u8>) -> Self {
         self.in1 = i1;
         self.in2 = i2;
@@ -275,13 +315,13 @@ impl Cell {
         self
     }
 
-    /// Finds the first free input (one without an adjacent cell). If any free input
-    /// has an assigned input, that edge is returned.
+    /// Finds the first free input or output (one without an adjacent cell). If any free input/output
+    /// has an assigned input, that edge is returned before any else.
     /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
     /// and any with `CellDir::C`.
     pub fn find_first_adjacent_free(
         &self,
-        m: &mut Matrix,
+        m: &Matrix,
         dir: CellDir,
     ) -> Option<(CellDir, Option<u8>)> {
         let mut free_ports = vec![];
@@ -320,7 +360,7 @@ impl Cell {
     /// and any with `CellDir::C`.
     pub fn find_all_adjacent_free(
         &self,
-        m: &mut Matrix,
+        m: &Matrix,
         dir: CellDir,
     ) -> Vec<(CellDir, (usize, usize))> {
         let mut free_ports = vec![];
@@ -341,11 +381,34 @@ impl Cell {
             }
         }
 
-        free_ports.to_vec()
+        free_ports
+    }
+
+    /// Finds all dangling ports in the specified direction.
+    /// With `dir` you can specify input with `CellDir::T`, output with `CellDir::B`
+    /// and any with `CellDir::C`.
+    pub fn find_unconnected_ports(&self, m: &Matrix, dir: CellDir) -> Vec<CellDir> {
+        let mut unused_ports = vec![];
+
+        let options: &[CellDir] = if dir == CellDir::C {
+            &[CellDir::T, CellDir::TL, CellDir::BL, CellDir::TR, CellDir::BR, CellDir::B]
+        } else if dir.is_input() {
+            &[CellDir::T, CellDir::TL, CellDir::BL]
+        } else {
+            &[CellDir::TR, CellDir::BR, CellDir::B]
+        };
+
+        for dir in options {
+            if self.is_port_dir_connected(m, *dir).is_none() {
+                unused_ports.push(*dir);
+            }
+        }
+
+        unused_ports
     }
 
     /// If the port is connected, it will return the position of the other cell.
-    pub fn is_port_dir_connected(&self, m: &mut Matrix, dir: CellDir) -> Option<(usize, usize)> {
+    pub fn is_port_dir_connected(&self, m: &Matrix, dir: CellDir) -> Option<(usize, usize)> {
         if self.has_dir_set(dir) {
             if let Some(new_pos) = dir.offs_pos((self.x as usize, self.y as usize)) {
                 if let Some(dst_cell) = m.get(new_pos.0, new_pos.1) {
@@ -388,7 +451,7 @@ pub trait MatrixObserver {
     /// Not called, when [MatrixObserver::update_all] tells you that
     /// everything has changed.
     fn update_prop(&self, key: &str);
-    /// Called when a new cell is monitored via [MatrixObserver::monitor_cell].
+    /// Called when a new cell is monitored via [Matrix::monitor_cell].
     /// Not called, when [MatrixObserver::update_all] tells you that
     /// everything has changed.
     fn update_monitor(&self, cell: &Cell);
@@ -516,14 +579,35 @@ impl Matrix {
         self.config.filtered_out_fb_for(ni, out)
     }
 
+    /// Retrieve the oscilloscope handle for the scope index `scope`.
     pub fn get_pattern_data(&self, tracker_id: usize) -> Option<Arc<Mutex<PatternData>>> {
         self.config.get_pattern_data(tracker_id)
     }
 
-    /// Checks if pattern data updates need to be sent to the
-    /// DSP thread.
+    /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.
+    pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
+        self.config.get_scope_handle(scope)
+    }
+
+    /// Checks if there are any updates to send for the pattern data that belongs to the
+    /// tracker `tracker_id`. Call this repeatedly, eg. once per frame in a GUI, in case the user
+    /// modified the pattern data. It will make sure that the modifications are sent to the
+    /// audio thread.
     pub fn check_pattern_data(&mut self, tracker_id: usize) {
         self.config.check_pattern_data(tracker_id)
+    }
+
+    /// Checks the block function for the id `id`. If the block function did change,
+    /// updates are then sent to the audio thread.
+    /// See also [Matrix::get_block_function].
+    pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
+        self.config.check_block_function(id)
+    }
+
+    /// Retrieve a handle to the block function `id`. In case you modify the block function,
+    /// make sure to call [Matrix::check_block_function].
+    pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
+        self.config.get_block_function(id)
     }
 
     /// Saves the state of the hexagonal grid layout.
@@ -760,9 +844,21 @@ impl Matrix {
             tracker_id += 1;
         }
 
+        let mut block_funs: Vec<Option<BlockFunSnapshot>> = vec![];
+        let mut bf_id = 0;
+        while let Some(bf) = self.get_block_function(bf_id) {
+            block_funs.push(if bf.lock().unwrap().is_unset() {
+                None
+            } else {
+                Some(bf.lock().unwrap().save_snapshot())
+            });
+
+            bf_id += 1;
+        }
+
         let properties = self.properties.iter().map(|(k, v)| (k.to_string(), v.clone())).collect();
 
-        MatrixRepr { cells, params, atoms, patterns, properties, version: 2 }
+        MatrixRepr { cells, params, atoms, patterns, block_funs, properties, version: 2 }
     }
 
     /// Loads the matrix from a previously my [Matrix::to_repr]
@@ -790,6 +886,14 @@ impl Matrix {
             if let Some(pat) = pat {
                 if let Some(pd) = self.get_pattern_data(tracker_id) {
                     pd.lock().unwrap().from_repr(pat);
+                }
+            }
+        }
+
+        for (bf_id, block_fun) in repr.block_funs.iter().enumerate() {
+            if let Some(block_fun) = block_fun {
+                if let Some(bf) = self.get_block_function(bf_id) {
+                    bf.lock().unwrap().load_snapshot(block_fun);
                 }
             }
         }
@@ -976,6 +1080,53 @@ impl Matrix {
         } else {
             false
         }
+    }
+
+    /// Retrieves the immediate connections to adjacent cells and returns a list.
+    /// Returns none if there is no cell at the given position.
+    ///
+    /// Returns a vector with pairs of this content:
+    ///
+    ///    (
+    ///        (center_cell, center_connection_dir, center_node_io_index),
+    ///        (
+    ///            other_cell,
+    ///            other_connection_dir,
+    ///            other__node_io_index,
+    ///            (other_cell_x, other_cell_y)
+    ///        )
+    ///    )
+    pub fn get_connections(
+        &self,
+        x: usize,
+        y: usize,
+    ) -> Option<Vec<((Cell, CellDir, u8), (Cell, CellDir, u8, (usize, usize)))>> {
+        let this_cell = self.get(x, y)?;
+
+        let mut ret = vec![];
+
+        for edge in 0..6 {
+            let dir = CellDir::from(edge);
+
+            if let Some(node_io_idx) = this_cell.local_port_idx(dir) {
+                if let Some((nx, ny)) = dir.offs_pos((x, y)) {
+                    if !(nx < self.w && ny < self.h) {
+                        continue;
+                    }
+
+                    if let Some(other_cell) = self.get(nx, ny) {
+                        if let Some(other_node_io_idx) = other_cell.local_port_idx(dir.flip()) {
+                            ret.push((
+                                (*this_cell, dir, node_io_idx),
+                                (*other_cell, dir.flip(), other_node_io_idx, (nx, ny)),
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        Some(ret)
     }
 
     pub fn for_each<F: FnMut(usize, usize, &Cell)>(&self, mut f: F) {
@@ -1348,6 +1499,44 @@ mod tests {
     }
 
     #[test]
+    fn check_matrix_get_connections() {
+        use crate::nodes::new_node_engine;
+
+        let (node_conf, _node_exec) = new_node_engine();
+        let mut matrix = Matrix::new(node_conf, 3, 3);
+
+        matrix.place(0, 0, Cell::empty(NodeId::Sin(0)).out(None, Some(0), None));
+        matrix.place(
+            1,
+            0,
+            Cell::empty(NodeId::Sin(1)).input(None, Some(0), None).out(None, None, Some(0)),
+        );
+        matrix.place(1, 1, Cell::empty(NodeId::Sin(2)).input(Some(0), None, None));
+        matrix.sync().unwrap();
+
+        let res = matrix.get_connections(1, 0);
+        let res = res.expect("Found connected cells");
+
+        let (_src_cell, src_dir, src_io_idx) = res[0].0;
+        let (_dst_cell, dst_dir, dst_io_idx, (nx, ny)) = res[0].1;
+
+        assert_eq!(src_dir, CellDir::B, "Found first connection at bottom");
+        assert_eq!(src_io_idx, 0, "Correct output port");
+        assert_eq!(dst_dir, CellDir::T, "Found first connection at bottom");
+        assert_eq!(dst_io_idx, 0, "Correct output port");
+        assert_eq!((nx, ny), (1, 1), "Correct other position");
+
+        let (_src_cell, src_dir, src_io_idx) = res[1].0;
+        let (_dst_cell, dst_dir, dst_io_idx, (nx, ny)) = res[1].1;
+
+        assert_eq!(src_dir, CellDir::TL, "Found first connection at bottom");
+        assert_eq!(src_io_idx, 0, "Correct output port");
+        assert_eq!(dst_dir, CellDir::BR, "Found first connection at bottom");
+        assert_eq!(dst_io_idx, 0, "Correct output port");
+        assert_eq!((nx, ny), (0, 0), "Correct other position");
+    }
+
+    #[test]
     fn check_matrix_param_is_used() {
         use crate::nodes::new_node_engine;
 
@@ -1542,7 +1731,9 @@ mod tests {
             prog.prog[2].to_string(),
             "Op(i=1 out=(1-2|1) in=(2-4|1) at=(0-0) mod=(1-3) cpy=(o0 => i2) mod=1)"
         );
-        assert_eq!(prog.prog[3].to_string(), "Op(i=2 out=(2-3|0) in=(4-6|3) at=(0-0) mod=(3-5) cpy=(o1 => i4) cpy=(o3 => i5) mod=3 mod=4)");
+        assert_eq!(
+            prog.prog[3].to_string(),
+            "Op(i=2 out=(2-3|0) in=(4-6|3) at=(0-0) mod=(3-5) cpy=(o1 => i4) cpy=(o3 => i5) mod=3 mod=4)");
     }
 
     #[test]

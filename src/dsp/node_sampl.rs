@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use super::helpers::Trigger;
+use synfx_dsp::{cubic_interpolate, Trigger};
 use crate::dsp::{at, denorm, denorm_offs, inp, out}; //, inp, denorm, denorm_v, inp_dir, at};
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
@@ -142,72 +142,24 @@ be provided on the 'trig' input port. The 'trig' input also works in
 impl Sampl {
     #[allow(clippy::many_single_char_names)]
     #[inline]
-    fn next_sample_rev(&mut self, sr_factor: f64, speed: f64, sample_data: &[f32]) -> f32 {
+    fn next_sample(
+        &mut self,
+        sr_factor: f64,
+        speed: f64,
+        sample_data: &[f32],
+        reverse: bool,
+    ) -> f32 {
         let sd_len = sample_data.len();
         if sd_len < 1 {
             return 0.0;
         }
 
-        let j = self.phase.floor() as usize % sd_len;
-        let i = ((sd_len - 1) - j) + sd_len;
-
+        let i = self.phase.floor() as usize % sd_len;
         let f = self.phase.fract();
-        self.phase = j as f64 + f + sr_factor * speed;
+        self.phase = i as f64 + f + sr_factor * speed;
 
-        // Hermite interpolation, take from
-        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
-        //
-        // Thanks go to Eric Wood!
-        //
-        // For the interpolation code:
-        // MIT License, Copyright (c) 2021 Eric Wood
-        let xm1 = sample_data[(i + 1) % sd_len];
-        let x0 = sample_data[i % sd_len];
-        let x1 = sample_data[(i - 1) % sd_len];
-        let x2 = sample_data[(i - 2) % sd_len];
-
-        let c = (x1 - xm1) * 0.5;
-        let v = x0 - x1;
-        let w = c + v;
-        let a = w + v + (x2 - x0) * 0.5;
-        let b_neg = w + a;
-
-        let f = (1.0 - f) as f32;
-        (((a * f) - b_neg) * f + c) * f + x0
-    }
-
-    #[allow(clippy::many_single_char_names)]
-    #[inline]
-    fn next_sample(&mut self, sr_factor: f64, speed: f64, sample_data: &[f32]) -> f32 {
-        let sd_len = sample_data.len();
-        if sd_len < 1 {
-            return 0.0;
-        }
-
-        let i = self.phase.floor() as usize + sd_len;
-        let f = self.phase.fract();
-        self.phase = (i % sd_len) as f64 + f + sr_factor * speed;
-
-        // Hermite interpolation, take from
-        // https://github.com/eric-wood/delay/blob/main/src/delay.rs#L52
-        //
-        // Thanks go to Eric Wood!
-        //
-        // For the interpolation code:
-        // MIT License, Copyright (c) 2021 Eric Wood
-        let xm1 = sample_data[(i - 1) % sd_len];
-        let x0 = sample_data[i % sd_len];
-        let x1 = sample_data[(i + 1) % sd_len];
-        let x2 = sample_data[(i + 2) % sd_len];
-
-        let c = (x1 - xm1) * 0.5;
-        let v = x0 - x1;
-        let w = c + v;
-        let a = w + v + (x2 - x0) * 0.5;
-        let b_neg = w + a;
-
-        let f = f as f32;
-        (((a * f) - b_neg) * f + c) * f + x0
+        let (i, f) = if reverse { (((sd_len - 1) - i), 1.0 - f) } else { (i, f) };
+        cubic_interpolate(&sample_data[..], sd_len, i, f as f32)
     }
 
     #[allow(clippy::float_cmp)]
@@ -294,11 +246,8 @@ impl Sampl {
                 // that is used for looking up the sample from the audio data.
                 let sample_idx = self.phase.floor() as usize;
 
-                let mut s = if reverse {
-                    self.next_sample_rev(sr_factor, playback_speed as f64, sample_slice)
-                } else {
-                    self.next_sample(sr_factor, playback_speed as f64, sample_slice)
-                };
+                let mut s =
+                    self.next_sample(sr_factor, playback_speed as f64, sample_slice, reverse);
 
                 if declick {
                     let samples_to_end = sample_slice.len() - sample_idx;

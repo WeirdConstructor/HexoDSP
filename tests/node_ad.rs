@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
@@ -10,12 +10,11 @@ fn check_node_ad_1() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
-    let ad = NodeId::Ad(0);
-    let out = NodeId::Out(0);
-    matrix.place(0, 0, Cell::empty(ad).out(None, None, ad.out("sig")));
-    matrix.place(0, 1, Cell::empty(out).input(out.inp("ch1"), None, None));
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain.node_out("ad", "sig").node_inp("out", "ch1").place(&mut matrix, 0, 0).unwrap();
     matrix.sync().unwrap();
 
+    let ad = NodeId::Ad(0);
     let trig_p = ad.inp_param("trig").unwrap();
 
     matrix.set_param(trig_p, SAtom::param(1.0));

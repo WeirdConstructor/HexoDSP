@@ -8,8 +8,8 @@ description = "Comprehensive DSP graph and synthesis library for developing a mo
 keywords    = ["audio", "music", "real-time", "synthesis", "synthesizer", "dsp", "sound"]
 categories  = ["multimedia::audio", "multimedia", "algorithms", "mathematics"]
 
-#[features]
-#default = [ "hexotk" ]
+[features]
+default = [ "synfx-dsp-jit" ]
 
 [dependencies]
 serde         = { version = "1.0", features = ["derive"] }
@@ -18,11 +18,14 @@ ringbuf       = "0.2.2"
 triple_buffer = "5.0.6"
 lazy_static   = "1.4.0"
 hound         = "3.4.0"
-num-traits    = "0.2.14"
+synfx-dsp-jit = { git = "https://github.com/WeirdConstructor/synfx-dsp-jit", optional = true }
+synfx-dsp     = { git = "https://github.com/WeirdConstructor/synfx-dsp" }
+#synfx-dsp-jit = { path = "../synfx-dsp-jit", optional = true }
+#synfx-dsp     = "0.5.1"
 
 [dev-dependencies]
 num-complex = "0.2"
-jack        = "0.6.6"
+jack        = "0.10.0"
 rustfft     = "6.0.0"
 cpal        = "0.13.5"
 anyhow      = "1.0.58"
