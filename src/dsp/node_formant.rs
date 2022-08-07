@@ -13,19 +13,27 @@ impl Formant {
         Self { inv_sample_rate: 1.0 / 44100.0, phase: 0.0 }
     }
     pub const freq: &'static str = "Formant freq\nBase frequency to oscilate at\n";
-    pub const form: &'static str = "Formant form\nFrequency of the formant\n";
+    pub const form: &'static str = "Formant form\nFrequency of the formant\nThis affects how much lower or higher tones the sound has.";
     pub const atk: &'static str =
         "Formant atk\nFormant attack bandwidth, controls the general bandwidth";
     pub const dcy: &'static str =
         "Formant dcy\nFormant decay bandwidth, controls the peak bandwidth";
     pub const sig: &'static str = "Formant sig\nGenerated formant signal";
-    pub const DESC: &'static str = r#"A direct formant synthesizer
+    pub const DESC: &'static str = r#"Direct formant synthesizer
 
 This generates a single formant from a given frequency, formant frequency, as well as attack and decay frequencies.
 The attack and decay frequencies both control the bandwidth of the formant, decay the peak of the bandwidth, attack peak.
 "#;
-    pub const HELP: &'static str = r#"Formant - Single formant synthesizer
-This is a formant synthesizer that directly generates the audio, no filters needed.
+    pub const HELP: &'static str = r#"Formant - Direct formant synthesized
+This is a formant synthesizer that directly generates the audio of a single formant.
+
+This can be seen as passing a saw wave with frequency `freq` into a bandpass filter with the cutoff at `form`
+
+`freq` controls the base frequency of the formant.
+`form` controls the formant frequency. Lower values give more bass to the sound, and higher values give the high frequencies more sound.
+If `form` is lower than `freq`, the overal loudness will go down, however it's guaranteed to never exceed the [-1,1] range.
+`atk` and `dcy` both control the bandwidth/resonance of the formant. The further apart they are in value, the higher the bandwidth/lower the resonance.
+If these are set to a low value, the sine wave used for the formant effect becomes very audible.
 "#;
 }
 

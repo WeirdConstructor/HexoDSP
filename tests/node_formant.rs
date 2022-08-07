@@ -130,4 +130,31 @@ fn check_no_nan() {
 }
 
 #[test]
-fn check_formant_freq() {}
+fn check_formant_freq() {
+    let (node_conf, mut node_exec) = new_node_engine();
+
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain.node_out("formant", "sig").node_inp("out", "ch1").place(&mut matrix, 0, 0).unwrap();
+
+    matrix.sync().unwrap();
+
+    let formant = NodeId::Formant(0);
+
+    // params
+    let freq_p = formant.inp_param("freq").unwrap();
+    let form_p = formant.inp_param("form").unwrap();
+    let atk_p = formant.inp_param("atk").unwrap();
+    let dcy_p = formant.inp_param("dcy").unwrap();
+
+    // set params to reasonable values
+    matrix.set_param(freq_p, SAtom::param(-0.2));
+    matrix.set_param(form_p, SAtom::param(0.0));
+    matrix.set_param(atk_p, SAtom::param(0.2));
+    matrix.set_param(dcy_p, SAtom::param(-0.2));
+
+    // run
+    let fft = run_and_get_avg_fft4096_now(&mut node_exec, 180);
+    assert_eq!(fft, vec![(334, 191), (431, 331), (441, 546), (452, 222), (549, 209)]);
+}
