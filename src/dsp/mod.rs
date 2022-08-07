@@ -537,6 +537,8 @@ mod node_test;
 #[allow(non_upper_case_globals)]
 mod node_tseq;
 #[allow(non_upper_case_globals)]
+mod node_goertzel;
+pub mod goertzel;
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
@@ -601,6 +603,7 @@ use node_out::Out;
 use node_pverb::PVerb;
 use node_quant::Quant;
 use node_rndwk::RndWk;
+use node_goertzel::Gz3Filt;
 use node_sampl::Sampl;
 use node_scope::Scope;
 use node_sfilter::SFilter;
@@ -1528,6 +1531,16 @@ macro_rules! node_list {
                (14 mix   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                [0 sig_l]
                [1 sig_r],
+               
+            goertzel => Gz3Filt UIType::Generic UICategory::Signal
+            (0 inp n_id d_id r_id f_def stp_d -1.0, 1.0, 0.0)
+            (1 freq1   n_pit     d_pit r_fq  f_freq stp_d 0.0, 20000.0, 220.0)
+            (2 freq2   n_pit     d_pit r_fq  f_freq stp_d 0.0, 20000.0, 330.0)
+            (3 freq3   n_pit     d_pit r_fq  f_freq stp_d 0.0, 20000.0, 440.0)
+            (4 latency n_pit     d_pit r_fq  f_ms   stp_d 256.0, 65536.0, 2048.0)
+            (5 gain   n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
+            [0 sigf1][1 sigf2][2 sigf3],
+
             test => Test UIType::Generic UICategory::IOUtil
                (0 f     n_id      d_id   r_id   f_def stp_d 0.0, 1.0, 0.5)
                {1 0 p     param(0.0) knob fa_test_s 0  10}
