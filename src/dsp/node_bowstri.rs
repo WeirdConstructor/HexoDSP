@@ -2,11 +2,11 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use synfx_dsp::{DelayBuffer, FixedOnePole, Biquad};
 use crate::dsp::{
     denorm, denorm_offs, inp, out, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
+use synfx_dsp::{Biquad, DelayBuffer, FixedOnePole};
 
 // Bowed String instrument oscillator
 // Bowed string model, a la Smith (1986),

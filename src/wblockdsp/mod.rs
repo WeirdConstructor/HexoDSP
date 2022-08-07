@@ -6,10 +6,10 @@
 
 */
 
+mod compiler;
 mod definition;
 mod language;
-mod compiler;
 
+pub use compiler::*;
 pub use definition::*;
 pub use language::*;
-pub use compiler::*;

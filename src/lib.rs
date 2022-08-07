@@ -321,8 +321,8 @@ pub mod monitor;
 pub mod nodes;
 pub mod sample_lib;
 pub mod scope_handle;
-pub mod wblockdsp;
 mod util;
+pub mod wblockdsp;
 
 pub use cell_dir::CellDir;
 pub use chain_builder::MatrixCellChain;
