@@ -507,7 +507,7 @@ mod node_delay;
 #[allow(non_upper_case_globals)]
 mod node_fbwr_fbrd;
 #[allow(non_upper_case_globals)]
-mod node_formant;
+mod node_formfm;
 #[allow(non_upper_case_globals)]
 mod node_map;
 #[allow(non_upper_case_globals)]
@@ -595,7 +595,7 @@ use node_cqnt::CQnt;
 use node_delay::Delay;
 use node_fbwr_fbrd::FbRd;
 use node_fbwr_fbrd::FbWr;
-use node_formant::Formant;
+use node_formfm::FormFM;
 use node_map::Map;
 use node_mix3::Mix3;
 use node_mux9::Mux9;
@@ -1499,11 +1499,11 @@ macro_rules! node_list {
                (1  offs  n_id      d_id  r_s    f_def stp_d -1.0, 1.0, 0.0)
                {2 0 mode setting(0) mode fa_noise_mode 0 1}
                [0 sig],
-            formant => Formant UIType::Generic UICategory::Osc
-               (0 freq n_pit d_pit r_fq f_freq stp_d -1.0, 1.0, 440.0)
-               (1 form n_pit d_pit r_fq f_freq stp_d -1.0, 1.0, 440.0)
-               (2 atk  n_pit d_pit r_fq f_freq stp_d -1.0, 1.0, 44.0)
-               (3 dcy  n_pit d_pit r_fq f_freq stp_d -1.0, 1.0, 44.0)
+            formfm => FormFM UIType::Generic UICategory::Osc
+               (0 freq n_pit d_pit r_fq f_freq stp_d -1.0, 0.5647131, 440.0)
+               (1 form n_pit d_pit r_fq f_freq stp_d -1.0, 0.5647131, 440.0)
+               (2 side  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.2)
+               (3 peak  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.4)
                [0 sig],
             sfilter => SFilter UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
