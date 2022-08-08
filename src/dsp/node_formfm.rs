@@ -1,3 +1,7 @@
+// Copyright (c) 2022 Dimas Leenman <skythedragon@outlook.com>
+// This file is a part of HexoDSP. Released under GPL-3.0-or-later.
+// See README.md and COPYING for details.
+
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
