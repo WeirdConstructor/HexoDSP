@@ -40,6 +40,7 @@ And following DSP nodes:
 | Osc     | BOsc        | Basic bandlimited waveform oscillator (waveforms: Sin, Tri, Saw, Pulse/Square) |
 | Osc     | VOsc        | Vector phase shaping oscillator |
 | Osc     | Noise       | Noise oscillator |
+| Osc     | FormFM      | Formant oscillator based on FM synthesis |
 | Signal  | Amp         | Amplifier/Attenuator |
 | Signal  | SFilter     | Simple collection of filters, useable for synthesis |
 | Signal  | Delay       | Single tap signal delay |
@@ -174,10 +175,6 @@ Make sure to follow [Weird Constructors Mastodon
 account](https://mastodon.online/@weirdconstructor) or the releases of this
 project to be notified of updates.
 
-#### Road Map / TODO List
-
-I have a pretty detailed TODO list in my private notebook.
-
 ### Running the Jack Example:
 
 
@@ -210,6 +207,10 @@ There exists an automate test suite for the DSP and backend code:
 ### Known Bugs
 
 * The ones you encounter and create as issues on GitHub.
+
+### Credits
+
+- Dimas Leenman (aka Skythedragon) contributed the `FormFM` node.
 
 ### Contributions
 

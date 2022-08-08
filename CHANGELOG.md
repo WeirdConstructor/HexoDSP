@@ -16,3 +16,4 @@ chains on the hexagonal Matrix.
 the scope handles for access to it's capture buffers.
 * Feature: Added WBlockDSP visual programming language utilizing the `synfx-dsp-jit` crate.
 * Change: Moved DSP code over to `synfx-dsp` crate.
+* Feature: Added the `FormFM` node that was contributed by Dimas Leenman (aka Skythedragon).
