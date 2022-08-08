@@ -2,10 +2,10 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use synfx_dsp::{Trigger, TriggerPhaseClock};
 use crate::dsp::tracker::TrackerBackend;
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
+use synfx_dsp::{Trigger, TriggerPhaseClock};
 
 use crate::dsp::MAX_BLOCK_SIZE;
 

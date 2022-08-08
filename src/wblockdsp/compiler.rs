@@ -210,7 +210,7 @@ pub struct Block2JITCompiler {
 
 #[cfg(not(feature = "synfx-dsp-jit"))]
 pub enum ASTNode {
-    NoSynfxDSPJit
+    NoSynfxDSPJit,
 }
 
 impl Block2JITCompiler {

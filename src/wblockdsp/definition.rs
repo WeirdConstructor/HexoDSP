@@ -208,39 +208,42 @@ pub fn setup_hxdsp_block_language(
         });
     }
 
-    dsp_lib.borrow().for_each(|node_type| -> Result<(), ()> {
-        let max_ports = node_type.input_count().max(node_type.output_count());
-        let is_stateful = node_type.is_stateful();
+    dsp_lib
+        .borrow()
+        .for_each(|node_type| -> Result<(), ()> {
+            let max_ports = node_type.input_count().max(node_type.output_count());
+            let is_stateful = node_type.is_stateful();
 
-        let mut inputs = vec![];
-        let mut outputs = vec![];
+            let mut inputs = vec![];
+            let mut outputs = vec![];
 
-        let mut i = 0;
-        while let Some(name) = node_type.input_names(i) {
-            inputs.push(Some(name[0..(name.len().min(2))].to_string()));
-            i += 1;
-        }
+            let mut i = 0;
+            while let Some(name) = node_type.input_names(i) {
+                inputs.push(Some(name[0..(name.len().min(2))].to_string()));
+                i += 1;
+            }
 
-        let mut i = 0;
-        while let Some(name) = node_type.output_names(i) {
-            outputs.push(Some(name[0..(name.len().min(2))].to_string()));
-            i += 1;
-        }
+            let mut i = 0;
+            while let Some(name) = node_type.output_names(i) {
+                outputs.push(Some(name[0..(name.len().min(2))].to_string()));
+                i += 1;
+            }
 
-        lang.define(BlockType {
-            category: if is_stateful { "nodes".to_string() } else { "functions".to_string() },
-            name: node_type.name().to_string(),
-            rows: max_ports,
-            area_count: 0,
-            user_input: BlockUserInput::None,
-            description: node_type.documentation().to_string(),
-            color: if is_stateful { 8 } else { 16 },
-            inputs,
-            outputs,
-        });
+            lang.define(BlockType {
+                category: if is_stateful { "nodes".to_string() } else { "functions".to_string() },
+                name: node_type.name().to_string(),
+                rows: max_ports,
+                area_count: 0,
+                user_input: BlockUserInput::None,
+                description: node_type.documentation().to_string(),
+                color: if is_stateful { 8 } else { 16 },
+                inputs,
+                outputs,
+            });
 
-        Ok(())
-    }).expect("seriously no error here");
+            Ok(())
+        })
+        .expect("seriously no error here");
 
     lang.define_identifier("in1");
     lang.define_identifier("in2");

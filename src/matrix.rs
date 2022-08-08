@@ -8,9 +8,9 @@ use crate::matrix_repr::*;
 pub use crate::monitor::MON_SIG_CNT;
 pub use crate::nodes::MinMaxMonitorSamples;
 use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES};
+use crate::wblockdsp::{BlkJITCompileError, BlockFun, BlockFunSnapshot};
 pub use crate::CellDir;
 use crate::ScopeHandle;
-use crate::wblockdsp::{BlockFun, BlockFunSnapshot, BlkJITCompileError};
 
 use std::collections::{HashMap, HashSet};
 

@@ -2,11 +2,11 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use synfx_dsp::fast_sin;
 use crate::dsp::{
     denorm_offs, inp, out, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
+use synfx_dsp::fast_sin;
 
 /// A sine oscillator
 #[derive(Debug, Clone)]
