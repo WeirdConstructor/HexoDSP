@@ -43,6 +43,15 @@ impl Smoother {
     }
 
     #[inline]
+    pub fn current(&self) -> f32 {
+        if self.done {
+            self.target
+        } else {
+            self.value
+        }
+    }
+
+    #[inline]
     pub fn next(&mut self) -> f32 {
         //d// println!("NEXT: count={}, value={:6.3} inc={:6.4}",
         //d//          self.count,
