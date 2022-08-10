@@ -85,8 +85,7 @@ impl DspNode for MidiP {
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        let out_i = out_idx::MidiP::freq();
-
+        let out_i = out_idx::MidiP::gate();
         let (freq, r) = outputs.split_at_mut(out_i);
         let (gate, vel) = r.split_at_mut(1);
         let freq = &mut freq[0];

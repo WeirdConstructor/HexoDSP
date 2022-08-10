@@ -43,10 +43,17 @@ impl NoteBuffer {
     }
 
     #[inline]
+    pub fn step_to(&mut self, buf_idx: usize) {
+        while self.buf_idx < (buf_idx % MAX_BLOCK_SIZE) {
+            self.step();
+        }
+    }
+
+    #[inline]
     pub fn step(&mut self) {
         let cur = self.buf_idx;
         let next = (self.buf_idx + 1) % MAX_BLOCK_SIZE;
-        println!("COPY {}..{} => {}", (cur * 16), ((cur + 1) * 16), next * 16);
+        //d// println!("COPY {}..{} => {}", (cur * 16), ((cur + 1) * 16), next * 16);
         self.interleaved_chans.copy_within((cur * 16)..((cur + 1) * 16), next * 16);
         self.buf_idx = next;
     }
