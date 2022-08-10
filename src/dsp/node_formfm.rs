@@ -90,13 +90,11 @@ impl DspNode for FormFM {
             let peak_val = denorm::FormFM::peak(peak_val, frame);
 
             // make a triangle wave, with the peak at carrier center
-            let carrier_base =
-                (self.phase / side_val).min((1.0 - self.phase) / (1.0 - side_val));
+            let carrier_base = (self.phase / side_val).min((1.0 - self.phase) / (1.0 - side_val));
 
             // smoothstep
             let carrier = 1.0
-                - ((1.0 - peak_val)
-                    * (carrier_base * carrier_base * (3.0 - 2.0 * carrier_base)));
+                - ((1.0 - peak_val) * (carrier_base * carrier_base * (3.0 - 2.0 * carrier_base)));
 
             // multiple of the frequency the modulators are at
             let multiple = formant_freq / base_freq.max(1e-6);

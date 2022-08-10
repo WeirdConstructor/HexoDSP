@@ -2,6 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
+use super::NoteBuffer;
 use super::{
     DropMsg, GraphMessage, NodeProg, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE,
     MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
@@ -169,13 +170,14 @@ impl Default for FeedbackBuffer {
 /// This is used for instance to implement the feedbackd delay nodes.
 pub struct NodeExecContext {
     pub feedback_delay_buffers: Vec<FeedbackBuffer>,
+    pub note_buffer: NoteBuffer,
 }
 
 impl NodeExecContext {
     fn new() -> Self {
         let mut fbdb = vec![];
         fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
-        Self { feedback_delay_buffers: fbdb }
+        Self { feedback_delay_buffers: fbdb, note_buffer: NoteBuffer::new() }
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
@@ -350,6 +352,11 @@ impl NodeExecutor {
         for sm in self.smoothers.iter_mut() {
             sm.1.set_sample_rate(sample_rate);
         }
+    }
+
+    #[inline]
+    pub fn get_note_buffer(&mut self) -> &mut NoteBuffer {
+        &mut self.exec_ctx.note_buffer
     }
 
     #[inline]

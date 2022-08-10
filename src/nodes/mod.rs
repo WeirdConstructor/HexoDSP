@@ -21,6 +21,7 @@ mod node_conf;
 mod node_exec;
 mod node_graph_ordering;
 mod node_prog;
+mod note_buffer;
 pub mod visual_sampling_filter;
 
 pub(crate) use visual_sampling_filter::*;
@@ -30,6 +31,7 @@ pub use node_conf::*;
 pub use node_exec::*;
 pub use node_graph_ordering::NodeGraphOrdering;
 pub use node_prog::*;
+pub use note_buffer::{NoteBuffer, NoteChannelState};
 
 use crate::dsp::{Node, SAtom};
 pub use crate::monitor::MinMaxMonitorSamples;
