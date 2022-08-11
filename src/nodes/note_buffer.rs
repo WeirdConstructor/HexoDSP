@@ -5,6 +5,19 @@
 use crate::dsp::MAX_BLOCK_SIZE;
 
 #[derive(Debug, Clone, Copy)]
+pub struct TimedEvent {
+    /// The frame number in the current block by the audio driver or plugin API/DAW
+    timing: usize,
+    kind: MidiEvent,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum MidiEvent {
+    NoteOn  { channel: u8, note: u8, vel: f32 },
+    NoteOff { channel: u8, note: u8, vel: f32 },
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct NoteChannelState {
     pub vel: f32,
     pub note: u8,
@@ -83,6 +96,44 @@ impl NoteBuffer {
         &self.interleaved_chans[frame as usize * 16 + (channel as usize % 16)]
     }
 }
+
+struct EventWindowing {
+    pub event: Option<TimedEvent>,
+}
+
+impl EventWindowing {
+    pub fn new() -> Self {
+        Self {
+            event: None,
+        }
+    }
+
+    #[inline]
+    pub fn feed_me(&self) -> bool {
+        self.event.is_none()
+    }
+
+    #[inline]
+    pub fn feed(&mut self, event: TimedEvent) {
+        self.event = Some(event);
+    }
+
+    #[inline]
+    pub fn next_event_in_range(&mut self, to_time: usize) -> Option<NoteEvent> {
+        let to_time = to_time as u32;
+
+        if let Some(event) = self.event.take() {
+            if event.timing() < to_time {
+                return Some(event);
+            } else {
+                self.event = Some(event);
+            }
+        }
+
+        None
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
