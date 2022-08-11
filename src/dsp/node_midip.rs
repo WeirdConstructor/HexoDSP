@@ -17,15 +17,12 @@ macro_rules! fa_midip_chan {
 /// The (stereo) output port of the plugin
 #[derive(Debug, Clone)]
 pub struct MidiP {
-    /// - 0: signal channel 1
-    /// - 1: signal channel 2
-    #[allow(dead_code)]
-    input: [f32; 2],
+    prev_gate: u8,
 }
 
 impl MidiP {
     pub fn new(_nid: &NodeId) -> Self {
-        Self { input: [0.0; 2] }
+        Self { prev_gate: 0 }
     }
 
     pub const chan: &'static str = "MidiP chan\nMIDI Channel 0 to 15\n";
@@ -94,8 +91,22 @@ impl DspNode for MidiP {
 
         for frame in 0..ctx.nframes() {
             let chan = ectx.note_buffer.get_chan_at(0, frame as u8);
-            freq.write(frame, chan.note as f32 * 1.0 / 127.0);
-            gate.write(frame, chan.gate as f32);
+
+            let note = (chan.note as f32 - 57.0) / 120.0;
+            freq.write(frame, note);
+
+            if chan.gate > 0 {
+                // insert a single sample of silence, for retriggering
+                // any envelopes if the note changed but no note-off came.
+                if self.prev_gate > 0 && self.prev_gate != chan.gate {
+                    gate.write(frame, 0.0);
+                } else {
+                    gate.write(frame, 1.0);
+                }
+            } else {
+                gate.write(frame, 0.0);
+            }
+            self.prev_gate = chan.gate;
             vel.write(frame, chan.vel as f32);
         }
 
