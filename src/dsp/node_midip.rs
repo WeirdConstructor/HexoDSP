@@ -94,6 +94,7 @@ impl DspNode for MidiP {
 
             let note = (chan.note as f32 - 57.0) / 120.0;
             freq.write(frame, note);
+            println!("FRAME: {}, gate={}, freq={}", frame, chan.gate, chan.note);
 
             if chan.gate > 0 {
                 // insert a single sample of silence, for retriggering

@@ -5,7 +5,7 @@
 use super::NoteBuffer;
 use super::{
     DropMsg, GraphMessage, NodeProg, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE,
-    MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
+    MAX_SMOOTHERS, UNUSED_MONITOR_IDX, HxTimedEvent, EventWindowing, HxMidiEvent,
 };
 use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
@@ -521,10 +521,12 @@ impl NodeExecutor {
     ///
     /// You can use it's source as reference for your own audio
     /// DSP thread processing function.
-    pub fn test_run(&mut self, seconds: f32, realtime: bool) -> (Vec<f32>, Vec<f32>) {
+    pub fn test_run(&mut self, seconds: f32, realtime: bool, mut events: Vec<HxTimedEvent>) -> (Vec<f32>, Vec<f32>) {
         const SAMPLE_RATE: f32 = 44100.0;
         self.set_sample_rate(SAMPLE_RATE);
         self.process_graph_updates();
+
+        let mut ev_win = EventWindowing::new();
 
         let mut nframes = (seconds * SAMPLE_RATE) as usize;
 
@@ -540,6 +542,37 @@ impl NodeExecutor {
         while nframes > 0 {
             let cur_nframes = if nframes >= MAX_BLOCK_SIZE { MAX_BLOCK_SIZE } else { nframes };
             nframes -= cur_nframes;
+
+            let buf = self.get_note_buffer();
+            buf.reset();
+            loop {
+                if ev_win.feed_me() {
+                    if events.is_empty() {
+                        break;
+                    }
+
+                    ev_win.feed(events.remove(0));
+                    println!("FEED {}", offs);
+                }
+
+                println!("CHECK {}", offs);
+                if let Some((timing, event)) = ev_win.next_event_in_range(offs + cur_nframes) {
+                    buf.step_to(timing);
+                    match event {
+                        HxMidiEvent::NoteOn { channel, note, vel } => {
+                            buf.note_on(channel, note);
+                            buf.set_velocity(channel, vel);
+                        }
+                        HxMidiEvent::NoteOff { channel, note } => {
+                            buf.note_off(channel, note);
+                        }
+                    }
+
+                } else {
+                    break;
+                }
+            }
+            self.get_note_buffer().step_to(cur_nframes - 1);
 
             let mut context = crate::Context {
                 nframes: cur_nframes,

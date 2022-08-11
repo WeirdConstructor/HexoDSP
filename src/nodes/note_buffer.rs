@@ -5,16 +5,32 @@
 use crate::dsp::MAX_BLOCK_SIZE;
 
 #[derive(Debug, Clone, Copy)]
-pub struct TimedEvent {
+pub struct HxTimedEvent {
     /// The frame number in the current block by the audio driver or plugin API/DAW
     timing: usize,
-    kind: MidiEvent,
+    kind: HxMidiEvent,
+}
+
+impl HxTimedEvent {
+    pub fn note_on(timing: usize, channel: u8, note: u8, vel: f32) -> Self {
+        Self {
+            timing,
+            kind: HxMidiEvent::NoteOn { channel, note, vel }
+        }
+    }
+
+    pub fn note_off(timing: usize, channel: u8, note: u8) -> Self {
+        Self {
+            timing,
+            kind: HxMidiEvent::NoteOff { channel, note }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum MidiEvent {
+pub enum HxMidiEvent {
     NoteOn  { channel: u8, note: u8, vel: f32 },
-    NoteOff { channel: u8, note: u8, vel: f32 },
+    NoteOff { channel: u8, note: u8 },
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -74,7 +90,8 @@ impl NoteBuffer {
     #[inline]
     pub fn note_on(&mut self, channel: u8, note: u8) {
         let mut chan = &mut self.interleaved_chans[(self.buf_idx * 16) + (channel as usize % 16)];
-        chan.gate = (chan.gate + 1) % 2 + 1;
+        println!("NOTE ON {}, GATE={}", note, chan.gate);
+        chan.gate = chan.gate % 2 + 1;
         chan.note = note;
     }
 
@@ -97,8 +114,8 @@ impl NoteBuffer {
     }
 }
 
-struct EventWindowing {
-    pub event: Option<TimedEvent>,
+pub struct EventWindowing {
+    pub event: Option<HxTimedEvent>,
 }
 
 impl EventWindowing {
@@ -114,17 +131,15 @@ impl EventWindowing {
     }
 
     #[inline]
-    pub fn feed(&mut self, event: TimedEvent) {
+    pub fn feed(&mut self, event: HxTimedEvent) {
         self.event = Some(event);
     }
 
     #[inline]
-    pub fn next_event_in_range(&mut self, to_time: usize) -> Option<NoteEvent> {
-        let to_time = to_time as u32;
-
+    pub fn next_event_in_range(&mut self, to_time: usize) -> Option<(usize, HxMidiEvent)> {
         if let Some(event) = self.event.take() {
-            if event.timing() < to_time {
-                return Some(event);
+            if event.timing < to_time {
+                return Some((event.timing, event.kind));
             } else {
                 self.event = Some(event);
             }

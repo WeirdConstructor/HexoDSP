@@ -7,6 +7,7 @@ pub use hexodsp::matrix::*;
 pub use hexodsp::nodes::new_node_engine;
 pub use hexodsp::MatrixCellChain;
 pub use hexodsp::NodeExecutor;
+pub use hexodsp::nodes::{HxTimedEvent, HxMidiEvent};
 
 use hound;
 
@@ -518,7 +519,7 @@ pub fn run_realtime_no_input(
     seconds: f32,
     sleep_a_bit: bool,
 ) -> (Vec<f32>, Vec<f32>) {
-    node_exec.test_run(seconds, sleep_a_bit)
+    node_exec.test_run(seconds, sleep_a_bit, vec![])
 }
 
 pub fn calc_rms_mimax_each_ms(buf: &[f32], ms: f32) -> Vec<(f32, f32, f32)> {
