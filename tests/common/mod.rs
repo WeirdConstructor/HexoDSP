@@ -336,6 +336,20 @@ pub fn collect_signal_changes(inp: &[f32], thres: i64) -> Vec<(usize, i64)> {
 }
 
 #[allow(dead_code)]
+pub fn collect_signal_changes_flt(inp: &[f32], delta: f32) -> Vec<(usize, f32)> {
+    let mut idxs = vec![];
+    let mut last_sig = 0.0;
+    for i in 0..inp.len() {
+        if (inp[i] - last_sig).abs() > delta {
+            idxs.push((i, inp[i]));
+            last_sig = inp[i];
+        }
+    }
+
+    return idxs;
+}
+
+#[allow(dead_code)]
 pub fn collect_non_zero(inp: &[f32]) -> Vec<(usize, usize)> {
     let mut idxs = vec![];
     let mut start_idx = 0;
