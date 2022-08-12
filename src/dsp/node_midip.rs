@@ -92,9 +92,8 @@ impl DspNode for MidiP {
         for frame in 0..ctx.nframes() {
             let chan = ectx.note_buffer.get_chan_at(0, frame as u8);
 
-            let note = (chan.note as f32 - 57.0) / 120.0;
+            let note = (chan.note as f32 - 69.0) / 120.0;
             freq.write(frame, note);
-            println!("FRAME: {}, gate={}, freq={}", frame, chan.gate, chan.note);
 
             if chan.gate > 0 {
                 // insert a single sample of silence, for retriggering
@@ -107,6 +106,7 @@ impl DspNode for MidiP {
             } else {
                 gate.write(frame, 0.0);
             }
+
             self.prev_gate = chan.gate;
             vel.write(frame, chan.vel as f32);
         }

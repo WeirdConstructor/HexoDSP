@@ -10,21 +10,32 @@ fn check_node_midip_gate_inserts() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
+    // Create a DSP matrix with a "MidiP" node and an Out node:
     let mut chain = MatrixCellChain::new(CellDir::B);
     chain.node_out("midip", "gate").node_inp("out", "ch1").place(&mut matrix, 0, 0).unwrap();
     matrix.sync().unwrap();
 
-    let (ch1, _) = node_exec.test_run(0.005, false, vec![
-        HxTimedEvent::note_on(5, 0, 69, 1.0),
-        HxTimedEvent::note_on(10, 0, 68, 1.0),
-        HxTimedEvent::note_on(130, 0, 57, 1.0),
-    ]);
+    // Test run for 5ms with 3 Note On events at sample positions
+    // 5, 10 and 130 in this block of samples:
+    let (ch1, _) = node_exec.test_run(
+        0.005,
+        false,
+        vec![
+            HxTimedEvent::note_on(5, 0, 69, 1.0),
+            HxTimedEvent::note_on(10, 0, 68, 1.0),
+            HxTimedEvent::note_on(130, 0, 57, 1.0),
+        ],
+    );
 
+    // Collect the signal changes (raising edges):
     let changes = collect_signal_changes(&ch1[..], 0);
 
-    assert_eq!(changes, vec![
-        (5, 100),
-        (11, 100),
-        (131, 100),
-    ]);
+    assert_eq!(
+        changes,
+        vec![
+            (5, 100),   // First note triggers right
+            (11, 100),  // Second note needs to shortly pause the gate, which has 1 sample delay
+            (131, 100), // Third note also shortly pauses one sample later.
+        ]
+    );
 }

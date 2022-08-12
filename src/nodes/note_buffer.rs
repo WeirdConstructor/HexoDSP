@@ -13,23 +13,17 @@ pub struct HxTimedEvent {
 
 impl HxTimedEvent {
     pub fn note_on(timing: usize, channel: u8, note: u8, vel: f32) -> Self {
-        Self {
-            timing,
-            kind: HxMidiEvent::NoteOn { channel, note, vel }
-        }
+        Self { timing, kind: HxMidiEvent::NoteOn { channel, note, vel } }
     }
 
     pub fn note_off(timing: usize, channel: u8, note: u8) -> Self {
-        Self {
-            timing,
-            kind: HxMidiEvent::NoteOff { channel, note }
-        }
+        Self { timing, kind: HxMidiEvent::NoteOff { channel, note } }
     }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum HxMidiEvent {
-    NoteOn  { channel: u8, note: u8, vel: f32 },
+    NoteOn { channel: u8, note: u8, vel: f32 },
     NoteOff { channel: u8, note: u8 },
 }
 
@@ -90,7 +84,6 @@ impl NoteBuffer {
     #[inline]
     pub fn note_on(&mut self, channel: u8, note: u8) {
         let mut chan = &mut self.interleaved_chans[(self.buf_idx * 16) + (channel as usize % 16)];
-        println!("NOTE ON {}, GATE={}", note, chan.gate);
         chan.gate = chan.gate % 2 + 1;
         chan.note = note;
     }
@@ -120,9 +113,7 @@ pub struct EventWindowing {
 
 impl EventWindowing {
     pub fn new() -> Self {
-        Self {
-            event: None,
-        }
+        Self { event: None }
     }
 
     #[inline]
@@ -148,7 +139,6 @@ impl EventWindowing {
         None
     }
 }
-
 
 #[cfg(test)]
 mod tests {

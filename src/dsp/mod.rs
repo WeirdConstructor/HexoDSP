@@ -511,6 +511,8 @@ mod node_formfm;
 #[allow(non_upper_case_globals)]
 mod node_map;
 #[allow(non_upper_case_globals)]
+mod node_midip;
+#[allow(non_upper_case_globals)]
 mod node_mix3;
 #[allow(non_upper_case_globals)]
 mod node_mux9;
@@ -518,8 +520,6 @@ mod node_mux9;
 mod node_noise;
 #[allow(non_upper_case_globals)]
 mod node_out;
-#[allow(non_upper_case_globals)]
-mod node_midip;
 #[allow(non_upper_case_globals)]
 mod node_pverb;
 #[allow(non_upper_case_globals)]
@@ -569,10 +569,10 @@ use crate::fa_cqnt_omax;
 use crate::fa_cqnt_omin;
 use crate::fa_delay_mode;
 use crate::fa_map_clip;
+use crate::fa_midip_chan;
 use crate::fa_mux9_in_cnt;
 use crate::fa_noise_mode;
 use crate::fa_out_mono;
-use crate::fa_midip_chan;
 use crate::fa_quant;
 use crate::fa_sampl_dclick;
 use crate::fa_sampl_dir;
@@ -600,11 +600,11 @@ use node_fbwr_fbrd::FbRd;
 use node_fbwr_fbrd::FbWr;
 use node_formfm::FormFM;
 use node_map::Map;
+use node_midip::MidiP;
 use node_mix3::Mix3;
 use node_mux9::Mux9;
 use node_noise::Noise;
 use node_out::Out;
-use node_midip::MidiP;
 use node_pverb::PVerb;
 use node_quant::Quant;
 use node_rndwk::RndWk;

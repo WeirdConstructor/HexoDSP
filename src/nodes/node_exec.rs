@@ -4,8 +4,8 @@
 
 use super::NoteBuffer;
 use super::{
-    DropMsg, GraphMessage, NodeProg, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE,
-    MAX_SMOOTHERS, UNUSED_MONITOR_IDX, HxTimedEvent, EventWindowing, HxMidiEvent,
+    DropMsg, EventWindowing, GraphMessage, HxMidiEvent, HxTimedEvent, NodeProg, FB_DELAY_TIME_US,
+    MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
@@ -521,7 +521,12 @@ impl NodeExecutor {
     ///
     /// You can use it's source as reference for your own audio
     /// DSP thread processing function.
-    pub fn test_run(&mut self, seconds: f32, realtime: bool, mut events: Vec<HxTimedEvent>) -> (Vec<f32>, Vec<f32>) {
+    pub fn test_run(
+        &mut self,
+        seconds: f32,
+        realtime: bool,
+        mut events: Vec<HxTimedEvent>,
+    ) -> (Vec<f32>, Vec<f32>) {
         const SAMPLE_RATE: f32 = 44100.0;
         self.set_sample_rate(SAMPLE_RATE);
         self.process_graph_updates();
@@ -552,10 +557,8 @@ impl NodeExecutor {
                     }
 
                     ev_win.feed(events.remove(0));
-                    println!("FEED {}", offs);
                 }
 
-                println!("CHECK {}", offs);
                 if let Some((timing, event)) = ev_win.next_event_in_range(offs + cur_nframes) {
                     buf.step_to(timing);
                     match event {
@@ -567,7 +570,6 @@ impl NodeExecutor {
                             buf.note_off(channel, note);
                         }
                     }
-
                 } else {
                     break;
                 }

@@ -5,9 +5,9 @@
 pub use hexodsp::dsp::*;
 pub use hexodsp::matrix::*;
 pub use hexodsp::nodes::new_node_engine;
+pub use hexodsp::nodes::{HxMidiEvent, HxTimedEvent};
 pub use hexodsp::MatrixCellChain;
 pub use hexodsp::NodeExecutor;
-pub use hexodsp::nodes::{HxTimedEvent, HxMidiEvent};
 
 use hound;
 
