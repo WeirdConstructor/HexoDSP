@@ -570,6 +570,7 @@ use crate::fa_cqnt_omin;
 use crate::fa_delay_mode;
 use crate::fa_map_clip;
 use crate::fa_midip_chan;
+use crate::fa_midip_gmode;
 use crate::fa_mux9_in_cnt;
 use crate::fa_noise_mode;
 use crate::fa_out_mono;
@@ -1429,7 +1430,9 @@ macro_rules! node_list {
                [0 sig],
             midip => MidiP UIType::Generic UICategory::IOUtil
                (0 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2, 0.0)
-               {1 0 chan setting(0) mode fa_midip_chan 0 16}
+               (1 glen  n_lfot   d_lfot r_lfot f_lfoms stp_f 0.0, 1.0, 250.0)
+               {2 0 chan setting(0) mode fa_midip_chan 0 16}
+               {3 1 gmode setting(0) mode fa_midip_gmode 0 2}
                [0 freq]
                [1 gate]
                [2 vel],

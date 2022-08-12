@@ -14,6 +14,19 @@ macro_rules! fa_midip_chan {
     }};
 }
 
+#[macro_export]
+macro_rules! fa_midip_gmode {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {{
+        let s = match ($v.round() as usize) {
+            0 => "MIDI",
+            1 => "Trigger",
+            2 => "Gate Len",
+            _ => "?",
+        };
+        write!($formatter, "{}", s)
+    }};
+}
+
 /// The (stereo) output port of the plugin
 #[derive(Debug, Clone)]
 pub struct MidiP {
@@ -26,6 +39,8 @@ impl MidiP {
     }
 
     pub const chan: &'static str = "MidiP chan\nMIDI Channel 0 to 15\n";
+    pub const gmode: &'static str = "MidiP gmode\nMIDI gate mode.\n- 'MIDI' gate same as MIDI input\n- 'Trigger' output only triggers on 'gate' output\n- 'Gate Len' output gate with the length of the 'gatel' parameter\n";
+    pub const glen: &'static str = "MidiP glen\nMIDI gate length\nIf 'gmode' is set to 'Gate Len' this controls and overrides the gate length on a MIDI note event.";
     pub const det: &'static str = "MidiP det\nDetune input pitch a bit\nRange: (-1..1)";
     pub const freq: &'static str =
         "MidiP freq\nMIDI note frequency, detuned by 'det'.\nRange: (-1..1)";
@@ -78,10 +93,12 @@ impl DspNode for MidiP {
         ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],
-        _inputs: &[ProcBuf],
+        inputs: &[ProcBuf],
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
+        let det = inp::MidiP::det(inputs);
+        let chan = at::MidiP::chan(atoms);
         let out_i = out_idx::MidiP::gate();
         let (freq, r) = outputs.split_at_mut(out_i);
         let (gate, vel) = r.split_at_mut(1);
@@ -89,10 +106,13 @@ impl DspNode for MidiP {
         let gate = &mut gate[0];
         let vel = &mut vel[0];
 
+        let channel = (chan.i() as usize % 16) as u8;
+
         for frame in 0..ctx.nframes() {
-            let chan = ectx.note_buffer.get_chan_at(0, frame as u8);
+            let chan = ectx.note_buffer.get_chan_at(channel, frame as u8);
 
             let note = (chan.note as f32 - 69.0) / 120.0;
+            let note = note + denorm::MidiP::det(det, frame);
             freq.write(frame, note);
 
             if chan.gate > 0 {
