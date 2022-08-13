@@ -85,6 +85,7 @@ impl NoteBuffer {
     pub fn note_on(&mut self, channel: u8, note: u8) {
         let mut chan = &mut self.interleaved_chans[(self.buf_idx * 16) + (channel as usize % 16)];
         chan.gate = chan.gate % 2 + 1;
+        chan.gate |= 0x10;
         chan.note = note;
     }
 
@@ -92,7 +93,7 @@ impl NoteBuffer {
     pub fn note_off(&mut self, channel: u8, note: u8) {
         let mut chan = &mut self.interleaved_chans[(self.buf_idx * 16) + (channel as usize % 16)];
         if chan.gate > 0 && chan.note == note {
-            chan.gate = 0;
+            chan.gate = chan.gate & 0x0F;
         }
     }
 

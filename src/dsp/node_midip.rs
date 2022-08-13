@@ -115,7 +115,7 @@ impl DspNode for MidiP {
             let note = note + denorm::MidiP::det(det, frame);
             freq.write(frame, note);
 
-            if chan.gate > 0 {
+            if chan.gate & 0x10 > 0 {
                 // insert a single sample of silence, for retriggering
                 // any envelopes if the note changed but no note-off came.
                 if self.prev_gate > 0 && self.prev_gate != chan.gate {
