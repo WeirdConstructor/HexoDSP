@@ -31,7 +31,9 @@ pub use node_conf::*;
 pub use node_exec::*;
 pub use node_graph_ordering::NodeGraphOrdering;
 pub use node_prog::*;
-pub use note_buffer::{EventWindowing, HxMidiEvent, HxTimedEvent, NoteBuffer, NoteChannelState};
+pub use note_buffer::{
+    EventWindowing, HxMidiEvent, HxTimedEvent, MidiEventPointer, NoteBuffer, NoteChannelState,
+};
 
 use crate::dsp::{Node, SAtom};
 pub use crate::monitor::MinMaxMonitorSamples;

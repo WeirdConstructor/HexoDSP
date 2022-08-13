@@ -5,7 +5,7 @@
 use crate::dsp::{
     at, denorm, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
-use crate::nodes::{NodeAudioContext, NodeExecContext};
+use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
 
 #[macro_export]
 macro_rules! fa_midip_chan {
@@ -30,12 +30,15 @@ macro_rules! fa_midip_gmode {
 /// The (stereo) output port of the plugin
 #[derive(Debug, Clone)]
 pub struct MidiP {
-    prev_gate: u8,
+    next_gate: i8,
+    cur_note: u8,
+    cur_gate: u8,
+    cur_vel: f32,
 }
 
 impl MidiP {
     pub fn new(_nid: &NodeId) -> Self {
-        Self { prev_gate: 0 }
+        Self { next_gate: 0, cur_note: 0, cur_gate: 0, cur_vel: 0.0 }
     }
 
     pub const chan: &'static str = "MidiP chan\nMIDI Channel 0 to 15\n";
@@ -106,29 +109,54 @@ impl DspNode for MidiP {
         let gate = &mut gate[0];
         let vel = &mut vel[0];
 
-        let channel = (chan.i() as usize % 16) as u8;
+        let midip_channel = (chan.i() as usize % 16) as u8;
+
+        let mut ptr = MidiEventPointer::new(&ectx.midi_notes[..]);
 
         for frame in 0..ctx.nframes() {
-            let chan = ectx.note_buffer.get_chan_at(channel, frame as u8);
+            if self.next_gate > 0 {
+                self.cur_gate = 1;
+            } else if self.next_gate < 0 {
+                self.cur_gate = 0;
+            }
+            self.next_gate = 0;
 
-            let note = (chan.note as f32 - 69.0) / 120.0;
-            let note = note + det.read(frame);
-            freq.write(frame, note);
+            while let Some(ev) = ptr.next_at(frame) {
+                println!("MIDIP EV: {} {:?}", frame, ev);
+                match ev {
+                    HxMidiEvent::NoteOn { channel, note, vel } => {
+                        if channel != midip_channel {
+                            continue;
+                        }
 
-            if chan.gate & 0x10 > 0 {
-                // insert a single sample of silence, for retriggering
-                // any envelopes if the note changed but no note-off came.
-                if self.prev_gate > 0 && self.prev_gate != chan.gate {
-                    gate.write(frame, 0.0);
-                } else {
-                    gate.write(frame, 1.0);
+                        if self.cur_gate > 0 {
+                            self.next_gate = 1;
+                            self.cur_gate = 0;
+                        } else {
+                            self.cur_gate = 1;
+                        }
+                        self.cur_note = note;
+                        self.cur_vel = vel;
+                    }
+                    HxMidiEvent::NoteOff { channel, note } => {
+                        if channel != midip_channel {
+                            continue;
+                        }
+
+                        if self.cur_note == note {
+                            self.next_gate = -1;
+                        }
+                    }
+                    _ => (),
                 }
-            } else {
-                gate.write(frame, 0.0);
             }
 
-            self.prev_gate = chan.gate;
-            vel.write(frame, chan.vel as f32);
+            let note = (self.cur_note as f32 - 69.0) / 120.0;
+            let note = note + det.read(frame);
+            println!("FRAME: {} => gate={}, freq={}, next_gate={}", frame, self.cur_gate, note, self.next_gate);
+            freq.write(frame, note);
+            gate.write(frame, if self.cur_gate > 0 { 1.0 } else { 0.0 });
+            vel.write(frame, self.cur_vel as f32);
         }
 
         let last_val = gate.read(ctx.nframes() - 1);

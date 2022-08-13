@@ -25,6 +25,9 @@ use core::arch::x86_64::{
     //    _MM_GET_FLUSH_ZERO_MODE
 };
 
+pub const MAX_MIDI_NOTES_PER_BLOCK: usize = 512;
+pub const MAX_MIDI_CC_PER_BLOCK: usize = 1024;
+
 /// Holds the complete allocation of nodes and
 /// the program. New Nodes or the program is
 /// not newly allocated in the audio backend, but it is
@@ -171,13 +174,17 @@ impl Default for FeedbackBuffer {
 pub struct NodeExecContext {
     pub feedback_delay_buffers: Vec<FeedbackBuffer>,
     pub note_buffer: NoteBuffer,
+    pub midi_notes: Vec<HxTimedEvent>,
+    pub midi_ccs: Vec<HxTimedEvent>,
 }
 
 impl NodeExecContext {
     fn new() -> Self {
         let mut fbdb = vec![];
         fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
-        Self { feedback_delay_buffers: fbdb, note_buffer: NoteBuffer::new() }
+        let midi_notes = Vec::with_capacity(MAX_MIDI_NOTES_PER_BLOCK);
+        let midi_ccs = Vec::with_capacity(MAX_MIDI_CC_PER_BLOCK);
+        Self { feedback_delay_buffers: fbdb, note_buffer: NoteBuffer::new(), midi_notes, midi_ccs }
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
@@ -351,6 +358,27 @@ impl NodeExecutor {
 
         for sm in self.smoothers.iter_mut() {
             sm.1.set_sample_rate(sample_rate);
+        }
+    }
+
+    #[inline]
+    pub fn feed_midi_events_from<F: FnMut() -> Option<HxTimedEvent>>(&mut self, mut f: F) {
+        self.exec_ctx.midi_notes.clear();
+        self.exec_ctx.midi_ccs.clear();
+
+        while let Some(ev) = f() {
+            if ev.is_cc() {
+                self.exec_ctx.midi_ccs.push(ev);
+            } else {
+                self.exec_ctx.midi_notes.push(ev);
+            }
+
+            if self.exec_ctx.midi_ccs.len() == MAX_MIDI_CC_PER_BLOCK {
+                break;
+            }
+            if self.exec_ctx.midi_notes.len() == MAX_MIDI_NOTES_PER_BLOCK {
+                break;
+            }
         }
     }
 
@@ -548,33 +576,17 @@ impl NodeExecutor {
             let cur_nframes = if nframes >= MAX_BLOCK_SIZE { MAX_BLOCK_SIZE } else { nframes };
             nframes -= cur_nframes;
 
-            let buf = self.get_note_buffer();
-            buf.reset();
-            loop {
+            self.feed_midi_events_from(|| {
                 if ev_win.feed_me() {
                     if events.is_empty() {
-                        break;
+                        return None;
                     }
 
                     ev_win.feed(events.remove(0));
                 }
 
-                if let Some((timing, event)) = ev_win.next_event_in_range(offs + cur_nframes) {
-                    buf.step_to(timing);
-                    match event {
-                        HxMidiEvent::NoteOn { channel, note, vel } => {
-                            buf.note_on(channel, note);
-                            buf.set_velocity(channel, vel);
-                        }
-                        HxMidiEvent::NoteOff { channel, note } => {
-                            buf.note_off(channel, note);
-                        }
-                    }
-                } else {
-                    break;
-                }
-            }
-            self.get_note_buffer().step_to(cur_nframes - 1);
+                ev_win.next_event_in_range(offs, cur_nframes)
+            });
 
             let mut context = crate::Context {
                 nframes: cur_nframes,
