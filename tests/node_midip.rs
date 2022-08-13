@@ -75,7 +75,7 @@ fn check_node_midip_pitch_det() {
     let mut chain = MatrixCellChain::new(CellDir::B);
     chain
         .node_out("midip", "freq")
-        .set_denorm("det", 0.1)
+        .set_norm("det", 0.1)
         .node_inp("out", "ch1")
         .place(&mut matrix, 0, 0)
         .unwrap();

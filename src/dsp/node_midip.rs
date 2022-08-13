@@ -112,7 +112,7 @@ impl DspNode for MidiP {
             let chan = ectx.note_buffer.get_chan_at(channel, frame as u8);
 
             let note = (chan.note as f32 - 69.0) / 120.0;
-            let note = note + denorm::MidiP::det(det, frame);
+            let note = note + det.read(frame);
             freq.write(frame, note);
 
             if chan.gate & 0x10 > 0 {

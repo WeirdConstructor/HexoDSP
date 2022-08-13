@@ -120,6 +120,23 @@ impl MatrixCellChain {
         self
     }
 
+    /// Sets the normalized value of the current parameter cell's parameter.
+    ///
+    /// The current parameter cell is set automatically when a new node is added.
+    /// Alternatively you can use [MatrixCellChain::params_for_idx] to set the current
+    /// parameter cell.
+    pub fn set_norm(&mut self, param: &str, norm: f32) -> &mut Self {
+        let link = self.chain.get_mut(self.param_idx).expect("Correct parameter idx");
+
+        if let Some(pid) = link.cell.node_id().inp_param(param) {
+            link.params.push((pid, SAtom::param(norm as f32)));
+        } else {
+            self.error = Some(ChainError::UnknownInput(link.cell.node_id(), param.to_string()));
+        }
+
+        self
+    }
+
     /// Sets the atom value of the current parameter cell's parameter.
     ///
     /// The current parameter cell is set automatically when a new node is added.
