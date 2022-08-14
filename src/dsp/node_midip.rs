@@ -152,7 +152,7 @@ impl DspNode for MidiP {
 
             let note = (self.cur_note as f32 - 69.0) / 120.0;
             let note = note + det.read(frame);
-            println!("FRAME: {} => gate={}, freq={}, next_gate={}", frame, self.cur_gate, note, self.next_gate);
+            //d// println!("FRAME: {} => gate={}, freq={}, next_gate={}", frame, self.cur_gate, note, self.next_gate);
             freq.write(frame, note);
             gate.write(frame, if self.cur_gate > 0 { 1.0 } else { 0.0 });
             vel.write(frame, self.cur_vel as f32);

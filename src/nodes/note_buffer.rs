@@ -20,6 +20,10 @@ impl HxTimedEvent {
         }
     }
 
+    pub fn cc(timing: usize, channel: u8, cc: u8, value: f32) -> Self {
+        Self { timing, kind: HxMidiEvent::CC { channel, cc, value } }
+    }
+
     pub fn note_on(timing: usize, channel: u8, note: u8, vel: f32) -> Self {
         Self { timing, kind: HxMidiEvent::NoteOn { channel, note, vel } }
     }

@@ -80,9 +80,9 @@ impl DspNode for MidiCC {
         let sig3 = &mut sig3[0];
 
         let midicc_channel = (chan.i() as usize % 16) as u8;
-        let midicc_cc1 = (chan.i() as usize % 128) as u8;
-        let midicc_cc2 = (chan.i() as usize % 128) as u8;
-        let midicc_cc3 = (chan.i() as usize % 128) as u8;
+        let midicc_cc1 = (cc1.i() as usize % 128) as u8;
+        let midicc_cc2 = (cc2.i() as usize % 128) as u8;
+        let midicc_cc3 = (cc3.i() as usize % 128) as u8;
 
         let mut ptr = MidiEventPointer::new(&ectx.midi_ccs[..]);
 
@@ -92,6 +92,7 @@ impl DspNode for MidiCC {
             while let Some(ev) = ptr.next_at(frame) {
                 match ev {
                     HxMidiEvent::CC { channel, cc, value } => {
+                println!("CC: {} {} {}", channel, cc, value);
                         if channel != midicc_channel {
                             continue;
                         }
