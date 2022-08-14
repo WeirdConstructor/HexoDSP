@@ -513,6 +513,8 @@ mod node_map;
 #[allow(non_upper_case_globals)]
 mod node_midip;
 #[allow(non_upper_case_globals)]
+mod node_midicc;
+#[allow(non_upper_case_globals)]
 mod node_mix3;
 #[allow(non_upper_case_globals)]
 mod node_mux9;
@@ -571,6 +573,7 @@ use crate::fa_delay_mode;
 use crate::fa_map_clip;
 use crate::fa_midip_chan;
 use crate::fa_midip_gmode;
+use crate::fa_midicc_cc;
 use crate::fa_mux9_in_cnt;
 use crate::fa_noise_mode;
 use crate::fa_out_mono;
@@ -602,6 +605,7 @@ use node_fbwr_fbrd::FbWr;
 use node_formfm::FormFM;
 use node_map::Map;
 use node_midip::MidiP;
+use node_midicc::MidiCC;
 use node_mix3::Mix3;
 use node_mux9::Mux9;
 use node_noise::Noise;
@@ -1436,6 +1440,15 @@ macro_rules! node_list {
                [0 freq]
                [1 gate]
                [2 vel],
+            midicc => MidiCC UIType::Generic UICategory::IOUtil
+               (0 slew  n_lfot   d_lfot r_lfot f_lfoms stp_f 0.0, 1.0, 0.0)
+               {1 0 chan setting(0) mode fa_midip_chan 0 16}
+               {2 1 cc1  setting(0) mode fa_midicc_cc 0 127}
+               {3 2 cc2  setting(0) mode fa_midicc_cc 0 127}
+               {4 3 cc3  setting(0) mode fa_midicc_cc 0 127}
+               [0 sig1]
+               [1 sig2]
+               [2 sig3],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
                (1  ch2   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)

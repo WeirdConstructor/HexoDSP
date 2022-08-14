@@ -122,7 +122,6 @@ impl DspNode for MidiP {
             self.next_gate = 0;
 
             while let Some(ev) = ptr.next_at(frame) {
-                println!("MIDIP EV: {} {:?}", frame, ev);
                 match ev {
                     HxMidiEvent::NoteOn { channel, note, vel } => {
                         if channel != midip_channel {
