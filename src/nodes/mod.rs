@@ -7,6 +7,7 @@ pub const MAX_SCOPES: usize = 8;
 pub const SCOPE_SAMPLES: usize = 512;
 pub const MAX_INPUTS: usize = 32;
 pub const MAX_SMOOTHERS: usize = 36 + 4; // 6 * 6 modulator inputs + 4 UI Knobs
+pub const MAX_INJ_MIDI_EVENTS: usize = 64;
 pub const MAX_AVAIL_TRACKERS: usize = 128;
 pub const MAX_AVAIL_CODE_ENGINES: usize = 32;
 pub const MAX_FB_DELAYS: usize = 256; // 256 feedback delays, thats roughly 1.2MB RAM
@@ -17,23 +18,21 @@ pub const MAX_FB_DELAY_SIZE: usize = (MAX_FB_DELAY_SRATE * FB_DELAY_TIME_US) / 1
 
 mod drop_thread;
 mod feedback_filter;
+mod midi;
 mod node_conf;
 mod node_exec;
 mod node_graph_ordering;
 mod node_prog;
-mod note_buffer;
 pub mod visual_sampling_filter;
 
 pub(crate) use visual_sampling_filter::*;
 
 pub use feedback_filter::*;
+pub use midi::{EventWindowing, HxMidiEvent, HxTimedEvent, MidiEventPointer};
 pub use node_conf::*;
 pub use node_exec::*;
 pub use node_graph_ordering::NodeGraphOrdering;
 pub use node_prog::*;
-pub use note_buffer::{
-    EventWindowing, HxMidiEvent, HxTimedEvent, MidiEventPointer, NoteBuffer, NoteChannelState,
-};
 
 use crate::dsp::{Node, SAtom};
 pub use crate::monitor::MinMaxMonitorSamples;
@@ -78,10 +77,19 @@ pub enum GraphMessage {
         mod_idx: usize,
         modamt: f32,
     },
+    InjectMidi {
+        midi_ev: HxMidiEvent,
+    },
     /// Sets the buffer indices to monitor with the FeedbackProcessor.
     SetMonitor {
         bufs: [usize; MON_SIG_CNT],
     },
+}
+
+/// Message from the DSP graph/backend to the frontend. Such as MIDI events
+/// for MIDI learn for instance.
+pub enum GraphEvent {
+    MIDI(HxMidiEvent),
 }
 
 pub const UNUSED_MONITOR_IDX: usize = 99999;

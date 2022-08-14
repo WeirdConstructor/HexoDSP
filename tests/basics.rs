@@ -976,7 +976,7 @@ fn check_matrix_output_feedback() {
     matrix.set_param(gain_p, SAtom::param(0.25));
 
     for _ in 0..10 {
-        node_exec.test_run(0.11, true);
+        node_exec.test_run(0.11, true, &[]);
         matrix.update_filters();
         matrix.filtered_out_fb_for(&sin, sin.out("sig").unwrap());
         matrix.filtered_out_fb_for(&amp, amp.out("sig").unwrap());

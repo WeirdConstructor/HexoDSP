@@ -7,7 +7,9 @@ use crate::dsp::{NodeId, NodeInfo, ParamId, SAtom};
 use crate::matrix_repr::*;
 pub use crate::monitor::MON_SIG_CNT;
 pub use crate::nodes::MinMaxMonitorSamples;
-use crate::nodes::{NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES};
+use crate::nodes::{
+    GraphEvent, HxMidiEvent, NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES,
+};
 use crate::wblockdsp::{BlkJITCompileError, BlockFun, BlockFunSnapshot};
 pub use crate::CellDir;
 use crate::ScopeHandle;
@@ -467,6 +469,8 @@ pub trait MatrixObserver {
     /// The called then needs up update all it's internal state it knows
     /// about [Matrix].
     fn update_all(&self);
+    /// Called when a MIDI event was received.
+    fn midi_event(&self, midi_ev: HxMidiEvent);
 }
 
 pub struct Matrix {
@@ -1456,6 +1460,28 @@ impl Matrix {
     /// See also [NodeConfigurator::update_output_feedback].
     pub fn update_output_feedback(&mut self) {
         self.config.update_output_feedback();
+    }
+
+    /// Injects a [HxMidiEvent] directly into audio thread, so that it can trickle
+    /// back to the GUI thread the standard way. This is mostly used for automated testing.
+    /// And maybe some day for some kind of remote control script from WLambda?
+    pub fn inject_midi_event(&mut self, midi_ev: HxMidiEvent) {
+        self.config.inject_midi_event(midi_ev);
+    }
+
+    /// Handles events from the DSP graph. Such as MIDI events for MIDI learn
+    /// functionality! Call this regularily (every UI frame) if you want to
+    /// have MIDI learn to work and receive events such as MIDI events via the [MatrixObserver].
+    pub fn handle_graph_events(&mut self) {
+        while let Some(event) = self.config.next_event() {
+            match event {
+                GraphEvent::MIDI(midi_ev) => {
+                    if let Some(obs) = &self.observer {
+                        obs.midi_event(midi_ev);
+                    }
+                }
+            }
+        }
     }
 }
 

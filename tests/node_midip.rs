@@ -20,7 +20,7 @@ fn check_node_midip_gate_inserts() {
     let (ch1, _) = node_exec.test_run(
         0.005,
         false,
-        vec![
+        &[
             HxTimedEvent::note_on(5, 0, 69, 1.0),
             HxTimedEvent::note_on(10, 0, 68, 1.0),
             HxTimedEvent::note_on(130, 0, 57, 1.0),
@@ -32,7 +32,7 @@ fn check_node_midip_gate_inserts() {
 
     assert_eq!(
         changes,
-        vec![
+        &[
             (5, 100),   // First note triggers right
             (11, 100),  // Second note needs to shortly pause the gate, which has 1 sample delay
             (131, 100), // Third note also shortly pauses one sample later.
@@ -55,7 +55,7 @@ fn check_node_midip_pitch_track() {
     let (ch1, _) = node_exec.test_run(
         0.005,
         false,
-        vec![
+        &[
             HxTimedEvent::note_on(5, 0, 69, 1.0),
             HxTimedEvent::note_on(10, 0, 68, 1.0),
             HxTimedEvent::note_on(130, 0, 57, 1.0),
@@ -86,7 +86,7 @@ fn check_node_midip_pitch_det() {
     let (ch1, _) = node_exec.test_run(
         0.005,
         false,
-        vec![
+        &[
             HxTimedEvent::note_on(5, 0, 69, 1.0),
             HxTimedEvent::note_on(10, 0, 68, 1.0),
             HxTimedEvent::note_on(130, 0, 57, 1.0),
@@ -112,7 +112,7 @@ fn check_node_midip_vel_track() {
     let (ch1, _) = node_exec.test_run(
         0.005,
         false,
-        vec![
+        &[
             HxTimedEvent::note_on(5, 0, 69, 0.4),
             HxTimedEvent::note_on(10, 0, 68, 1.0),
             HxTimedEvent::note_on(130, 0, 57, 0.6),
@@ -141,7 +141,7 @@ fn check_node_midip_off_on_test() {
     let (ch1, _) = node_exec.test_run(
         0.005,
         false,
-        vec![
+        &[
             HxTimedEvent::note_on(0, 0, 69, 1.0),
             HxTimedEvent::note_off(5, 0, 69),
             HxTimedEvent::note_on(5, 0, 68, 1.0),

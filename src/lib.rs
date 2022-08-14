@@ -332,7 +332,7 @@ pub use log::log;
 pub use matrix::{Cell, Matrix};
 pub use matrix_repr::load_patch_from_file;
 pub use matrix_repr::save_patch_to_file;
-pub use nodes::{new_node_engine, NodeConfigurator, NodeExecutor};
+pub use nodes::{new_node_engine, HxMidiEvent, NodeConfigurator, NodeExecutor};
 pub use sample_lib::{SampleLibrary, SampleLoadError};
 pub use scope_handle::ScopeHandle;
 

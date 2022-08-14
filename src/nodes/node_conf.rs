@@ -3,8 +3,8 @@
 // See README.md and COPYING for details.
 
 use super::{
-    FeedbackFilter, GraphMessage, NodeOp, NodeProg, MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES,
-    MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
+    FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg, MAX_ALLOCATED_NODES,
+    MAX_AVAIL_CODE_ENGINES, MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
@@ -16,7 +16,7 @@ use crate::ScopeHandle;
 #[cfg(feature = "synfx-dsp-jit")]
 use synfx_dsp_jit::engine::CodeEngine;
 
-use ringbuf::{Producer, RingBuffer};
+use ringbuf::{Consumer, Producer, RingBuffer};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -229,6 +229,8 @@ pub(crate) struct SharedNodeConf {
     pub(crate) node_ctx_values: Vec<Arc<AtomicFloat>>,
     /// For updating the NodeExecutor with graph updates.
     pub(crate) graph_update_prod: Producer<GraphMessage>,
+    /// For receiving events from the DSP graph.
+    pub(crate) graph_event_cons: Consumer<GraphEvent>,
     /// For receiving monitor data from the backend thread.
     pub(crate) monitor: Monitor,
     /// Handles deallocation of dead nodes from the backend.
@@ -242,9 +244,11 @@ impl SharedNodeConf {
     pub(crate) fn new() -> (Self, SharedNodeExec) {
         let rb_graph = RingBuffer::new(MAX_ALLOCATED_NODES * 2);
         let rb_drop = RingBuffer::new(MAX_ALLOCATED_NODES * 2);
+        let rb_ev = RingBuffer::new(MAX_ALLOCATED_NODES * 2);
 
         let (rb_graph_prod, rb_graph_con) = rb_graph.split();
         let (rb_drop_prod, rb_drop_con) = rb_drop.split();
+        let (rb_ev_prod, rb_ev_con) = rb_ev.split();
 
         let drop_thread = DropThread::new(rb_drop_con);
 
@@ -259,11 +263,18 @@ impl SharedNodeConf {
         }
 
         (
-            Self { node_ctx_values, graph_update_prod: rb_graph_prod, monitor, drop_thread },
+            Self {
+                node_ctx_values,
+                graph_update_prod: rb_graph_prod,
+                graph_event_cons: rb_ev_con,
+                monitor,
+                drop_thread,
+            },
             SharedNodeExec {
                 node_ctx_values: exec_node_ctx_vals,
                 graph_update_con: rb_graph_con,
                 graph_drop_prod: rb_drop_prod,
+                graph_event_prod: rb_ev_prod,
                 monitor_backend,
             },
         )
@@ -1092,5 +1103,17 @@ impl NodeConfigurator {
 
     pub fn get_minmax_monitor_samples(&mut self, idx: usize) -> &MinMaxMonitorSamples {
         self.shared.monitor.get_minmax_monitor_samples(idx)
+    }
+
+    /// Injects a [HxMidiEvent] directly into audio thread, so that it can trickle
+    /// back to the GUI thread the standard way. This is mostly used for automated testing.
+    /// And maybe some day for some kind of remote control script from WLambda?
+    pub fn inject_midi_event(&mut self, midi_ev: HxMidiEvent) {
+        let _ = self.shared.graph_update_prod.push(GraphMessage::InjectMidi { midi_ev });
+    }
+
+    /// Returns the next [GraphEvent] from the DSP/audio/backend thread.
+    pub fn next_event(&mut self) -> Option<GraphEvent> {
+        self.shared.graph_event_cons.pop()
     }
 }

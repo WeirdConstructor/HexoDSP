@@ -42,6 +42,7 @@ impl Smoother {
         self.done = false;
     }
 
+    #[allow(dead_code)]
     #[inline]
     pub fn current(&self) -> f32 {
         if self.done {

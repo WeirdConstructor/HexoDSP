@@ -2,10 +2,10 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use super::NoteBuffer;
 use super::{
-    DropMsg, EventWindowing, GraphMessage, HxMidiEvent, HxTimedEvent, NodeProg, FB_DELAY_TIME_US,
-    MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
+    DropMsg, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent, NodeProg,
+    FB_DELAY_TIME_US, MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE, MAX_INJ_MIDI_EVENTS, MAX_SMOOTHERS,
+    UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
@@ -69,6 +69,9 @@ pub struct NodeExecutor {
     /// The connection with the [crate::nodes::NodeConfigurator].
     shared: SharedNodeExec,
 
+    /// A small buffer for injected [HxMidiEvent]
+    injected_midi: Vec<HxMidiEvent>,
+
     /// A flag to remember if we already initialized the logger on the audio thread.
     dsp_log_init: bool,
 }
@@ -84,6 +87,9 @@ pub(crate) struct SharedNodeExec {
     pub(crate) graph_update_con: Consumer<GraphMessage>,
     /// For receiving deleted/overwritten nodes from the backend thread.
     pub(crate) graph_drop_prod: Producer<DropMsg>,
+    /// For sending events from the DSP graph to the frontend. Such as MIDI events for
+    /// the MIDI learn functionality.
+    pub(crate) graph_event_prod: Producer<GraphEvent>,
     /// For sending feedback to the frontend thread.
     pub(crate) monitor_backend: MonitorBackend,
 }
@@ -173,7 +179,6 @@ impl Default for FeedbackBuffer {
 /// This is used for instance to implement the feedbackd delay nodes.
 pub struct NodeExecContext {
     pub feedback_delay_buffers: Vec<FeedbackBuffer>,
-    pub note_buffer: NoteBuffer,
     pub midi_notes: Vec<HxTimedEvent>,
     pub midi_ccs: Vec<HxTimedEvent>,
 }
@@ -184,7 +189,7 @@ impl NodeExecContext {
         fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
         let midi_notes = Vec::with_capacity(MAX_MIDI_NOTES_PER_BLOCK);
         let midi_ccs = Vec::with_capacity(MAX_MIDI_CC_PER_BLOCK);
-        Self { feedback_delay_buffers: fbdb, note_buffer: NoteBuffer::new(), midi_notes, midi_ccs }
+        Self { feedback_delay_buffers: fbdb, midi_notes, midi_ccs }
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
@@ -209,6 +214,7 @@ impl NodeExecutor {
         smoothers.resize_with(MAX_SMOOTHERS, || (0, Smoother::new()));
 
         let target_refresh = Vec::with_capacity(MAX_SMOOTHERS);
+        let injected_midi = Vec::with_capacity(MAX_INJ_MIDI_EVENTS);
 
         NodeExecutor {
             nodes,
@@ -219,6 +225,7 @@ impl NodeExecutor {
             monitor_signal_cur_inp_indices: [UNUSED_MONITOR_IDX; MON_SIG_CNT],
             exec_ctx: NodeExecContext::new(),
             dsp_log_init: false,
+            injected_midi,
             shared,
         }
     }
@@ -345,6 +352,11 @@ impl NodeExecutor {
                 GraphMessage::SetMonitor { bufs } => {
                     self.monitor_signal_cur_inp_indices = bufs;
                 }
+                GraphMessage::InjectMidi { midi_ev } => {
+                    if self.injected_midi.len() < MAX_INJ_MIDI_EVENTS {
+                        self.injected_midi.push(midi_ev);
+                    }
+                }
             }
         }
     }
@@ -366,12 +378,28 @@ impl NodeExecutor {
         self.exec_ctx.midi_notes.clear();
         self.exec_ctx.midi_ccs.clear();
 
+        if self.injected_midi.len() > 0 {
+            for ev in self.injected_midi.iter().rev() {
+                let ev = HxTimedEvent::new_timed(0, *ev);
+                if ev.is_cc() {
+                    self.exec_ctx.midi_ccs.push(ev);
+                } else {
+                    self.exec_ctx.midi_notes.push(ev);
+                }
+                let _ = self.shared.graph_event_prod.push(GraphEvent::MIDI(ev.kind()));
+            }
+
+            self.injected_midi.clear();
+        }
+
         while let Some(ev) = f() {
             if ev.is_cc() {
                 self.exec_ctx.midi_ccs.push(ev);
             } else {
                 self.exec_ctx.midi_notes.push(ev);
             }
+
+            let _ = self.shared.graph_event_prod.push(GraphEvent::MIDI(ev.kind()));
 
             if self.exec_ctx.midi_ccs.len() == MAX_MIDI_CC_PER_BLOCK {
                 break;
@@ -380,11 +408,6 @@ impl NodeExecutor {
                 break;
             }
         }
-    }
-
-    #[inline]
-    pub fn get_note_buffer(&mut self) -> &mut NoteBuffer {
-        &mut self.exec_ctx.note_buffer
     }
 
     #[inline]
@@ -553,7 +576,7 @@ impl NodeExecutor {
         &mut self,
         seconds: f32,
         realtime: bool,
-        mut events: Vec<HxTimedEvent>,
+        events: &[HxTimedEvent],
     ) -> (Vec<f32>, Vec<f32>) {
         const SAMPLE_RATE: f32 = 44100.0;
         self.set_sample_rate(SAMPLE_RATE);
@@ -571,6 +594,7 @@ impl NodeExecutor {
             output_l[i] = 0.0;
             output_r[i] = 0.0;
         }
+        let mut ev_idx = 0;
         let mut offs = 0;
         while nframes > 0 {
             let cur_nframes = if nframes >= MAX_BLOCK_SIZE { MAX_BLOCK_SIZE } else { nframes };
@@ -578,11 +602,12 @@ impl NodeExecutor {
 
             self.feed_midi_events_from(|| {
                 if ev_win.feed_me() {
-                    if events.is_empty() {
+                    if ev_idx >= events.len() {
                         return None;
                     }
 
-                    ev_win.feed(events.remove(0));
+                    ev_win.feed(events[ev_idx]);
+                    ev_idx += 1;
                 }
 
                 ev_win.next_event_in_range(offs, cur_nframes)

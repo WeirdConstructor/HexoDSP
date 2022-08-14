@@ -533,7 +533,7 @@ pub fn run_realtime_no_input(
     seconds: f32,
     sleep_a_bit: bool,
 ) -> (Vec<f32>, Vec<f32>) {
-    node_exec.test_run(seconds, sleep_a_bit, vec![])
+    node_exec.test_run(seconds, sleep_a_bit, &[])
 }
 
 pub fn calc_rms_mimax_each_ms(buf: &[f32], ms: f32) -> Vec<(f32, f32, f32)> {
