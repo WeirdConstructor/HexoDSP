@@ -151,3 +151,41 @@ fn check_node_midip_off_on_test() {
     let changes = collect_signal_changes(&ch1[..], -1);
     assert_eq!(changes, vec![(0, 100), (5, 0), (6, 100)]);
 }
+
+#[test]
+fn check_node_midip_trigger_test() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("midip", "gate")
+        .set_denorm("det", 0.1)
+        .set_atom("gmode", SAtom::setting(1))
+        .node_inp("out", "ch1")
+        .place(&mut matrix, 0, 0)
+        .unwrap();
+    matrix.sync().unwrap();
+
+    let (ch1, _) = node_exec.test_run(
+        0.015,
+        false,
+        &[HxTimedEvent::note_on(100, 0, 69, 1.0), HxTimedEvent::note_off(105, 0, 69)],
+    );
+
+    let changes = collect_signal_changes_both_edges(&ch1[..], 1);
+    assert_eq!(changes, vec![(100, 100), (189, -100)]);
+
+    // Now test without the trigger signal:
+    node_pset_s(&mut matrix, "midip", 0, "gmode", 0);
+
+    let (ch1, _) = node_exec.test_run(
+        0.015,
+        false,
+        &[HxTimedEvent::note_on(100, 0, 69, 1.0), HxTimedEvent::note_off(105, 0, 69)],
+    );
+
+    let changes = collect_signal_changes_both_edges(&ch1[..], 1);
+    // As expected, now end of note at 106:
+    assert_eq!(changes, vec![(100, 100), (106, -100)]);
+}

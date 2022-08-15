@@ -4,6 +4,7 @@
 
 use crate::dsp::{at, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
+use synfx_dsp::TrigSignal;
 
 #[macro_export]
 macro_rules! fa_midip_chan {
@@ -32,16 +33,20 @@ pub struct MidiP {
     cur_note: u8,
     cur_gate: u8,
     cur_vel: f32,
+    trig_sig: TrigSignal,
 }
 
 impl MidiP {
     pub fn new(_nid: &NodeId) -> Self {
-        Self { next_gate: 0, cur_note: 0, cur_gate: 0, cur_vel: 0.0 }
+        Self { next_gate: 0, cur_note: 0, cur_gate: 0, cur_vel: 0.0, trig_sig: TrigSignal::new() }
     }
 
     pub const chan: &'static str = "MidiP chan\nMIDI Channel 0 to 15\n";
     pub const gmode: &'static str = "MidiP gmode\nMIDI gate mode.\n- 'MIDI' gate same as MIDI input\n- 'Trigger' output only triggers on 'gate' output\n- 'Gate Len' output gate with the length of the 'gatel' parameter\n";
-    pub const glen: &'static str = "MidiP glen\nMIDI gate length\nIf 'gmode' is set to 'Gate Len' this controls and overrides the gate length on a MIDI note event.";
+    pub const glen: &'static str = "MidiP glen\nMIDI gate length\n\
+        If 'gmode' is set to 'Gate Len' this controls and overrides the gate length on a MIDI \
+        note event. 'Trigger' will just send a short trigger when a note event is received. \
+        'MIDI' means the gate reflects the note on/off duration.";
     pub const det: &'static str = "MidiP det\nDetune input pitch a bit\nRange: (-1..1)";
     pub const freq: &'static str =
         "MidiP freq\nMIDI note frequency, detuned by 'det'.\nRange: (-1..1)";
@@ -84,8 +89,12 @@ impl DspNode for MidiP {
         0
     }
 
-    fn set_sample_rate(&mut self, _srate: f32) {}
-    fn reset(&mut self) {}
+    fn set_sample_rate(&mut self, srate: f32) {
+        self.trig_sig.set_sample_rate(srate);
+    }
+    fn reset(&mut self) {
+        self.trig_sig.reset();
+    }
 
     #[inline]
     fn process<T: NodeAudioContext>(
@@ -100,6 +109,7 @@ impl DspNode for MidiP {
     ) {
         let det = inp::MidiP::det(inputs);
         let chan = at::MidiP::chan(atoms);
+        let gmode = at::MidiP::gmode(atoms);
         let out_i = out_idx::MidiP::gate();
         let (freq, r) = outputs.split_at_mut(out_i);
         let (gate, vel) = r.split_at_mut(1);
@@ -110,6 +120,8 @@ impl DspNode for MidiP {
         let midip_channel = (chan.i() as usize % 16) as u8;
 
         let mut ptr = MidiEventPointer::new(&ectx.midi_notes[..]);
+
+        let gmode = gmode.i();
 
         for frame in 0..ctx.nframes() {
             if self.next_gate > 0 {
@@ -132,6 +144,7 @@ impl DspNode for MidiP {
                         } else {
                             self.cur_gate = 1;
                         }
+                        self.trig_sig.trigger();
                         self.cur_note = note;
                         self.cur_vel = vel;
                     }
@@ -148,11 +161,19 @@ impl DspNode for MidiP {
                 }
             }
 
+            match gmode {
+                1 => {
+                    gate.write(frame, self.trig_sig.next());
+                }
+                _ => {
+                    gate.write(frame, if self.cur_gate > 0 { 1.0 } else { 0.0 });
+                }
+            }
+
             let note = (self.cur_note as f32 - 69.0) / 120.0;
             let note = note + det.read(frame);
             //d// println!("FRAME: {} => gate={}, freq={}, next_gate={}", frame, self.cur_gate, note, self.next_gate);
             freq.write(frame, note);
-            gate.write(frame, if self.cur_gate > 0 { 1.0 } else { 0.0 });
             vel.write(frame, self.cur_vel as f32);
         }
 
