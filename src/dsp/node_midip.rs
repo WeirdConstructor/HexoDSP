@@ -2,9 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{at, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{at, inp, denorm, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
-use synfx_dsp::TrigSignal;
+use synfx_dsp::{GateSignal, TrigSignal};
 
 #[macro_export]
 macro_rules! fa_midip_chan {
@@ -34,11 +34,19 @@ pub struct MidiP {
     cur_gate: u8,
     cur_vel: f32,
     trig_sig: TrigSignal,
+    gate_sig: GateSignal,
 }
 
 impl MidiP {
     pub fn new(_nid: &NodeId) -> Self {
-        Self { next_gate: 0, cur_note: 0, cur_gate: 0, cur_vel: 0.0, trig_sig: TrigSignal::new() }
+        Self {
+            next_gate: 0,
+            cur_note: 0,
+            cur_gate: 0,
+            cur_vel: 0.0,
+            trig_sig: TrigSignal::new(),
+            gate_sig: GateSignal::new(),
+        }
     }
 
     pub const chan: &'static str = "MidiP chan\nMIDI Channel 0 to 15\n";
@@ -91,9 +99,11 @@ impl DspNode for MidiP {
 
     fn set_sample_rate(&mut self, srate: f32) {
         self.trig_sig.set_sample_rate(srate);
+        self.gate_sig.set_sample_rate(srate);
     }
     fn reset(&mut self) {
         self.trig_sig.reset();
+        self.gate_sig.reset();
     }
 
     #[inline]
@@ -108,6 +118,7 @@ impl DspNode for MidiP {
         ctx_vals: LedPhaseVals,
     ) {
         let det = inp::MidiP::det(inputs);
+        let glen = inp::MidiP::glen(inputs);
         let chan = at::MidiP::chan(atoms);
         let gmode = at::MidiP::gmode(atoms);
         let out_i = out_idx::MidiP::gate();
@@ -124,6 +135,8 @@ impl DspNode for MidiP {
         let gmode = gmode.i();
 
         for frame in 0..ctx.nframes() {
+            let gate_len = denorm::MidiP::glen(glen, frame);
+
             if self.next_gate > 0 {
                 self.cur_gate = 1;
             } else if self.next_gate < 0 {
@@ -144,11 +157,14 @@ impl DspNode for MidiP {
                         } else {
                             self.cur_gate = 1;
                         }
+                        println!("NOTE ON");
                         self.trig_sig.trigger();
+                        self.gate_sig.trigger();
                         self.cur_note = note;
                         self.cur_vel = vel;
                     }
                     HxMidiEvent::NoteOff { channel, note } => {
+                        println!("NOTE OFF");
                         if channel != midip_channel {
                             continue;
                         }
@@ -164,6 +180,14 @@ impl DspNode for MidiP {
             match gmode {
                 1 => {
                     gate.write(frame, self.trig_sig.next());
+                }
+                2 => {
+                    println!("GOGOGO {} {}", gate_len, self.next_gate);
+                    if self.next_gate > 0 {
+                        gate.write(frame, 0.0);
+                    } else {
+                        gate.write(frame, self.gate_sig.next(gate_len));
+                    }
                 }
                 _ => {
                     gate.write(frame, if self.cur_gate > 0 { 1.0 } else { 0.0 });
