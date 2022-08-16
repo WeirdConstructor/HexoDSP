@@ -227,7 +227,7 @@ fn check_node_midip_gate_test() {
     );
 
     let changes = collect_signal_changes_both_edges(&ch1[..], 1);
-    assert_eq!(changes, vec![(100, 100), (145, -100)]);
+    assert_eq!(changes, vec![(100, 100), (120, -100), (121, 100), (166, -100)]);
 
     //    // Now test without the trigger signal:
     //    node_pset_s(&mut matrix, "midip", 0, "gmode", 0);

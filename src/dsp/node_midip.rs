@@ -157,14 +157,12 @@ impl DspNode for MidiP {
                         } else {
                             self.cur_gate = 1;
                         }
-                        println!("NOTE ON");
                         self.trig_sig.trigger();
                         self.gate_sig.trigger();
                         self.cur_note = note;
                         self.cur_vel = vel;
                     }
                     HxMidiEvent::NoteOff { channel, note } => {
-                        println!("NOTE OFF");
                         if channel != midip_channel {
                             continue;
                         }
@@ -182,11 +180,13 @@ impl DspNode for MidiP {
                     gate.write(frame, self.trig_sig.next());
                 }
                 2 => {
-                    println!("GOGOGO {} {}", gate_len, self.next_gate);
                     if self.next_gate > 0 {
                         gate.write(frame, 0.0);
+                        self.cur_gate = 0;
                     } else {
-                        gate.write(frame, self.gate_sig.next(gate_len));
+                        let gsig = self.gate_sig.next(gate_len);
+                        self.cur_gate = gsig.ceil() as u8;
+                        gate.write(frame, gsig);
                     }
                 }
                 _ => {
