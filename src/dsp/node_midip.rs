@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{at, inp, denorm, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    at, denorm, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
 use synfx_dsp::{GateSignal, TrigSignal};
 
@@ -50,7 +52,7 @@ impl MidiP {
     }
 
     pub const chan: &'static str = "MidiP chan\nMIDI Channel 0 to 15\n";
-    pub const gmode: &'static str = "MidiP gmode\nMIDI gate mode.\n- 'MIDI' gate same as MIDI input\n- 'Trigger' output only triggers on 'gate' output\n- 'Gate Len' output gate with the length of the 'gatel' parameter\n";
+    pub const gmode: &'static str = "MidiP gmode\nMIDI gate mode.\n- 'MIDI' gate same as MIDI input\n- 'Trigger' output only triggers on 'gate' output\n- 'Gate Len' output gate with the length of the 'glen' parameter\n";
     pub const glen: &'static str = "MidiP glen\nMIDI gate length\n\
         If 'gmode' is set to 'Gate Len' this controls and overrides the gate length on a MIDI \
         note event. 'Trigger' will just send a short trigger when a note event is received. \
@@ -61,34 +63,21 @@ impl MidiP {
     pub const gate: &'static str = "MidiP gate\nMIDI note gate\nRange: (0..1)";
     pub const vel: &'static str = "MidiP vel\nMIDI note velocity\nRange: (0..1)";
 
-    pub const ch1: &'static str = "MidiP ch1\nAudio channel 1 (left)\nRange: (-1..1)";
-    pub const ch2: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
+    pub const DESC: &'static str = "MIDI Pitch/Note Input\n\n\
+        This node is an input of MIDI note events into the DSP graph. \
+        You get 3 outputs: frequency of the note, gate signal for the length of the note and the velocity.";
+    pub const HELP: &'static str = r#"MIDI Pitch/Note Input
 
-    pub const ch3: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch4: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch5: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch6: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch7: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch8: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch9: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch10: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch11: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch12: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch13: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch14: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch15: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch16: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch17: &'static str = "MidiP ch2\nAudio channel 2 (right)\nRange: (-1..1)";
+This node is an input of MIDI note events into the DSP graph.
+You get 3 outputs: frequency of the note, gate signal for the length of
+the note and the velocity.
 
-    pub const DESC: &'static str = "Audio Output Port\n\n\
-        This output port node allows you to send audio signals \
-        to audio devices or tracks in your DAW.";
-    pub const HELP: &'static str = r#"Audio Output Port
-
-This output port node allows you to send audio signals to audio devices
-or tracks in your DAW. If you need a stereo output but only have a mono
-signal you can use the 'mono' setting to duplicate the signal on the 'ch1'
-input to the second channel 'ch2'.
+You can modify the gate length using the 'gmode' and 'glen' settings.
+Setting 'gmode' to 'Trigger' allows you to get only a short trigger
+signal, which might be helpful in some situations.
+The 'Gate Len' setting allows you to overwrite the gate length with a
+custom and fixed gate length. However, if new note is played on this
+MIDI channel, the gate will restart after a very short pause.
 "#;
 }
 
