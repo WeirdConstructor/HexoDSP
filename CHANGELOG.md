@@ -18,3 +18,4 @@ the scope handles for access to it's capture buffers.
 * Feature: Added WBlockDSP visual programming language utilizing the `synfx-dsp-jit` crate.
 * Feature: Added the `FormFM` node that was contributed by Dimas Leenman (aka Skythedragon).
 * Feature: Added `MidiP` node for MIDI pitch/note input.
+* Feature: Added `MidiCC` node for MIDI CC input.

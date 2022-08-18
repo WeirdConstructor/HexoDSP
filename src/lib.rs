@@ -63,6 +63,7 @@ And following DSP nodes:
 | IO Util | FbWr / FbRd | Utility modules for feedback in patches |
 | IO Util | Scope       | Oscilloscope for up to 3 channels |
 | IO Util | MidiP       | MIDI Pitch/Note input from plugin host, DAW or hardware |
+| IO Util | MidiCC      | MIDI CC input from plugin host, DAW or hardware |
 
 ## API Examples
 
