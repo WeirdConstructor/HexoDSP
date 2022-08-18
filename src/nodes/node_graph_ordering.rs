@@ -139,18 +139,22 @@ impl NodeGraphOrdering {
             *indeg = 0;
         }
 
+        // Calculate the number of inputs for each node:
         for node in self.nodes.iter().take(self.node_count) {
             for out_node_idx in node.edges.iter().take(node.unused_idx) {
                 self.in_degree[*out_node_idx] += 1;
             }
         }
 
+        // Find the "input" nodes by looking at the nodes without any input. These
+        // are the first that must be executed!
         for idx in 0..self.node_count {
             if self.in_degree[idx] == 0 {
                 deq.push_back(idx);
             }
         }
 
+        // Track visit count for cycle detection:
         let mut visited_count = 0;
 
         while let Some(node_idx) = deq.pop_front() {
@@ -160,9 +164,13 @@ impl NodeGraphOrdering {
 
             out.push(node.node_id);
 
+            // Push the nodes we output to, to the end of the dequeue:
             for neigh_node_idx in node.edges.iter().take(node.unused_idx) {
+                // by reducing the input count of the to be visited node:
                 self.in_degree[*neigh_node_idx] -= 1;
 
+                // we know when that node has been fully supplied with all it's inputs,
+                // so we push it to the end of the dequeue to be executed then:
                 if self.in_degree[*neigh_node_idx] == 0 {
                     deq.push_back(*neigh_node_idx);
                 }
