@@ -88,7 +88,7 @@ impl DspNode for Sin {
 
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {
-            let freq = denorm_offs::Sampl::freq(freq, det.read(frame), frame);
+            let freq = denorm_offs::Sin::freq(freq, det.read(frame), frame);
 
             last_val = fast_sin(self.phase * TWOPI);
             o.write(frame, last_val);

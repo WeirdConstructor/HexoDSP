@@ -16,7 +16,8 @@ impl FormFM {
     pub fn new(_nid: &NodeId) -> Self {
         Self { inv_sample_rate: 1.0 / 44100.0, phase: 0.0 }
     }
-    pub const freq: &'static str = "Formant freq\nBase frequency to oscilate at\n";
+    pub const freq: &'static str = "Formant freq\nBase frequency to oscillate at\n";
+    pub const det: &'static str = "Formant det\nDetune the oscillator in semitones and cents.\n";
     pub const form: &'static str = "Formant form\nFrequency of the formant\nThis affects how much lower or higher tones the sound has.";
     pub const side: &'static str =
         "Formant side\nWhich side the peak of the wave is. Values more towards 0.0 or 1.0 make the base frequency more pronounced";
@@ -74,9 +75,10 @@ impl DspNode for FormFM {
         outputs: &mut [ProcBuf],
         _ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{denorm, inp, out};
+        use crate::dsp::{denorm, denorm_offs, inp, out};
 
         let base_freq = inp::FormFM::freq(inputs);
+        let det = inp::FormFM::det(inputs);
         let formant_freq = inp::FormFM::form(inputs);
         let side_val = inp::FormFM::side(inputs);
         let peak_val = inp::FormFM::peak(inputs);
@@ -84,7 +86,7 @@ impl DspNode for FormFM {
 
         for frame in 0..ctx.nframes() {
             // get the inputs
-            let base_freq = denorm::FormFM::freq(base_freq, frame);
+            let base_freq = denorm_offs::FormFM::freq(base_freq, det.read(frame), frame);
             let formant_freq = denorm::FormFM::form(formant_freq, frame);
             let side_val = denorm::FormFM::side(side_val, frame).min(1.0 - 1e-6).max(1e-6);
             let peak_val = denorm::FormFM::peak(peak_val, frame);

@@ -162,3 +162,38 @@ fn check_formant_freq() {
     let fft = run_and_get_avg_fft4096_now(&mut node_exec, 100);
     assert_eq!(fft, vec![(323, 106), (334, 131), (431, 430), (441, 708), (452, 288), (549, 140)]);
 }
+
+#[test]
+fn check_formant_freq_det() {
+    let (node_conf, mut node_exec) = new_node_engine();
+
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("formfm", "sig")
+        .set_denorm("det", 0.1)
+        .node_inp("out", "ch1")
+        .place(&mut matrix, 0, 0)
+        .unwrap();
+
+    matrix.sync().unwrap();
+
+    let formant = NodeId::FormFM(0);
+
+    // params
+    let freq_p = formant.inp_param("freq").unwrap();
+    let form_p = formant.inp_param("form").unwrap();
+    let side_p = formant.inp_param("side").unwrap();
+    let peak_p = formant.inp_param("peak").unwrap();
+
+    // set params to reasonable values
+    matrix.set_param(freq_p, SAtom::param(-0.2));
+    matrix.set_param(form_p, SAtom::param(0.0));
+    matrix.set_param(side_p, SAtom::param(0.2));
+    matrix.set_param(peak_p, SAtom::param(0.4));
+
+    // run
+    let fft = run_and_get_avg_fft4096_now(&mut node_exec, 100);
+    assert_eq!(fft, vec![(334, 146), (431, 297), (441, 696), (452, 406), (549, 127), (560, 107)]);
+}

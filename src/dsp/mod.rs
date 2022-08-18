@@ -1527,9 +1527,10 @@ macro_rules! node_list {
                [0 sig],
             formfm => FormFM UIType::Generic UICategory::Osc
                (0 freq n_pit d_pit r_fq f_freq stp_d -1.0, 0.5647131, 440.0)
-               (1 form n_pit d_pit r_fq f_freq stp_d -1.0, 0.5647131, 440.0)
-               (2 side  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.2)
-               (3 peak  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.4)
+               (1 det  n_det d_det r_det f_det stp_f -0.2, 0.2, 0.0)
+               (2 form n_pit d_pit r_fq f_freq stp_d -1.0, 0.5647131, 440.0)
+               (3 side  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.2)
+               (4 peak  n_id d_id r_id f_def stp_d 0.0, 1.0, 0.4)
                [0 sig],
             sfilter => SFilter UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
