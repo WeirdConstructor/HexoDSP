@@ -46,21 +46,21 @@ impl Mux9 {
     pub const slct: &'static str =
         "Mux9 slct\nSelects the input that is routed to the output 'sig'.\
         But only if this input is actually connected. If there is no \
-        connection, the 't_rst', 't_up' and 't_down' inputs are used to \
+        connection, the 't_rst', 't_up' and 't_down' trigger inputs are used to \
         control the current routing. The maximum routed input is determined \
         by the 'in_cnt' setting.\nRange: (0..1)";
     pub const t_rst: &'static str =
-        "Mux9 t_rst\nResets the internal routing to the first input 'in_1'.\
+        "Mux9 t_rst\nTrigger resets the internal routing to the first input 'in_1'.\
         Keep in mind: This input is only used if 'slct' is not connected.\
         \nRange: (-1..1)\n";
     pub const t_up: &'static str =
-        "Mux9 t_up\nIncreases the internal routing to the next input port.\
+        "Mux9 t_up\nTrigger increases the internal routing to the next input port.\
         If the last input (depending on the 'in_cnt' setting) was selected\
         if will wrap around to 'in_1'.\
         Keep in mind: This input is only used if 'slct' is not connected.\
         \nRange: (-1..1)\n";
     pub const t_down: &'static str =
-        "Mux9 t_down\nDecreases the internal routing to the previous input \
+        "Mux9 t_down\nTrigger decreases the internal routing to the previous input \
         port (eg. 'in_3' => 'in_2'). If 'in_1' as selected, then it will \
         wrap around to the highest possible input port (depending on the \
         'in_cnt' setting).\
