@@ -56,13 +56,15 @@ fn check_node_code_state() {
     let block_fun = matrix.get_block_function(0).expect("block fun exists");
     {
         let mut block_fun = block_fun.lock().expect("matrix lock");
-        put_v(&mut block_fun, 0, 0, 2, "value", "220.0");
+        put_v(&mut block_fun, 0, 0, 3, "value", "220.0");
         put_n(&mut block_fun, 0, 1, 2, "phase");
-        put_v(&mut block_fun, 0, 1, 3, "value", "2.0");
-        put_n(&mut block_fun, 0, 2, 2, "*");
-        put_n(&mut block_fun, 0, 3, 1, "-");
-        put_v(&mut block_fun, 0, 2, 1, "value", "1.0");
-        put_v(&mut block_fun, 0, 4, 1, "set", "&sig1");
+        block_fun.shift_port(0, 1, 2, 0, false); // move reset up
+        block_fun.shift_port(0, 1, 2, 0, true);  // move output down
+        put_v(&mut block_fun, 0, 1, 4, "value", "2.0");
+        put_n(&mut block_fun, 0, 2, 3, "*");
+        put_n(&mut block_fun, 0, 3, 2, "-");
+        put_v(&mut block_fun, 0, 2, 2, "value", "1.0");
+        put_v(&mut block_fun, 0, 4, 2, "set", "&sig1");
     }
 
     matrix.check_block_function(0).expect("no compile error");

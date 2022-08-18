@@ -1819,7 +1819,7 @@ mod test {
     fn check_blockfun_serialize_empty() {
         let dsp_lib = synfx_dsp_jit::get_standard_library();
         let lang = crate::wblockdsp::setup_hxdsp_block_language(dsp_lib);
-        let mut bf = BlockFun::new(lang.clone());
+        let bf = BlockFun::new(lang.clone());
 
         let sn = bf.save_snapshot();
         let serialized = sn.serialize().to_string();
@@ -1828,7 +1828,7 @@ mod test {
         let v: Value = serde_json::from_str(&serialized).unwrap();
         let sn = BlockFunSnapshot::deserialize(&v).expect("No deserialization error");
         let mut bf2 = BlockFun::new(lang);
-        let bf2 = bf2.load_snapshot(&sn);
+        bf2.load_snapshot(&sn);
     }
 
     #[test]

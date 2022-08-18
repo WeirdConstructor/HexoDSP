@@ -105,7 +105,7 @@ node_conf.set_prog_node_exec_connection(
 
 node_conf.upload_prog(prog, true);
 
-let (out_l, out_r) = node_exec.test_run(0.1, false);
+let (out_l, out_r) = node_exec.test_run(0.1, false, &[]);
 ```
 
 ### Hexagonal Matrix API
@@ -139,7 +139,7 @@ matrix.sync().unwrap();
 let gain_p = amp.inp_param("gain").unwrap();
 matrix.set_param(gain_p, SAtom::param(0.25));
 
-let (out_l, out_r) = node_exec.test_run(0.11, true);
+let (out_l, out_r) = node_exec.test_run(0.11, true, &[]);
 // out_l and out_r contain two channels of audio
 // samples now.
 ```
@@ -163,7 +163,7 @@ chain.node_out("sin", "sig")
     .place(&mut matrix, 0, 0);
 matrix.sync().unwrap();
 
-let (out_l, out_r) = node_exec.test_run(0.11, true);
+let (out_l, out_r) = node_exec.test_run(0.11, true, &[]);
 // out_l and out_r contain two channels of audio
 // samples now.
 ```

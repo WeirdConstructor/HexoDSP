@@ -526,7 +526,7 @@ mod tests {
 
         assert_eq!(
             s,
-            "{\"VERSION\":2,\"atoms\":[],\"cells\":[],\"params\":[],\"patterns\":[],\"props\":[]}"
+            "{\"VERSION\":2,\"atoms\":[],\"block_funs\":[],\"cells\":[],\"params\":[],\"patterns\":[],\"props\":[]}"
         );
         assert!(MatrixRepr::deserialize(&s).is_ok());
     }
@@ -556,7 +556,7 @@ mod tests {
         let s = mr.serialize();
 
         assert_eq!(s,
-            "{\"VERSION\":2,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",440.0],[\"sin\",1,\"freq\",440.0],[\"sin\",2,\"freq\",220.0],[\"out\",0,\"gain\",1.0]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
+            "{\"VERSION\":2,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"block_funs\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",440.0],[\"sin\",1,\"freq\",440.0],[\"sin\",2,\"freq\",220.0],[\"out\",0,\"gain\",1.0]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
         let mut mr2 = MatrixRepr::deserialize(&s).unwrap();
 
         let s2 = mr2.serialize();
@@ -875,17 +875,6 @@ mod tests {
         let new_format = mr.serialize().to_string();
 
         assert_eq!(new_format,
-            "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"cells\":[[\"sin\",2,0,\
-            0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"o\
-            ut\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],\
-            [\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\
-            \",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,nul\
-            l,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,\
-            null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,nu\
-            ll,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null\
-            ,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,n\
-            ull,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,nul\
-            l,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,\
-            null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
+            "{\"VERSION\":1,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"block_funs\":[],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",0.0],[\"sin\",1,\"freq\",0.0],[\"sin\",2,\"freq\",-0.10000000149011612],[\"out\",0,\"gain\",0.5]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
     }
 }

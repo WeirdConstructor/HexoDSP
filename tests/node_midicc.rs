@@ -65,7 +65,7 @@ fn check_node_midicc_test_slew() {
 
     // Test run for 5ms with 3 Note On events at sample positions
     // 5, 10 and 130 in this block of samples:
-    let (ch1, ch2) = node_exec.test_run(
+    let (ch1, _ch2) = node_exec.test_run(
         0.005,
         false,
         &[
@@ -117,7 +117,7 @@ fn check_node_midicc_test_slew2() {
 
     // Test run for 5ms with 3 Note On events at sample positions
     // 5, 10 and 130 in this block of samples:
-    let (ch1, ch2) = node_exec.test_run(
+    let (ch1, _ch2) = node_exec.test_run(
         0.005,
         false,
         &[

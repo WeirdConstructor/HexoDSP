@@ -617,12 +617,12 @@ impl NodeConfigurator {
     ///
     /// node_conf.upload_prog(prog, true);
     ///
-    /// node_exec.test_run(0.1, false);
+    /// node_exec.test_run(0.1, false, &[]);
     /// assert!((node_conf.led_value_for(&NodeId::Sin(0)) - (-0.062522)).abs() < 0.001);
     /// assert!((node_conf.led_value_for(&NodeId::Amp(0)) - (-0.062522)).abs() < 0.001);
     ///
     /// for _ in 0..10 {
-    ///     node_exec.test_run(0.1, false);
+    ///     node_exec.test_run(0.1, false, &[]);
     ///     node_conf.update_filters();
     ///     node_conf.filtered_led_for(&NodeId::Sin(0));
     ///     node_conf.filtered_led_for(&NodeId::Amp(0));
