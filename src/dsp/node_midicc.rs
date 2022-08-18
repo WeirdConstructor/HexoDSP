@@ -2,8 +2,11 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{at, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    at, denorm, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
+use synfx_dsp::SlewValue;
 
 #[macro_export]
 macro_rules! fa_midicc_cc {
@@ -18,32 +21,50 @@ pub struct MidiCC {
     cur_cc1: f32,
     cur_cc2: f32,
     cur_cc3: f32,
+    slew_cc1: SlewValue<f32>,
+    slew_cc2: SlewValue<f32>,
+    slew_cc3: SlewValue<f32>,
 }
 
 impl MidiCC {
     pub fn new(_nid: &NodeId) -> Self {
-        Self { cur_cc1: 0.0, cur_cc2: 0.0, cur_cc3: 0.0 }
+        Self {
+            cur_cc1: 0.0,
+            cur_cc2: 0.0,
+            cur_cc3: 0.0,
+            slew_cc1: SlewValue::new(),
+            slew_cc2: SlewValue::new(),
+            slew_cc3: SlewValue::new(),
+        }
     }
 
     pub const chan: &'static str = "MidiCC chan\nMIDI Channel 0 to 15\n";
-    pub const slew: &'static str = "MidiCC slew\nSlew limiter for the 3 CCs\n- 'MIDI' gate same as MIDI input\n- 'Trigger' output only triggers on 'gate' output\n- 'Gate Len' output gate with the length of the 'gatel' parameter\n";
-    pub const cc1: &'static str = "MidiCC cc1\nMIDI selected CC";
-    pub const cc2: &'static str = "MidiCC cc1\nMIDI selected CC";
-    pub const cc3: &'static str = "MidiCC cc1\nMIDI selected CC";
+    pub const slew: &'static str = "MidiCC slew\nSlew limiter for the 3 CCs\nRange: (0..1)";
+    pub const cc1: &'static str = "MidiCC cc1\nMIDI selected CC 1";
+    pub const cc2: &'static str = "MidiCC cc2\nMIDI selected CC 2";
+    pub const cc3: &'static str = "MidiCC cc3\nMIDI selected CC 3";
 
     pub const sig1: &'static str = "MidiCC sig1\nCC output channel 1\nRange: (0..1)";
-    pub const sig2: &'static str = "MidiCC sig1\nCC output channel 1\nRange: (0..1)";
-    pub const sig3: &'static str = "MidiCC sig1\nCC output channel 1\nRange: (0..1)";
+    pub const sig2: &'static str = "MidiCC sig2\nCC output channel 2\nRange: (0..1)";
+    pub const sig3: &'static str = "MidiCC sig3\nCC output channel 3\nRange: (0..1)";
 
-    pub const DESC: &'static str = "Audio Output Port\n\n\
-        This output port node allows you to send audio signals \
-        to audio devices or tracks in your DAW.";
-    pub const HELP: &'static str = r#"Audio Output Port
+    pub const DESC: &'static str = "MIDI CC Input\n\n\
+        This node is an input of MIDI CC events/values into the DSP graph. \
+        You get 3 CC value outputs: 'sig1', 'sig2' and 'sig3'. To set which CC \
+        gets which output you have to set the corresponding 'cc1', 'cc2' and \
+        'cc3' parameters.";
+    pub const HELP: &'static str = r#"MIDI CC Input
 
-This output port node allows you to send audio signals to audio devices
-or tracks in your DAW. If you need a stereo output but only have a mono
-signal you can use the 'mono' setting to duplicate the signal on the 'ch1'
-input to the second channel 'ch2'.
+This node is an input of MIDI CC events/values into the DSP graph.
+You get 3 CC value outputs: 'sig1', 'sig2' and 'sig3'. To set which CC
+gets which output you have to set the corresponding 'cc1', 'cc2' and
+'cc3' parameters.";
+
+If the CC values change to rapidly or you hear audible artifacts, you can
+try to limit the speed of change with the 'slew' limiter.
+
+If you need different 'slew' values for the CCs, I recommend creating other
+MidiCC instances with different 'slew' settings.
 "#;
 }
 
@@ -66,6 +87,7 @@ impl DspNode for MidiCC {
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
+        let slew = inp::MidiCC::slew(inputs);
         let chan = at::MidiCC::chan(atoms);
         let cc1 = at::MidiCC::cc1(atoms);
         let cc2 = at::MidiCC::cc2(atoms);
@@ -87,6 +109,8 @@ impl DspNode for MidiCC {
         let mut change = false;
 
         for frame in 0..ctx.nframes() {
+            let slew_ms = denorm::MidiCC::slew(slew, frame);
+
             while let Some(ev) = ptr.next_at(frame) {
                 match ev {
                     HxMidiEvent::CC { channel, cc, value } => {
@@ -109,9 +133,9 @@ impl DspNode for MidiCC {
                 }
             }
 
-            sig1.write(frame, self.cur_cc1);
-            sig2.write(frame, self.cur_cc2);
-            sig3.write(frame, self.cur_cc3);
+            sig1.write(frame, self.slew_cc1.next(self.cur_cc1, slew_ms));
+            sig2.write(frame, self.slew_cc2.next(self.cur_cc2, slew_ms));
+            sig3.write(frame, self.slew_cc3.next(self.cur_cc3, slew_ms));
         }
 
         ctx_vals[0].set(if change { 1.0 } else { 0.0 });

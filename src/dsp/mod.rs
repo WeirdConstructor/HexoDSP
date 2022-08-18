@@ -1441,7 +1441,7 @@ macro_rules! node_list {
                [1 gate]
                [2 vel],
             midicc => MidiCC UIType::Generic UICategory::IOUtil
-               (0 slew  n_lfot   d_lfot r_lfot f_lfoms stp_f 0.0, 1.0, 0.0)
+               (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
                {1 0 chan setting(0) mode fa_midip_chan 0 16}
                {2 1 cc1  setting(0) mode fa_midicc_cc 0 127}
                {3 2 cc2  setting(0) mode fa_midicc_cc 0 127}
