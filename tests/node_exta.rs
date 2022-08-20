@@ -79,3 +79,65 @@ fn check_node_exta() {
         ]
     );
 }
+
+#[test]
+fn check_node_exta_slew() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let myparams = std::sync::Arc::new(MyParams {});
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("exta", "sig1")
+        .set_denorm("slew", 40.0)
+        .node_inp("out", "ch1")
+        .place(&mut matrix, 0, 0)
+        .unwrap();
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("exta", "sig3")
+        .set_denorm("slew", 40.0)
+        .node_inp("out", "ch2")
+        .place(&mut matrix, 1, 0)
+        .unwrap();
+    matrix.sync().unwrap();
+
+    node_exec.set_external_params(myparams);
+
+    let (ch1, ch2) = node_exec.test_run(0.1, false, &[]);
+    assert_decimated_feq!(
+        ch1,
+        80,
+        vec![
+            0.00056689343,
+            0.045918357,
+            0.09126975,
+            0.13662128,
+            0.18197326,
+            0.22732525,
+            0.23,
+            0.23,
+            0.23,
+            0.23,
+            0.23
+        ]
+    );
+    assert_decimated_feq!(
+        ch2,
+        80,
+        vec![
+            -0.00056689343,
+            -0.045918357,
+            -0.09126975,
+            -0.13662128,
+            -0.18197326,
+            -0.22732525,
+            -0.2726772,
+            -0.3180292,
+            -0.33,
+            -0.33,
+            -0.33
+        ]
+    );
+}

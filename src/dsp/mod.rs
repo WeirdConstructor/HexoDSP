@@ -513,7 +513,7 @@ mod node_map;
 #[allow(non_upper_case_globals)]
 mod node_midicc;
 #[allow(non_upper_case_globals)]
-mod node_exta;
+mod node_ext;
 #[allow(non_upper_case_globals)]
 mod node_midip;
 #[allow(non_upper_case_globals)]
@@ -607,7 +607,12 @@ use node_fbwr_fbrd::FbWr;
 use node_formfm::FormFM;
 use node_map::Map;
 use node_midicc::MidiCC;
-use node_exta::ExtA;
+use node_ext::ExtA;
+use node_ext::ExtB;
+use node_ext::ExtC;
+use node_ext::ExtD;
+use node_ext::ExtE;
+use node_ext::ExtF;
 use node_midip::MidiP;
 use node_mix3::Mix3;
 use node_mux9::Mux9;
@@ -1453,6 +1458,46 @@ macro_rules! node_list {
                [1 sig2]
                [2 sig3],
             exta => ExtA UIType::Generic UICategory::IOUtil
+               (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
+               (1 atv1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (2 atv2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (3 atv3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               [0 sig1]
+               [1 sig2]
+               [2 sig3],
+            extb => ExtB UIType::Generic UICategory::IOUtil
+               (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
+               (1 atv1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (2 atv2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (3 atv3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               [0 sig1]
+               [1 sig2]
+               [2 sig3],
+            extc => ExtC UIType::Generic UICategory::IOUtil
+               (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
+               (1 atv1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (2 atv2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (3 atv3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               [0 sig1]
+               [1 sig2]
+               [2 sig3],
+            extd => ExtD UIType::Generic UICategory::IOUtil
+               (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
+               (1 atv1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (2 atv2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (3 atv3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               [0 sig1]
+               [1 sig2]
+               [2 sig3],
+            exte => ExtE UIType::Generic UICategory::IOUtil
+               (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
+               (1 atv1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (2 atv2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (3 atv3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               [0 sig1]
+               [1 sig2]
+               [2 sig3],
+            extf => ExtF UIType::Generic UICategory::IOUtil
                (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
                (1 atv1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                (2 atv2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
