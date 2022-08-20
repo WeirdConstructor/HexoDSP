@@ -15,7 +15,6 @@ macro_rules! fa_midicc_cc {
     }};
 }
 
-/// The (stereo) output port of the plugin
 #[derive(Debug, Clone)]
 pub struct MidiCC {
     cur_cc1: f32,

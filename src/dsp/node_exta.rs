@@ -5,10 +5,9 @@
 use crate::dsp::{
     denorm, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
-use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
+use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::SlewValue;
 
-/// The (stereo) output port of the plugin
 #[derive(Debug, Clone)]
 pub struct ExtA {
     slew1: SlewValue<f32>,
@@ -20,23 +19,6 @@ impl ExtA {
     pub fn new(_nid: &NodeId) -> Self {
         Self { slew1: SlewValue::new(), slew2: SlewValue::new(), slew3: SlewValue::new() }
     }
-
-    pub const slew: &'static str = "ExtA slew\nSlew limiter for the 3 parameters\nRange: (0..1)";
-    pub const atv1: &'static str = "ExtA atv1\nAttenuverter for the A1 parameter\nRange: (-1..1)";
-    pub const atv2: &'static str = "ExtA atv2\nAttenuverter for the A2 parameter\nRange: (-1..1)";
-    pub const atv3: &'static str = "ExtA atv3\nAttenuverter for the A3 parameter\nRange: (-1..1)";
-
-    pub const sig1: &'static str = "ExtA sig1\nA1 output channel\nRange: (-1..1)";
-    pub const sig2: &'static str = "ExtA sig2\nA2 output channel\nRange: (-1..1)";
-    pub const sig3: &'static str = "ExtA sig3\nA3 output channel\nRange: (-1..1)";
-
-    pub const DESC: &'static str = "External Parameter Set A Input\n\n\
-        \
-        \
-        \
-        ";
-    pub const HELP: &'static str = r#"External Parameter Set A Input
-"#;
 }
 
 impl DspNode for ExtA {
@@ -53,7 +35,7 @@ impl DspNode for ExtA {
         ctx: &mut T,
         ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        atoms: &[SAtom],
+        _atoms: &[SAtom],
         inputs: &[ProcBuf],
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
@@ -87,6 +69,26 @@ impl DspNode for ExtA {
             }
         }
 
-        //        ctx_vals[0].set(if change { 1.0 } else { 0.0 });
+        let last_frame = ctx.nframes() - 1;
+        ctx_vals[0].set(sig1.read(last_frame));
     }
+}
+
+impl ExtA {
+    pub const slew: &'static str = "ExtA slew\nSlew limiter for the 3 parameters\nRange: (0..1)";
+    pub const atv1: &'static str = "ExtA atv1\nAttenuverter for the A1 parameter\nRange: (-1..1)";
+    pub const atv2: &'static str = "ExtA atv2\nAttenuverter for the A2 parameter\nRange: (-1..1)";
+    pub const atv3: &'static str = "ExtA atv3\nAttenuverter for the A3 parameter\nRange: (-1..1)";
+
+    pub const sig1: &'static str = "ExtA sig1\nA1 output channel\nRange: (-1..1)";
+    pub const sig2: &'static str = "ExtA sig2\nA2 output channel\nRange: (-1..1)";
+    pub const sig3: &'static str = "ExtA sig3\nA3 output channel\nRange: (-1..1)";
+
+    pub const DESC: &'static str = "External Parameter Set A Input\n\n\
+        \
+        \
+        \
+        ";
+    pub const HELP: &'static str = r#"External Parameter Set A Input
+"#;
 }
