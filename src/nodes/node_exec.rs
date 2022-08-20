@@ -181,21 +181,51 @@ pub trait ExternalParams: Send + Sync {
     fn a1(&self) -> f32;
     fn a2(&self) -> f32;
     fn a3(&self) -> f32;
-    fn b1(&self) -> f32 { self.a1() }
-    fn b2(&self) -> f32 { self.a2() }
-    fn b3(&self) -> f32 { self.a3() }
-    fn c1(&self) -> f32 { self.a1() }
-    fn c2(&self) -> f32 { self.a2() }
-    fn c3(&self) -> f32 { self.a3() }
-    fn d1(&self) -> f32 { self.a1() }
-    fn d2(&self) -> f32 { self.a2() }
-    fn d3(&self) -> f32 { self.a3() }
-    fn e1(&self) -> f32 { self.a1() }
-    fn e2(&self) -> f32 { self.a2() }
-    fn e3(&self) -> f32 { self.a3() }
-    fn f1(&self) -> f32 { self.a1() }
-    fn f2(&self) -> f32 { self.a2() }
-    fn f3(&self) -> f32 { self.a3() }
+    fn b1(&self) -> f32 {
+        self.a1()
+    }
+    fn b2(&self) -> f32 {
+        self.a2()
+    }
+    fn b3(&self) -> f32 {
+        self.a3()
+    }
+    fn c1(&self) -> f32 {
+        self.a1()
+    }
+    fn c2(&self) -> f32 {
+        self.a2()
+    }
+    fn c3(&self) -> f32 {
+        self.a3()
+    }
+    fn d1(&self) -> f32 {
+        self.a1()
+    }
+    fn d2(&self) -> f32 {
+        self.a2()
+    }
+    fn d3(&self) -> f32 {
+        self.a3()
+    }
+    fn e1(&self) -> f32 {
+        self.a1()
+    }
+    fn e2(&self) -> f32 {
+        self.a2()
+    }
+    fn e3(&self) -> f32 {
+        self.a3()
+    }
+    fn f1(&self) -> f32 {
+        self.a1()
+    }
+    fn f2(&self) -> f32 {
+        self.a2()
+    }
+    fn f3(&self) -> f32 {
+        self.a3()
+    }
 }
 
 /// Contains global state that all nodes can access.

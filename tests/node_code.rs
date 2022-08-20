@@ -59,7 +59,7 @@ fn check_node_code_state() {
         put_v(&mut block_fun, 0, 0, 3, "value", "220.0");
         put_n(&mut block_fun, 0, 1, 2, "phase");
         block_fun.shift_port(0, 1, 2, 0, false); // move reset up
-        block_fun.shift_port(0, 1, 2, 0, true);  // move output down
+        block_fun.shift_port(0, 1, 2, 0, true); // move output down
         put_v(&mut block_fun, 0, 1, 4, "value", "2.0");
         put_n(&mut block_fun, 0, 2, 3, "*");
         put_n(&mut block_fun, 0, 3, 2, "-");

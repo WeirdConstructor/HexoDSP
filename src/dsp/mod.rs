@@ -505,6 +505,8 @@ mod node_cqnt;
 #[allow(non_upper_case_globals)]
 mod node_delay;
 #[allow(non_upper_case_globals)]
+mod node_ext;
+#[allow(non_upper_case_globals)]
 mod node_fbwr_fbrd;
 #[allow(non_upper_case_globals)]
 mod node_formfm;
@@ -512,8 +514,6 @@ mod node_formfm;
 mod node_map;
 #[allow(non_upper_case_globals)]
 mod node_midicc;
-#[allow(non_upper_case_globals)]
-mod node_ext;
 #[allow(non_upper_case_globals)]
 mod node_midip;
 #[allow(non_upper_case_globals)]
@@ -602,17 +602,17 @@ use node_code::Code;
 use node_comb::Comb;
 use node_cqnt::CQnt;
 use node_delay::Delay;
-use node_fbwr_fbrd::FbRd;
-use node_fbwr_fbrd::FbWr;
-use node_formfm::FormFM;
-use node_map::Map;
-use node_midicc::MidiCC;
 use node_ext::ExtA;
 use node_ext::ExtB;
 use node_ext::ExtC;
 use node_ext::ExtD;
 use node_ext::ExtE;
 use node_ext::ExtF;
+use node_fbwr_fbrd::FbRd;
+use node_fbwr_fbrd::FbWr;
+use node_formfm::FormFM;
+use node_map::Map;
+use node_midicc::MidiCC;
 use node_midip::MidiP;
 use node_mix3::Mix3;
 use node_mux9::Mux9;

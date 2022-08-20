@@ -8,7 +8,6 @@ use crate::dsp::{
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::SlewValue;
 
-
 macro_rules! define_ext {
     ($name: ident, $p1: ident, $p2: ident, $p3: ident) => {
         #[derive(Debug, Clone)]
@@ -28,17 +27,32 @@ macro_rules! define_ext {
             pub const atv2: &'static str = "ExtA-F atv2\nAttenuverter for the A2 parameter\nRange: (-1..1)";
             pub const atv3: &'static str = "ExtA-F atv3\nAttenuverter for the A3 parameter\nRange: (-1..1)";
 
-            pub const sig1: &'static str = "ExtA-F sig1\nA1 output channel\nRange: (-1..1)";
-            pub const sig2: &'static str = "ExtA-F sig2\nA2 output channel\nRange: (-1..1)";
-            pub const sig3: &'static str = "ExtA-F sig3\nA3 output channel\nRange: (-1..1)";
+            pub const sig1: &'static str = "ExtA-F sig1\nA-F1 output channel\nRange: (0..1)";
+            pub const sig2: &'static str = "ExtA-F sig2\nA-F2 output channel\nRange: (0..1)";
+            pub const sig3: &'static str = "ExtA-F sig3\nA-F3 output channel\nRange: (0..1)";
 
-            pub const DESC: &'static str = "External Parameter Set A-F Input\n\n\
-                \
-                \
-                \
-                ";
+            pub const DESC: &'static str = "Ext. Parameter Set A-F Input\n\n\
+                This node gives access to the 24 input parameters of the HexoSynth VST3/CLAP plugin. \
+                A 'slew' limiter allows you to smooth out quick changes a bit if you need it. \
+                Attenuverters (attenuators that can also invert) allow to reduce the amplitude \
+                or invert the signal.";
             pub const HELP: &'static str = r#"External Parameter Set A-F Input
-                "#;
+
+This node gives access to the 24 input parameters of the
+HexoSynth VST3/CLAP plugin. A 'slew' limiter allows you to smooth out quick
+changes a bit if you need it. Attenuverters (attenuators that can also invert)
+allow to reduce the amplitude or invert the signal.
+
+All instances of the nodes 'ExtA', 'ExtB', ..., 'ExtF' have access to the same
+3 input parameters (A1-A3, B1-B3, ..., F1-F3). That means there is no
+difference whether you use the same instance of different ones.
+Except that you can of course set the `atv` and `slew` parameters to different
+values.
+
+If you absolutely need more parameters to control the HexoSynth patch:
+Keep in mind, that there is also the 'MidiCC' node, that allows HexoSynth to
+react to MIDI CC messages.
+"#;
         }
 
         impl DspNode for $name {
