@@ -513,6 +513,8 @@ mod node_map;
 #[allow(non_upper_case_globals)]
 mod node_midicc;
 #[allow(non_upper_case_globals)]
+mod node_exta;
+#[allow(non_upper_case_globals)]
 mod node_midip;
 #[allow(non_upper_case_globals)]
 mod node_mix3;
@@ -605,6 +607,7 @@ use node_fbwr_fbrd::FbWr;
 use node_formfm::FormFM;
 use node_map::Map;
 use node_midicc::MidiCC;
+use node_exta::ExtA;
 use node_midip::MidiP;
 use node_mix3::Mix3;
 use node_mux9::Mux9;
@@ -1446,6 +1449,14 @@ macro_rules! node_list {
                {2 1 cc1  setting(0) mode fa_midicc_cc 0 127}
                {3 2 cc2  setting(0) mode fa_midicc_cc 0 127}
                {4 3 cc3  setting(0) mode fa_midicc_cc 0 127}
+               [0 sig1]
+               [1 sig2]
+               [2 sig3],
+            exta => ExtA UIType::Generic UICategory::IOUtil
+               (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
+               (1 atv1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (2 atv2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (3 atv3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
                [0 sig1]
                [1 sig2]
                [2 sig3],

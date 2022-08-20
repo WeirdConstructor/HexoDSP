@@ -175,12 +175,21 @@ impl Default for FeedbackBuffer {
     }
 }
 
+/// This trait needs to be implemented by the caller of the [NodeExecutor]
+/// if it wants to provide the parameters for the "ExtA" to "ExtL" nodes.
+pub trait ExternalParams: Send + Sync {
+    fn a1(&self) -> f32;
+    fn a2(&self) -> f32;
+    fn a3(&self) -> f32;
+}
+
 /// Contains global state that all nodes can access.
 /// This is used for instance to implement the feedbackd delay nodes.
 pub struct NodeExecContext {
     pub feedback_delay_buffers: Vec<FeedbackBuffer>,
     pub midi_notes: Vec<HxTimedEvent>,
     pub midi_ccs: Vec<HxTimedEvent>,
+    pub ext_param: Option<Arc<dyn ExternalParams>>,
 }
 
 impl NodeExecContext {
@@ -189,7 +198,7 @@ impl NodeExecContext {
         fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
         let midi_notes = Vec::with_capacity(MAX_MIDI_NOTES_PER_BLOCK);
         let midi_ccs = Vec::with_capacity(MAX_MIDI_CC_PER_BLOCK);
-        Self { feedback_delay_buffers: fbdb, midi_notes, midi_ccs }
+        Self { feedback_delay_buffers: fbdb, midi_notes, midi_ccs, ext_param: None }
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
@@ -359,6 +368,10 @@ impl NodeExecutor {
                 }
             }
         }
+    }
+
+    pub fn set_external_params(&mut self, ext_param: Arc<dyn ExternalParams>) {
+        self.exec_ctx.ext_param = Some(ext_param);
     }
 
     pub fn set_sample_rate(&mut self, sample_rate: f32) {
