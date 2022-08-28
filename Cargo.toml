@@ -5,7 +5,7 @@ authors     = ["Weird Constructor <weirdconstructor@m8geil.de>"]
 license     = "GPL-3.0-or-later"
 edition     = "2021"
 description = "Comprehensive DSP graph and synthesis library for developing a modular synthesizer in Rust, such as HexoSynth."
-keywords    = ["audio", "music", "real-time", "synthesis", "synthesizer", "dsp", "sound"]
+keywords    = ["audio", "real-time", "synthesis", "synthesizer", "dsp"]
 categories  = ["multimedia::audio", "multimedia", "algorithms", "mathematics"]
 
 [features]
