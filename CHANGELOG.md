@@ -20,3 +20,4 @@ the scope handles for access to it's capture buffers.
 * Feature: Added `MidiP` node for MIDI pitch/note input.
 * Feature: Added `MidiCC` node for MIDI CC input.
 * Feature: Added `ExtA` to `ExtF` nodes for plugin parameter access.
+* Feature: Added `Inp` input node for the two audio channels.

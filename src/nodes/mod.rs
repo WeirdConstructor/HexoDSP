@@ -46,9 +46,9 @@ pub(crate) enum DropMsg {
     Atom { atom: SAtom },
 }
 
-/// Messages for updating the NodeExecutor thread.
+/// Messages for updating the [NodeExecutor] thread.
 /// Usually used for shoveling NodeProg and Nodes to and from
-/// the NodeExecutor thread. And also parameter updates of course.
+/// the [NodeExecutor] thread. And also parameter updates of course.
 #[derive(Debug)]
 pub enum GraphMessage {
     NewNode {
@@ -94,7 +94,7 @@ pub enum GraphEvent {
 
 pub const UNUSED_MONITOR_IDX: usize = 99999;
 
-/// Creates a NodeConfigurator and a NodeExecutor which are interconnected
+/// Creates a [NodeConfigurator] and a [NodeExecutor] which are interconnected
 /// by ring buffers.
 pub fn new_node_engine() -> (NodeConfigurator, NodeExecutor) {
     let (nc, shared_exec) = NodeConfigurator::new();

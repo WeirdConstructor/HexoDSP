@@ -511,6 +511,8 @@ mod node_fbwr_fbrd;
 #[allow(non_upper_case_globals)]
 mod node_formfm;
 #[allow(non_upper_case_globals)]
+mod node_inp;
+#[allow(non_upper_case_globals)]
 mod node_map;
 #[allow(non_upper_case_globals)]
 mod node_midicc;
@@ -611,6 +613,7 @@ use node_ext::ExtF;
 use node_fbwr_fbrd::FbRd;
 use node_fbwr_fbrd::FbWr;
 use node_formfm::FormFM;
+use node_inp::Inp;
 use node_map::Map;
 use node_midicc::MidiCC;
 use node_midip::MidiP;
@@ -1505,6 +1508,10 @@ macro_rules! node_list {
                [0 sig1]
                [1 sig2]
                [2 sig3],
+            inp => Inp UIType::Generic UICategory::IOUtil
+               (0  gain n_ogin    d_ogin r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               [0 sig1]
+               [1 sig2],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
                (1  ch2   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)

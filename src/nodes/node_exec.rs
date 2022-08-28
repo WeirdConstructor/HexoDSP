@@ -625,6 +625,80 @@ impl NodeExecutor {
     /// Relying on the behvaiour of this function for production code
     /// is not it's intended usecase and changes might break your code.
     ///
+    /// * `realtime`: If this is set, the function will sleep.
+    ///
+    /// You can use it's source as reference for your own audio
+    /// DSP thread processing function.
+    pub fn test_run_input(
+        &mut self,
+        input: &[f32],
+        realtime: bool,
+        events: &[HxTimedEvent],
+    ) -> (Vec<f32>, Vec<f32>) {
+        const SAMPLE_RATE: f32 = 44100.0;
+        self.set_sample_rate(SAMPLE_RATE);
+        self.process_graph_updates();
+
+        let mut ev_win = EventWindowing::new();
+
+        let mut nframes = input.len();
+
+        let mut output_l = vec![0.0; nframes];
+        let mut output_r = vec![0.0; nframes];
+
+        for i in 0..nframes {
+            output_l[i] = 0.0;
+            output_r[i] = 0.0;
+        }
+        let mut ev_idx = 0;
+        let mut offs = 0;
+        while nframes > 0 {
+            let cur_nframes = if nframes >= MAX_BLOCK_SIZE { MAX_BLOCK_SIZE } else { nframes };
+            nframes -= cur_nframes;
+
+            self.feed_midi_events_from(|| {
+                if ev_win.feed_me() {
+                    if ev_idx >= events.len() {
+                        return None;
+                    }
+
+                    ev_win.feed(events[ev_idx]);
+                    ev_idx += 1;
+                }
+
+                ev_win.next_event_in_range(offs, cur_nframes)
+            });
+
+            let mut context = crate::Context {
+                nframes: cur_nframes,
+                output: &mut [
+                    &mut output_l[offs..(offs + cur_nframes)],
+                    &mut output_r[offs..(offs + cur_nframes)],
+                ],
+                input: &[&input[offs..(offs + cur_nframes)], &input[offs..(offs + cur_nframes)]],
+            };
+
+            self.process(&mut context);
+
+            if realtime {
+                let micros = ((MAX_BLOCK_SIZE as u64) * 1000000) / (SAMPLE_RATE as u64);
+                std::thread::sleep(std::time::Duration::from_micros(micros));
+            }
+
+            offs += cur_nframes;
+        }
+
+        (output_l, output_r)
+    }
+
+    /// This is a convenience function used for testing
+    /// the DSP graph input and output in automated tests for this crate.
+    ///
+    /// The sample rate that is used to run the DSP code is 44100 Hz.
+    ///
+    /// Relying on the behvaiour of this function for production code
+    /// is not it's intended usecase and changes might break your code.
+    ///
     /// * `seconds`: The number of seconds to run the DSP thread for.
     /// * `realtime`: If this is set, the function will sleep.
     ///
@@ -677,7 +751,7 @@ impl NodeExecutor {
                     &mut output_l[offs..(offs + cur_nframes)],
                     &mut output_r[offs..(offs + cur_nframes)],
                 ],
-                input: &[&input[offs..(offs + cur_nframes)]],
+                input: &[&input[offs..(offs + cur_nframes)], &input[offs..(offs + cur_nframes)]],
             };
 
             self.process(&mut context);
