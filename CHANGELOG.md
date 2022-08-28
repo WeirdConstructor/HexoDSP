@@ -1,4 +1,4 @@
-0.2.0 (unreleased)
+0.2.0 (2022-08-28)
 ==================
 
 * Documentation: Added a guide in the hexodsp::dsp module documentation
