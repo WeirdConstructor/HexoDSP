@@ -1419,6 +1419,7 @@ macro_rules! node_list {
             sin => Sin UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
                (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
+               (2 pm    n_id       d_id  r_id  f_def   stp_d -1.0, 1.0,   0.0)
                [0 sig],
             bosc => BOsc UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)

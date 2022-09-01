@@ -1,3 +1,9 @@
+0.2.1 (unreleased)
+==================
+
+* Feature: Added PM input to the Sin node for phase modulation/distortion.
+This allows to get a more linear FM sound from that oscillator.
+
 0.2.0 (2022-08-28)
 ==================
 

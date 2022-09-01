@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    denorm_offs, inp, out, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    denorm, denorm_offs, inp, out, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::fast_sin;
@@ -34,6 +34,7 @@ impl Sin {
          A signal sent to this port is not rounded.\n\
          Note: The signal input allows detune +-10 octaves.\
          \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
+    pub const pm: &'static str = "Sin pm\nPhase modulation input or phase offset. Use this for linear FM/PM modulation.\n\nRange: (-1..1)\n";
     pub const sig: &'static str = "Sin sig\nOscillator signal output.\n\nRange: (-1..1)\n";
 
     pub const DESC: &'static str = r#"Sine Oscillator
@@ -84,13 +85,18 @@ impl DspNode for Sin {
         let o = out::Sin::sig(outputs);
         let freq = inp::Sin::freq(inputs);
         let det = inp::Sin::det(inputs);
+        let pm = inp::Sin::pm(inputs);
         let isr = 1.0 / self.srate;
 
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {
             let freq = denorm_offs::Sin::freq(freq, det.read(frame), frame);
 
-            last_val = fast_sin(self.phase * TWOPI);
+            let mut phase = self.phase + denorm::Sin::pm(pm, frame);
+            while phase < 0.0 {
+                phase += 1.0
+            }
+            last_val = fast_sin(phase.fract() * TWOPI);
             o.write(frame, last_val);
 
             self.phase += freq * isr;
