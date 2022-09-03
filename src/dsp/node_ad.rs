@@ -46,50 +46,51 @@ impl Ad {
         }
     }
     pub const inp: &'static str =
-        "Ad inp\nSignal input. If you don't connect this, and set this to 1.0 \
+        "### `Ad` ~~inp~~\nSignal input. If you don't connect this, and set this to **1.0** \
         this will act as envelope signal generator. But you can also just \
-        route a signal directly through this of course.\nRange: (-1..1)\n";
+        route a signal directly through this of course.";
     pub const trig: &'static str =
-        "Ad trig\nTrigger input that starts the attack phase.\nRange: (0..1)\n";
+        "### `Ad` ~~trig~~\nTrigger input that starts the attack phase.";
     pub const atk: &'static str =
-        "Ad atk\nAttack time of the envelope. You can extend the maximum \
-        range of this with the 'mult' setting.\nRange: (0..1)\n";
-    pub const dcy: &'static str = "Ad atk\nDecay time of the envelope. You can extend the maximum \
-        range of this with the 'mult' setting.\nRange: (0..1)\n";
-    pub const ashp: &'static str = "Ad ashp\nAttack shape. This allows you to change the shape \
+        "### `Ad` ~~atk~~\nAttack time of the envelope. You can extend the maximum \
+        range of this with the ~~mult~~ setting.";
+    pub const dcy: &'static str = "### `Ad` ~~atk~~\nDecay time of the envelope. \
+        You can extend the maximum range of this with the ~~mult~~ setting.\
+        ";
+    pub const ashp: &'static str = "### `Ad` ~~ashp~~\nAttack shape. This allows you to change the shape \
         of the attack stage from a logarithmic, to a linear and to an \
-        exponential shape.\nRange: (0..1)\n";
-    pub const dshp: &'static str = "Ad dshp\nDecay shape. This allows you to change the shape \
+        exponential shape.";
+    pub const dshp: &'static str = "### `Ad` ~~dshp~~\nDecay shape. This allows you to change the shape \
         of the decay stage from a logarithmic, to a linear and to an \
-        exponential shape.\nRange: (0..1)\n";
-    pub const mult: &'static str = "Ad mult\nAttack and Decay time range multiplier. \
-        This will extend the maximum range of the 'atk' and 'dcy' parameters.";
+        exponential shape.";
+    pub const mult: &'static str = "### `Ad` ~~mult~~\nAttack and Decay time range multiplier. \
+        This will extend the maximum range of the ~~atk~~ and ~~dcy~~ parameters.";
     pub const sig: &'static str =
-        "Ad sig\nEnvelope signal output. If a signal is sent to the 'inp' port, \
+        "### `Ad` ~~sig~~\nEnvelope signal output. If a signal is sent to the 'inp' port, \
         you will receive an attenuated signal here. If you set 'inp' to a \
-        fixed value (for instance 1.0), this will output an envelope signal \
-        in the range 0.0 to 'inp' (1.0).\nRange: (-1..1)\n";
+        fixed value (**for instance 1.0**), this will output an envelope signal \
+        in the range 0.0 to 'inp' (**1.0**).";
     pub const eoet: &'static str =
-        "Ad eoet\nEnd of envelope trigger. This output sends a trigger once \
-        the end of the decay stage has been reached.\nRange: (0..1)";
-    pub const DESC: &'static str = r#"Attack-Decay Envelope
+        "### `Ad` ~~eoet~~\nEnd of envelope trigger. This output sends a trigger once \
+        the end of the decay stage has been reached.";
+    pub const DESC: &'static str = r#"### `Ad` Attack-Decay Envelope
 
 This is a simple envelope offering an attack time and decay time with a shape parameter.
 You can use it as envelope generator to modulate other inputs or process a signal with it directly.
 "#;
-    pub const HELP: &'static str = r#"Ad - Attack-Decay Envelope
+    pub const HELP: &'static str = r#"# `Ad` Attack-Decay Envelope
 
 This simple two stage envelope with attack and decay offers shape parameters
-for each stage. The attack and decay times can be extended using the 'mult'
+for each stage. The attack and decay times can be extended using the ~~mult~~
 setting.
 
-The 'inp' can either be used to process a signal, or set the target output
+The ~~inp~~ can either be used to process a signal, or set the target output
 value of the envelope. In the latter case this node is just a simple
 envelope generator, with which you can generate control signals to modulate
 other inputs.
 
-With the 'eoet' output you can either trigger other envelopes or via
-'FbWr'/'FbRd' retrigger the envelope.
+With the ~~eoet~~ output you can either trigger other envelopes or via
+`FbWr`/`FbRd` retrigger the envelope.
 "#;
 }
 
