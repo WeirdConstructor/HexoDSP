@@ -18,18 +18,17 @@ impl AllP {
     }
 
     pub const inp: &'static str =
-        "AllP inp\nThe signal input for the allpass filter.\nRange: (-1..1)";
+        "### `AllP` ~~inp~~\nThe signal input for the allpass filter.";
     pub const g: &'static str =
-        "AllP g\nThe internal factor for the allpass filter.\nRange: (-1..1)";
-    pub const time: &'static str = "AllP time\nThe allpass delay time.\nRange: (0..1)";
-    pub const sig: &'static str = "AllP sig\nThe output of allpass filter.\nRange: (-1..1)";
+        "### `AllP` ~~g~~\nThe internal factor for the allpass filter.";
+    pub const time: &'static str = "### `AllP` ~~time~~\nThe allpass delay time.";
+    pub const sig: &'static str = "### `AllP` ~~sig~~\nThe output of allpass filter.";
 
-    pub const DESC: &'static str = r#"Single Allpass Filter
-
+    pub const DESC: &'static str = r#"### `AllP` Single Allpass Filter
 This is an allpass filter that can be used to build reverbs
 or anything you might find it useful for.
 "#;
-    pub const HELP: &'static str = r#"AllP - A Simple Single Allpass Filter
+    pub const HELP: &'static str = r#"## `AllP` A Simple Single Allpass Filter
 
 This is an allpass filter that can be used to build reverbs
 or anything you might find it useful for.
@@ -50,15 +49,14 @@ Or:
     Comb -> t=5ms   t=1.68ms
             g=0.7   g=0.7
 
-Typical values for the comb filters are in the range g=0.6 to 0.9
-and time in the range of 30ms to 250ms.
+Typical values for the comb filters are in the range ~~g~~=**0.6** to **0.9**
+and time in the range of **30ms** to **250ms**.
 
 Feel free to deviate from this and experiment around.
 
 Building your own reverbs is fun!
 
-(And don't forget that you can create feedback
-using the FbWr and FbRd nodes!)
+(And don't forget that you can create feedback using the `FbWr` and `FbRd` nodes!)
 "#;
 }
 

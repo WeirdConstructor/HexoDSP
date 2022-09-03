@@ -81,7 +81,7 @@ impl TSeq {
         This node implements a sequencer that can be programmed \
         using the tracker interface in HexoSynth on the right.\n\
         It provides 6 control signals and 6 gate outputs.";
-    pub const HELP: &'static str = r#"# Tracker (based) Sequencer
+    pub const HELP: &'static str = r#"## `TSeq` Tracker (based) Sequencer
 
 This sequencer gets it's speed from the clock source. The ~~clock~~
 signal can be interpreted in different modes. But if you want to

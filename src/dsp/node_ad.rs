@@ -78,7 +78,7 @@ impl Ad {
 This is a simple envelope offering an attack time and decay time with a shape parameter.
 You can use it as envelope generator to modulate other inputs or process a signal with it directly.
 "#;
-    pub const HELP: &'static str = r#"# `Ad` Attack-Decay Envelope
+    pub const HELP: &'static str = r#"## `Ad` Attack-Decay Envelope
 
 This simple two stage envelope with attack and decay offers shape parameters
 for each stage. The attack and decay times can be extended using the ~~mult~~
