@@ -81,16 +81,16 @@ impl TSeq {
         This node implements a sequencer that can be programmed \
         using the tracker interface in HexoSynth on the right.\n\
         It provides 6 control signals and 6 gate outputs.";
-    pub const HELP: &'static str = r#"Tracker (based) Sequencer
+    pub const HELP: &'static str = r#"# Tracker (based) Sequencer
 
-This sequencer gets it's speed from the clock source. The 'clock'
+This sequencer gets it's speed from the clock source. The ~~clock~~
 signal can be interpreted in different modes. But if you want to
 run multiple sequencers in parallel, you want to synchronize them.
-For this you can use the 'trig' input, it resets the played row to
+For this you can use the ~~trig~~ input, it resets the played row to
 the beginning of the sequence every time a trigger is received.
 
 Alternatively you can run the sequencer clock using the phase mode.
-With that the phase (0..1) signal on the 'clock' input determines the
+With that the phase (**0..1**) signal on the ~~clock~~ input determines the
 exact play head position in the pattern. With this you just need to
 synchronize the phase generators for different sequencers.
 
@@ -99,65 +99,64 @@ For an idea how to chain multiple tracker sequencers, see the next page.
 This tracker provides 6 columns that each can have one of the following
 types:
 
-- Note column: for specifying pitches.
-- Step column: for specifying non interpolated control signals.
-- Value column: for specifying linearly interpolated control signals.
-- Gate column: for specifying gates, with probability and ratcheting.
+- *Note* column: for specifying pitches.
+- *Step* column: for specifying non interpolated control signals.
+- *Value* column: for specifying linearly interpolated control signals.
+- *Gate* column: for specifying gates, with probability and ratcheting.
 
-Step, value and gate cells can be set to 4096 (0xFFF) different values
+Step, value and gate cells can be set to **4096** (**0xFFF**) different values
 or contain nothing at all. For step and value columns these values
-are mapped to the 0.0-1.0 control signal range, with 0xFFF being 1.0
-and 0x000 being 0.0.
+are mapped to the **0.0-1.0** control signal range, with **0xFFF** being **1.0**
+and **0x000** being **0.0**.
 
-Value examples:     1.0   0.9  0.75   0.5  0.25   0.1
-                  0xFFF 0xE70 0xC00 0x800 0x400 0x19A
-Gate examples:
-    Probability  Ratcheting   Gate Length        full on gate: 0xFFF
-      6%  0x000  16   0x000   1/16  0x000      2 short pulses: 0xFE0
-     18%  0x200  14   0x020   3/16  0x002      4 short pulses: 0xFC0
-     25%  0x300  13   0x030   4/16  0x003        2 50% pulses: 0xFE7
-     50%  0x700   9   0x070   8/16  0x007        half on gate: 0xFF7
-     62%  0x900   7   0x090  10/16  0x009         short pulse: 0xFF0
-     75%  0xC00   4   0x0C0  12/16  0x00C    rare short pulse: 0xEF0
-     87%  0xE00   2   0x0E0  15/16  0x00E   50/50 short pulse: 0x7F0
-    100%  0xF00   1   0x0F0  16/16  0x00F   50/50 full gate:   0x7FF
+    Value examples:     1.0   0.9  0.75   0.5  0.25   0.1
+                      0xFFF 0xE70 0xC00 0x800 0x400 0x19A
+    Gate examples:
+        Probability  Ratcheting   Gate Length        full on gate: 0xFFF
+          6%  0x000  16   0x000   1/16  0x000      2 short pulses: 0xFE0
+         18%  0x200  14   0x020   3/16  0x002      4 short pulses: 0xFC0
+         25%  0x300  13   0x030   4/16  0x003        2 50% pulses: 0xFE7
+         50%  0x700   9   0x070   8/16  0x007        half on gate: 0xFF7
+         62%  0x900   7   0x090  10/16  0x009         short pulse: 0xFF0
+         75%  0xC00   4   0x0C0  12/16  0x00C    rare short pulse: 0xEF0
+         87%  0xE00   2   0x0E0  15/16  0x00E   50/50 short pulse: 0x7F0
+        100%  0xF00   1   0x0F0  16/16  0x00F   50/50 full gate:   0x7FF
 
-On the next page you can read about the gate cells and the gate outputs.
----page---
-Gate Input and Output
+## Gate Input and Output
 
 The gate cells are differently coded:
 
-- 0x00F: The least significant nibble controls the gate length.
-         With 0x00F being the full row, and 0x000 being 1/16th of a row.
-- 0x0F0: The second nibble controls ratcheting, with 0x0F0 being one
-         gate per row, and 0x000 being 16 gates per row.
+- **0x00F**: The least significant nibble controls the gate length.
+         With **0x00f** being the full row, and **0x000** being 1/16th of a row.
+- **0x0F0**: The second nibble controls ratcheting, with **0x0F0** being one
+         gate per row, and **0x000** being 16 gates per row.
          Length of these gates is controlled by the last significant nibble.
-- 0xF00: The most significant nibble controls probability of the
-         whole gate cell. With 0xF00 meaning the gate will always be
-         triggered, and 0x000 means that the gate is only triggered with
-         6% probability. 50% is 0x700.
+- **0xF00**: The most significant nibble controls probability of the
+         whole gate cell. With **0xF00** meaning the gate will always be
+         triggered, and **0x000** means that the gate is only triggered with
+         **6%** probability. **50%** is **0x700.**
 
-The behaviour of the 6 gate outputs of TSeq depend on the corresponding
+The behaviour of the 6 gate outputs of `TSeq` depend on the corresponding
 column type:
 
-- Step gat1-gat6:  Like note columns, this will output a 1.0 for the whole
+- Step ~~gat1-gat6~~:  Like note columns, this will output a **1.0** for the whole
                    row if a step value is set. With two step values directly
-                   following each other no 0.0 will be emitted in between
+                   following each other no **0.0** will be emitted in between
                    the rows. This means if you want to drive an envelope
                    with release phase with this signal, you need to make
                    space for the release phase.
-- Note gat1-gat6:  Behaves just like step columns.
-- Gate gat1-gat6:  Behaves just like step columns.
-- Value gat1-gat6: Outputs a 1.0 value for the duration of the last row.
+- Note ~~gat1-gat6~~:  Behaves just like step columns.
+- Gate ~~gat1-gat6~~:  Behaves just like step columns.
+- Value ~~gat1-gat6~~: Outputs a **1.0** value for the duration of the last row.
                    You can use this to trigger other things once the
                    sequence has been played.
 
-Tip:
-    If you want to use the end of a tracker sequence as trigger for
-    something else, eg. switching to a different 'tseq' and restart
-    it using it's 'trig' input, you will need to use the gate output
-    of a value column and invert it.
+*Tip*:
+
+If you want to use the end of a tracker sequence as trigger for
+something else, eg. switching to a different `TSeq` and restart
+it using it's ~~trig~~ input, you will need to use the gate output
+of a value column and invert it.
 "#;
 }
 
