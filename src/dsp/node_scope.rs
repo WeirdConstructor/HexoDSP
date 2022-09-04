@@ -54,18 +54,25 @@ impl Scope {
     pub const in2: &'static str = "Signal input 2.";
     pub const in3: &'static str = "Signal input 3.";
     pub const time: &'static str = "Displayed time range of the oscilloscope view.";
-    pub const trig: &'static str = "External trigger input. Only active if 'tsrc' is set to 'Extern'. 'thrsh' applies also for external triggers.";
-    pub const thrsh: &'static str = "Trigger threshold. If the threshold is passed by the signal from low to high the signal recording will be reset. Either for internal or for external triggering. Trigger is only active if 'tsrc' is not 'Off'.";
+    pub const trig: &'static str = "External trigger input. Only active if ~~tsrc~~ is set to **Extern**. ~~thrsh~~ applies also for external triggers.";
+    pub const thrsh: &'static str = "Trigger threshold. If the threshold is passed by the signal \
+    from low to high the signal recording will be reset. \
+    Either for internal or for external triggering. \
+    Trigger is only active if ~~tsrc~~ is not **Off**.";
     pub const off1: &'static str = "Visual offset of signal input 1.";
     pub const off2: &'static str = "Visual offset of signal input 2.";
     pub const off3: &'static str = "Visual offset of signal input 3.";
     pub const gain1: &'static str = "Visual amplification/attenuation of the signal input 1.";
     pub const gain2: &'static str = "Visual amplification/attenuation of the signal input 2.";
     pub const gain3: &'static str = "Visual amplification/attenuation of the signal input 3.";
-    pub const tsrc: &'static str = "Triggering allows you to capture fast signals or pinning fast waveforms into the scope view for better inspection. You can let the scope freeze and manually recapture waveforms by setting 'tsrc' to 'Extern' and hitting the 'trig' button manually.";
+    pub const tsrc: &'static str =
+        "Triggering allows you to capture fast signals or pinning fast waveforms into the scope \
+        view for better inspection. You can let the scope freeze and manually recapture \
+        waveforms by setting ~~tsrc~~ to **Extern** and hitting the ~~trig~~ button manually.";
     pub const DESC: &'static str = r#"Signal Oscilloscope Probe
 
-This is a signal oscilloscope probe node, you can capture up to 3 signals. You can enable internal or external triggering for capturing signals or pinning fast waveforms.
+This is a signal oscilloscope probe node, you can capture up to 3 signals.
+You can enable internal or external triggering for capturing signals or pinning fast waveforms.
 "#;
     pub const HELP: &'static str = r#"Signal Oscilloscope Probe
 
@@ -74,18 +81,18 @@ in record up to 24 signals for displaying them in the scope view.
 The received signal will be forwarded to the GUI and you can inspect
 the waveform there.
 
-You can enable an internal trigger with the 'tsrc' setting set to 'Intern'.
-'Intern' here means that the signal input 1 'in1' is used as trigger signal.
-The 'thrsh' parameter is the trigger detection parameter. That means, if your
+You can enable an internal trigger with the ~~tsrc~~ setting set to **Intern**.
+**Intern** here means that the signal input 1 ~~in1~~ is used as trigger signal.
+The ~~thrsh~~ parameter is the trigger detection parameter. That means, if your
 signal passes that threshold in negative to positive direction, the signal
 recording will be reset to that point.
 
-You can also route in an external trigger to capture signals with the 'trig'
-input and 'tsrc' set to 'Extern'. Of course you can also hit the 'trig' button
+You can also route in an external trigger to capture signals with the ~~trig~~
+input and ~~tsrc~~ set to **Extern**. Of course you can also hit the ~~trig~~ button
 manually to recapture a waveform.
 
-The inputs 'off1', 'off2' and 'off3' define a vertical offset of the signal
-waveform in the scope view. Use 'gain1', 'gain2' and 'gain3' for scaling
+The inputs ~~off1~~, ~~off2~~ and ~~off3~~ define a vertical offset of the signal
+waveform in the scope view. Use ~~gain1~~, ~~gain2~~ and ~~gain3~~ for scaling
 the input signals up/down.
 "#;
 

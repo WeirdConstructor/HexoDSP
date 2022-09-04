@@ -53,24 +53,27 @@ impl VOsc {
         oscillators. Make sure to try modulating this parameter at audio rate!\
         ";
     pub const v: &'static str = "This is the vertical bending point of the waveform. \
-        You can adjust the effect that 'd' has on the waveform with this \
+        You can adjust the effect that ~~d~~ has on the waveform with this \
         parameter. Make sure to try to modulate this parameter at audio rate!\
         ";
-    pub const vs: &'static str = "Scaling factor for 'v'. If you increase this beyond 1.0, \
+    pub const vs: &'static str = "Scaling factor for ~~v~~. If you increase this beyond **1.0**, \
         you will hear formant like sounds from the oscillator. Try adjusting \
-        'd' to move the formants around.";
+        ~~d~~ to move the formants around.";
     pub const dist: &'static str = "A collection of waveshaper/distortions to choose from.";
     pub const damt: &'static str = "Distortion amount.";
     pub const ovrsmpl: &'static str = "Enable/Disable oversampling.";
     pub const sig: &'static str = "Oscillator output";
     pub const DESC: &'static str = r#"V Oscillator
 
-A vector phase shaping oscillator, to create interesting waveforms and ways to manipulate them. It has two parameters ('v' and 'd') to shape the phase of the sinusoid wave, and a 'vs' parameter to add extra spice. Distortion can beef up the oscillator output and you can apply oversampling.
+A vector phase shaping oscillator, to create interesting waveforms and ways to manipulate them.
+It has two parameters (~~v~~ and ~~d~~) to shape the phase of the sinusoid wave,
+and a ~~vs~~ parameter to add extra spice.
+Distortion can beef up the oscillator output and you can apply oversampling.
 "#;
     pub const HELP: &'static str = r#"Vector Phase Shaping Oscillator
 A vector phase shaping oscillator, to create interesting waveforms and
-ways to manipulate them. It has two parameters ('v' and 'd') to shape the
-phase of the sinusoid wave, and a third parameter 'vs' to add extra spice.
+ways to manipulate them. It has two parameters (~~v~~ and ~~d~~) to shape the
+phase of the sinusoid wave, and a third parameter ~~vs~~ to add extra spice.
 With distortion you can beef up the oscillator output even more and to
 make it more harmonic you can apply oversampling.
 "#;

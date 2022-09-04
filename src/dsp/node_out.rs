@@ -32,10 +32,10 @@ impl Out {
     }
 
     pub const mono: &'static str =
-        "If set to 'Mono', ch1 will be sent to both output channels.\n(UI only)";
+        "If set to **Mono**, ~~ch1~~ will be sent to both output channels.\n(UI only)";
     pub const gain: &'static str =
         "The main gain of the synthesizer output, applied to all channels. \
-        Please note that this is a linear control, to prevent inaccuracies for 1.0. \
+        Please note that this is a linear control, to prevent inaccuracies for **1.0**. \
         ";
     pub const ch1: &'static str = "Audio channel 1 (left)";
     pub const ch2: &'static str = "Audio channel 2 (right)";
@@ -47,8 +47,8 @@ impl Out {
 
 This output port node allows you to send audio signals to audio devices
 or tracks in your DAW. If you need a stereo output but only have a mono
-signal you can use the 'mono' setting to duplicate the signal on the 'ch1'
-input to the second channel 'ch2'.
+signal you can use the ~~mono~~ setting to duplicate the signal on the ~~ch1~~
+input to the second channel ~~ch2~~.
 "#;
 }
 

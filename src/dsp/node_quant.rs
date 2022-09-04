@@ -26,11 +26,11 @@ impl Quant {
     }
     pub const freq: &'static str = "Any signal that is to be pitch quantized.";
     pub const oct: &'static str = "Pitch offset, the knob is snapping to octave offsets. \
-        Feed signal values snapped to 0.1 multiples for exact octave offsets.\
+        Feed signal values snapped to **0.1** multiples for exact octave offsets.\
         ";
     pub const sig: &'static str = "The quantized output signal that is rounded to \
         the next selected note pitch within the octave of the \
-        original input to 'freq'.";
+        original input to ~~freq~~.";
     pub const keys: &'static str = "Select the notes you want to snap to here. \
         If no notes are selected, the quantizer will snap the \
         incoming signal to any closest note.";
@@ -39,17 +39,17 @@ impl Quant {
         to trigger for example an envelope.";
     pub const DESC: &'static str = r#"Pitch Quantizer
 
-This is a simple quantizer, that snaps a pitch signal on 'freq' to the closest selected notes within their octave.
+This is a simple quantizer, that snaps a pitch signal on ~~freq~~ to the closest selected notes within their octave.
 "#;
     pub const HELP: &'static str = r#"A pitch quantizer
 
-This is a simple quantizer, that snaps a pitch signal on 'freq' to the
+This is a simple quantizer, that snaps a pitch signal on ~~freq~~ to the
 closest selected notes within their octave.
 
 If you sweep along pitches you will notice that notes that are closer together
 are travelled across faster. That means the notes are not evenly distributed
 across the pitch input. If you want a more evenly distributed pitch selection
-please see also the 'CQnt' node.
+please see also the `CQnt` node.
 "#;
 }
 

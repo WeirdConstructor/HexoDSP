@@ -88,7 +88,7 @@ impl PVerb {
     pub const predly: &'static str = "The pre-delay length for the first reflection.";
     pub const size: &'static str = "The size of the simulated room. Goes from a small \
         chamber to a huge hall.";
-    pub const dcy: &'static str = "The decay of the sound. If you set this to '1.0' the
+    pub const dcy: &'static str = "The decay of the sound. If you set this to **1.0** the
         sound will infinitively be sustained. Just be careful feeding in more \
         sound with that.";
     pub const ilpf: &'static str = "Input low-pass filter cutoff frequency, for filtering \
@@ -96,31 +96,32 @@ impl PVerb {
     pub const ihpf: &'static str = "Input high-pass filter cutoff frequency, for filtering \
         the input before it's fed into the pre-delay.";
     pub const dif: &'static str = "The amount of diffusion inside the reverb tank. \
-        Setting this to 0 will disable any kind of diffusion and the reverb \
+        Setting this to **0** will disable any kind of diffusion and the reverb \
         will become a more or less simple echo effect.";
     pub const dmix: &'static str = "The mix between input diffusion and clean output of the \
-        pre-delay. Setting this to 0 will not diffuse any input.";
+        pre-delay. Setting this to **0** will not diffuse any input.";
     pub const mspeed: &'static str = "The internal LFO speed, that modulates the internal \
-        diffusion inside the reverb tank. Keeping this low (< 0.2) will sound \
+        diffusion inside the reverb tank. Keeping this low (< **0.2**) will sound \
         a bit more natural than a fast LFO.";
-    pub const mshp: &'static str = "The shape of the LFO. 0.0 is a down ramp, 1.0 is an up \
-        ramp and 0.0 is a triangle. Setting this to 0.5 is a good choise. The \
-        extreme values of 0.0 and 1.0 can lead to audible artifacts.";
+    pub const mshp: &'static str = "The shape of the LFO. **0.0** is a down ramp, **1.0** is an up \
+        ramp and **0.0** is a triangle. Setting this to **0.5** is a good choice. The \
+        extreme values of **0.0** and **1.0** can lead to audible artifacts.";
     pub const mdepth: &'static str = "The depth of the LFO change that is applied to the \
-        diffusion inside the reverb tank. More extreme values (above 0.2) will \
+        diffusion inside the reverb tank. More extreme values (above **0.2**) will \
         lead to more detuned sounds reverbing inside the tank.";
     pub const rlpf: &'static str = "Reverb tank low-pass filter cutoff frequency.";
     pub const rhpf: &'static str = "Reverb tank high-pass filter cutoff frequency.";
     pub const mix: &'static str = "Dry/Wet mix between the input and the diffused output.";
     pub const DESC: &'static str = r#"Plate Reverb
 
-This is a simple but yet powerful small plate reverb based on the design by Jon Dattorro. It should suit your needs from small rooms up to large athmospheric sound scapes.
+This is a simple but yet powerful small plate reverb based on the design by Jon Dattorro.
+It should suit your needs from small rooms up to large atmospheric sound scapes.
 "#;
     pub const HELP: &'static str = r#"Plate Reverb (by Jon Dattorro)
 
 This is a simple but yet powerful small plate reverb based on the design
 by Jon Dattorro. It should suit your needs from small rooms up to large
-athmospheric sound scapes. It provides two inputs, and two outputs for
+atmospheric sound scapes. It provides two inputs, and two outputs for
 stereo signals. You can also feed a monophonic input, and you will get
 a stereo output.
 
@@ -132,31 +133,31 @@ Internal modulation keeps the sound alive and spreads it even more.
 
 Structure of the reverb is:
 
-    Left       Right
-      |         |
-      \----+----/
-           v
-         'ilpf'           'ihpf'         'predly'
-    Input Low-Pass -> Input High-Pass -> Pre-Delay
-                                                 |
-         o------------------o--------------\     |
-         +------\           +----------\   |     |
-         v      |           v          |   |  v--o----> All-Pass Diffusor
-   [Left Channel]     [Right Channel]  |   \--x 'dmix'     |
-  /> Diffusor 1 |'size' Diffusor 1 <-\ |      ^------------/
-  |    Delay 1  |'size'   Delay 1    | |
-  |   LPF/HPF   |        LPF/HPF   'rlpf'/'rhpf'
-  |  [x Decay]  |'dcy'  [x Decay]    | |               'mspeed'
-  o> Diffusor 2 |'size' Diffusor 2 <-o----o-x-----LFO  'mshp'
-  |    Delay 2  |'size'   Delay 2      |  | 'mdepth'
-  |      |      |            |         |  |
-  |      x 'dcy'|            x         |  |
-  |      |      \-[feedback]-/         |  |
-  |      \--------[feedback]-----------/  |
-  \--------------------------------------/
+      Left       Right
+        |         |
+        \----+----/
+             v
+           'ilpf'           'ihpf'         'predly'
+      Input Low-Pass -> Input High-Pass -> Pre-Delay
+                                                   |
+           o------------------o--------------\     |
+           +------\           +----------\   |     |
+           v      |           v          |   |  v--o----> All-Pass Diffusor
+     [Left Channel]     [Right Channel]  |   \--x 'dmix'     |
+    /> Diffusor 1 |'size' Diffusor 1 <-\ |      ^------------/
+    |    Delay 1  |'size'   Delay 1    | |
+    |   LPF/HPF   |        LPF/HPF   'rlpf'/'rhpf'
+    |  [x Decay]  |'dcy'  [x Decay]    | |               'mspeed'
+    o> Diffusor 2 |'size' Diffusor 2 <-o----o-x-----LFO  'mshp'
+    |    Delay 2  |'size'   Delay 2      |  | 'mdepth'
+    |      |      |            |         |  |
+    |      x 'dcy'|            x         |  |
+    |      |      \-[feedback]-/         |  |
+    |      \--------[feedback]-----------/  |
+    \--------------------------------------/
 
-    Multiple Taps into Left/Right Diffusors 1/2 and Delays 1/2
-    are then fed to the left and right output channels.
+      Multiple Taps into Left/Right Diffusors 1/2 and Delays 1/2
+      are then fed to the left and right output channels.
 "#;
 }
 

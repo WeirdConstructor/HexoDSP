@@ -24,14 +24,14 @@ impl RndWk {
     }
 
     pub const trig: &'static str = "This trigger generates a new random number within \
-        the current 'min'/'max' range.";
+        the current ~~min~~/~~max~~ range.";
     pub const step: &'static str = "This is the maximum possible step size of the \
-        random number drawn upon 'trig'. Setting this to 0.0 will disable \
+        random number drawn upon ~~trig~~. Setting this to **0.0** will disable \
         the randomness.\nThe minimum step size can be defined \
-        by the 'offs' parameter.";
+        by the ~~offs~~ parameter.";
     pub const offs: &'static str =
-        "The minimum step size and direction that is done on each 'trig'.\
-        Depending on the size of the 'offs' and the 'min'/'max' range, \
+        "The minimum step size and direction that is done on each ~~trig~~.\
+        Depending on the size of the ~~offs~~ and the ~~min~~/~~max~~ range, \
         this might result in the output value being close to the limits \
         of that range.";
     pub const min: &'static str = "The minimum of the new target value. If a value is drawn \
@@ -41,28 +41,29 @@ impl RndWk {
         that is outside of this range, it will be reflected back into it.\
         ";
     pub const slew: &'static str = "The slew rate limiting time. Thats the time it takes to \
-        get to 1.0 from 0.0. Useful for smoothing modulation of audio signals. \
+        get to **1.0** from **0.0**. Useful for smoothing modulation of audio signals. \
         The higher the time, the smoother/slower the transition to new \
         target values will be.";
     pub const sig: &'static str = "Oscillator output";
     pub const DESC: &'static str = r#"Random Walker
 
-This modulator generates a random number by walking a pre defined maximum random 'step' width. For smoother transitions a slew rate limiter is integrated.
+This modulator generates a random number by walking a pre defined maximum random ~~step~~ width.
+For smoother transitions a slew rate limiter is integrated.
 "#;
     pub const HELP: &'static str = r#"Random Walker
 
 This modulator generates a random number by walking a pre defined
-maximum random 'step' width. The newly generated target value will always
-be folded within the defined 'min'/'max' range. The 'offs' parameter defines a
-minimal step width each 'trig' has to change the target value.
+maximum random ~~step~~ width. The newly generated target value will always
+be folded within the defined ~~min~~/~~max~~ range. The ~~offs~~ parameter defines a
+minimal step width each ~~trig~~ has to change the target value.
 
 For smoother transitions, if you want to modulate an audio signal with this,
-a slew rate limiter ('slew') is integrated.
+a slew rate limiter (~~slew~~) is integrated.
 
-You can disable all randomness by setting 'step' to 0.0.
+You can disable all randomness by setting ~~step~~ to **0.0**.
 
-Tip: Interesting and smooth results can be achieved if you set 'slew'
-to a (way) longer time than the 'trig' interval. It will smooth
+Tip: Interesting and smooth results can be achieved if you set ~~slew~~
+to a (way) longer time than the ~~trig~~ interval. It will smooth
 off the step widths and the overall motion even more.
 "#;
 }

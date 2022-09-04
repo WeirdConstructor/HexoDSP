@@ -69,7 +69,7 @@ impl Sampl {
         sample.";
 
     pub const trig: &'static str = "The trigger input causes a resync of the playback phase \
-         and triggers the playback if the 'pmode' is 'OneShot'";
+         and triggers the playback if the ~~pmode~~ is **OneShot**";
     pub const offs: &'static str = "Start position offset.";
     pub const len: &'static str = "Adjusts the playback length of the sample in relation \
         to the original length of the sample.";
@@ -84,9 +84,9 @@ impl Sampl {
     pub const sample: &'static str = "The audio sample that is played back.";
 
     pub const pmode: &'static str = "The playback mode of the sampler.\n\
-        - 'Loop' constantly plays back the sample. You can reset/sync the phase \
-        using the 'trig' input in this case.\n\
-        - 'OneShot' plays back the sample if a trigger is received on 'trig' input.\n";
+        - **Loop** constantly plays back the sample. You can reset/sync the phase \
+        using the ~~trig~~ input in this case.\n\
+        - **OneShot** plays back the sample if a trigger is received on ~~trig~~ input.\n";
     pub const dclick: &'static str =
         "If this is enabled it will enable short fade in and out ramps.\n\
          This if useful if you don't want to add an envelope just for \
@@ -105,31 +105,29 @@ Provides a simple sample player for playing back one loaded audio sample.
 It can be used for purposes like:
 
 * Adding ambient samples to your patches.
-* Using drum samples (set 'pmode' to 'OneShot').
-* Having an oscillator with a custom waveform (set 'pmode' to 'Loop').
+* Using drum samples (set ~~pmode~~ to **OneShot**
+* Having an oscillator with a custom waveform (set ~~pmode~~ to **Loop**
 * As custom control signal source for very long or very custom envelopes.
 
-Only a single audio sample can be loaded into this player. In HexoSynth
-the sample selection can be done by the file browser in the right panel
-in the 'Samples' tab.
+Only a single audio sample can be loaded into this player.
 
-You can adjust the playback speed of the sample either by the 'freq' parameter
-or the 'det' parameter. You can offset into the sample using the 'offs'
+You can adjust the playback speed of the sample either by the ~~freq~~ parameter
+or the ~~det~~ parameter. You can offset into the sample using the ~~offs~~
 parameter and modify the playback length relative to the original
-sample length using the 'len' parameter.
+sample length using the ~~len~~ parameter.
 
 Even though you are advised to use an envelope for controlling the playback
 volume of the sample to prevent clicks a simple in and out ramp is provided
-using by the 'dclick' setting. The length of these ramps can be controlled
-using the 'dcms' parameter.
+using by the ~~dclick~~ setting. The length of these ramps can be controlled
+using the ~~dcms~~ parameter.
 
-When 'pmode' is set to 'Loop' the sample will restart playing immediately
+When ~~pmode~~ is set to **Loop** the sample will restart playing immediately
 after it has finished. This is useful when you just want to load a waveform
 into the sample player to use it as oscillator.
 
-To start samples when 'pmode' is set to 'OneShot' a trigger input needs to
-be provided on the 'trig' input port. The 'trig' input also works in
-'Loop' mode to retrigger the sample.
+To start samples when ~~pmode~~ is set to **OneShot** a trigger input needs to
+be provided on the ~~trig~~ input port. The ~~trig~~ input also works in
+**Loop** mode to retrigger the sample.
 "#;
 }
 
