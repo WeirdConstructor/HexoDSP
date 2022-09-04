@@ -108,8 +108,7 @@ impl BowStri {
     pub fn new(_nid: &NodeId) -> Self {
         Self { bstr: Box::new(BowedString::new()) }
     }
-    pub const freq: &'static str =
-        "Frequency of the bowed string oscillator.\n";
+    pub const freq: &'static str = "Frequency of the bowed string oscillator.\n";
     pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \

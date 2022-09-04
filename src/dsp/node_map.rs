@@ -26,18 +26,17 @@ impl Map {
         Self {}
     }
     pub const inp: &'static str = "Signal input";
-    pub const atv : &'static str =
+    pub const atv: &'static str =
         "Input signal attenuverter, to attenuate or invert the input signal.";
-    pub const offs: &'static str =
-        "Input signal offset after 'atv' has been applied.";
+    pub const offs: &'static str = "Input signal offset after ~~atv~~ has been applied.";
     pub const imin: &'static str = "Minimum of the input signal range, \
-        it's mapped to the 'min' output signal range.";
+        it's mapped to the ~~min~~ output signal range.";
     pub const imax: &'static str = "Maximum of the input signal range, \
-        it's mapped to the 'max' output signal range.";
+        it's mapped to the ~~max~~ output signal range.";
     pub const min: &'static str = "Minimum of the output signal range.";
     pub const max: &'static str = "Maximum of the output signal range.";
-    pub const clip: &'static str = "The 'clip' mode allows you to limit the output \
-        exactly to the 'min'/'max' range. If this is off, the output \
+    pub const clip: &'static str = "The ~~clip~~ mode allows you to limit the output \
+        exactly to the ~~min~~/~~max~~ range. If this is off, the output \
         may be outside the output signal range if the input signal is \
         outside the input signal range.";
     pub const sig: &'static str = "Mapped signal output";
@@ -46,7 +45,7 @@ impl Map {
 This node allows to map an input signal range to a precise output signal range.
 It's mostly useful to map control signals to modulate inputs.
 
-See also the 'SMap' node, which is a simplified version of this node.
+See also the `SMap` node, which is a simplified version of this node.
 "#;
     pub const HELP: &'static str = r#"Range Mapper
 
@@ -54,20 +53,20 @@ This node allows to map an input signal range to a precise output signal
 range. It's main use is for precise control of an input of another node.
 
 It processes the input signal as follows. First the input is attenuverted
-using the 'atv' paramter and then the 'offs' offset parameter is added:
+using the ~~atv~~ parameter and then the ~~offs~~ offset parameter is added:
 
     inp * atv + offs
 
 The resulting signal is then processed by the mapping, that maps
-the input signal range 'imin'/'imax' to the ouput signal range 'min/'max'.
+the input signal range ~~imin~~/~~imax~~ to the ouput signal range ~~min~~/~~max~~.
 
-The 'clip' mode allows you to limit the output exactly to the 'min'/'max'
+The ~~clip~~ mode allows you to limit the output exactly to the ~~min~~/~~max~~
 range. If this is off, the output may be outside the output signal
 range if the input signal is outside the input signal range.
 
 This can also be used to invert the signal.
 
-For a more simplified version of this node see also 'SMap'.
+For a more simplified version of this node see also `SMap`.
 "#;
 }
 

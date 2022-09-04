@@ -36,8 +36,7 @@ impl BOsc {
         Self { osc: PolyBlepOscillator::new(init_phase), israte: 1.0 / 44100.0 }
     }
 
-    pub const freq: &'static str =
-        "Base frequency of the oscillator.\n";
+    pub const freq: &'static str = "Base frequency of the oscillator.\n";
     pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \

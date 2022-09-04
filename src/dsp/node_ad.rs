@@ -49,10 +49,8 @@ impl Ad {
         "Signal input. If you don't connect this, and set this to **1.0** \
         this will act as envelope signal generator. But you can also just \
         route a signal directly through this of course.";
-    pub const trig: &'static str =
-        "Trigger input that starts the attack phase.";
-    pub const atk: &'static str =
-        "Attack time of the envelope. You can extend the maximum \
+    pub const trig: &'static str = "Trigger input that starts the attack phase.";
+    pub const atk: &'static str = "Attack time of the envelope. You can extend the maximum \
         range of this with the ~~mult~~ setting.";
     pub const dcy: &'static str = "Decay time of the envelope. \
         You can extend the maximum range of this with the ~~mult~~ setting.\
@@ -65,13 +63,11 @@ impl Ad {
         exponential shape.";
     pub const mult: &'static str = "Attack and Decay time range multiplier. \
         This will extend the maximum range of the ~~atk~~ and ~~dcy~~ parameters.";
-    pub const sig: &'static str =
-        "Envelope signal output. If a signal is sent to the 'inp' port, \
+    pub const sig: &'static str = "Envelope signal output. If a signal is sent to the 'inp' port, \
         you will receive an attenuated signal here. If you set 'inp' to a \
         fixed value (**for instance 1.0**), this will output an envelope signal \
         in the range 0.0 to 'inp' (**1.0**).";
-    pub const eoet: &'static str =
-        "End of envelope trigger. This output sends a trigger once \
+    pub const eoet: &'static str = "End of envelope trigger. This output sends a trigger once \
         the end of the decay stage has been reached.";
     pub const DESC: &'static str = r#"Attack-Decay Envelope
 

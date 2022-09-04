@@ -53,19 +53,15 @@ impl Scope {
     pub const in1: &'static str = "Signal input 1.";
     pub const in2: &'static str = "Signal input 2.";
     pub const in3: &'static str = "Signal input 3.";
-    pub const time: &'static str =
-        "Displayed time range of the oscilloscope view.";
+    pub const time: &'static str = "Displayed time range of the oscilloscope view.";
     pub const trig: &'static str = "External trigger input. Only active if 'tsrc' is set to 'Extern'. 'thrsh' applies also for external triggers.";
     pub const thrsh: &'static str = "Trigger threshold. If the threshold is passed by the signal from low to high the signal recording will be reset. Either for internal or for external triggering. Trigger is only active if 'tsrc' is not 'Off'.";
     pub const off1: &'static str = "Visual offset of signal input 1.";
     pub const off2: &'static str = "Visual offset of signal input 2.";
     pub const off3: &'static str = "Visual offset of signal input 3.";
-    pub const gain1: &'static str =
-        "Visual amplification/attenuation of the signal input 1.";
-    pub const gain2: &'static str =
-        "Visual amplification/attenuation of the signal input 2.";
-    pub const gain3: &'static str =
-        "Visual amplification/attenuation of the signal input 3.";
+    pub const gain1: &'static str = "Visual amplification/attenuation of the signal input 1.";
+    pub const gain2: &'static str = "Visual amplification/attenuation of the signal input 2.";
+    pub const gain3: &'static str = "Visual amplification/attenuation of the signal input 3.";
     pub const tsrc: &'static str = "Triggering allows you to capture fast signals or pinning fast waveforms into the scope view for better inspection. You can let the scope freeze and manually recapture waveforms by setting 'tsrc' to 'Extern' and hitting the 'trig' button manually.";
     pub const DESC: &'static str = r#"Signal Oscilloscope Probe
 

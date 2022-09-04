@@ -52,14 +52,13 @@ impl MidiP {
     }
 
     pub const chan: &'static str = "MIDI Channel 0 to 15\n";
-    pub const gmode: &'static str = "MIDI gate mode.\n- 'MIDI' gate same as MIDI input\n- 'Trigger' output only triggers on 'gate' output\n- 'Gate Len' output gate with the length of the 'glen' parameter\n";
+    pub const gmode: &'static str = "MIDI gate mode.\n- **MIDI** gate same as MIDI input\n- **Trigger** output only triggers on ~~gate~~ output\n- **Gate Len** output gate with the length of the ~~glen~~ parameter\n";
     pub const glen: &'static str = "MIDI gate length\n\
-        If 'gmode' is set to 'Gate Len' this controls and overrides the gate length on a MIDI \
-        note event. 'Trigger' will just send a short trigger when a note event is received. \
-        'MIDI' means the gate reflects the note on/off duration.";
+        If ~~gmode~~ is set to **Gate Len** this controls and overrides the gate length on a MIDI \
+        note event. **Trigger** will just send a short trigger when a note event is received. \
+        **MIDI** means the gate reflects the note on/off duration.";
     pub const det: &'static str = "Detune input pitch a bit";
-    pub const freq: &'static str =
-        "MIDI note frequency, detuned by 'det'.";
+    pub const freq: &'static str = "MIDI note frequency, detuned by ~~det~~.";
     pub const gate: &'static str = "MIDI note gate";
     pub const vel: &'static str = "MIDI note velocity";
 
@@ -72,10 +71,10 @@ This node is an input of MIDI note events into the DSP graph.
 You get 3 outputs: frequency of the note, gate signal for the length of
 the note and the velocity.
 
-You can modify the gate length using the 'gmode' and 'glen' settings.
-Setting 'gmode' to 'Trigger' allows you to get only a short trigger
+You can modify the gate length using the ~~gmode~~ and ~~glen~~ settings.
+Setting ~~gmode~~ to **Trigger** allows you to get only a short trigger
 signal, which might be helpful in some situations.
-The 'Gate Len' setting allows you to overwrite the gate length with a
+The **Gate Len** setting allows you to overwrite the gate length with a
 custom and fixed gate length. However, if new note is played on this
 MIDI channel, the gate will restart after a very short pause.
 "#;

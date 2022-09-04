@@ -45,8 +45,7 @@ impl SMap {
     pub const clip: &'static str = "The 'clip' mode allows you to limit the output \
         exactly to the 'min'/'max' range. If this is off, the output \
         may be outside the output signal range.";
-    pub const mode: &'static str =
-        "This mode defines what kind of input signal is expected \
+    pub const mode: &'static str = "This mode defines what kind of input signal is expected \
         and how it will be mapped to the output 'min'/'max' range. \
         These modes are available:\
         \nUnipolar (0..1) / Bipolar  (-1..1)\

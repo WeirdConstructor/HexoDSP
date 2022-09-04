@@ -31,21 +31,18 @@ impl Delay {
     }
 
     pub const inp: &'static str = "The signal input for the delay. You can mix in this \
-         input to the output with the 'mix' parameter.";
-    pub const trig: &'static str =
-        "If you set 'mode' to 'Sync', the delay time will be \
+         input to the output with the ~~mix~~ parameter.";
+    pub const trig: &'static str = "If you set ~~mode~~ to **Sync** the delay time will be \
          synchronized to the trigger signals received on this input.";
-    pub const time: &'static str =
-        "The delay time. It can be freely modulated to your \
+    pub const time: &'static str = "The delay time. It can be freely modulated to your \
          likings.";
-    pub const fb: &'static str =
-        "The feedback amount of the delay output to it's input. \
+    pub const fb: &'static str = "The feedback amount of the delay output to it's input. \
         ";
     pub const mix: &'static str = "The dry/wet mix of the delay.";
     pub const mode: &'static str = "Allows different operating modes of the delay. \
-        'Time' is the default, and means that the 'time' input \
-        specifies the delay time. 'Sync' will synchronize the delay time \
-        with the trigger signals on the 'trig' input.";
+        **Time** is the default, and means that the ~~time~~ input \
+        specifies the delay time. **Sync** will synchronize the delay time \
+        with the trigger signals on the ~~trig~~ input.";
     pub const sig: &'static str = "The output of the dry/wet mix.";
 
     pub const DESC: &'static str = r#"Simple Delay Line
@@ -56,15 +53,15 @@ It provides an internal feedback and dry/wet mix.
     pub const HELP: &'static str = r#"A Simple Delay Line
 
 This node provides a very simple delay line with the bare minimum of
-parameters. Most importantly a freely modulateable 'time' parameter
-and a feedback 'fb' parameter.
+parameters. Most importantly a freely modulateable ~~time~~ parameter
+and a feedback ~~fb~~ parameter.
 
-Via the 'mix' parameter you can mix in the input signal to the output.
+Via the ~~mix~~ parameter you can mix in the input signal to the output.
 
 You can use this node to delay any kind of signal, from a simple control
 signal to an audio signal.
 
-For other kinds of delay/feedback please see also the 'FbWr'/'FbRd' nodes.
+For other kinds of delay/feedback please see also the `FbWr`/`FbRd` nodes.
 "#;
 }
 

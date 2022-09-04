@@ -29,9 +29,8 @@ impl Amp {
     pub const att: &'static str =
         "Attenuate input. Does only attenuate the signal, not amplify it.\n\
          Use this for envelope input.";
-    pub const gain: &'static str =
-        "Gain input. This control can actually amplify the signal.";
-    pub const neg_att : &'static str =
+    pub const gain: &'static str = "Gain input. This control can actually amplify the signal.";
+    pub const neg_att: &'static str =
         "If this is set to 'Clip', only the **0.0**-**1.0** input range of the \
         ~~att~~ input port is used. Negative values are clipped to **0.0**.";
     pub const sig: &'static str = "Amplified signal output";

@@ -24,10 +24,8 @@ impl Quant {
     pub fn new(_nid: &NodeId) -> Self {
         Self { quant: Box::new(Quantizer::new()), change_trig: ChangeTrig::new() }
     }
-    pub const freq: &'static str =
-        "Any signal that is to be pitch quantized.";
-    pub const oct: &'static str =
-        "Pitch offset, the knob is snapping to octave offsets. \
+    pub const freq: &'static str = "Any signal that is to be pitch quantized.";
+    pub const oct: &'static str = "Pitch offset, the knob is snapping to octave offsets. \
         Feed signal values snapped to 0.1 multiples for exact octave offsets.\
         ";
     pub const sig: &'static str = "The quantized output signal that is rounded to \

@@ -65,19 +65,15 @@ impl Sampl {
             decaying: 0.0,
         }
     }
-    pub const freq: &'static str =
-        "Pitch input for the sampler, giving the playback speed of the \
+    pub const freq: &'static str = "Pitch input for the sampler, giving the playback speed of the \
         sample.";
 
-    pub const trig: &'static str =
-        "The trigger input causes a resync of the playback phase \
+    pub const trig: &'static str = "The trigger input causes a resync of the playback phase \
          and triggers the playback if the 'pmode' is 'OneShot'";
     pub const offs: &'static str = "Start position offset.";
-    pub const len: &'static str =
-        "Adjusts the playback length of the sample in relation \
+    pub const len: &'static str = "Adjusts the playback length of the sample in relation \
         to the original length of the sample.";
-    pub const dcms: &'static str =
-        "Declick fade time in milliseconds.\nNot audio rate!";
+    pub const dcms: &'static str = "Declick fade time in milliseconds.\nNot audio rate!";
     pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
@@ -85,8 +81,7 @@ impl Sampl {
          Note: The signal input allows detune +-10 octaves.\
          ";
 
-    pub const sample: &'static str =
-        "The audio sample that is played back.";
+    pub const sample: &'static str = "The audio sample that is played back.";
 
     pub const pmode: &'static str = "The playback mode of the sampler.\n\
         - 'Loop' constantly plays back the sample. You can reset/sync the phase \
@@ -96,14 +91,12 @@ impl Sampl {
         "If this is enabled it will enable short fade in and out ramps.\n\
          This if useful if you don't want to add an envelope just for \
          getting rid of the clicks if spos and epos are modulated.";
-    pub const dir: &'static str =
-        "Sets the direction of the playhead, plays the sample \
+    pub const dir: &'static str = "Sets the direction of the playhead, plays the sample \
         forwards or backwards.";
 
     pub const sig: &'static str = "Sampler audio output";
 
-    pub const DESC: &'static str =
-        "Sample Player\n\
+    pub const DESC: &'static str = "Sample Player\n\
          Provides a simple sample player that you can load a single audio \
          sample from a WAV file into.";
     pub const HELP: &'static str = r#"Sample Player

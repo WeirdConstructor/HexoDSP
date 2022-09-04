@@ -33,13 +33,13 @@ impl Noise {
         Self { seed: nid.instance() as u64, rng }
     }
 
-    pub const atv: &'static str = ".Attenuverter input, to attenuate or invert \
+    pub const atv: &'static str = "Attenuverter input, to attenuate or invert \
         the noise";
-    pub const offs: &'static str = ".Offset input, that is added to the output \
+    pub const offs: &'static str = "Offset input, that is added to the output \
         signal after attenuvertig it.";
-    pub const mode: &'static str = "You can switch between 'Bipolar' noise, which \
-         uses the full range from -1 to 1, or 'Unipolar' noise that \
-         only uses the range from 0 to 1.";
+    pub const mode: &'static str = "You can switch between **Bipolar** noise, which \
+         uses the full range from **-1** to **1**, or **Unipolar** noise that \
+         only uses the range from **0** to **1**.";
     pub const sig: &'static str = "The noise output.";
 
     pub const DESC: &'static str = r#"Noise Oscillator
@@ -53,8 +53,8 @@ This is a very simple noise oscillator, which can be used for
 any kind of audio rate noise. And as a source for sample & hold
 like nodes to generate low frequency modulation.
 
-The 'atv' attenuverter and 'offs' parameters control the value range
-of the noise, and the 'mode' allows to switch the oscillator between
+The ~~atv~~ attenuverter and ~~offs~~ parameters control the value range
+of the noise, and the ~~mode~~ allows to switch the oscillator between
 unipolar and bipolar output.
 "#;
 }

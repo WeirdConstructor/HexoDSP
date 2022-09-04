@@ -43,28 +43,26 @@ impl Mux9 {
             idx: 0,
         }
     }
-    pub const slct: &'static str =
-        "Selects the input that is routed to the output 'sig'.\
+    pub const slct: &'static str = "Selects the input that is routed to the output ~~sig~~.\
         But only if this input is actually connected. If there is no \
-        connection, the 't_rst', 't_up' and 't_down' trigger inputs are used to \
+        connection, the ~~t_rst~~, ~~t_up~~ and ~~t_down~~ trigger inputs are used to \
         control the current routing. The maximum routed input is determined \
-        by the 'in_cnt' setting.";
+        by the ~~in_cnt~~ setting.";
     pub const t_rst: &'static str =
-        "Trigger resets the internal routing to the first input 'in_1'.\
-        Keep in mind: This input is only used if 'slct' is not connected.\
+        "Trigger resets the internal routing to the first input ~~in_1~~.\
+        Keep in mind: This input is only used if ~~slct~~ is not connected.\
         ";
-    pub const t_up: &'static str =
-        "Trigger increases the internal routing to the next input port.\
-        If the last input (depending on the 'in_cnt' setting) was selected\
-        if will wrap around to 'in_1'.\
-        Keep in mind: This input is only used if 'slct' is not connected.\
+    pub const t_up: &'static str = "Trigger increases the internal routing to the next input port.\
+        If the last input (depending on the ~~in_cnt~~ setting) was selected\
+        if will wrap around to ~~in_1~~.\
+        Keep in mind: This input is only used if ~~slct~~ is not connected.\
         ";
     pub const t_down: &'static str =
         "Trigger decreases the internal routing to the previous input \
-        port (eg. 'in_3' => 'in_2'). If 'in_1' as selected, then it will \
+        port (eg. ~~in_3~~ => ~~in_2~~). If ~~in_1~~ as selected, then it will \
         wrap around to the highest possible input port (depending on the \
-        'in_cnt' setting).\
-        Keep in mind: This input is only used if 'slct' is not connected.\
+        ~~in_cnt~~ setting).\
+        Keep in mind: This input is only used if ~~slct~~ is not connected.\
         ";
     pub const in_1: &'static str = "Input port 1.";
     pub const in_2: &'static str = "Input port 2.";
@@ -75,41 +73,42 @@ impl Mux9 {
     pub const in_7: &'static str = "Input port 7.";
     pub const in_8: &'static str = "Input port 8.";
     pub const in_9: &'static str = "Input port 9.";
-    pub const in_cnt: &'static str =
-        "The number of inputs that are routed to the output. \
+    pub const in_cnt: &'static str = "The number of inputs that are routed to the output. \
         This will limit the number of maximally used inputs.\n";
-    pub const sig: &'static str =
-        "The currently selected input port will be presented on \
+    pub const sig: &'static str = "The currently selected input port will be presented on \
         this output port.";
     pub const DESC: &'static str = r#"9 Ch. Multiplexer
 
-An up to 9 channel multiplexer aka switch or junction. You can route one of the 9 (or fewer) inputs to the output. The opposite of this node is the 'Demux9', which demultiplexes or routes the one input signal to one of the 9 outputs.
+An up to 9 channel multiplexer aka switch or junction.
+You can route one of the 9 (or fewer) inputs to the output.
+The opposite of this node is the `Demux9`,
+which demultiplexes or routes the one input signal to one of the 9 outputs.
 "#;
     pub const HELP: &'static str = r#"9 Channel Multiplexer/Switch
 
 This is an up to 9 channel multiplexer, also known as switch or junction.
 You can route one of the 9 (or fewer) inputs to the one output.
 Selection of the input is done either via a control signal to the
-'slct' input (range 0..1) (exclusive) or via the 't_rst', 't_up' or
-'t_down' triggers.
+~~slct~~ input (range **0**..**1**) (exclusive) or via the ~~t_rst~~, ~~t_up~~ or
+~~t_down~~ triggers.
 
-If the 'slct' input is not connected, the trigger inputs are active.
+If the ~~slct~~ input is not connected, the trigger inputs are active.
 If you still prefer a knob for manually selecting the input, consider using
-some constant signal source like an 'Amp' node with an unconnected input.
+some constant signal source like an `Amp` node with an unconnected input.
 
-The 'in_cnt' parameter allows selecting the number of routed input channels.
+The ~~in_cnt~~ parameter allows selecting the number of routed input channels.
 
-The opposite of this node is the 'Demux9', which demultiplexes or routes
+The opposite of this node is the `Demux9`, which demultiplexes or routes
 the one input signal to one of the 9 outputs.
 
 Tip:
     An interesting use case for this node is to use it as (up to) 9 step
-    control signal sequencer. Leave the 'in_1' to 'in_9' ports unconnected
+    control signal sequencer. Leave the ~~in_1~~ to ~~in_9~~ ports unconnected
     and dial in the desired value via the parameter knobs. This can lead to
     interesting results. Even more interesting it can become if you stack
-    multiple 'Demux9' in series and connect just some of the input ports
-    for slightly changing sequences. Attach a slew limiter node (eg. 'LSlew'
-    or 'ESlew') if less harsh transitions between the input routings is
+    multiple `Demux9` in series and connect just some of the input ports
+    for slightly changing sequences. Attach a slew limiter node (eg. `LSlew`
+    or `ESlew`) if less harsh transitions between the input routings is
     desired.
 "#;
 }

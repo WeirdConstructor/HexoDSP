@@ -17,10 +17,8 @@ impl AllP {
         Self { allpass: Box::new(AllPass::new()) }
     }
 
-    pub const inp: &'static str =
-        "The signal input for the allpass filter.";
-    pub const g: &'static str =
-        "The internal factor for the allpass filter.";
+    pub const inp: &'static str = "The signal input for the allpass filter.";
+    pub const g: &'static str = "The internal factor for the allpass filter.";
     pub const time: &'static str = "The allpass delay time.";
     pub const sig: &'static str = "The output of allpass filter.";
 

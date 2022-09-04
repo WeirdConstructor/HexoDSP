@@ -34,7 +34,8 @@ impl Sin {
          A signal sent to this port is not rounded.\n\
          Note: The signal input allows detune +-10 octaves.\
          ";
-    pub const pm: &'static str = "Phase modulation input or phase offset. Use this for linear FM/PM modulation.\n";
+    pub const pm: &'static str =
+        "Phase modulation input or phase offset. Use this for linear FM/PM modulation.\n";
     pub const sig: &'static str = "Oscillator signal output.\n";
 
     pub const DESC: &'static str = r#"Sine Oscillator

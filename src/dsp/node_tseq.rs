@@ -56,8 +56,7 @@ impl TSeq {
     }
 
     pub const clock: &'static str = "Clock input";
-    pub const trig: &'static str =
-        "Synchronization trigger which restarts the sequence.";
+    pub const trig: &'static str = "Synchronization trigger which restarts the sequence.";
     pub const cmode: &'static str = "~~clock~~ input signal mode:\n\
              - **RowT**: Trigger = advance row\n\
              - **PatT**: Trigger = pattern rate\n\

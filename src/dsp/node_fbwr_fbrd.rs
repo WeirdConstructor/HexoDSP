@@ -19,23 +19,22 @@ impl FbWr {
 
     pub const DESC: &'static str = "Feedback Delay Writer\n\n\
 HexoSynth does not allow direct feedback cycles in it's graph.\n\
-To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.\n\
+To make feedback possible anyways the `FbWr` and `FbRd` nodes are provided.\n\
 This node allows you to write a signal into the corresponsing signal delay buffer.\n\
-Use 'FbRd' for using the signal.\n\
-The delay is 3.14ms.";
+Use `FbRd` for using the signal. The delay is **3.14ms**.";
     pub const HELP: &'static str = r#"Feedback Delay Writer
 
 HexoSynth does not allow direct feedback cycles in it's graph.
-To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.
-This node allows you to send a signal into the corresponsing 'FbWr' signal
+To make feedback possible anyways the `FbWr` and `FbRd` nodes are provided.
+This node allows you to send a signal into the corresponding `FbWr` signal
 delay.
 
-The instance id of the node defines which FbWr and FbRd are connected.
-That means 'FbRd 0' is connected to the corresponding 'FbWr 0'. You can use
-the signal multiple times by connecting the 'FbRd 0' 'sig' port to multiple
+The instance id of the node defines which `FbWr` and `FbRd` are connected.
+That means `FbRd 0` is connected to the corresponding `FbWr 0`. You can use
+the signal multiple times by connecting the `FbRd 0` ~~sig~~ port to multiple
 inputs.
 
-The delay is always 3.14ms, regardless of the sampling rate the synthesizer
+The delay is always **3.14ms**, regardless of the sampling rate the synthesizer
 is running at.
 "#;
 }
@@ -87,26 +86,25 @@ impl FbRd {
 
     pub const DESC: &'static str = "Feedback Delay Reader\n\n\
 HexoSynth does not allow direct feedback cycles in it's graph.\n\
-To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.\n\
-This node allows you to tap into the corresponsing 'FbWr' signal delay \
-for feedback.\n\
-The delay is 3.14ms.";
+To make feedback possible anyways the `FbWr` and `FbRd` nodes are provided.\n\
+This node allows you to tap into the corresponding `FbWr` signal delay \
+for feedback. The delay is **3.14ms**.";
     pub const HELP: &'static str = r#"Feedback Delay Reader
 
 HexoSynth does not allow direct feedback cycles in it's graph.
-To make feedback possible anyways the 'FbWr' and 'FbRd' nodes are provided.
-This node allows you to tap into the corresponsing 'FbWr' signal delay for
+To make feedback possible anyways the `FbWr` and `FbRd` nodes are provided.
+This node allows you to tap into the corresponding `FbWr` signal delay for
 feedback.
 
-The instance id of the node defines which FbWr and FbRd are connected.
-That means 'FbRd 0' is connected to the corresponding 'FbWr 0'. You can use
-the signal multiple times by connecting the 'FbRd 0' 'sig' port to multiple
+The instance id of the node defines which `FbWr` and `FbRd` are connected.
+That means `FbRd 0` is connected to the corresponding `FbWr 0`. You can use
+the signal multiple times by connecting the `FbRd 0` ~~sig~~ port to multiple
 inputs.
 
-The delay is always 3.14ms, regardless of the sampling rate the synthesizer
+The delay is always **3.14ms**, regardless of the sampling rate the synthesizer
 is running at.
 
-The 'atv' parameter is a convenience parameter to allow attenuating or
+The ~~atv~~ parameter is a convenience parameter to allow attenuating or
 even inverting the signal.
 "#;
 }

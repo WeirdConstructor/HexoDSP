@@ -41,8 +41,7 @@ impl VOsc {
         }
     }
 
-    pub const freq: &'static str =
-        "Base frequency of the oscillator.\n";
+    pub const freq: &'static str = "Base frequency of the oscillator.\n";
     pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
@@ -57,12 +56,10 @@ impl VOsc {
         You can adjust the effect that 'd' has on the waveform with this \
         parameter. Make sure to try to modulate this parameter at audio rate!\
         ";
-    pub const vs: &'static str =
-        "Scaling factor for 'v'. If you increase this beyond 1.0, \
+    pub const vs: &'static str = "Scaling factor for 'v'. If you increase this beyond 1.0, \
         you will hear formant like sounds from the oscillator. Try adjusting \
         'd' to move the formants around.";
-    pub const dist: &'static str =
-        "A collection of waveshaper/distortions to choose from.";
+    pub const dist: &'static str = "A collection of waveshaper/distortions to choose from.";
     pub const damt: &'static str = "Distortion amount.";
     pub const ovrsmpl: &'static str = "Enable/Disable oversampling.";
     pub const sig: &'static str = "Oscillator output";

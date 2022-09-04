@@ -43,14 +43,13 @@ impl Test {
 
     pub const f: &'static str = "F Test";
     pub const p: &'static str = "An unsmoothed parameter for automated tests.";
-    pub const trig: &'static str = "A trigger input, that will create a short pulse on the 'tsig' output.";
+    pub const trig: &'static str =
+        "A trigger input, that will create a short pulse on the 'tsig' output.";
     pub const sig: &'static str = "The output of p as signal";
     pub const tsig: &'static str =
         "A short trigger pulse will be generated when the 'trig' input is triggered.";
-    pub const out2: &'static str =
-        "A test output that will emit 1.0 if output 'sig' is connected.";
-    pub const out3: &'static str =
-        "A test output that will emit 1.0 if input 'f' is connected.";
+    pub const out2: &'static str = "A test output that will emit 1.0 if output 'sig' is connected.";
+    pub const out3: &'static str = "A test output that will emit 1.0 if input 'f' is connected.";
     pub const out4: &'static str = "";
     pub const outc: &'static str =
         "Emits a number that defines the out_connected bitmask. Used only for testing!";

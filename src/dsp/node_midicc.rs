@@ -49,21 +49,21 @@ impl MidiCC {
 
     pub const DESC: &'static str = "MIDI CC Input\n\n\
         This node is an input of MIDI CC events/values into the DSP graph. \
-        You get 3 CC value outputs: 'sig1', 'sig2' and 'sig3'. To set which CC \
-        gets which output you have to set the corresponding 'cc1', 'cc2' and \
-        'cc3' parameters.";
+        You get 3 CC value outputs: ~~sig1~~, ~~sig2~~ and ~~sig3~~. To set which CC \
+        gets which output you have to set the corresponding ~~cc1~~, ~~cc2~~ and \
+        ~~cc3~~ parameters.";
     pub const HELP: &'static str = r#"MIDI CC Input
 
 This node is an input of MIDI CC events/values into the DSP graph.
-You get 3 CC value outputs: 'sig1', 'sig2' and 'sig3'. To set which CC
-gets which output you have to set the corresponding 'cc1', 'cc2' and
-'cc3' parameters.";
+You get 3 CC value outputs: ~~sig1~~, ~~sig2~~ and ~~sig3~~. To set which CC
+gets which output you have to set the corresponding ~~cc1~~, ~~cc2~~ and
+~~cc3~~ parameters.
 
 If the CC values change to rapidly or you hear audible artifacts, you can
-try to limit the speed of change with the 'slew' limiter.
+try to limit the speed of change with the ~~slew~~ limiter.
 
-If you need different 'slew' values for the CCs, I recommend creating other
-MidiCC instances with different 'slew' settings.
+If you need different ~~slew~~ values for the CCs, I recommend creating other
+`MidiCC` instances with different ~~slew~~ settings.
 "#;
 }
 

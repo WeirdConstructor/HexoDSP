@@ -19,14 +19,11 @@ impl TsLFO {
         Self { lfo: Box::new(TriSawLFO::new()), trig: Trigger::new() }
     }
 
-    pub const time: &'static str =
-        "The frequency or period time of the LFO, goes all the \
+    pub const time: &'static str = "The frequency or period time of the LFO, goes all the \
         way from 0.1ms up to 30s. Please note, that the text entry is always \
         in milliseconds.";
-    pub const trig: &'static str =
-        "Triggers a phase reset of the LFO.";
-    pub const rev: &'static str =
-        "The reverse point of the LFO waveform. At 0.5 the LFO \
+    pub const trig: &'static str = "Triggers a phase reset of the LFO.";
+    pub const rev: &'static str = "The reverse point of the LFO waveform. At 0.5 the LFO \
         will follow a triangle waveform. At 0.0 or 1.0 the LFO waveform will \
         be (almost) a (reversed) saw tooth. Node: A perfect sawtooth can not be \
         achieved with this oscillator, as there will always be a minimal \

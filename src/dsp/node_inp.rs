@@ -18,7 +18,7 @@ impl Inp {
 
     pub const gain: &'static str =
         "The gain of the two plugin input ports, applied to all channels. \
-        Please note that this is a linear control, to prevent inaccuracies for 1.0. \
+        Please note that this is a linear control, to prevent inaccuracies for **1.0**. \
         ";
     pub const sig1: &'static str = "Audio input channel 1 (left)";
     pub const sig2: &'static str = "Audio input channel 2 (right)";
@@ -30,7 +30,7 @@ impl Inp {
     pub const HELP: &'static str = r#"Audio Input Port
 
 This node gives you access to the two input ports of the HexoSynth plugin.
-You can build an effects plugin with this node and the 'Out' node.
+You can build an effects plugin with this node and the `Out` node.
 Or a synthesizer that reacts to audio rate control signals on these two
 input ports.
 "#;

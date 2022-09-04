@@ -18,9 +18,10 @@ impl FormFM {
     }
     pub const freq: &'static str = "Base frequency to oscillate at\n";
     pub const det: &'static str = "Detune the oscillator in semitones and cents.\n";
-    pub const form: &'static str = "Frequency of the formant\nThis affects how much lower or higher tones the sound has.";
+    pub const form: &'static str =
+        "Frequency of the formant\nThis affects how much lower or higher tones the sound has.";
     pub const side: &'static str =
-        "Which side the peak of the wave is. Values more towards 0.0 or 1.0 make the base frequency more pronounced";
+        "Which side the peak of the wave is. Values more towards **0.0** or **1.0** make the base frequency more pronounced";
     pub const peak: &'static str =
         "How high the peak amplitude is. Lower values make the effect more pronounced";
     pub const sig: &'static str = "Generated formant signal";
@@ -34,18 +35,18 @@ Loosely based on the ModFM synthesis method.
 This is a formant synthesizer that directly generates 
 the audio of a single formant.
 
-This can be seen as passing a saw wave with frequency `freq` 
-into a bandpass filter with the cutoff at `form`
+This can be seen as passing a saw wave with frequency ~~freq~~ 
+into a bandpass filter with the cutoff at ~~form~~
 
-`freq` controls the base frequency of the formant.
-`form` controls the formant frequency. Lower values give more bass to the sound, 
+~~freq~~ controls the base frequency of the formant.
+~~form~~ controls the formant frequency. Lower values give more bass to the sound,
 and higher values give the high frequencies more sound.
 
-`side` controls where the peak of the carrier wave is, 
-and in turn controls the bandwidth of the effect. The more towards 0.0 or 1.0,
+~~side~~ controls where the peak of the carrier wave is, 
+and in turn controls the bandwidth of the effect. The more towards **0.0** or **1.0**,
 the more the formant is audible.
 
-`peak` controls how high the peak of the carrier wave is.
+~~peak~~ controls how high the peak of the carrier wave is.
 This also controls the bandwidth of the effect, where lower means a higher 
 bandwidth, and thus more audible formant.
 "#;

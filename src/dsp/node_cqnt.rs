@@ -54,20 +54,16 @@ impl CQnt {
     pub fn new(_nid: &NodeId) -> Self {
         Self { quant: Box::new(CtrlPitchQuantizer::new()), change_trig: ChangeTrig::new() }
     }
-    pub const inp: &'static str =
-        "The unipolar input signal that is to be mapped to the \
+    pub const inp: &'static str = "The unipolar input signal that is to be mapped to the \
         selected pitch range.";
     pub const oct: &'static str = "The octave offset from A4.";
-    pub const omin: &'static str =
-        "The minimum octave of the range. If **0** it will be ~~oct~~.";
-    pub const omax: &'static str =
-        "The maximum octave of the range. If **0** it will be ~~oct~~.";
+    pub const omin: &'static str = "The minimum octave of the range. If **0** it will be ~~oct~~.";
+    pub const omax: &'static str = "The maximum octave of the range. If **0** it will be ~~oct~~.";
     pub const sig: &'static str = "The output pitch signal.";
     pub const t: &'static str = "Everytime the quantizer snaps to a new pitch, it will \
         emit a short trigger on this signal output. This is useful \
         to trigger for example an envelope.";
-    pub const keys: &'static str =
-        "Here you can select the individual notes of the range. \
+    pub const keys: &'static str = "Here you can select the individual notes of the range. \
         If no note is selected, it's the same as if all notes were selected.";
     pub const DESC: &'static str = r#"Ctrl Pitch Quantizer
 

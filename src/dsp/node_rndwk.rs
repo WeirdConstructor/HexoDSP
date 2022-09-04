@@ -34,16 +34,13 @@ impl RndWk {
         Depending on the size of the 'offs' and the 'min'/'max' range, \
         this might result in the output value being close to the limits \
         of that range.";
-    pub const min: &'static str =
-        "The minimum of the new target value. If a value is drawn \
+    pub const min: &'static str = "The minimum of the new target value. If a value is drawn \
         that is outside of this range, it will be reflected back into it.\
         ";
-    pub const max: &'static str =
-        "The maximum of the new target value. If a value is drawn \
+    pub const max: &'static str = "The maximum of the new target value. If a value is drawn \
         that is outside of this range, it will be reflected back into it.\
         ";
-    pub const slew: &'static str =
-        "The slew rate limiting time. Thats the time it takes to \
+    pub const slew: &'static str = "The slew rate limiting time. Thats the time it takes to \
         get to 1.0 from 0.0. Useful for smoothing modulation of audio signals. \
         The higher the time, the smoother/slower the transition to new \
         target values will be.";

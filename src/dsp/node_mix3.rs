@@ -13,14 +13,14 @@ impl Mix3 {
     pub fn new(_nid: &NodeId) -> Self {
         Self {}
     }
-    pub const ch1: &'static str = "Channel 1 Signal input\nRange: (-1..1)\n";
-    pub const ch2: &'static str = "Channel 2 Signal input\nRange: (-1..1)\n";
-    pub const ch3: &'static str = "Channel 3 Signal input\nRange: (-1..1)\n";
-    pub const gain1: &'static str = "Channel 1 gain\nRange: (0..1)";
-    pub const gain2: &'static str = "Channel 2 gain\nRange: (0..1)";
-    pub const gain3: &'static str = "Channel 3 gain\nRange: (0..1)";
-    pub const ogain: &'static str = "Output gain of the sum\nRange: (0..1)";
-    pub const sig: &'static str = "Mixed signal output\nRange: (-1..1)\n";
+    pub const ch1: &'static str = "Channel 1 Signal input";
+    pub const ch2: &'static str = "Channel 2 Signal input";
+    pub const ch3: &'static str = "Channel 3 Signal input";
+    pub const gain1: &'static str = "Channel 1 gain";
+    pub const gain2: &'static str = "Channel 2 gain";
+    pub const gain3: &'static str = "Channel 3 gain";
+    pub const ogain: &'static str = "Output gain of the sum";
+    pub const sig: &'static str = "Mixed signal output";
     pub const DESC: &'static str = r#"3 Ch. Signal Mixer
 
 A very simple 3 channel signal mixer.
