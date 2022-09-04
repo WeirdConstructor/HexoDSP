@@ -109,31 +109,30 @@ impl BowStri {
         Self { bstr: Box::new(BowedString::new()) }
     }
     pub const freq: &'static str =
-        "BowStri freq\nFrequency of the bowed string oscillator.\n\nRange: (-1..1)\n";
-    pub const det: &'static str = "BowStri det\nDetune the oscillator in semitones and cents. \
+        "Frequency of the bowed string oscillator.\n";
+    pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
          A signal sent to this port is not rounded.\n\
-         Note: The signal input allows detune +-10 octaves.\
-         \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
-    pub const vel: &'static str = "BowStri vel\n\n\nRange: (-1..1)\n";
-    pub const force: &'static str = "BowStri force\n\n\nRange: (-1..1)\n";
-    pub const pos: &'static str = "BowStri pos\n\n\nRange: (-1..1)\n";
-    pub const sig: &'static str = "BowStri sig\nOscillator signal output.\n\nRange: (-1..1)\n";
+         Note: The signal input allows detune +-10 octaves.";
+    pub const vel: &'static str = "Velocity of the bow";
+    pub const force: &'static str = "Force of the bow";
+    pub const pos: &'static str = "Position of the bow";
+    pub const sig: &'static str = "Oscillator signal output.\n";
 
     pub const DESC: &'static str = r#"Bowed String Oscillator
 
 This is an oscillator that simulates a bowed string.
 "#;
 
-    pub const HELP: &'static str = r#"BowStri - A Bowed String Simulation Oscillator
+    pub const HELP: &'static str = r#"A Bowed String Simulation Oscillator
 
 This is an oscillator that simulates a bowed string.
 It's a bit wonky, so play around with the parameters and see what
-works and what doesn't. It plays find in the area from ~55Hz up to
-~1760Hz, beyond that it might not produce a sound.
+works and what doesn't. It plays find in the area from **~55Hz** up to
+**~1760Hz**, beyond that it might not produce a sound.
 
-I can recommend to apply an envelope to the 'vel' parameter,
+I can recommend to apply an envelope to the ~~vel~~ parameter,
 which is basically the bow's velocity.
 "#;
 }

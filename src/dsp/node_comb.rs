@@ -29,32 +29,32 @@ impl Comb {
         Self { comb: Box::new(synfx_dsp::Comb::new()) }
     }
 
-    pub const inp: &'static str = "Comb inp\nThe signal input for the comb filter.\nRange: (-1..1)";
+    pub const inp: &'static str = "The signal input for the comb filter.";
     pub const g: &'static str =
-        "Comb g\nThe internal factor for the comb filter. Be careful with high 'g' \
-        values (> 0.75) in feedback mode, you will probably have to attenuate \
-        the output a bit yourself.\nRange: (-1..1)";
-    pub const time: &'static str = "Comb time\nThe comb delay time.\nRange: (0..1)";
-    pub const sig: &'static str = "Comb sig\nThe output of comb filter.\nRange: (-1..1)";
-    pub const mode: &'static str = "Comb mode\nThe mode of the comb filter, whether it's a \
+        "The internal factor for the comb filter. Be careful with high ~~g~~ \
+        values (> **0.75**) in feedback mode, you will probably have to attenuate \
+        the output a bit yourself.";
+    pub const time: &'static str = "The comb delay time.";
+    pub const sig: &'static str = "The output of comb filter.";
+    pub const mode: &'static str = "The mode of the comb filter, whether it's a \
          feedback or feedforward comb filter.";
     pub const DESC: &'static str = r#"Comb Filter
 
 A very simple comb filter. It has interesting filtering effects
-and can be used to build custom reverbs.
+and can also be used to build custom reverbs.
 "#;
-    pub const HELP: &'static str = r#"Comb - A Simple Comb Filter
+    pub const HELP: &'static str = r#"A Simple Comb Filter
 
 This is a comb filter that can be used for filtering
 as well as for building reverbs or anything you might
 find it useful for.
 
-Attention: Be careful with high 'g' values, you might need to
+Attention: Be careful with high ~~g~~ values, you might need to
 attenuate the output manually for the feedback combfilter mode,
 because the feedback adds up quickly.
 
 For typical arrangements in combination with allpass filters,
-see the documentation of the 'Comb' node!
+see the documentation of the `AllP` node!
 "#;
 }
 

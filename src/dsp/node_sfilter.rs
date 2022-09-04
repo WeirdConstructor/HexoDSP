@@ -50,22 +50,22 @@ impl SFilter {
     pub fn new(_nid: &NodeId) -> Self {
         Self { israte: 1.0 / 44100.0, z: 0.0, y: 0.0, k: 0.0, h: 0.0, delay: [0.0; 4], otype: -1 }
     }
-    pub const inp: &'static str = "SFilter inp\nSignal input\nRange: (-1..1)\n";
-    pub const freq: &'static str = "SFilter freq\nFilter cutoff frequency.\nRange: (-1..1)\n";
-    pub const res: &'static str = "SFilter res\nFilter resonance.\nRange: (0..1)\n";
-    pub const ftype: &'static str = "SFilter ftype\nThe filter type, there are varying types of \
+    pub const inp: &'static str = "Signal input";
+    pub const freq: &'static str = "Filter cutoff frequency.";
+    pub const res: &'static str = "Filter resonance.";
+    pub const ftype: &'static str = "The filter type, there are varying types of \
         filters available. Please consult the node documentation for \
         a complete list.\n\
         Types: 1p/1pt=one poles, 12c=Hal Chamberlin SVF,\n\
         12s=Simper SVF, 24m=Moog\n\
         Outputs: LP=Low-,HP=High-,BP=Band-Pass,NO=Notch,PK=Peak";
-    pub const sig: &'static str = "SFilter sig\nFiltered signal output.\nRange: (-1..1)\n";
+    pub const sig: &'static str = "Filtered signal output.";
     pub const DESC: &'static str = r#"Simple Filter
 
 This is a collection of more or less simple filters.
 There are only two parameters: Filter cutoff 'freq' and the 'res'onance.
 "#;
-    pub const HELP: &'static str = r#"SFilter - Simple Audio Filter Collection
+    pub const HELP: &'static str = r#"Simple Audio Filter Collection
 
 This is a collection of a few more or less simple filters
 of varying types. There are only few parameters for you to change: 'freq'

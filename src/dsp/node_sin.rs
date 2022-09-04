@@ -27,22 +27,22 @@ impl Sin {
 
         Self { srate: 44100.0, phase: init_phase, init_phase }
     }
-    pub const freq: &'static str = "Sin freq\nFrequency of the oscillator.\n\nRange: (-1..1)\n";
-    pub const det: &'static str = "Sin det\nDetune the oscillator in semitones and cents. \
+    pub const freq: &'static str = "Frequency of the oscillator.\n";
+    pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
          A signal sent to this port is not rounded.\n\
          Note: The signal input allows detune +-10 octaves.\
-         \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
-    pub const pm: &'static str = "Sin pm\nPhase modulation input or phase offset. Use this for linear FM/PM modulation.\n\nRange: (-1..1)\n";
-    pub const sig: &'static str = "Sin sig\nOscillator signal output.\n\nRange: (-1..1)\n";
+         ";
+    pub const pm: &'static str = "Phase modulation input or phase offset. Use this for linear FM/PM modulation.\n";
+    pub const sig: &'static str = "Oscillator signal output.\n";
 
     pub const DESC: &'static str = r#"Sine Oscillator
 
 This is a very simple oscillator that generates a sine wave.
 "#;
 
-    pub const HELP: &'static str = r#"Sin - A Sine Oscillator
+    pub const HELP: &'static str = r#"A Sine Oscillator
 
 This is a very simple oscillator that generates a sine wave.
 The 'freq' paramter specifies the frequency, and the 'det' parameter

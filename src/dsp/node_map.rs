@@ -25,22 +25,22 @@ impl Map {
     pub fn new(_nid: &NodeId) -> Self {
         Self {}
     }
-    pub const inp: &'static str = "Map inp\nSignal input\nRange: (-1..1)\n";
+    pub const inp: &'static str = "Signal input";
     pub const atv : &'static str =
-        "Map atv\nInput signal attenuverter, to attenuate or invert the input signal.\nRange: (0..1)\n";
+        "Input signal attenuverter, to attenuate or invert the input signal.";
     pub const offs: &'static str =
-        "Map offs\nInput signal offset after 'atv' has been applied.\nRange: (-1..1)\n";
-    pub const imin: &'static str = "Map imin\nMinimum of the input signal range, \
-        it's mapped to the 'min' output signal range.\nRange: (0..1)\n";
-    pub const imax: &'static str = "Map imax\nMaximum of the input signal range, \
-        it's mapped to the 'max' output signal range.\nRange: (0..1)\n";
-    pub const min: &'static str = "Map min\nMinimum of the output signal range.\nRange: (0..1)\n";
-    pub const max: &'static str = "Map max\nMaximum of the output signal range.\nRange: (0..1)\n";
-    pub const clip: &'static str = "Map clip\nThe 'clip' mode allows you to limit the output \
+        "Input signal offset after 'atv' has been applied.";
+    pub const imin: &'static str = "Minimum of the input signal range, \
+        it's mapped to the 'min' output signal range.";
+    pub const imax: &'static str = "Maximum of the input signal range, \
+        it's mapped to the 'max' output signal range.";
+    pub const min: &'static str = "Minimum of the output signal range.";
+    pub const max: &'static str = "Maximum of the output signal range.";
+    pub const clip: &'static str = "The 'clip' mode allows you to limit the output \
         exactly to the 'min'/'max' range. If this is off, the output \
         may be outside the output signal range if the input signal is \
         outside the input signal range.";
-    pub const sig: &'static str = "Map sig\nMapped signal output\nRange: (-1..1)\n";
+    pub const sig: &'static str = "Mapped signal output";
     pub const DESC: &'static str = r#"Range Mapper
 
 This node allows to map an input signal range to a precise output signal range.
@@ -48,7 +48,7 @@ It's mostly useful to map control signals to modulate inputs.
 
 See also the 'SMap' node, which is a simplified version of this node.
 "#;
-    pub const HELP: &'static str = r#"Map - Range Mapper
+    pub const HELP: &'static str = r#"Range Mapper
 
 This node allows to map an input signal range to a precise output signal
 range. It's main use is for precise control of an input of another node.

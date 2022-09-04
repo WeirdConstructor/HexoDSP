@@ -32,29 +32,13 @@ impl Out {
     }
 
     pub const mono: &'static str =
-        "Out mono\nIf set to 'Mono', ch1 will be sent to both output channels.\n(UI only)";
+        "If set to 'Mono', ch1 will be sent to both output channels.\n(UI only)";
     pub const gain: &'static str =
-        "Out gain\nThe main gain of the synthesizer output, applied to all channels. \
+        "The main gain of the synthesizer output, applied to all channels. \
         Please note that this is a linear control, to prevent inaccuracies for 1.0. \
-        \nRange: (0..1)";
-    pub const ch1: &'static str = "Out ch1\nAudio channel 1 (left)\nRange: (-1..1)";
-    pub const ch2: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-
-    pub const ch3: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch4: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch5: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch6: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch7: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch8: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch9: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch10: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch11: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch12: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch13: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch14: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch15: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch16: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
-    pub const ch17: &'static str = "Out ch2\nAudio channel 2 (right)\nRange: (-1..1)";
+        ";
+    pub const ch1: &'static str = "Audio channel 1 (left)";
+    pub const ch2: &'static str = "Audio channel 2 (right)";
 
     pub const DESC: &'static str = "Audio Output Port\n\n\
         This output port node allows you to send audio signals \

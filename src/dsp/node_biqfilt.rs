@@ -54,20 +54,20 @@ impl BiqFilt {
             ogain: -2.0, // value that can't be set by the user
         }
     }
-    pub const inp: &'static str = "### `BiqFilt` ~~inp~~\nSignal input";
-    pub const freq: &'static str = "### `BiqFilt` ~~freq~~\nFilter cutoff frequency.";
-    pub const q: &'static str = "### `BiqFilt` ~~q~~\nFilter Q factor.";
-    pub const gain: &'static str = "### `BiqFilt` ~~gain~~\nFilter gain.";
-    pub const ftype: &'static str = "### `BiqFilt` ~~ftype~~\n'BtW LP' Butterworth Low-Pass, 'Res' Resonator";
-    pub const order: &'static str = "### `BiqFilt` ~~order~~\n";
-    pub const sig: &'static str = "### `BiqFilt` ~~sig~~\nFiltered signal output.";
-    pub const DESC: &'static str = r#"### BiqFilt - Biquad Filter
+    pub const inp: &'static str = "Signal input";
+    pub const freq: &'static str = "Filter cutoff frequency.";
+    pub const q: &'static str = "Filter Q factor.";
+    pub const gain: &'static str = "Filter gain.";
+    pub const ftype: &'static str = "'BtW LP' Butterworth Low-Pass, 'Res' Resonator";
+    pub const order: &'static str = "";
+    pub const sig: &'static str = "Filtered signal output.";
+    pub const DESC: &'static str = r#"Biquad Filter
 
 This is the implementation of a biquad filter cascade.
 It is not meant for fast automation. Please use other nodes
 like eg. `SFilter` for that.
 "#;
-    pub const HELP: &'static str = r#"## `BiqFilt` Biquad Filter (Cascade)
+    pub const HELP: &'static str = r#"Biquad Filter (Cascade)
 
 This is the implementation of a biquad filter cascade.
 It is not meant for fast automation and might blow up if you

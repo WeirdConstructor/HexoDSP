@@ -30,30 +30,30 @@ impl Delay {
         Self { buffer: Box::new(DelayBuffer::new()), clock: TriggerSampleClock::new() }
     }
 
-    pub const inp: &'static str = "Delay inp\nThe signal input for the delay. You can mix in this \
-         input to the output with the 'mix' parameter.\nRange: (-1..1)";
+    pub const inp: &'static str = "The signal input for the delay. You can mix in this \
+         input to the output with the 'mix' parameter.";
     pub const trig: &'static str =
-        "Delay trig\nIf you set 'mode' to 'Sync', the delay time will be \
-         synchronized to the trigger signals received on this input.\nRange: (-1..1)";
+        "If you set 'mode' to 'Sync', the delay time will be \
+         synchronized to the trigger signals received on this input.";
     pub const time: &'static str =
-        "Delay time\nThe delay time. It can be freely modulated to your \
-         likings.\nRange: (0..1)";
+        "The delay time. It can be freely modulated to your \
+         likings.";
     pub const fb: &'static str =
-        "Delay fb\nThe feedback amount of the delay output to it's input. \
-        \nRange: (-1..1)";
-    pub const mix: &'static str = "Delay mix\nThe dry/wet mix of the delay.\nRange: (0..1)";
-    pub const mode: &'static str = "Delay mode\nAllows different operating modes of the delay. \
+        "The feedback amount of the delay output to it's input. \
+        ";
+    pub const mix: &'static str = "The dry/wet mix of the delay.";
+    pub const mode: &'static str = "Allows different operating modes of the delay. \
         'Time' is the default, and means that the 'time' input \
         specifies the delay time. 'Sync' will synchronize the delay time \
         with the trigger signals on the 'trig' input.";
-    pub const sig: &'static str = "Delay sig\nThe output of the dry/wet mix.\nRange: (-1..1)";
+    pub const sig: &'static str = "The output of the dry/wet mix.";
 
     pub const DESC: &'static str = r#"Simple Delay Line
 
 This is a very simple single buffer delay node.
 It provides an internal feedback and dry/wet mix.
 "#;
-    pub const HELP: &'static str = r#"Delay - A Simple Delay Line
+    pub const HELP: &'static str = r#"A Simple Delay Line
 
 This node provides a very simple delay line with the bare minimum of
 parameters. Most importantly a freely modulateable 'time' parameter

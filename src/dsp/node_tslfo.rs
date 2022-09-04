@@ -20,23 +20,23 @@ impl TsLFO {
     }
 
     pub const time: &'static str =
-        "TsLFO time\nThe frequency or period time of the LFO, goes all the \
+        "The frequency or period time of the LFO, goes all the \
         way from 0.1ms up to 30s. Please note, that the text entry is always \
-        in milliseconds.\nRange: (0..1)\n";
+        in milliseconds.";
     pub const trig: &'static str =
-        "TsLFO trig\nTriggers a phase reset of the LFO.\nRange: (0..1)\n";
+        "Triggers a phase reset of the LFO.";
     pub const rev: &'static str =
-        "TsLFO rev\nThe reverse point of the LFO waveform. At 0.5 the LFO \
+        "The reverse point of the LFO waveform. At 0.5 the LFO \
         will follow a triangle waveform. At 0.0 or 1.0 the LFO waveform will \
         be (almost) a (reversed) saw tooth. Node: A perfect sawtooth can not be \
         achieved with this oscillator, as there will always be a minimal \
-        rise/fall time.\nRange: (0..1)\n";
-    pub const sig: &'static str = "TsLFO sig\nThe LFO output.\nRange: (0..1)";
+        rise/fall time.";
+    pub const sig: &'static str = "The LFO output.";
     pub const DESC: &'static str = r#"TriSaw LFO
 
 This simple LFO has a configurable waveform. You can blend between triangular to sawtooth waveforms using the 'rev' parameter.
 "#;
-    pub const HELP: &'static str = r#"TsLFO - TriSaw LFO
+    pub const HELP: &'static str = r#"TriSaw LFO
 
 This simple LFO has a configurable waveform. You can blend between
 triangular to sawtooth waveforms using the 'rev' parameter.

@@ -78,57 +78,57 @@ impl PVerb {
         Self { verb: Box::new(DattorroReverb::new()) }
     }
 
-    pub const in_l: &'static str = "PVerb in_l\nLeft input channel, will be summed with the right \
+    pub const in_l: &'static str = "Left input channel, will be summed with the right \
         channel. So you can just feed in a mono signal \
-        without harm.\nRange: (-1..1)\n";
-    pub const in_r: &'static str = "PVerb in_r\nRight input channel, will be summed with the \
-        left channel.\nRange: (-1..1)\n";
+        without harm.";
+    pub const in_r: &'static str = "Right input channel, will be summed with the \
+        left channel.";
     pub const sig_l: &'static str =
-        "PVerb sig_l\nThe left channel of the output signal.\nRange: (0..1)";
+        "The left channel of the output signal.";
     pub const sig_r: &'static str =
-        "PVerb sig_r\nThe right channel of the output signal.\nRange: (0..1)";
+        "The right channel of the output signal.";
     pub const predly: &'static str =
-        "PVerb predly\nThe pre-delay length for the first reflection.\nRange: (0..1)";
-    pub const size: &'static str = "PVerb size\nThe size of the simulated room. Goes from a small \
-        chamber to a huge hall.\nRange: (0..1)";
-    pub const dcy: &'static str = "PVerb dcy\nThe decay of the sound. If you set this to '1.0' the
+        "The pre-delay length for the first reflection.";
+    pub const size: &'static str = "The size of the simulated room. Goes from a small \
+        chamber to a huge hall.";
+    pub const dcy: &'static str = "The decay of the sound. If you set this to '1.0' the
         sound will infinitively be sustained. Just be careful feeding in more \
-        sound with that.\nRange: (0..1)";
+        sound with that.";
     pub const ilpf: &'static str =
-        "PVerb ilpf\nInput low-pass filter cutoff frequency, for filtering \
-        the input before it's fed into the pre-delay.\nRange: (0..1)";
+        "Input low-pass filter cutoff frequency, for filtering \
+        the input before it's fed into the pre-delay.";
     pub const ihpf: &'static str =
-        "PVerb ihpf\nInput high-pass filter cutoff frequency, for filtering \
-        the input before it's fed into the pre-delay.\nRange: (0..1)";
-    pub const dif: &'static str = "PVerb dif\nThe amount of diffusion inside the reverb tank. \
+        "Input high-pass filter cutoff frequency, for filtering \
+        the input before it's fed into the pre-delay.";
+    pub const dif: &'static str = "The amount of diffusion inside the reverb tank. \
         Setting this to 0 will disable any kind of diffusion and the reverb \
-        will become a more or less simple echo effect.\nRange: (0..1)";
+        will become a more or less simple echo effect.";
     pub const dmix: &'static str =
-        "PVerb dmix\nThe mix between input diffusion and clean output of the \
-        pre-delay. Setting this to 0 will not diffuse any input.\nRange: (0..1)";
+        "The mix between input diffusion and clean output of the \
+        pre-delay. Setting this to 0 will not diffuse any input.";
     pub const mspeed: &'static str =
-        "PVerb mspeed\nThe internal LFO speed, that modulates the internal \
+        "The internal LFO speed, that modulates the internal \
         diffusion inside the reverb tank. Keeping this low (< 0.2) will sound \
-        a bit more natural than a fast LFO.\nRange: (0..1)";
+        a bit more natural than a fast LFO.";
     pub const mshp: &'static str =
-        "PVerb mshp\nThe shape of the LFO. 0.0 is a down ramp, 1.0 is an up \
+        "The shape of the LFO. 0.0 is a down ramp, 1.0 is an up \
         ramp and 0.0 is a triangle. Setting this to 0.5 is a good choise. The \
-        extreme values of 0.0 and 1.0 can lead to audible artifacts.\nRange: (0..1)";
+        extreme values of 0.0 and 1.0 can lead to audible artifacts.";
     pub const mdepth: &'static str =
-        "PVerb mdepth\nThe depth of the LFO change that is applied to the \
+        "The depth of the LFO change that is applied to the \
         diffusion inside the reverb tank. More extreme values (above 0.2) will \
-        lead to more detuned sounds reverbing inside the tank.\nRange: (0..1)";
+        lead to more detuned sounds reverbing inside the tank.";
     pub const rlpf: &'static str =
-        "PVerb rlpf\nReverb tank low-pass filter cutoff frequency.\nRange: (0..1)";
+        "Reverb tank low-pass filter cutoff frequency.";
     pub const rhpf: &'static str =
-        "PVerb rhpf\nReverb tank high-pass filter cutoff frequency.\nRange: (0..1)";
+        "Reverb tank high-pass filter cutoff frequency.";
     pub const mix: &'static str =
-        "PVerb mix\nDry/Wet mix between the input and the diffused output.\nRange: (0..1)";
+        "Dry/Wet mix between the input and the diffused output.";
     pub const DESC: &'static str = r#"Plate Reverb
 
 This is a simple but yet powerful small plate reverb based on the design by Jon Dattorro. It should suit your needs from small rooms up to large athmospheric sound scapes.
 "#;
-    pub const HELP: &'static str = r#"PVerb - Plate Reverb (by Jon Dattorro)
+    pub const HELP: &'static str = r#"Plate Reverb (by Jon Dattorro)
 
 This is a simple but yet powerful small plate reverb based on the design
 by Jon Dattorro. It should suit your needs from small rooms up to large

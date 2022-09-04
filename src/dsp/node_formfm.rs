@@ -16,20 +16,20 @@ impl FormFM {
     pub fn new(_nid: &NodeId) -> Self {
         Self { inv_sample_rate: 1.0 / 44100.0, phase: 0.0 }
     }
-    pub const freq: &'static str = "Formant freq\nBase frequency to oscillate at\n";
-    pub const det: &'static str = "Formant det\nDetune the oscillator in semitones and cents.\n";
-    pub const form: &'static str = "Formant form\nFrequency of the formant\nThis affects how much lower or higher tones the sound has.";
+    pub const freq: &'static str = "Base frequency to oscillate at\n";
+    pub const det: &'static str = "Detune the oscillator in semitones and cents.\n";
+    pub const form: &'static str = "Frequency of the formant\nThis affects how much lower or higher tones the sound has.";
     pub const side: &'static str =
-        "Formant side\nWhich side the peak of the wave is. Values more towards 0.0 or 1.0 make the base frequency more pronounced";
+        "Which side the peak of the wave is. Values more towards 0.0 or 1.0 make the base frequency more pronounced";
     pub const peak: &'static str =
-        "Formant peak\nHow high the peak amplitude is. Lower values make the effect more pronounced";
-    pub const sig: &'static str = "Formant sig\nGenerated formant signal";
+        "How high the peak amplitude is. Lower values make the effect more pronounced";
+    pub const sig: &'static str = "Generated formant signal";
     pub const DESC: &'static str = r#"Formant oscillator
 
 Simple formant oscillator that generates a formant like sound.
 Loosely based on the ModFM synthesis method.
 "#;
-    pub const HELP: &'static str = r#"formfm - Direct formant synthesizer
+    pub const HELP: &'static str = r#"Direct formant synthesizer
 
 This is a formant synthesizer that directly generates 
 the audio of a single formant.

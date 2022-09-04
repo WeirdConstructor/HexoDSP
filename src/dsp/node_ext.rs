@@ -22,16 +22,16 @@ macro_rules! define_ext {
                 Self { slew1: SlewValue::new(), slew2: SlewValue::new(), slew3: SlewValue::new() }
             }
 
-            pub const slew: &'static str = "ExtA-F slew\nSlew limiter for the 3 parameters\nRange: (0..1)";
-            pub const atv1: &'static str = "ExtA-F atv1\nAttenuverter for the A1 parameter\nRange: (-1..1)";
-            pub const atv2: &'static str = "ExtA-F atv2\nAttenuverter for the A2 parameter\nRange: (-1..1)";
-            pub const atv3: &'static str = "ExtA-F atv3\nAttenuverter for the A3 parameter\nRange: (-1..1)";
+            pub const slew: &'static str = "Slew limiter for the 3 parameters";
+            pub const atv1: &'static str = "Attenuverter for the A1 parameter";
+            pub const atv2: &'static str = "Attenuverter for the A2 parameter";
+            pub const atv3: &'static str = "Attenuverter for the A3 parameter";
 
-            pub const sig1: &'static str = "ExtA-F sig1\nA-F1 output channel\nRange: (0..1)";
-            pub const sig2: &'static str = "ExtA-F sig2\nA-F2 output channel\nRange: (0..1)";
-            pub const sig3: &'static str = "ExtA-F sig3\nA-F3 output channel\nRange: (0..1)";
+            pub const sig1: &'static str = "A-F1 output channel";
+            pub const sig2: &'static str = "A-F2 output channel";
+            pub const sig3: &'static str = "A-F3 output channel";
 
-            pub const DESC: &'static str = "Ext. Parameter Set A-F Input\n\n\
+            pub const DESC: &'static str = "Ext. Param. Set A-F Input\n\n\
                 This node gives access to the 24 input parameters of the HexoSynth VST3/CLAP plugin. \
                 A 'slew' limiter allows you to smooth out quick changes a bit if you need it. \
                 Attenuverters (attenuators that can also invert) allow to reduce the amplitude \

@@ -37,15 +37,15 @@ impl MidiCC {
         }
     }
 
-    pub const chan: &'static str = "MidiCC chan\nMIDI Channel 0 to 15\n";
-    pub const slew: &'static str = "MidiCC slew\nSlew limiter for the 3 CCs\nRange: (0..1)";
-    pub const cc1: &'static str = "MidiCC cc1\nMIDI selected CC 1";
-    pub const cc2: &'static str = "MidiCC cc2\nMIDI selected CC 2";
-    pub const cc3: &'static str = "MidiCC cc3\nMIDI selected CC 3";
+    pub const chan: &'static str = "MIDI Channel 0 to 15\n";
+    pub const slew: &'static str = "Slew limiter for the 3 CCs";
+    pub const cc1: &'static str = "MIDI selected CC 1";
+    pub const cc2: &'static str = "MIDI selected CC 2";
+    pub const cc3: &'static str = "MIDI selected CC 3";
 
-    pub const sig1: &'static str = "MidiCC sig1\nCC output channel 1\nRange: (0..1)";
-    pub const sig2: &'static str = "MidiCC sig2\nCC output channel 2\nRange: (0..1)";
-    pub const sig3: &'static str = "MidiCC sig3\nCC output channel 3\nRange: (0..1)";
+    pub const sig1: &'static str = "CC output channel 1";
+    pub const sig2: &'static str = "CC output channel 2";
+    pub const sig3: &'static str = "CC output channel 3";
 
     pub const DESC: &'static str = "MIDI CC Input\n\n\
         This node is an input of MIDI CC events/values into the DSP graph. \

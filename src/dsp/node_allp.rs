@@ -18,17 +18,17 @@ impl AllP {
     }
 
     pub const inp: &'static str =
-        "### `AllP` ~~inp~~\nThe signal input for the allpass filter.";
+        "The signal input for the allpass filter.";
     pub const g: &'static str =
-        "### `AllP` ~~g~~\nThe internal factor for the allpass filter.";
-    pub const time: &'static str = "### `AllP` ~~time~~\nThe allpass delay time.";
-    pub const sig: &'static str = "### `AllP` ~~sig~~\nThe output of allpass filter.";
+        "The internal factor for the allpass filter.";
+    pub const time: &'static str = "The allpass delay time.";
+    pub const sig: &'static str = "The output of allpass filter.";
 
-    pub const DESC: &'static str = r#"### `AllP` Single Allpass Filter
+    pub const DESC: &'static str = r#"Single Allpass Filter
 This is an allpass filter that can be used to build reverbs
 or anything you might find it useful for.
 "#;
-    pub const HELP: &'static str = r#"## `AllP` A Simple Single Allpass Filter
+    pub const HELP: &'static str = r#"A Simple Single Allpass Filter
 
 This is an allpass filter that can be used to build reverbs
 or anything you might find it useful for.

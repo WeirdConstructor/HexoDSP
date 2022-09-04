@@ -42,35 +42,35 @@ impl VOsc {
     }
 
     pub const freq: &'static str =
-        "VOsc freq\nBase frequency of the oscillator.\n\nRange: (-1..1)\n";
-    pub const det: &'static str = "VOsc det\nDetune the oscillator in semitones and cents. \
+        "Base frequency of the oscillator.\n";
+    pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
          A signal sent to this port is not rounded.\n\
          Note: The signal input allows detune +-10 octaves.\
-         \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
-    pub const d: &'static str = "VOsc d\nThis is the horzontal bending point of the waveform. \
+         ";
+    pub const d: &'static str = "This is the horzontal bending point of the waveform. \
         It has a similar effect that pulse width settings have on other \
         oscillators. Make sure to try modulating this parameter at audio rate!\
-        \nRange: (0..1)\n";
-    pub const v: &'static str = "VOsc v\nThis is the vertical bending point of the waveform. \
+        ";
+    pub const v: &'static str = "This is the vertical bending point of the waveform. \
         You can adjust the effect that 'd' has on the waveform with this \
         parameter. Make sure to try to modulate this parameter at audio rate!\
-        \nRange: (0..1)\n";
+        ";
     pub const vs: &'static str =
-        "VOsc vs\nScaling factor for 'v'. If you increase this beyond 1.0, \
+        "Scaling factor for 'v'. If you increase this beyond 1.0, \
         you will hear formant like sounds from the oscillator. Try adjusting \
-        'd' to move the formants around.\nRange: (0..1)\n";
+        'd' to move the formants around.";
     pub const dist: &'static str =
-        "VOsc dist\nA collection of waveshaper/distortions to choose from.";
-    pub const damt: &'static str = "VOsc damt\nDistortion amount.\nRange: (0..1)\n";
-    pub const ovrsmpl: &'static str = "VOsc ovrsmpl\nEnable/Disable oversampling.";
-    pub const sig: &'static str = "VOsc sig\nOscillator output\nRange: (-1..1)\n";
+        "A collection of waveshaper/distortions to choose from.";
+    pub const damt: &'static str = "Distortion amount.";
+    pub const ovrsmpl: &'static str = "Enable/Disable oversampling.";
+    pub const sig: &'static str = "Oscillator output";
     pub const DESC: &'static str = r#"V Oscillator
 
 A vector phase shaping oscillator, to create interesting waveforms and ways to manipulate them. It has two parameters ('v' and 'd') to shape the phase of the sinusoid wave, and a 'vs' parameter to add extra spice. Distortion can beef up the oscillator output and you can apply oversampling.
 "#;
-    pub const HELP: &'static str = r#"VOsc - Vector Phase Shaping Oscillator
+    pub const HELP: &'static str = r#"Vector Phase Shaping Oscillator
 A vector phase shaping oscillator, to create interesting waveforms and
 ways to manipulate them. It has two parameters ('v' and 'd') to shape the
 phase of the sinusoid wave, and a third parameter 'vs' to add extra spice.

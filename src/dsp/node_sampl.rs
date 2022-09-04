@@ -66,43 +66,44 @@ impl Sampl {
         }
     }
     pub const freq: &'static str =
-        "Sampl freq\nPitch input for the sampler, giving the playback speed of the \
-        sample.\nRange: (-1..1)\n";
+        "Pitch input for the sampler, giving the playback speed of the \
+        sample.";
 
     pub const trig: &'static str =
-        "Sampl trig\nThe trigger input causes a resync of the playback phase \
+        "The trigger input causes a resync of the playback phase \
          and triggers the playback if the 'pmode' is 'OneShot'";
-    pub const offs: &'static str = "Sampl offs\nStart position offset.\nRange: (0..1)\n";
+    pub const offs: &'static str = "Start position offset.";
     pub const len: &'static str =
-        "Sampl len\nAdjusts the playback length of the sample in relation \
-        to the original length of the sample.\nRange: (0..1)\n";
+        "Adjusts the playback length of the sample in relation \
+        to the original length of the sample.";
     pub const dcms: &'static str =
-        "Sampl dcms\nDeclick fade time in milliseconds.\nNot audio rate!\nRange: (0..1)\n";
-    pub const det: &'static str = "Sin det\nDetune the oscillator in semitones and cents. \
+        "Declick fade time in milliseconds.\nNot audio rate!";
+    pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
          A signal sent to this port is not rounded.\n\
          Note: The signal input allows detune +-10 octaves.\
-         \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
+         ";
 
     pub const sample: &'static str =
-        "Sampl sample\nThe audio sample that is played back.\nRange: (-1..1)\n";
+        "The audio sample that is played back.";
 
-    pub const pmode: &'static str = "Sampl pmode\nThe playback mode of the sampler.\n\
+    pub const pmode: &'static str = "The playback mode of the sampler.\n\
         - 'Loop' constantly plays back the sample. You can reset/sync the phase \
         using the 'trig' input in this case.\n\
         - 'OneShot' plays back the sample if a trigger is received on 'trig' input.\n";
     pub const dclick: &'static str =
-        "Sampl dclick\nIf this is enabled it will enable short fade in and out ramps.\n\
+        "If this is enabled it will enable short fade in and out ramps.\n\
          This if useful if you don't want to add an envelope just for \
          getting rid of the clicks if spos and epos are modulated.";
     pub const dir: &'static str =
-        "Sampl dir\nSets the direction of the playhead, plays the sample \
+        "Sets the direction of the playhead, plays the sample \
         forwards or backwards.";
 
-    pub const sig: &'static str = "Sampl sig\nSampler audio output\nRange: (-1..1)\n";
+    pub const sig: &'static str = "Sampler audio output";
 
-    pub const DESC: &'static str = "Sample Player\n\n\
+    pub const DESC: &'static str =
+        "Sample Player\n\
          Provides a simple sample player that you can load a single audio \
          sample from a WAV file into.";
     pub const HELP: &'static str = r#"Sample Player

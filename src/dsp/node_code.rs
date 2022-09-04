@@ -42,22 +42,45 @@ impl Code {
         self.backend = Some(Box::new(backend));
     }
 
-    pub const in1: &'static str = "Code in1\nInput Signal 1\nRange: (-1..1)\n";
-    pub const in2: &'static str = "Code in2\nInput Signal 1\nRange: (-1..1)\n";
-    pub const alpha: &'static str = "Code alpha\nInput Parameter Alpha\nRange: (-1..1)\n";
-    pub const beta: &'static str = "Code alpha\nInput Parameter Alpha\nRange: (-1..1)\n";
-    pub const delta: &'static str = "Code alpha\nInput Parameter Alpha\nRange: (-1..1)\n";
-    pub const gamma: &'static str = "Code alpha\nInput Parameter Alpha\nRange: (-1..1)\n";
-    pub const sig: &'static str = "Code sig\nReturn output\nRange: (-1..1)\n";
-    pub const sig1: &'static str = "Code sig1\nSignal channel 1 output\nRange: (-1..1)\n";
-    pub const sig2: &'static str = "Code sig2\nSignal channel 2 output\nRange: (-1..1)\n";
+    pub const in1: &'static str = "Input Signal 1";
+    pub const in2: &'static str = "Input Signal 2";
+    pub const alpha: &'static str = "Input Parameter Alpha";
+    pub const beta: &'static str = "Input Parameter Beta";
+    pub const delta: &'static str = "Input Parameter Delta";
+    pub const gamma: &'static str = "Input Parameter Gamma";
+    pub const sig: &'static str = "Return output";
+    pub const sig1: &'static str = "Signal channel 1 output";
+    pub const sig2: &'static str = "Signal channel 2 output";
 
     pub const DESC: &'static str = "WBlockDSP Code Execution\n\n\
         This node executes just in time compiled code as fast as machine code. \
-        Use this to implement real time DSP code yourself.";
+        Use this to implement real time DSP code yourself. The inputs are freely \
+        useable in your code. All the ports (input and output) can be used either \
+        for audio or for control signals.";
     pub const HELP: &'static str = r#"WBlockDSP Code Execution
 
-Do it!
+This node executes just in time compiled code as fast as machine code.
+Use this to implement real time DSP code yourself. The inputs are freely
+useable in your code. All the ports (input and output) can be used either
+for audio or for control signals.
+
+The inputs ~~in1~~ and ~~in2~~ are thought to be a stereo signal input. But
+you are free to repurpose them as you like.
+
+The inputs ~~alpha~~, ~~beta~~, ~~delta~~ and ~~gamma~~ can be used as parameters
+in your code. But are also not restricted, so you may use them as audio signal
+inputs.
+
+The outputs ~~sig~~, ~~sig1~~ and ~~sig3~~ are also freely useable.
+
+Some ideas how to use this, you can build your own:
+
+- Waveshapers
+- Signal Generators (Oscillators)
+- Custom LFO
+- Control Signal shapers or generators
+- Sequencers
+- ... and many more things!
 "#;
 }
 

@@ -46,39 +46,39 @@ impl Ad {
         }
     }
     pub const inp: &'static str =
-        "### `Ad` ~~inp~~\nSignal input. If you don't connect this, and set this to **1.0** \
+        "Signal input. If you don't connect this, and set this to **1.0** \
         this will act as envelope signal generator. But you can also just \
         route a signal directly through this of course.";
     pub const trig: &'static str =
-        "### `Ad` ~~trig~~\nTrigger input that starts the attack phase.";
+        "Trigger input that starts the attack phase.";
     pub const atk: &'static str =
-        "### `Ad` ~~atk~~\nAttack time of the envelope. You can extend the maximum \
+        "Attack time of the envelope. You can extend the maximum \
         range of this with the ~~mult~~ setting.";
-    pub const dcy: &'static str = "### `Ad` ~~atk~~\nDecay time of the envelope. \
+    pub const dcy: &'static str = "Decay time of the envelope. \
         You can extend the maximum range of this with the ~~mult~~ setting.\
         ";
-    pub const ashp: &'static str = "### `Ad` ~~ashp~~\nAttack shape. This allows you to change the shape \
+    pub const ashp: &'static str = "Attack shape. This allows you to change the shape \
         of the attack stage from a logarithmic, to a linear and to an \
         exponential shape.";
-    pub const dshp: &'static str = "### `Ad` ~~dshp~~\nDecay shape. This allows you to change the shape \
+    pub const dshp: &'static str = "Decay shape. This allows you to change the shape \
         of the decay stage from a logarithmic, to a linear and to an \
         exponential shape.";
-    pub const mult: &'static str = "### `Ad` ~~mult~~\nAttack and Decay time range multiplier. \
+    pub const mult: &'static str = "Attack and Decay time range multiplier. \
         This will extend the maximum range of the ~~atk~~ and ~~dcy~~ parameters.";
     pub const sig: &'static str =
-        "### `Ad` ~~sig~~\nEnvelope signal output. If a signal is sent to the 'inp' port, \
+        "Envelope signal output. If a signal is sent to the 'inp' port, \
         you will receive an attenuated signal here. If you set 'inp' to a \
         fixed value (**for instance 1.0**), this will output an envelope signal \
         in the range 0.0 to 'inp' (**1.0**).";
     pub const eoet: &'static str =
-        "### `Ad` ~~eoet~~\nEnd of envelope trigger. This output sends a trigger once \
+        "End of envelope trigger. This output sends a trigger once \
         the end of the decay stage has been reached.";
-    pub const DESC: &'static str = r#"### `Ad` Attack-Decay Envelope
+    pub const DESC: &'static str = r#"Attack-Decay Envelope
 
 This is a simple envelope offering an attack time and decay time with a shape parameter.
 You can use it as envelope generator to modulate other inputs or process a signal with it directly.
 "#;
-    pub const HELP: &'static str = r#"## `Ad` Attack-Decay Envelope
+    pub const HELP: &'static str = r#"Attack-Decay Envelope
 
 This simple two stage envelope with attack and decay offers shape parameters
 for each stage. The attack and decay times can be extended using the ~~mult~~

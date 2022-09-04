@@ -37,28 +37,28 @@ impl BOsc {
     }
 
     pub const freq: &'static str =
-        "BOsc freq\nBase frequency of the oscillator.\n\nRange: (-1..1)\n";
-    pub const det: &'static str = "BOsc det\nDetune the oscillator in semitones and cents. \
+        "Base frequency of the oscillator.\n";
+    pub const det: &'static str = "Detune the oscillator in semitones and cents. \
          the input of this value is rounded to semitones on coarse input. \
          Fine input lets you detune in cents (rounded). \
          A signal sent to this port is not rounded.\n\
-         Note: The signal input allows detune +-10 octaves.\
-         \nRange: (Knob -0.2 .. 0.2) / (Signal -1.0 .. 1.0)\n";
-    pub const pw: &'static str = "BOsc pw\n\nRange: (0..1)\n";
-    pub const wtype: &'static str = "BOsc wtype\nWaveform type\nAvailable waveforms:\n\
-            Sin   - Sine Waveform\n\
-            Tri   - Triangle Waveform\n\
-            Saw   - Sawtooth Waveform\n\
-            Pulse - Pulse Waveform with configurable pulse width";
-    pub const sig: &'static str = "BOsc sig\nOscillator output\nRange: (-1..1)\n";
+         Note: The signal input allows detune +-10 octaves.";
+    pub const pw: &'static str = "";
+    pub const wtype: &'static str = "Waveform type. Available waveforms:\n\
+          - **Sin**   - Sine Waveform\n\
+          - **Tri**   - Triangle Waveform\n\
+          - **Saw**   - Sawtooth Waveform\n\
+          - **Pulse** - Pulse Waveform with configurable pulse width";
+    pub const sig: &'static str = "Oscillator output";
     pub const DESC: &'static str = r#"Basic Oscillator
 
-A very basic oscillator with a sine, triangle, pulse and sawtooth waveform.
+A very basic band limited oscillator with a sine, triangle, pulse and sawtooth waveform.
 "#;
-    pub const HELP: &'static str = r#"BOsc - Basic Waveform Oscillator
+    pub const HELP: &'static str = r#"Basic Waveform Oscillator
 
-A very basic oscillator with a sine, triangle, pulse and sawtooth waveform.
-The pulse width `pw` parameter only has an effect for the `Pulse` waveform.
+A very basic band limited oscillator with a sine, triangle, pulse and sawtooth
+waveform.  The pulse width ~~pw~~ parameter only has an effect for the
+**Pulse** waveform.
 "#;
 }
 

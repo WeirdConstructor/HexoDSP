@@ -17,11 +17,11 @@ impl Inp {
     }
 
     pub const gain: &'static str =
-        "Inp gain\nThe gain of the two plugin input ports, applied to all channels. \
+        "The gain of the two plugin input ports, applied to all channels. \
         Please note that this is a linear control, to prevent inaccuracies for 1.0. \
-        \nRange: (0..1)";
-    pub const sig1: &'static str = "Inp sig1\nAudio input channel 1 (left)\nRange: (-1..1)";
-    pub const sig2: &'static str = "Inp sig2\nAudio input channel 2 (right)\nRange: (-1..1)";
+        ";
+    pub const sig1: &'static str = "Audio input channel 1 (left)";
+    pub const sig2: &'static str = "Audio input channel 2 (right)";
 
     pub const DESC: &'static str = "Audio Input Port\n\n\
         This node gives you access to the two input ports of the HexoSynth plugin. \

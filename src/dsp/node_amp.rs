@@ -25,34 +25,34 @@ impl Amp {
     pub fn new(_nid: &NodeId) -> Self {
         Self {}
     }
-    pub const inp: &'static str = "Amp inp\nSignal input\nRange: (-1..1)\n";
+    pub const inp: &'static str = "Signal input";
     pub const att: &'static str =
-        "Amp att\nAttenuate input. Does only attenuate the signal, not amplify it.\n\
-         Use this for envelope input.\nRange: (0..1)\n";
+        "Attenuate input. Does only attenuate the signal, not amplify it.\n\
+         Use this for envelope input.";
     pub const gain: &'static str =
-        "Amp gain\nGain input. This control can actually amplify the signal.\nRange: (0..1)\n";
+        "Gain input. This control can actually amplify the signal.";
     pub const neg_att : &'static str =
-        "Amp neg\nIf this is set to 'Clip', only positive inputs to 'att' are used.\nRange: (0..1)\n";
-    pub const sig: &'static str = "Amp sig\nAmplified signal output\nRange: (-1..1)\n";
+        "If this is set to 'Clip', only the **0.0**-**1.0** input range of the \
+        ~~att~~ input port is used. Negative values are clipped to **0.0**.";
+    pub const sig: &'static str = "Amplified signal output";
     pub const DESC: &'static str = r#"Signal Amplifier
 
 This is a simple amplifier to amplify or attenuate a signal.
-See also nodes like 'atv' for an Attenuverter or 'mix' for mixing signals.
 "#;
-    pub const HELP: &'static str = r#"Amp - Signal Amplifier
+    pub const HELP: &'static str = r#"Signal Amplifier
 
 It serves the simple purpose of taking an input signal and attenuate (either
-with the 'att' or the 'gain' parameter) or just amplifying it with
-the 'gain' parameter.
+with the ~~att~~ or the ~~gain~~ parameter) or just amplifying it with
+the ~~gain~~ parameter.
 
 You can even use it as simple fixed control signal source if you leave the
-'inp' port unconnected and just dial in the desired output value with the
+~~inp~~ port unconnected and just dial in the desired output value with the
 parameter.
 
-The main idea with the 'gain' and 'att' parameters is, that you can set
-the desired amplification with the 'gain' parameter and automate it using
-the 'att' parameter. The 'neg' setting then defines what happens with
-negative inputs on the 'att' port.
+The main idea with the ~~gain~~ and ~~att~~ parameters is, that you can set
+the desired amplification with the ~~gain~~ parameter and automate it using
+the ~~att~~ parameter. The ~~neg~~ setting then defines what happens with
+negative inputs on the ~~att~~ port.
 "#;
 }
 

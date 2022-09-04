@@ -39,26 +39,26 @@ impl SMap {
     pub fn new(_nid: &NodeId) -> Self {
         Self {}
     }
-    pub const inp: &'static str = "SMap inp\nSignal input\nRange: (-1..1)\n";
-    pub const min: &'static str = "SMap min\nMinimum of the output signal range.\nRange: (0..1)\n";
-    pub const max: &'static str = "SMap max\nMaximum of the output signal range.\nRange: (0..1)\n";
-    pub const clip: &'static str = "SMap clip\nThe 'clip' mode allows you to limit the output \
+    pub const inp: &'static str = "Signal input";
+    pub const min: &'static str = "Minimum of the output signal range.";
+    pub const max: &'static str = "Maximum of the output signal range.";
+    pub const clip: &'static str = "The 'clip' mode allows you to limit the output \
         exactly to the 'min'/'max' range. If this is off, the output \
         may be outside the output signal range.";
     pub const mode: &'static str =
-        "SMap mode\nThis mode defines what kind of input signal is expected \
+        "This mode defines what kind of input signal is expected \
         and how it will be mapped to the output 'min'/'max' range. \
         These modes are available:\
         \nUnipolar (0..1) / Bipolar  (-1..1)\
         \nUniInv   (1..0) / BiInv    (1..-1)";
-    pub const sig: &'static str = "SMap sig\nMapped signal output\nRange: (-1..1)\n";
+    pub const sig: &'static str = "Mapped signal output";
     pub const DESC: &'static str = r#"Simple Range Mapper
 
 This node allows to map an unipolar (0..1) or bipolar signal (-1..1) to a defined 'min'/'max' signal range.
 
 See also the 'Map' node for a more sophisticated version of this.
 "#;
-    pub const HELP: &'static str = r#"SMap - Simple Range Mapper
+    pub const HELP: &'static str = r#"Simple Range Mapper
 
 This node allows to map an unipolar (0..1) or bipolar signal (-1..1)
 to a defined 'min'/'max' signal range.

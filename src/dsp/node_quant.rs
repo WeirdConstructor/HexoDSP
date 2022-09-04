@@ -25,25 +25,25 @@ impl Quant {
         Self { quant: Box::new(Quantizer::new()), change_trig: ChangeTrig::new() }
     }
     pub const freq: &'static str =
-        "Quant freq\nAny signal that is to be pitch quantized.\nRange: (-1..1)";
+        "Any signal that is to be pitch quantized.";
     pub const oct: &'static str =
-        "Quant oct\nPitch offset, the knob is snapping to octave offsets. \
+        "Pitch offset, the knob is snapping to octave offsets. \
         Feed signal values snapped to 0.1 multiples for exact octave offsets.\
-        \nRange: (-1..1)";
-    pub const sig: &'static str = "Quant sig\nThe quantized output signal that is rounded to \
+        ";
+    pub const sig: &'static str = "The quantized output signal that is rounded to \
         the next selected note pitch within the octave of the \
-        original input to 'freq'.\nRange: (-1..1)";
-    pub const keys: &'static str = "Quant keys\nSelect the notes you want to snap to here. \
+        original input to 'freq'.";
+    pub const keys: &'static str = "Select the notes you want to snap to here. \
         If no notes are selected, the quantizer will snap the \
         incoming signal to any closest note.";
-    pub const t: &'static str = "Quant t\nEverytime the quantizer snaps to a new pitch, it will \
+    pub const t: &'static str = "Everytime the quantizer snaps to a new pitch, it will \
         emit a short trigger on this signal output. This is useful \
         to trigger for example an envelope.";
     pub const DESC: &'static str = r#"Pitch Quantizer
 
 This is a simple quantizer, that snaps a pitch signal on 'freq' to the closest selected notes within their octave.
 "#;
-    pub const HELP: &'static str = r#"Quant - A pitch quantizer
+    pub const HELP: &'static str = r#"A pitch quantizer
 
 This is a simple quantizer, that snaps a pitch signal on 'freq' to the
 closest selected notes within their octave.

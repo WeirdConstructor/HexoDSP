@@ -55,33 +55,34 @@ impl CQnt {
         Self { quant: Box::new(CtrlPitchQuantizer::new()), change_trig: ChangeTrig::new() }
     }
     pub const inp: &'static str =
-        "CQnt inp\nThe unipolar input signal that is to be mapped to the \
-        selected pitch range.\nRange: (0..1)";
-    pub const oct: &'static str = "CQnt oct\nThe octave offset from A4.\nRange: (-1..1)";
+        "The unipolar input signal that is to be mapped to the \
+        selected pitch range.";
+    pub const oct: &'static str = "The octave offset from A4.";
     pub const omin: &'static str =
-        "CQnt omin\nThe minimum octave of the range. If 0 it will be 'oct'.\nRange: (-1..1)";
+        "The minimum octave of the range. If **0** it will be ~~oct~~.";
     pub const omax: &'static str =
-        "CQnt omax\nThe maximum octave of the range. If 0 it will be 'oct'.\nRange: (-1..1)";
-    pub const sig: &'static str = "CQnt sig\nThe output pitch signal.\nRange: (-1..1)";
-    pub const t: &'static str = "CQnt t\nEverytime the quantizer snaps to a new pitch, it will \
+        "The maximum octave of the range. If **0** it will be ~~oct~~.";
+    pub const sig: &'static str = "The output pitch signal.";
+    pub const t: &'static str = "Everytime the quantizer snaps to a new pitch, it will \
         emit a short trigger on this signal output. This is useful \
         to trigger for example an envelope.";
     pub const keys: &'static str =
-        "CQnt keys\nHere you can select the individual notes of the range. \
+        "Here you can select the individual notes of the range. \
         If no note is selected, it's the same as if all notes were selected.";
     pub const DESC: &'static str = r#"Ctrl Pitch Quantizer
 
-This special quantizer maps the unipolar 0..1 control signal input range on 'inp' evenly to the selected keys and octaves.
+This special quantizer maps the unipolar **0**..**1** control signal
+input range on ~~inp~~ evenly to the selected keys and octaves.
 "#;
-    pub const HELP: &'static str = r#"CQnt - A control signal to pitch quantizer
+    pub const HELP: &'static str = r#"A control signal to pitch quantizer
 
 This is a specialized control signal quantizer to generate a pitch/frequency
-from a signal within the 0..1 range. It does not quantize a typical -1..1
-frequency signal like the 'Quant' node.
+from a signal within the **0**..**1** range. It does not quantize a typical **-1**..**1**
+frequency signal like the `Quant` node.
 
-In contrast to 'Quant', this quantizer maps the incoming signal evenly
+In contrast to `Quant`, this quantizer maps the incoming signal evenly
 to the available note range. It will result in more evenly played notes
-if you sweep accross the input signal range.
+if you sweep across the input signal range.
 "#;
 }
 

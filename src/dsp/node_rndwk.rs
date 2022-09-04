@@ -23,36 +23,36 @@ impl RndWk {
         Self { rng, trig: Trigger::new(), slew_val: SlewValue::new(), target: 0.0 }
     }
 
-    pub const trig: &'static str = "RndWk trig\nThis trigger generates a new random number within \
-        the current 'min'/'max' range.\nRange: (-1..1)";
-    pub const step: &'static str = "RndWk step\nThis is the maximum possible step size of the \
+    pub const trig: &'static str = "This trigger generates a new random number within \
+        the current 'min'/'max' range.";
+    pub const step: &'static str = "This is the maximum possible step size of the \
         random number drawn upon 'trig'. Setting this to 0.0 will disable \
         the randomness.\nThe minimum step size can be defined \
-        by the 'offs' parameter.\nRange: (0..1)";
+        by the 'offs' parameter.";
     pub const offs: &'static str =
-        "RndWk offs\nThe minimum step size and direction that is done on each 'trig'.\
+        "The minimum step size and direction that is done on each 'trig'.\
         Depending on the size of the 'offs' and the 'min'/'max' range, \
         this might result in the output value being close to the limits \
-        of that range.\nRange: (-1..1)";
+        of that range.";
     pub const min: &'static str =
-        "RndWk min\nThe minimum of the new target value. If a value is drawn \
+        "The minimum of the new target value. If a value is drawn \
         that is outside of this range, it will be reflected back into it.\
-        \nRange: (0..1)";
+        ";
     pub const max: &'static str =
-        "RndWk max\nThe maximum of the new target value. If a value is drawn \
+        "The maximum of the new target value. If a value is drawn \
         that is outside of this range, it will be reflected back into it.\
-        \nRange: (0..1)";
+        ";
     pub const slew: &'static str =
-        "RndWk slew\nThe slew rate limiting time. Thats the time it takes to \
+        "The slew rate limiting time. Thats the time it takes to \
         get to 1.0 from 0.0. Useful for smoothing modulation of audio signals. \
         The higher the time, the smoother/slower the transition to new \
-        target values will be.\nRange: (0..1)";
-    pub const sig: &'static str = "RndWk sig\nOscillator output\nRange: (-1..1)\n";
+        target values will be.";
+    pub const sig: &'static str = "Oscillator output";
     pub const DESC: &'static str = r#"Random Walker
 
 This modulator generates a random number by walking a pre defined maximum random 'step' width. For smoother transitions a slew rate limiter is integrated.
 "#;
-    pub const HELP: &'static str = r#"RndWk - Random Walker
+    pub const HELP: &'static str = r#"Random Walker
 
 This modulator generates a random number by walking a pre defined
 maximum random 'step' width. The newly generated target value will always

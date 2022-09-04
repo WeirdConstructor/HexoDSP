@@ -15,7 +15,7 @@ impl FbWr {
     pub fn new(nid: &NodeId) -> Self {
         Self { fb_index: nid.instance() as u8 }
     }
-    pub const inp: &'static str = "FbWr inp\nSignal input\nRange: (-1..1)\n";
+    pub const inp: &'static str = "Signal input";
 
     pub const DESC: &'static str = "Feedback Delay Writer\n\n\
 HexoSynth does not allow direct feedback cycles in it's graph.\n\
@@ -81,9 +81,9 @@ impl FbRd {
     pub fn new(nid: &NodeId) -> Self {
         Self { fb_index: nid.instance() as u8 }
     }
-    pub const atv: &'static str = "FbRd atv\nAttenuate or invert input.\n\
-         Use this to adjust the feedback amount.\nRange: (-1..1)\n";
-    pub const sig: &'static str = "FbRd sig\nFeedback signal output.\nRange: (-1..1)\n";
+    pub const atv: &'static str = "Attenuate or invert input.\n\
+         Use this to adjust the feedback amount.";
+    pub const sig: &'static str = "Feedback signal output.";
 
     pub const DESC: &'static str = "Feedback Delay Reader\n\n\
 HexoSynth does not allow direct feedback cycles in it's graph.\n\

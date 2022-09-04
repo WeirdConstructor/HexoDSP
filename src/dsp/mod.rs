@@ -141,39 +141,26 @@ Here an example from ´node_ad.rs´:
 
 ```ignore
     pub const inp: &'static str =
-        "Ad inp\nSignal input. If you don't connect this, and set this to 1.0 \
+        "Signal input. If you don't connect this, and set this to **1.0** \
         this will act as envelope signal generator. But you can also just \
-        route a signal directly through this of course.\nRange: (-1..1)\n";
+        route a signal directly through this of course.";
 ```
 
-The general format of the parameter documentation should be:
-
-```ignore
-       "<Node name> <parameter name>\n
-        A short description what this paramter means/does and relates to others.\n
-        Range: <range>\n"
-```
-
-Keep the description of the paramter short and concise. Look at the space available
+Keep the description of the parameter short and concise. Look at the space available
 in HexoSynth where this is displayed. If you want to write more elaborate documentation
 for a paramter, write it in the `HELP` entry.
-
-The _range_ relates to the DSP signal range this paramter is supposed to receive.
-This should either be the unipolar range (0..1) or the bipolar range (-1..1). Other
-ranges should be avoided, because everything in HexoDSP is supposed to be fine with
-receiving values in those ranges.
 
 Next you need to document the node itself, how it works what it does and so on...
 For this there are two entries:
 
 ```ignore
-        pub const DESC: &'static str = r#"Attack-Decay Envelope
+        pub const DESC: &'static str = r#"### `Ad` Attack-Decay Envelope
 
     This is a simple envelope offering an attack time and decay time with a shape parameter.
     You can use it as envelope generator to modulate other inputs or process a signal with it directly.
     "#;
 
-        pub const HELP: &'static str = r#"Ad - Attack-Decay Envelope
+        pub const HELP: &'static str = r#"## `Ad` Attack-Decay Envelope
 
     This simple two stage envelope with attack and decay offers shape parameters
     ...
@@ -181,19 +168,29 @@ For this there are two entries:
 ```
 
 _DESC_ should only contain a short description of the node. It's space is as limited as the
-space for the parameter description. It will be autowrapped.
+space for the parameter description. It will be autowrapped. It should start by convention
+with the written out (but short) purpose title of the node.
 
 _HELP_ can be a multiple pages long detailed description of the node. Keep the
 width of the lines below a certain limit (below 80 usually). Or else it will be
-truncated in the help text window in HexoSynth. As inspiration what should be in
-the help documentation:
+truncated in the help text window in HexoSynth. The _HELP_ should by convention
+with a written out purpose title of the node.
+
+As inspiration what should be in the help documentation:
 
 - What the node does (even if it repeats mostly what _DESC_ already says)
-- How the input paramters relate to each other.
+- How the input parameters relate to each other.
 - What the different atom settings (if any) mean.
 - Which other DSP nodes this node is commonly combined with.
 - Interesting or even uncommon uses of this DSP node.
 - Try to inspire the user to experiment.
+
+More conventions for the documentation:
+
+- \**emphasis*\* - use this to emphasize some text.
+- \`Node\` - use back ticks to highlight node names.
+- \*\*Value\*\* - use '\*\*' to highlight values.
+- \~\~Port\~\~ - use '\~\~' to highlight input ports/parameters.
 
 ### Node Code Structure
 

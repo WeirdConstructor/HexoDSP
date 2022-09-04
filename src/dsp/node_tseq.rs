@@ -55,33 +55,33 @@ impl TSeq {
         self.backend = Some(Box::new(backend));
     }
 
-    pub const clock: &'static str = "### `TSeq` ~~clock~~\nClock input";
+    pub const clock: &'static str = "Clock input";
     pub const trig: &'static str =
-        "### `TSeq` ~~trig~~\nSynchronization trigger which restarts the sequence.";
-    pub const cmode: &'static str = "### `TSeq` ~~cmode~~\n~~clock~~ input signal mode:\n\
+        "Synchronization trigger which restarts the sequence.";
+    pub const cmode: &'static str = "~~clock~~ input signal mode:\n\
              - **RowT**: Trigger = advance row\n\
              - **PatT**: Trigger = pattern rate\n\
              - **Phase**: Phase to pattern index\n\
          \n";
-    pub const trk1: &'static str = "### `TSeq` ~~trk1~~\nTrack 1 signal output";
-    pub const trk2: &'static str = "### `TSeq` ~~trk2~~\nTrack 2 signal output";
-    pub const trk3: &'static str = "### `TSeq` ~~trk3~~\nTrack 3 signal output";
-    pub const trk4: &'static str = "### `TSeq` ~~trk4~~\nTrack 4 signal output";
-    pub const trk5: &'static str = "### `TSeq` ~~trk5~~\nTrack 5 signal output";
-    pub const trk6: &'static str = "### `TSeq` ~~trk6~~\nTrack 6 signal output";
+    pub const trk1: &'static str = "Track 1 signal output";
+    pub const trk2: &'static str = "Track 2 signal output";
+    pub const trk3: &'static str = "Track 3 signal output";
+    pub const trk4: &'static str = "Track 4 signal output";
+    pub const trk5: &'static str = "Track 5 signal output";
+    pub const trk6: &'static str = "Track 6 signal output";
 
-    pub const gat1: &'static str = "### `TSeq` ~~gat1~~\nTrack 1 gate output";
-    pub const gat2: &'static str = "### `TSeq` ~~gat2~~\nTrack 2 gate output";
-    pub const gat3: &'static str = "### `TSeq` ~~gat3~~\nTrack 3 gate output";
-    pub const gat4: &'static str = "### `TSeq` ~~gat4~~\nTrack 4 gate output";
-    pub const gat5: &'static str = "### `TSeq` ~~gat5~~\nTrack 5 gate output";
-    pub const gat6: &'static str = "### `TSeq` ~~gat6~~\nTrack 6 gate output";
+    pub const gat1: &'static str = "Track 1 gate output";
+    pub const gat2: &'static str = "Track 2 gate output";
+    pub const gat3: &'static str = "Track 3 gate output";
+    pub const gat4: &'static str = "Track 4 gate output";
+    pub const gat5: &'static str = "Track 5 gate output";
+    pub const gat6: &'static str = "Track 6 gate output";
 
-    pub const DESC: &'static str = "### `TSeq` Tracker Sequencer\n\n\
+    pub const DESC: &'static str = "Tracker Sequencer\n\n\
         This node implements a sequencer that can be programmed \
         using the tracker interface in HexoSynth on the right.\n\
         It provides 6 control signals and 6 gate outputs.";
-    pub const HELP: &'static str = r#"## `TSeq` Tracker (based) Sequencer
+    pub const HELP: &'static str = r#"Tracker (based) Sequencer
 
 This sequencer gets it's speed from the clock source. The ~~clock~~
 signal can be interpreted in different modes. But if you want to

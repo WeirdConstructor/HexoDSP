@@ -51,17 +51,17 @@ impl MidiP {
         }
     }
 
-    pub const chan: &'static str = "MidiP chan\nMIDI Channel 0 to 15\n";
-    pub const gmode: &'static str = "MidiP gmode\nMIDI gate mode.\n- 'MIDI' gate same as MIDI input\n- 'Trigger' output only triggers on 'gate' output\n- 'Gate Len' output gate with the length of the 'glen' parameter\n";
-    pub const glen: &'static str = "MidiP glen\nMIDI gate length\n\
+    pub const chan: &'static str = "MIDI Channel 0 to 15\n";
+    pub const gmode: &'static str = "MIDI gate mode.\n- 'MIDI' gate same as MIDI input\n- 'Trigger' output only triggers on 'gate' output\n- 'Gate Len' output gate with the length of the 'glen' parameter\n";
+    pub const glen: &'static str = "MIDI gate length\n\
         If 'gmode' is set to 'Gate Len' this controls and overrides the gate length on a MIDI \
         note event. 'Trigger' will just send a short trigger when a note event is received. \
         'MIDI' means the gate reflects the note on/off duration.";
-    pub const det: &'static str = "MidiP det\nDetune input pitch a bit\nRange: (-1..1)";
+    pub const det: &'static str = "Detune input pitch a bit";
     pub const freq: &'static str =
-        "MidiP freq\nMIDI note frequency, detuned by 'det'.\nRange: (-1..1)";
-    pub const gate: &'static str = "MidiP gate\nMIDI note gate\nRange: (0..1)";
-    pub const vel: &'static str = "MidiP vel\nMIDI note velocity\nRange: (0..1)";
+        "MIDI note frequency, detuned by 'det'.";
+    pub const gate: &'static str = "MIDI note gate";
+    pub const vel: &'static str = "MIDI note velocity";
 
     pub const DESC: &'static str = "MIDI Pitch/Note Input\n\n\
         This node is an input of MIDI note events into the DSP graph. \
