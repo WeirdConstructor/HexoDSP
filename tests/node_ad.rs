@@ -159,16 +159,17 @@ fn check_node_ad_retrig() {
     let res = run_for_ms(&mut node_exec, 0.1);
     assert_slope_feq!(res.0, vec![0.00755; 3]);
 
-    // Retrigger attack (should do nothing)
+    // Retrigger attack, which causes a new slope, as the ramp time is restarting:
     matrix.set_param(trig_p, SAtom::param(1.0));
     let res = run_for_ms(&mut node_exec, 0.1);
-    assert_slope_feq!(res.0, vec![0.00755; 7]);
+    assert_slope_feq!(res.0, vec![0.00355; 7]);
 
     // Wait into decay phase
     matrix.set_param(trig_p, SAtom::param(0.0));
     let res = run_for_ms(&mut node_exec, 1.4);
     let mut v = vec![0.00755; 57];
     v.append(&mut vec![0.002267, -0.002267, -0.002267]);
+    println!("{:#?}", res.0);
     assert_slope_feq!(res.0, v);
 
     // Decay some more

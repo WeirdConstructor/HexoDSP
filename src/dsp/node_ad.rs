@@ -6,7 +6,7 @@ use crate::dsp::{
     DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use synfx_dsp::{sqrt4_to_pow4, TrigSignal, Trigger};
+use synfx_dsp::{env_target_stage, sqrt4_to_pow4, EnvState, TrigSignal, Trigger};
 
 #[macro_export]
 macro_rules! fa_ad_mult {
@@ -24,26 +24,14 @@ macro_rules! fa_ad_mult {
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Ad {
-    inc: f64,
-    stage: u8,
-    samples_ms: f64,
-    value: f64,
-    last_time: f32,
+    state: EnvState,
     trig: Trigger,
     trig_sig: TrigSignal,
 }
 
 impl Ad {
     pub fn new(_nid: &NodeId) -> Self {
-        Self {
-            inc: 0.0,
-            stage: 0,
-            samples_ms: 44.1,
-            value: 0.0,
-            last_time: -1.0,
-            trig: Trigger::new(),
-            trig_sig: TrigSignal::new(),
-        }
+        Self { state: EnvState::new(), trig: Trigger::new(), trig_sig: TrigSignal::new() }
     }
     pub const inp: &'static str =
         "Signal input. If you don't connect this, and set this to **1.0** \
@@ -96,15 +84,12 @@ impl DspNode for Ad {
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.samples_ms = srate as f64 / 1000.0;
+        self.state.set_sample_rate(srate);
         self.trig_sig.set_sample_rate(srate);
     }
 
     fn reset(&mut self) {
-        self.stage = 0;
-        self.value = 0.0;
-        self.inc = 0.0;
-        self.last_time = -1.0;
+        self.state.reset();
         self.trig_sig.reset();
         self.trig.reset();
     }
@@ -130,92 +115,56 @@ impl DspNode for Ad {
         let dcy_shape = inp::Ad::dshp(inputs);
         let mult = at::Ad::mult(atoms);
 
-        // block start:
-        let (mut shape_src, mut inc_time_src, mut target, mut delta) = match self.stage {
-            1 => (atk_shape, atk, 1.0, 1.0),
-            2 => (dcy_shape, dcy, 0.0, -1.0),
-            _ => (atk_shape, atk, 0.0, 0.0),
-        };
-        let mult: f64 = match mult.i() {
+        let mult: f32 = match mult.i() {
             1 => 10.0,
             2 => 100.0,
             _ => 1.0,
         };
 
-        //        let mut cnt : usize = 0;
-
         for frame in 0..ctx.nframes() {
             if self.trig.check_trigger(denorm::Ad::trig(trig, frame)) {
-                //d// println!("RETRIGGER!");
-                self.stage = 1;
-                self.last_time = -1.0;
-                target = 1.0;
-                delta = 1.0;
-                shape_src = atk_shape;
-                inc_time_src = atk;
+                self.state.trigger();
             }
 
-            let cur_time = denorm::Ad::atk(inc_time_src, frame);
-            if self.last_time != cur_time {
-                self.inc = if cur_time <= 0.0001 {
-                    delta
-                } else {
-                    delta / ((cur_time as f64) * mult * self.samples_ms)
-                };
-                self.last_time = cur_time;
+            let atk_ms = mult * denorm::Ad::atk(atk, frame);
+            let ashp = denorm::Ad::ashp(atk_shape, frame).clamp(0.0, 1.0);
 
-                //                if cnt % 32 == 0 {
-                //                    println!("** v={:8.3}, inc={:8.3}, tar={:8.3}, time={:8.3}",
-                //                             self.value, self.inc, target, self.last_time);
-                //                }
-            }
+            if self.state.is_running() {
+                env_target_stage!(
+                    self.state,
+                    0,
+                    atk_ms,
+                    1.0,
+                    |x: f32| sqrt4_to_pow4(x.clamp(0.0, 1.0), ashp),
+                    {
+                        let dcy_ms = mult * denorm::Ad::dcy(dcy, frame);
+                        let dshp = 1.0 - denorm::Ad::dshp(dcy_shape, frame).clamp(0.0, 1.0);
 
-            self.value += self.inc;
-            let shape = denorm::Ad::ashp(shape_src, frame).clamp(0.0, 1.0);
-
-            //            if cnt % 32 == 0 {
-            //                println!("v={:8.3}, inc={:8.3}, tar={:8.3}, time={:8.3}",
-            //                         self.value, self.inc, target, self.last_time);
-            //            }
-            //            cnt += 1;
-
-            match self.stage {
-                1 => {
-                    if self.value >= (target - 0.0001) {
-                        self.stage = 2;
-                        self.last_time = -1.0;
-                        self.value = target;
-                        target = 0.0;
-                        delta = -1.0;
-                        shape_src = dcy_shape;
-                        inc_time_src = dcy;
+                        env_target_stage!(
+                            self.state,
+                            2,
+                            dcy_ms,
+                            0.0,
+                            |x: f32| sqrt4_to_pow4(x.clamp(0.0, 1.0), dshp),
+                            {
+                                self.trig_sig.trigger();
+                                self.state.stop_immediately();
+                            }
+                        );
                     }
-                }
-                2 => {
-                    if self.value <= (target + 0.0001) {
-                        self.stage = 0;
-                        self.last_time = -1.0;
-                        self.value = target;
-                        target = 0.0;
-                        delta = 0.0;
-                        self.trig_sig.trigger();
-                    }
-                }
-                _ => {}
+                );
             }
+
 
             let in_val = denorm::Ad::inp(inp, frame);
             let out = out::Ad::sig(outputs);
-            //d// println!("VAL in={}, val={} shp: {}=>{}", in_val, self.value, shape,
-            //d//     sqrt4_to_pow4(1.0, shape));
-            out.write(frame, in_val * sqrt4_to_pow4(self.value.clamp(0.0, 1.0) as f32, shape));
+            out.write(frame, in_val * self.state.current);
 
             let eoet = out::Ad::eoet(outputs);
             eoet.write(frame, self.trig_sig.next());
         }
 
-        ctx_vals[0].set(self.value as f32);
-        //        ctx_vals[1].set(self.phase / self. + self.stage * );
+        ctx_vals[0].set(self.state.current as f32);
     }
 
     fn graph_fun() -> Option<GraphFun> {

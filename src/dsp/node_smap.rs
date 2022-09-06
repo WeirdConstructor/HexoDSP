@@ -42,41 +42,45 @@ impl SMap {
     pub const inp: &'static str = "Signal input";
     pub const min: &'static str = "Minimum of the output signal range.";
     pub const max: &'static str = "Maximum of the output signal range.";
-    pub const clip: &'static str = "The 'clip' mode allows you to limit the output \
-        exactly to the 'min'/'max' range. If this is off, the output \
+    pub const clip: &'static str =
+        "The **Clip** mode allows you to limit the output \
+        exactly to the ~~min~~/~~max~~ range. If this is **Off**, the output \
         may be outside the output signal range.";
     pub const mode: &'static str = "This mode defines what kind of input signal is expected \
-        and how it will be mapped to the output 'min'/'max' range. \
-        These modes are available:\
-        \nUnipolar (0..1) / Bipolar  (-1..1)\
-        \nUniInv   (1..0) / BiInv    (1..-1)";
+        and how it will be mapped to the output ~~min~~/~~max~~ range. \
+        These modes are available:\n\n\
+        - **Unipolar** (**0**..**1**)\n\
+        - **Bipolar**  (**-1**..**1**)\n\
+        - **UniInv**   (**1**..**0**)\n\
+        - **BiInv**    (**1**..**-1**)\n";
     pub const sig: &'static str = "Mapped signal output";
     pub const DESC: &'static str = r#"Simple Range Mapper
 
-This node allows to map an unipolar (0..1) or bipolar signal (-1..1) to a defined 'min'/'max' signal range.
+This node allows to map an unipolar (**0**..**1**) or bipolar signal (**-1**..**1**) to a defined
+~~min~~/~~max~~ signal range.
 
 See also the 'Map' node for a more sophisticated version of this.
 "#;
     pub const HELP: &'static str = r#"Simple Range Mapper
 
-This node allows to map an unipolar (0..1) or bipolar signal (-1..1)
-to a defined 'min'/'max' signal range.
+This node allows to map an unipolar (**0**..**1**) or bipolar signal (**-1**..**1**)
+to a defined ~~min~~/~~max~~ signal range.
 
-The 'clip' mode allows you to limit the output exactly to the 'min'/'max'
-range. If this is off, the output may be outside the output signal
+The **Clip** mode allows you to limit the output exactly to the ~~min~~/~~max~~
+range. If this is **Off**, the output may be outside the output signal
 range if the input signal is outside the input signal range.
 
-The 'input' mode allows you to choose between 4 options:
+The ~~input~~ mode allows you to choose between 4 options:
 
-    * Unipolar (0..1)
-    * Bipolar  (-1..1)
-    * UniInv   (1..0)
-    * BiInv    (1..-1)
+- **Unipolar** (**0**..**1**)
+- **Bipolar**  (**-1**..**1**)
+- **UniInv**   (**1**..**0**)
+- **BiInv**    (**1**..**-1**)
 
-The inverse settings will map 1 to 'min' and 0 to 'max' for 'UniInv'.
-And 1 to 'min' and -1 to 'max' for 'BiInv'.
+The inverse settings will map **1** to ~~min~~ and **0** to ~~max~~ for **UniInv**.
+And **1** to ~~min~~ and **-1** to ~~max~~ for **BiInv**.
 
-For a more sophisticated version of this node see also 'Map'.
+For a more sophisticated version of this node see also `Map`.
 "#;
 }
 

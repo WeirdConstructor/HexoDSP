@@ -56,55 +56,51 @@ impl SFilter {
     pub const ftype: &'static str = "The filter type, there are varying types of \
         filters available. Please consult the node documentation for \
         a complete list.\n\
-        Types: 1p/1pt=one poles, 12c=Hal Chamberlin SVF,\n\
-        12s=Simper SVF, 24m=Moog\n\
-        Outputs: LP=Low-,HP=High-,BP=Band-Pass,NO=Notch,PK=Peak";
+        Types: **1p/1pt**=one poles, **12c**=Hal Chamberlin SVF,\n\
+        **12s**=Simper SVF, **24m**=Moog\n\
+        Outputs: **LP**=Low-,**HP**=High-,**BP**=Band-Pass,**NO**=Notch,**PK**=Peak";
     pub const sig: &'static str = "Filtered signal output.";
     pub const DESC: &'static str = r#"Simple Filter
 
 This is a collection of more or less simple filters.
-There are only two parameters: Filter cutoff 'freq' and the 'res'onance.
+There are only two parameters: Filter cutoff ~~freq~~ and the ~~res~~ resonance.
 "#;
     pub const HELP: &'static str = r#"Simple Audio Filter Collection
 
 This is a collection of a few more or less simple filters
-of varying types. There are only few parameters for you to change: 'freq'
-and 'res'onance. You can switch between the types with the 'ftype'.
+of varying types. There are only few parameters for you to change: ~~freq~~
+and ~~res~~ resonance. You can switch between the types with the ~~ftype~~.
 There are currently following filters available:
 
-    HP 1p     - One pole low-pass filter (6db)
-    HP 1pt    - One pole low-pass filter (6db) (TPT form)
-    LP 1p     - One pole high-pass filter (6db)
-    LP 1pt    - One pole high-pass filter (6db) (TPT form)
+- **HP 1p** - One pole low-pass filter (6db)
+- **HP 1pt** - One pole low-pass filter (6db) (TPT form)
+- **LP 1p** - One pole high-pass filter (6db)
+- **LP 1pt** - One pole high-pass filter (6db) (TPT form)
 
 The Hal Chamberlin filters are an older state variable filter design,
 that is limited to max cutoff frequency of 16kHz. For a more stable
 filter use the "12s" variants.
 
-    LP 12c    - Low-pass Hal Chamberlin state variable filter (12dB)
-    HP 12c    - High-pass Hal Chamberlin state variable filter (12dB)
-    BP 12c    - Band-pass Hal Chamberlin state variable filter (12dB)
-    NO 12c    - Notch Hal Chamberlin state variable filter (12dB)
+- **LP 12c** - Low-pass Hal Chamberlin state variable filter (12dB)
+- **HP 12c** - High-pass Hal Chamberlin state variable filter (12dB)
+- **BP 12c** - Band-pass Hal Chamberlin state variable filter (12dB)
+- **NO 12c** - Notch Hal Chamberlin state variable filter (12dB)
 
 The (Andrew) Simper state variable filter is a newer design
 and stable up to 22kHz at 44.1kHz sampling rate. It's overall more precise
 and less quirky than the Hal Chamberlin SVF.
 
-    LP 12s    - Low-pass Simper state variable filter (12dB)
-    HP 12s    - High-pass Simper state variable filter (12dB)
-    BP 12s    - Band-pass Simper state variable filter (12dB)
-    NO 12s    - Notch Simper state variable filter (12dB)
-    PK 12s    - Peak Simper state variable filter (12dB)
-
-Next page: more filters (eg. Moog)
----page---
-SFilter - Simple Audio Filter Collection
+- **LP 12s** - Low-pass Simper state variable filter (12dB)
+- **HP 12s** - High-pass Simper state variable filter (12dB)
+- **BP 12s** - Band-pass Simper state variable filter (12dB)
+- **NO 12s** - Notch Simper state variable filter (12dB)
+- **PK 12s** - Peak Simper state variable filter (12dB)
 
 For a more colored filter reach for the Stilson/Moog filter with a 24dB
 fall off per octave. Beware high cutoff frequencies for this filter,
 as it can become quite unstable.
 
-    LP 24m    - Low-pass Stilson/Moog filter (24dB)
+- **LP 24m** - Low-pass Stilson/Moog filter (24dB)
 
 "#;
 }
