@@ -130,10 +130,11 @@ impl DspNode for Ad {
             let ashp = denorm::Ad::ashp(atk_shape, frame).clamp(0.0, 1.0);
 
             if self.state.is_running() {
-                env_target_stage!(
+                env_target_stage_lin_time_adj!(
                     self.state,
                     0,
                     atk_ms,
+                    0.0,
                     1.0,
                     |x: f32| sqrt4_to_pow4(x.clamp(0.0, 1.0), ashp),
                     {
