@@ -5,6 +5,7 @@
 This allows to get a more linear FM sound from that oscillator.
 * Change: Changed `Ad` envelope node to be properly retriggerable. Refactored
 out it's DSP code to `synfx_dsp::EnvRetrigAD`.
+* Feature: Added `Matrix::load_patch_from_mem` and `Matrix::save_patch_to_mem`.
 
 0.2.0 (2022-08-28)
 ==================
