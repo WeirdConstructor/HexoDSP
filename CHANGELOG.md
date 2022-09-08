@@ -3,6 +3,8 @@
 
 * Feature: Added PM input to the Sin node for phase modulation/distortion.
 This allows to get a more linear FM sound from that oscillator.
+* Change: Changed `Ad` envelope node to be properly retriggerable. Refactored
+out it's DSP code to `synfx_dsp::EnvRetrigAD`.
 
 0.2.0 (2022-08-28)
 ==================

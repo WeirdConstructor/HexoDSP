@@ -296,6 +296,12 @@ impl MatrixRepr {
         Self { cells, params, atoms, patterns, block_funs, properties, version: 2 }
     }
 
+    pub fn write_to_mem(&mut self) -> Vec<u8> {
+        let mut ser = self.serialize();
+        ser.push('\n');
+        ser.as_bytes().to_vec()
+    }
+
     pub fn write_to_file(&mut self, filepath: &str) -> std::io::Result<()> {
         use std::fs::OpenOptions;
         use std::io::prelude::*;
@@ -311,6 +317,11 @@ impl MatrixRepr {
         std::fs::rename(&tmp_filepath, &filepath)?;
 
         Ok(())
+    }
+
+    pub fn read_from_mem(data: &[u8]) -> Result<MatrixRepr, MatrixDeserError> {
+        let s = std::str::from_utf8(data)?;
+        MatrixRepr::deserialize(s)
     }
 
     pub fn read_from_file(filepath: &str) -> Result<MatrixRepr, MatrixDeserError> {
@@ -495,6 +506,15 @@ impl MatrixRepr {
     }
 }
 
+pub fn load_patch_from_mem(
+    matrix: &mut crate::matrix::Matrix,
+    data: &[u8],
+) -> Result<(), MatrixDeserError> {
+    let mr = MatrixRepr::read_from_mem(data)?;
+    matrix.from_repr(&mr)?;
+    Ok(())
+}
+
 pub fn load_patch_from_file(
     matrix: &mut crate::matrix::Matrix,
     filepath: &str,
@@ -510,6 +530,11 @@ pub fn save_patch_to_file(
 ) -> std::io::Result<()> {
     let mut mr = matrix.to_repr();
     mr.write_to_file(filepath)
+}
+
+pub fn save_patch_to_mem(matrix: &mut crate::matrix::Matrix) -> Vec<u8> {
+    let mut mr = matrix.to_repr();
+    mr.write_to_mem()
 }
 
 #[cfg(test)]
@@ -556,7 +581,7 @@ mod tests {
         let s = mr.serialize();
 
         assert_eq!(s,
-            "{\"VERSION\":2,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"block_funs\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",440.0],[\"sin\",1,\"freq\",440.0],[\"sin\",2,\"freq\",220.0],[\"out\",0,\"gain\",1.0]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
+            "{\"VERSION\":2,\"atoms\":[[\"out\",0,\"mono\",[\"i\",0]]],\"block_funs\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"cells\":[[\"sin\",2,0,0,[-1,-1,-1],[-1,\"sig\",-1]],[\"out\",0,1,0,[-1,\"ch1\",-1],[-1,-1,-1]]],\"params\":[[\"out\",0,\"ch1\",0.0],[\"out\",0,\"ch2\",0.0],[\"sin\",0,\"det\",0.0],[\"sin\",1,\"det\",0.0],[\"sin\",2,\"det\",0.0],[\"sin\",0,\"freq\",440.0],[\"sin\",1,\"freq\",440.0],[\"sin\",2,\"freq\",220.0],[\"out\",0,\"gain\",1.0],[\"sin\",0,\"pm\",0.0],[\"sin\",1,\"pm\",0.0],[\"sin\",2,\"pm\",0.0]],\"patterns\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],\"props\":[]}");
         let mut mr2 = MatrixRepr::deserialize(&s).unwrap();
 
         let s2 = mr2.serialize();

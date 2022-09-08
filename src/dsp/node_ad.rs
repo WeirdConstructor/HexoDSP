@@ -6,7 +6,7 @@ use crate::dsp::{
     DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use synfx_dsp::{env_target_stage, env_target_stage_lin_time_adj, sqrt4_to_pow4, EnvState, TrigSignal, Trigger};
+use synfx_dsp::{EnvRetrigAD, sqrt4_to_pow4};
 
 #[macro_export]
 macro_rules! fa_ad_mult {
@@ -24,14 +24,12 @@ macro_rules! fa_ad_mult {
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct Ad {
-    state: EnvState,
-    trig: Trigger,
-    trig_sig: TrigSignal,
+    env: EnvRetrigAD,
 }
 
 impl Ad {
     pub fn new(_nid: &NodeId) -> Self {
-        Self { state: EnvState::new(), trig: Trigger::new(), trig_sig: TrigSignal::new() }
+        Self { env: EnvRetrigAD::new() }
     }
     pub const inp: &'static str =
         "Signal input. If you don't connect this, and set this to **1.0** \
@@ -84,14 +82,11 @@ impl DspNode for Ad {
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        self.state.set_sample_rate(srate);
-        self.trig_sig.set_sample_rate(srate);
+        self.env.set_sample_rate(srate);
     }
 
     fn reset(&mut self) {
-        self.state.reset();
-        self.trig_sig.reset();
-        self.trig.reset();
+        self.env.reset();
     }
 
     #[inline]
@@ -122,50 +117,25 @@ impl DspNode for Ad {
         };
 
         for frame in 0..ctx.nframes() {
-            if self.trig.check_trigger(denorm::Ad::trig(trig, frame)) {
-                self.state.trigger();
-            }
-
+            let trigger_sig = denorm::Ad::trig(trig, frame);
             let atk_ms = mult * denorm::Ad::atk(atk, frame);
             let ashp = denorm::Ad::ashp(atk_shape, frame).clamp(0.0, 1.0);
+            let dcy_ms = mult * denorm::Ad::dcy(dcy, frame);
+            let dshp = 1.0 - denorm::Ad::dshp(dcy_shape, frame).clamp(0.0, 1.0);
 
-            if self.state.is_running() {
-                env_target_stage_lin_time_adj!(
-                    self.state,
-                    0,
-                    atk_ms,
-                    0.0,
-                    1.0,
-                    |x: f32| sqrt4_to_pow4(x.clamp(0.0, 1.0), ashp),
-                    {
-                        let dcy_ms = mult * denorm::Ad::dcy(dcy, frame);
-                        let dshp = 1.0 - denorm::Ad::dshp(dcy_shape, frame).clamp(0.0, 1.0);
-
-                        env_target_stage!(
-                            self.state,
-                            2,
-                            dcy_ms,
-                            0.0,
-                            |x: f32| sqrt4_to_pow4(x.clamp(0.0, 1.0), dshp),
-                            {
-                                self.trig_sig.trigger();
-                                self.state.stop_immediately();
-                            }
-                        );
-                    }
-                );
-            }
-
+            let (value, retrig_sig) = self.env.tick(trigger_sig, atk_ms, ashp, dcy_ms, dshp);
 
             let in_val = denorm::Ad::inp(inp, frame);
             let out = out::Ad::sig(outputs);
-            out.write(frame, in_val * self.state.current);
+            out.write(frame, in_val * value);
 
             let eoet = out::Ad::eoet(outputs);
-            eoet.write(frame, self.trig_sig.next());
+            eoet.write(frame, retrig_sig);
         }
 
-        ctx_vals[0].set(self.state.current as f32);
+        let last_frame = ctx.nframes() - 1;
+        let out = out::Ad::sig(outputs);
+        ctx_vals[0].set(out.read(last_frame));
     }
 
     fn graph_fun() -> Option<GraphFun> {
