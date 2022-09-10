@@ -944,6 +944,32 @@ macro_rules! define_exp6 {
     };
 }
 
+macro_rules! define_db {
+    ($n_id: ident $d_id: ident $r_id: ident $min: expr, $max: expr) => {
+        macro_rules! $n_id {
+            ($x: expr) => {
+                ((synfx_dsp::coef2gain_db($x) - ($min)) / ($max - ($min)) as f32).abs()
+            };
+        }
+        macro_rules! $d_id {
+            ($x: expr) => {{
+                synfx_dsp::gain_db2coef(($min) * (1.0 - $x) + $x * $max)
+            }};
+        }
+        macro_rules! $r_id {
+            ($x: expr, $coarse: expr) => {
+                if $coarse {
+                    let db = synfx_dsp::coef2gain_db($d_id!($x));
+                    $n_id!(synfx_dsp::gain_db2coef((db * 2.0).round() * 0.5))
+                } else {
+                    let db = synfx_dsp::coef2gain_db($d_id!($x));
+                    $n_id!(synfx_dsp::gain_db2coef((db * 10.0).round() * 0.1))
+                }
+            }
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! n_pit {
     ($x: expr) => {
@@ -1266,9 +1292,31 @@ macro_rules! f_det {
     }};
 }
 
+// Default formatting function
+macro_rules! f_db {
+    ($formatter: expr, $v: expr, $denorm_v: expr) => {
+        {
+            let db = synfx_dsp::coef2gain_db($denorm_v);
+            if db < -90.0 {
+                write!($formatter, "-Inf dB")
+            } else {
+                let db = synfx_dsp::coef2gain_db($denorm_v);
+                // snap to 0.00dB
+                let db = if db.abs() < 0.0001 { 0.0 } else { db };
+                write!($formatter, "{:5.2}dB", db)
+            }
+        }
+    };
+}
+
+
+//           norm  denorm  round min    max
+define_db!  {n_vol d_vol   r_vol -90.01,  6.0}
+define_db!  {n_gain d_gain r_gain -24.0, 24.0}
+define_db!  {n_driv d_driv r_driv 0.0, 40.0}
+
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
-define_exp! {n_gain d_gain 0.0, 2.0}
 define_exp! {n_xgin d_xgin 0.0, 10.0}
 define_exp! {n_att  d_att  0.0, 1.0}
 
@@ -1312,7 +1360,7 @@ macro_rules! node_list {
              //   name             denorm round format steps norm norm denorm
              //         norm_fun   fun    fun   fun    def   min  max  default
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (1 gain  n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (1 gain  n_gain     d_gain r_gain f_db   stp_d 0.0, 1.0, 1.0)
                (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
                {3 0 neg_att setting(1) mode fa_amp_neg_att 0  1}
                [0 sig],
@@ -1320,10 +1368,10 @@ macro_rules! node_list {
                (0 ch1   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 ch2   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (2 ch3   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (3 gain1 n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
-               (4 gain2 n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
-               (5 gain3 n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
-               (6 ogain n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (3 vol1  n_vol      d_vol  r_vol f_db   stp_d  0.0, 1.0, 1.0)
+               (4 vol2  n_vol      d_vol  r_vol f_db   stp_d  0.0, 1.0, 1.0)
+               (5 vol3  n_vol      d_vol  r_vol f_db   stp_d  0.0, 1.0, 1.0)
+               (6 ovol  n_vol      d_vol  r_vol f_db   stp_d  0.0, 1.0, 1.0)
                [0 sig],
             mux9 => Mux9 UIType::Generic UICategory::NtoM
                ( 0 slct    n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 0.0)
@@ -1430,7 +1478,7 @@ macro_rules! node_list {
                (2 d     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (3 v     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (4 vs    n_vps     d_vps r_vps f_defvlp stp_d  0.0, 1.0,   0.0)
-               (5 damt  n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.0)
+               (5 driv  n_driv     n_driv r_driv  f_db stp_d  0.0, 1.0,   1.0)
                {6 0 dist     setting(0) mode fa_distort 0 3}
                {7 1 ovrsmpl  setting(1) mode fa_vosc_ovrsmpl 0 1}
                [0 sig],
@@ -1507,13 +1555,13 @@ macro_rules! node_list {
                [1 sig2]
                [2 sig3],
             inp => Inp UIType::Generic UICategory::IOUtil
-               (0  gain n_ogin    d_ogin r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (0  vol  n_vol     d_vol  r_vol f_db   stp_d  0.0, 1.0, 1.0)
                [0 sig1]
                [1 sig2],
             out => Out UIType::Generic UICategory::IOUtil
                (0  ch1   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
                (1  ch2   n_id      d_id  r_id   f_def  stp_d -1.0, 1.0, 0.0)
-               (2  gain  n_ogin    d_ogin r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (2  vol   n_vol     d_vol r_vol  f_db   stp_d  0.0, 1.0, 1.0)
              // node_param_idx      UI widget type (mode, knob, sample)
              // | atom_idx          |     format fun
              // | | name constructor|     |     min max
@@ -1523,7 +1571,7 @@ macro_rules! node_list {
             fbwr => FbWr UIType::Generic UICategory::IOUtil
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0),
             fbrd => FbRd UIType::Generic UICategory::IOUtil
-               (0  atv   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (0  vol   n_vol     d_vol r_vol  f_db stp_d  0.0, 1.0, 1.0)
                [0 sig],
             scope => Scope UIType::Generic UICategory::IOUtil
                (0  in1   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
@@ -1535,9 +1583,9 @@ macro_rules! node_list {
                (6  off1  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (7  off2  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (8  off3  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (9  gain1 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
-               (10 gain2 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
-               (11 gain3 n_xgin   d_xgin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               (9  gain1 n_gain   d_gain r_gain f_db  stp_d 0.0, 1.0, 1.0)
+               (10 gain2 n_gain   d_gain r_gain f_db  stp_d 0.0, 1.0, 1.0)
+               (11 gain3 n_gain   d_gain r_gain f_db  stp_d 0.0, 1.0, 1.0)
                {12 0 tsrc  setting(0) mode fa_scope_tsrc 0 2},
             ad   => Ad   UIType::Generic UICategory::Mod
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)

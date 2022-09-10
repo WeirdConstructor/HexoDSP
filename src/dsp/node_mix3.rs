@@ -16,10 +16,10 @@ impl Mix3 {
     pub const ch1: &'static str = "Channel 1 Signal input";
     pub const ch2: &'static str = "Channel 2 Signal input";
     pub const ch3: &'static str = "Channel 3 Signal input";
-    pub const gain1: &'static str = "Channel 1 gain";
-    pub const gain2: &'static str = "Channel 2 gain";
-    pub const gain3: &'static str = "Channel 3 gain";
-    pub const ogain: &'static str = "Output gain of the sum";
+    pub const vol1: &'static str = "Channel 1 volume";
+    pub const vol2: &'static str = "Channel 2 volume";
+    pub const vol3: &'static str = "Channel 3 volume";
+    pub const ovol: &'static str = "Output volume of the sum";
     pub const sig: &'static str = "Mixed signal output";
     pub const DESC: &'static str = r#"3 Ch. Signal Mixer
 
@@ -31,7 +31,7 @@ You can mix anything, from audio signals to control signals.
 Just a small 3 channel mixer to create a sum of multiple signals.
 You can mix anything, from audio signals to control signals.
 
-There is even a convenient output gain knob,
+There is even a convenient output volume knob,
 to turn down the output.
 "#;
 }
@@ -60,17 +60,17 @@ impl DspNode for Mix3 {
         let inp1 = inp::Mix3::ch1(inputs);
         let inp2 = inp::Mix3::ch2(inputs);
         let inp3 = inp::Mix3::ch3(inputs);
-        let g1 = inp::Mix3::gain1(inputs);
-        let g2 = inp::Mix3::gain2(inputs);
-        let g3 = inp::Mix3::gain3(inputs);
-        let og = inp::Mix3::ogain(inputs);
+        let g1 = inp::Mix3::vol1(inputs);
+        let g2 = inp::Mix3::vol2(inputs);
+        let g3 = inp::Mix3::vol3(inputs);
+        let og = inp::Mix3::ovol(inputs);
         let out = out::Mix3::sig(outputs);
 
         for frame in 0..ctx.nframes() {
-            let sum = inp1.read(frame) * denorm::Mix3::gain1(g1, frame)
-                + inp2.read(frame) * denorm::Mix3::gain2(g2, frame)
-                + inp3.read(frame) * denorm::Mix3::gain3(g3, frame);
-            out.write(frame, sum * denorm::Mix3::ogain(og, frame));
+            let sum = inp1.read(frame) * denorm::Mix3::vol1(g1, frame)
+                + inp2.read(frame) * denorm::Mix3::vol2(g2, frame)
+                + inp3.read(frame) * denorm::Mix3::vol3(g3, frame);
+            out.write(frame, sum * denorm::Mix3::ovol(og, frame));
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));

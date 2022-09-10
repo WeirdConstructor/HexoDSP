@@ -33,8 +33,8 @@ impl Out {
 
     pub const mono: &'static str =
         "If set to **Mono**, ~~ch1~~ will be sent to both output channels.\n(UI only)";
-    pub const gain: &'static str =
-        "The main gain of the synthesizer output, applied to all channels. \
+    pub const vol: &'static str =
+        "The main volume of the synthesizer output, applied to all channels. \
         Please note that this is a linear control, to prevent inaccuracies for **1.0**. \
         ";
     pub const ch1: &'static str = "Audio channel 1 (left)";
@@ -72,21 +72,21 @@ impl DspNode for Out {
         ctx_vals: LedPhaseVals,
     ) {
         let in1 = inp::Out::ch1(inputs);
-        let gain = inp::Out::gain(inputs);
+        let vol = inp::Out::vol(inputs);
 
         if at::Out::mono(atoms).i() > 0 {
             for frame in 0..ctx.nframes() {
-                let gain = denorm::Out::gain(gain, frame);
-                ctx.output(0, frame, gain * in1.read(frame));
-                ctx.output(1, frame, gain * in1.read(frame));
+                let vol = denorm::Out::vol(vol, frame);
+                ctx.output(0, frame, vol * in1.read(frame));
+                ctx.output(1, frame, vol * in1.read(frame));
             }
         } else {
             let in2 = inp::Out::ch2(inputs);
 
             for frame in 0..ctx.nframes() {
-                let gain = denorm::Out::gain(gain, frame);
-                ctx.output(0, frame, gain * in1.read(frame));
-                ctx.output(1, frame, gain * in2.read(frame));
+                let vol = denorm::Out::vol(vol, frame);
+                ctx.output(0, frame, vol * in1.read(frame));
+                ctx.output(1, frame, vol * in2.read(frame));
             }
         }
 

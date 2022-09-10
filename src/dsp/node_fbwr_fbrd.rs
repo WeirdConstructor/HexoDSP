@@ -80,7 +80,7 @@ impl FbRd {
     pub fn new(nid: &NodeId) -> Self {
         Self { fb_index: nid.instance() as u8 }
     }
-    pub const atv: &'static str = "Attenuate or invert input.\n\
+    pub const vol: &'static str = "Volume of the input.\n\
          Use this to adjust the feedback amount.";
     pub const sig: &'static str = "Feedback signal output.";
 
@@ -104,8 +104,8 @@ inputs.
 The delay is always **3.14ms**, regardless of the sampling rate the synthesizer
 is running at.
 
-The ~~atv~~ parameter is a convenience parameter to allow attenuating or
-even inverting the signal.
+The ~~vol~~ parameter is a convenience parameter to allow to control the
+volume of the feedback.
 "#;
 }
 
@@ -130,13 +130,13 @@ impl DspNode for FbRd {
     ) {
         use crate::dsp::{denorm, inp, out};
 
-        let atv = inp::FbRd::atv(inputs);
+        let vol = inp::FbRd::vol(inputs);
         let sig = out::FbRd::sig(outputs);
 
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {
             last_val = ectx.feedback_delay_buffers[self.fb_index as usize].read();
-            last_val *= denorm::FbRd::atv(atv, frame);
+            last_val *= denorm::FbRd::vol(vol, frame);
             sig.write(frame, last_val);
         }
 

@@ -16,8 +16,8 @@ impl Inp {
         Self {}
     }
 
-    pub const gain: &'static str =
-        "The gain of the two plugin input ports, applied to all channels. \
+    pub const vol: &'static str =
+        "The volume of the two plugin input ports, applied to all channels. \
         Please note that this is a linear control, to prevent inaccuracies for **1.0**. \
         ";
     pub const sig1: &'static str = "Audio input channel 1 (left)";
@@ -55,7 +55,7 @@ impl DspNode for Inp {
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        let gain = inp::Inp::gain(inputs);
+        let vol = inp::Inp::vol(inputs);
 
         let sig_i = out_idx::Inp::sig2();
         let (sig1, sig2) = outputs.split_at_mut(sig_i);
@@ -63,9 +63,9 @@ impl DspNode for Inp {
         let sig2 = &mut sig2[0];
 
         for frame in 0..ctx.nframes() {
-            let gain = denorm::Inp::gain(gain, frame);
-            sig1.write(frame, gain * ctx.input(0, frame));
-            sig2.write(frame, gain * ctx.input(1, frame));
+            let vol = denorm::Inp::vol(vol, frame);
+            sig1.write(frame, vol * ctx.input(0, frame));
+            sig2.write(frame, vol * ctx.input(1, frame));
         }
 
         let last_val = sig1.read(ctx.nframes() - 1);
