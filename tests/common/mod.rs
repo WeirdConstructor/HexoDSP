@@ -320,7 +320,7 @@ pub fn collect_signal_changes(inp: &[f32], thres: i64) -> Vec<(usize, i64)> {
     let mut last_sig = 0.0;
     for i in 0..inp.len() {
         if (inp[i] - last_sig).abs() > 0.1 {
-            idxs.push((i, (inp[i] * 100.0).floor() as i64));
+            idxs.push((i, (inp[i] * 100.0).round() as i64));
             last_sig = inp[i];
         }
     }
@@ -341,7 +341,7 @@ pub fn collect_signal_changes_both_edges(inp: &[f32], thres: i64) -> Vec<(usize,
     let mut last_sig = 0.0;
     for i in 0..inp.len() {
         if (inp[i] - last_sig).abs() > 0.1 {
-            idxs.push((i, ((inp[i] - last_sig) * 100.0).floor() as i64));
+            idxs.push((i, ((inp[i] - last_sig) * 100.0).round() as i64));
             last_sig = inp[i];
         }
     }
@@ -362,7 +362,7 @@ pub fn collect_signal_changes_flt(inp: &[f32], delta: f32) -> Vec<(usize, f32)> 
     let mut last_sig = 0.0;
     for i in 0..inp.len() {
         if (inp[i] - last_sig).abs() > delta {
-            idxs.push((i, inp[i]));
+            idxs.push((i, (inp[i] * 1000.0).round() / 1000.0));
             last_sig = inp[i];
         }
     }

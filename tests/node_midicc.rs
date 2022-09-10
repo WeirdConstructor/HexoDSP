@@ -42,7 +42,7 @@ fn check_node_midicc_test_receive() {
     );
 
     let changes = collect_signal_changes(&ch1[..], 0);
-    assert_eq!(changes, &[(5, 55), (100, 35), (120, 15), (190, 5)]);
+    assert_eq!(changes, &[(5, 55), (100, 35), (120, 15)]);
 
     let changes = collect_signal_changes(&ch2[..], 0);
     assert_eq!(changes, &[(3, 155), (200, 115)]);

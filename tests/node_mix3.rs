@@ -46,15 +46,15 @@ fn check_node_mix3_1() {
     );
 
     pset_d(&mut matrix, amp_1, "inp", 0.200);
-    pset_d(&mut matrix, mix3_1, "gain2", 0.2); // 0.04
+    pset_d(&mut matrix, mix3_1, "vol2", 0.2); // 0.04
 
     pset_d(&mut matrix, amp_2, "inp", -0.300);
-    pset_d(&mut matrix, mix3_1, "gain1", 0.1); // -0.03
+    pset_d(&mut matrix, mix3_1, "vol1", 0.1); // -0.03
 
     pset_d(&mut matrix, amp_3, "inp", 0.500);
-    pset_d(&mut matrix, mix3_1, "gain3", 0.5); // 0.25
+    pset_d(&mut matrix, mix3_1, "vol3", 0.5); // 0.25
 
-    pset_d(&mut matrix, mix3_1, "ogain", 1.0);
+    pset_d(&mut matrix, mix3_1, "ovol", 1.0);
     matrix.sync().unwrap();
 
     // hexodsp::save_patch_to_file(&mut matrix, "check_matrix_ser_mix3.hxy")
@@ -64,7 +64,7 @@ fn check_node_mix3_1() {
     // The sum is 0.26
     assert_float_eq!(res.0[100], 0.26);
 
-    pset_d_wait(&mut matrix, &mut node_exec, mix3_1, "gain1", 1.0);
+    pset_d_wait(&mut matrix, &mut node_exec, mix3_1, "vol1", 1.0);
 
     let res = run_for_ms(&mut node_exec, 25.0);
     // The sum is now (0.25 + 0.04) - 0.3 == -0.01

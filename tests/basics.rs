@@ -597,7 +597,7 @@ fn check_matrix_amp() {
     let gain_param = amp.inp_param("gain").unwrap();
 
     matrix.set_param(att_param, SAtom::param(1.0));
-    matrix.set_param(gain_param, SAtom::param(0.5));
+    matrix.set_param(gain_param, SAtom::param(gain_param.norm(0.5)));
     let (rms, min, max) = run_and_get_l_rms_mimax(&mut node_exec, 50.0);
     assert_float_eq!(rms, 0.12499);
     assert_float_eq!(min, -0.5);
@@ -973,7 +973,7 @@ fn check_matrix_output_feedback() {
     matrix.sync().unwrap();
 
     let gain_p = amp.inp_param("gain").unwrap();
-    matrix.set_param(gain_p, SAtom::param(0.25));
+    matrix.set_param(gain_p, SAtom::param(gain_p.norm(0.125)));
 
     for _ in 0..10 {
         node_exec.test_run(0.11, true, &[]);

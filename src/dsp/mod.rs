@@ -74,7 +74,7 @@ A `node_list` macro entry looks like this:
      //   name             denorm round format steps norm norm denorm
      //         norm_fun   fun    fun   fun    def   min  max  default
        (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-       (1 gain  n_gain     d_gain r_id  f_def  stp_d  0.0, 1.0, 1.0)
+       (1 gain  n_gain     d_gain r_gain f_db  stp_d  0.0, 1.0, 1.0)
        (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
      // node_param_idx      UI widget type (mode, knob, sample)
      // | atom_idx          |     format fun
@@ -1311,13 +1311,12 @@ macro_rules! f_db {
 
 
 //           norm  denorm  round min    max
-define_db!  {n_vol d_vol   r_vol -90.01,  6.0}
+define_db!  {n_vol d_vol   r_vol -90.01, 18.0}
 define_db!  {n_gain d_gain r_gain -24.0, 24.0}
 define_db!  {n_driv d_driv r_driv 0.0, 40.0}
 
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
-define_exp! {n_xgin d_xgin 0.0, 10.0}
 define_exp! {n_att  d_att  0.0, 1.0}
 
 define_exp! {n_declick d_declick 0.0, 50.0}
@@ -1331,10 +1330,6 @@ define_exp! {n_timz d_timz 0.0,  5000.0}
 
 // Special linear gain factor for the Out node, to be able
 // to reach more exact "1.0".
-define_lin! {n_ogin d_ogin 0.0, 2.0}
-
-define_lin! {n_pgin d_pgin 1.0, 10.0}
-
 define_lin! {n_vps d_vps 0.0, 20.0}
 
 // A note about the input-indicies:
@@ -1360,7 +1355,7 @@ macro_rules! node_list {
              //   name             denorm round format steps norm norm denorm
              //         norm_fun   fun    fun   fun    def   min  max  default
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
-               (1 gain  n_gain     d_gain r_gain f_db   stp_d 0.0, 1.0, 1.0)
+               (1 gain  n_gain     d_gain r_gain f_db  stp_d  0.0, 1.0, 1.0)
                (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
                {3 0 neg_att setting(1) mode fa_amp_neg_att 0  1}
                [0 sig],
@@ -1478,7 +1473,7 @@ macro_rules! node_list {
                (2 d     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (3 v     n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
                (4 vs    n_vps     d_vps r_vps f_defvlp stp_d  0.0, 1.0,   0.0)
-               (5 driv  n_driv     n_driv r_driv  f_db stp_d  0.0, 1.0,   1.0)
+               (5 damt  n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.0)
                {6 0 dist     setting(0) mode fa_distort 0 3}
                {7 1 ovrsmpl  setting(1) mode fa_vosc_ovrsmpl 0 1}
                [0 sig],
@@ -1651,7 +1646,7 @@ macro_rules! node_list {
                (0 inp    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1 freq   n_pit     d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 1000.0)
                (2 q      n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
-               (3 gain   n_ogin   d_ogin r_id   f_def stp_d 0.0, 1.0, 1.0)
+               (3 gain   n_gain   d_gain r_gain f_db stp_d 0.0, 1.0, 1.0)
                {4 0 ftype setting(0) mode fa_biqfilt_type 0 1}
                {5 1 order setting(0) mode fa_biqfilt_ord  0 3}
                [0 sig],

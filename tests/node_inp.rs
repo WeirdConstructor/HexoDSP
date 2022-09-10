@@ -25,21 +25,21 @@ fn check_node_inp_1() {
 }
 
 #[test]
-fn check_node_inp_gain() {
+fn check_node_inp_vol() {
     let (node_conf, mut node_exec) = new_node_engine();
     let mut matrix = Matrix::new(node_conf, 3, 3);
 
     let mut chain = MatrixCellChain::new(CellDir::B);
     chain
         .node_out("inp", "sig1")
-        .set_denorm("gain", 0.5)
+        .set_denorm("vol", 0.5)
         .node_inp("out", "ch1")
         .place(&mut matrix, 0, 0)
         .unwrap();
     let mut chain = MatrixCellChain::new(CellDir::B);
     chain
         .node_out("inp", "sig2")
-        .set_denorm("gain", 0.5)
+        .set_denorm("vol", 0.5)
         .node_inp("out", "ch2")
         .place(&mut matrix, 1, 0)
         .unwrap();

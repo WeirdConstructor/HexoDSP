@@ -60,7 +60,7 @@ impl VOsc {
         you will hear formant like sounds from the oscillator. Try adjusting \
         ~~d~~ to move the formants around.";
     pub const dist: &'static str = "A collection of waveshaper/distortions to choose from.";
-    pub const driv: &'static str = "Distortion drive.";
+    pub const damt: &'static str = "Distortion amount.";
     pub const ovrsmpl: &'static str = "Enable/Disable oversampling.";
     pub const sig: &'static str = "Oscillator output";
     pub const DESC: &'static str = r#"V Oscillator
@@ -112,7 +112,7 @@ impl DspNode for VOsc {
         let d = inp::VOsc::d(inputs);
         let v = inp::VOsc::v(inputs);
         let vs = inp::VOsc::vs(inputs);
-        let driv = inp::VOsc::driv(inputs);
+        let damt = inp::VOsc::damt(inputs);
         let out = out::VOsc::sig(outputs);
         let ovrsmpl = at::VOsc::ovrsmpl(atoms);
         let dist = at::VOsc::dist(atoms);
@@ -130,14 +130,14 @@ impl DspNode for VOsc {
                 let v = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
                 let d = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
                 let vs = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
-                let driv = denorm::VOsc::driv(driv, frame).clamp(0.0, 1.0);
+                let damt = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
 
                 let v = VPSOscillator::limit_v(d, v + vs);
 
                 let overbuf = self.oversampling.resample_buffer();
                 for b in overbuf {
                     let s = osc.next(freq, israte, d, v);
-                    *b = apply_distortion(s, driv, dist);
+                    *b = apply_distortion(s, damt, dist);
                 }
 
                 out.write(frame, self.oversampling.downsample());
@@ -148,11 +148,11 @@ impl DspNode for VOsc {
                 let v = denorm::VOsc::v(v, frame).clamp(0.0, 1.0);
                 let d = denorm::VOsc::d(d, frame).clamp(0.0, 1.0);
                 let vs = denorm::VOsc::vs(vs, frame).clamp(0.0, 20.0);
-                let driv = denorm::VOsc::driv(driv, frame).clamp(0.0, 1.0);
+                let damt = denorm::VOsc::damt(damt, frame).clamp(0.0, 1.0);
 
                 let v = VPSOscillator::limit_v(d, v + vs);
                 let s = osc.next(freq, israte * (OVERSAMPLING as f32), d, v);
-                let s = apply_distortion(s, driv, dist);
+                let s = apply_distortion(s, damt, dist);
 
                 out.write(frame, s);
             }
@@ -173,18 +173,18 @@ impl DspNode for VOsc {
             let v = NodeId::VOsc(0).inp_param("v").unwrap().inp();
             let vs = NodeId::VOsc(0).inp_param("vs").unwrap().inp();
             let d = NodeId::VOsc(0).inp_param("d").unwrap().inp();
-            let driv = NodeId::VOsc(0).inp_param("driv").unwrap().inp();
+            let damt = NodeId::VOsc(0).inp_param("damt").unwrap().inp();
             let dist = NodeId::VOsc(0).inp_param("dist").unwrap().inp();
 
             let v = gd.get_denorm(v as u32).clamp(0.0, 1.0);
             let d = gd.get_denorm(d as u32).clamp(0.0, 1.0);
             let vs = gd.get_denorm(vs as u32).clamp(0.0, 20.0);
-            let driv = gd.get_denorm(driv as u32);
+            let damt = gd.get_denorm(damt as u32);
             let dist = gd.get(dist as u32).map(|a| a.i()).unwrap_or(0);
 
             let v = VPSOscillator::limit_v(d, v + vs);
             let s = osc.next(1.0, israte, d, v);
-            let s = apply_distortion(s, driv, dist as u8);
+            let s = apply_distortion(s, damt, dist as u8);
 
             (s + 1.0) * 0.5
         }))

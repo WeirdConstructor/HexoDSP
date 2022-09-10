@@ -1,6 +1,14 @@
 0.2.1 (unreleased)
 ==================
 
+* Breaking Change: `Amp` gain knob got a more useful -24dB to 24dB range.
+* Breaking Change: `Mix3` gain knobs were replaced by volume knobs
+with proper dB range.
+* Breaking Change: `Inp` got a volume knob with proper dB range.
+* Breaking Change: `Out` got a volume knob with proper dB range.
+* Breaking Change: `FbRd` got a volume knob with proper dB range.
+* Breaking Change: `BigFilt` got also an output gain knob with dB range.
+* Breaking Change: `Scope` gain knobs now have a -24db to 24db range.
 * Feature: Added PM input to the Sin node for phase modulation/distortion.
 This allows to get a more linear FM sound from that oscillator.
 * Change: Changed `Ad` envelope node to be properly retriggerable. Refactored
