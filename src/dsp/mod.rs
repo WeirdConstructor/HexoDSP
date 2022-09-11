@@ -1303,11 +1303,11 @@ macro_rules! f_db {
     ($formatter: expr, $v: expr, $denorm_v: expr) => {{
         let db = synfx_dsp::coef2gain_db($denorm_v);
         if db < -89.90 {
-            write!($formatter, "-Inf dB")
+            write!($formatter, "-inf dB")
         } else {
             // snap to 0.00dB (not -0.00dB)
             let db = if db.abs() < 0.0001 { 0.0 } else { db };
-            write!($formatter, "{:4.1} dB", db)
+            write!($formatter, "{:+4.1}dB", db)
         }
     }};
 }
