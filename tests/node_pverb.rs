@@ -81,9 +81,9 @@ fn check_node_pverb_dcy_1() {
     //d// for s in &spec { println!("{:?}", s); }
 
     // We see the sine decaying with the AD envelope:
-    assert_eq!(spec[0], vec![(388, 42), (431, 120), (474, 82), (517, 6)]);
-    assert_eq!(spec[1], vec![(388, 32), (431, 92), (474, 63), (517, 5)]);
-    assert_eq!(spec[2], vec![(345, 5), (388, 12), (431, 16), (474, 14), (517, 8)]);
+    assert_eq!(spec[0], vec![(388, 44), (431, 123), (474, 84), (517, 6)]);
+    assert_eq!(spec[1], vec![(388, 35), (431, 99), (474, 68), (517, 5)]);
+    assert_eq!(spec[2], vec![(431, 5)]);
     assert_eq!(spec[3], vec![]);
 
     // Wet mix & clear out the reset in the tank:
@@ -125,10 +125,10 @@ fn check_node_pverb_dcy_1() {
     // 19 []
 
     // Now we see a very much longer tail:
-    assert_eq!(spec[0], vec![(388, 21), (431, 79), (474, 65), (517, 10)]);
-    assert_eq!(spec[5], vec![(388, 8), (431, 35), (474, 27), (517, 5)]);
-    assert_eq!(spec[9], vec![(388, 19), (431, 50), (474, 37), (517, 5)]);
-    assert_eq!(spec[19], vec![(388, 8), (431, 19), (474, 10)]);
+    assert_eq!(spec[0], vec![(388, 21), (431, 80), (474, 65), (517, 9)]);
+    assert_eq!(spec[5], vec![(431, 25), (474, 22)]);
+    assert_eq!(spec[9], vec![(388, 22), (431, 56), (474, 39), (517, 5)]);
+    assert_eq!(spec[19], vec![(388, 6), (431, 16), (474, 9)]);
 }
 
 #[test]
@@ -149,7 +149,7 @@ fn check_node_pverb_dcy_2() {
     assert_vec_feq!(
         rms_spec.iter().map(|rms| rms.0).collect::<Vec<f32>>(),
         // Decay over 500 ms:
-        vec![0.23928945, 0.5664783, 0.07564733, 0.0016927856, 0.0006737139]
+        vec![0.263493, 0.5664783, 0.069382906, 0.0018770096, 0.000680578]
     );
 }
 
@@ -172,7 +172,7 @@ fn check_node_pverb_dcy_3() {
     assert_vec_feq!(
         rms_spec.iter().map(|rms| rms.0).collect::<Vec<f32>>(),
         // Decay over 5000 ms:
-        vec![0.6168, 0.2924, 0.0640, 0.0385, 0.0191]
+        vec![0.6342092, 0.30604732, 0.06650744, 0.040495098, 0.019708129]
     );
 }
 
@@ -194,7 +194,7 @@ fn check_node_pverb_dcy_4() {
     assert_vec_feq!(
         rms_spec.iter().map(|rms| rms.0).collect::<Vec<f32>>(),
         // Decay over 10000 ms:
-        vec![0.1319, 0.1046, 0.0942, 0.0517, 0.0435,]
+        vec![0.1378, 0.1106, 0.0986, 0.0543, 0.0453,]
     );
 }
 
@@ -241,8 +241,8 @@ fn check_node_pverb_dif_on() {
     // 17 []
 
     // We expect a diffuse but defined response:
-    assert_eq!(spec[0], vec![(388, 9), (431, 38), (474, 36), (517, 7), (560, 6)]);
-    assert_eq!(spec[7], vec![(431, 15), (474, 19), (517, 6)]);
+    assert_eq!(spec[0], vec![(388, 10), (431, 39), (474, 37), (517, 7), (560, 6)]);
+    assert_eq!(spec[7], vec![(431, 15), (474, 18), (517, 5)]);
     assert_eq!(spec[13], vec![(388, 5), (431, 4)]);
     assert_eq!(spec[17], vec![]);
 }
@@ -295,13 +295,13 @@ fn check_node_pverb_dif_off() {
     assert_eq!(spec[0], vec![]);
     assert_eq!(
         spec[1],
-        vec![(301, 4), (345, 6), (388, 85), (431, 208), (474, 152), (517, 23), (560, 7)]
+        vec![(301, 4), (345, 6), (388, 90), (431, 219), (474, 160), (517, 24), (560, 8)]
     );
     assert_eq!(spec[2], vec![]);
-    assert_eq!(spec[3], vec![(345, 7), (388, 79), (431, 198), (474, 134), (517, 16), (560, 5)]);
+    assert_eq!(spec[3], vec![(345, 6), (388, 85), (431, 210), (474, 141), (517, 16), (560, 4)]);
     assert_eq!(spec[7], vec![]);
-    assert_eq!(spec[8], vec![(388, 6), (431, 17), (474, 11)]);
-    assert_eq!(spec[9], vec![(388, 7), (431, 20), (474, 13)]);
+    assert_eq!(spec[8], vec![(388, 7), (431, 18), (474, 12)]);
+    assert_eq!(spec[9], vec![(388, 8), (431, 22), (474, 15)]);
     assert_eq!(spec[10], vec![]);
     assert_eq!(spec[17], vec![]);
     assert_eq!(spec[19], vec![]);
@@ -355,10 +355,10 @@ fn check_node_pverb_dif_off_predly() {
             (215, 5),
             (301, 11),
             (345, 14),
-            (388, 46),
-            (431, 104),
-            (474, 86),
-            (517, 17),
+            (388, 47),
+            (431, 106),
+            (474, 87),
+            (517, 18),
             (560, 15),
             (603, 5)
         ]

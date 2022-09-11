@@ -154,7 +154,7 @@ impl DspNode for Mux9 {
 
         if nctx.in_connected & 0x1 == 0x1 {
             for frame in 0..ctx.nframes() {
-                self.idx = (max as f32 * denorm::Mux9::slct(slct, frame)).floor() as u8 % max;
+                self.idx = (max as f32 * (denorm::Mux9::slct(slct, frame) - 0.00001)).floor() as u8 % max;
 
                 out.write(
                     frame,

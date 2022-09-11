@@ -1305,7 +1305,7 @@ macro_rules! f_db {
         if db < -89.90 {
             write!($formatter, "-Inf dB")
         } else {
-            // snap to 0.00dB
+            // snap to 0.00dB (not -0.00dB)
             let db = if db.abs() < 0.0001 { 0.0 } else { db };
             write!($formatter, "{:4.1} dB", db)
         }
