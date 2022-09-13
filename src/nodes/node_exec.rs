@@ -18,12 +18,12 @@ use std::io::Write;
 use ringbuf::{Consumer, Producer};
 use std::sync::Arc;
 
-use core::arch::x86_64::{
-    _MM_FLUSH_ZERO_ON,
+//use core::arch::x86_64::{
+//    _MM_FLUSH_ZERO_ON,
     //    _MM_FLUSH_ZERO_OFF,
-    _MM_SET_FLUSH_ZERO_MODE,
+//    _MM_SET_FLUSH_ZERO_MODE,
     //    _MM_GET_FLUSH_ZERO_MODE
-};
+//};
 
 pub const MAX_MIDI_NOTES_PER_BLOCK: usize = 512;
 pub const MAX_MIDI_CC_PER_BLOCK: usize = 1024;
@@ -325,9 +325,9 @@ impl NodeExecutor {
                 GraphMessage::NewProg { prog, copy_old_out } => {
                     let mut prev_prog = std::mem::replace(&mut self.prog, prog);
 
-                    unsafe {
-                        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-                    }
+//                    unsafe {
+//                        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+//                    }
 
                     self.monitor_signal_cur_inp_indices = [UNUSED_MONITOR_IDX; MON_SIG_CNT];
 
