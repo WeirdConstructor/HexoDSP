@@ -45,13 +45,20 @@ impl Noise {
     pub const DESC: &'static str = r#"Noise Oscillator
 
 This is a very simple noise oscillator, which can be used for any kind of audio rate noise.
-And as a source for sample & hold like nodes to generate low frequency modulation.
+And as a source for sample & hold like nodes to generate low frequency modulation. The white
+noise is uniformly distributed and not normal distributed (which could be a bit more natural
+in some contexts). See also the `XNoise` node for more noise alternatives.
 "#;
     pub const HELP: &'static str = r#"A Simple Noise Oscillator
 
 This is a very simple noise oscillator, which can be used for
 any kind of audio rate noise. And as a source for sample & hold
 like nodes to generate low frequency modulation.
+
+The noise follows a uniform distribution. That means all amplitudes are equally likely to occur.
+While it might sound similar, white noise is usually following a normal distribution, which makes
+some amplitudes more likely to occur than others.
+See also the `XNoise` node for more noise alternatives.
 
 The ~~atv~~ attenuverter and ~~offs~~ parameters control the value range
 of the noise, and the ~~mode~~ allows to switch the oscillator between
