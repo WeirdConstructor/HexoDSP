@@ -244,27 +244,20 @@ impl DspNode for FVaFilt {
             let params = Arc::get_mut_unchecked(&mut self.params);
             params.set_frequency(denorm::FVaFilt::freq(freq, 0));
             params.set_resonance(denorm::FVaFilt::res(res, 0));
-            params.drive = denorm::FVaFilt::drive(drive, 0);
+            params.drive = 1.0 + 15.0 * denorm::FVaFilt::drive(drive, 0);
         };
-        println!("PARAMS: {:#?}", self.params);
+
         for frame in 0..ctx.nframes() {
             // TODO: Read in second channel!
             let vframe = f32x4::from_array([denorm::FVaFilt::inp(inp, frame), 0.0, 0.0, 0.0]);
-            //            let input = [vframe, f32x4::splat(0.)];
+            let input = [vframe, f32x4::splat(0.)];
             let mut output = f32x4::splat(0.);
 
-            //            for i in 0..2 {
-            //                let vframe = self.oversample.0.process(f32x4::splat(2.) * input[i]);
-            //                let out = self.ladder.tick_newton(vframe);
-            if frame == 0 {
-                println!("VFRAME={:?}", vframe);
+            for i in 0..2 {
+                let vframe = self.oversample.0.process(f32x4::splat(2.) * input[i]);
+                let out = self.ladder.tick_newton(vframe);
+                output = self.oversample.1.process(out);
             }
-            output = self.ladder.tick_newton(vframe);
-            if frame == 0 {
-                println!("OUTPUT={:?}", output);
-            }
-            //                output = self.oversample.1.process(out);
-            //            }
 
             let output = output.as_array();
             // TODO: Add output[1] to second output!
