@@ -547,6 +547,8 @@ mod node_tseq;
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
+#[allow(non_upper_case_globals)]
+mod node_fvafilt;
 
 mod satom;
 pub mod tracker;
@@ -589,6 +591,9 @@ use crate::fa_smap_mode;
 use crate::fa_test_s;
 use crate::fa_tseq_cmode;
 use crate::fa_vosc_ovrsmpl;
+use crate::fa_fvafilt_type;
+use crate::fa_fvafilt_lslope;
+use crate::fa_fvafilt_svf_mode;
 use synfx_dsp::fa_distort;
 
 use node_ad::Ad;
@@ -630,6 +635,7 @@ use node_test::Test;
 use node_tseq::TSeq;
 use node_tslfo::TsLFO;
 use node_vosc::VOsc;
+use node_fvafilt::FVaFilt;
 
 pub const MIDI_MAX_FREQ: f32 = 13289.75;
 
@@ -1643,6 +1649,15 @@ macro_rules! node_list {
                (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
                (2  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
                {3 0 ftype setting(8) mode fa_sfilter_type 0 13}
+               [0 sig],
+            vfafilt => FVaFilt UIType::Generic UICategory::Signal
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
+               (2  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
+               (3 drive  n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.0)
+               {4 0 ftype setting(8) mode fa_fvafilt_type 0 2}
+               {5 1 smode setting(8) mode fa_fvafilt_svf_mode 0 4}
+               {6 2 lslope setting(8) mode fa_fvafilt_lslope 0 3}
                [0 sig],
             biqfilt => BiqFilt UIType::Generic UICategory::Signal
                (0 inp    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)

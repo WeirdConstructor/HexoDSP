@@ -314,6 +314,9 @@ projects and authors, I can't relicense it.
 
 */
 
+#![feature(portable_simd)]
+#![feature(get_mut_unchecked)]
+
 pub mod cell_dir;
 pub mod chain_builder;
 #[allow(unused_macros, non_snake_case)]
