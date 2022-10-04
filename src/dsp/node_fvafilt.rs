@@ -242,9 +242,10 @@ impl DspNode for FVaFilt {
 
         unsafe {
             let params = Arc::get_mut_unchecked(&mut self.params);
-            params.set_frequency(denorm::FVaFilt::freq(freq, 0));
-            params.set_resonance(denorm::FVaFilt::res(res, 0));
-            params.drive = 1.0 + 15.0 * denorm::FVaFilt::drive(drive, 0);
+            params.set_frequency(denorm::FVaFilt::freq(freq, 0).clamp(1.0, 20000.0));
+            params.set_resonance(denorm::FVaFilt::res(res, 0).clamp(0.0, 1.0));
+            params.drive = denorm::FVaFilt::drive(drive, 0).max(0.0);
+            println!("DRIVE={}", params.drive);
             params.slope = match lslope {
                 0 => LadderSlope::LP6,
                 1 => LadderSlope::LP12,

@@ -1654,7 +1654,7 @@ macro_rules! node_list {
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
                (2  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
-               (3 drive  n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.0)
+               (3 drive n_driv     d_driv r_driv f_db  stp_v  0.0, 1.0, 0.0)
                {4 0 ftype setting(8) mode fa_fvafilt_type 0 2}
                {5 1 smode setting(8) mode fa_fvafilt_svf_mode 0 4}
                {6 2 lslope setting(8) mode fa_fvafilt_lslope 0 3}
