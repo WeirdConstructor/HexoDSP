@@ -60,7 +60,7 @@ pub struct FVaFilt {
 }
 
 impl FVaFilt {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId) -> Self {
         let params = Arc::new(FilterParams::new());
         Self {
             ladder: Box::new(LadderFilter::new(params.clone())),
@@ -205,7 +205,8 @@ impl DspNode for FVaFilt {
     fn set_sample_rate(&mut self, srate: f32) {
         unsafe {
             let mut params = Arc::get_mut_unchecked(&mut self.params);
-            params.set_sample_rate(srate);
+            // TODO: Set oversampling dependent on the sample rate, and not pass 2.0*sr here!
+            params.set_sample_rate(srate * 2.0);
         }
     }
     fn reset(&mut self) {
@@ -245,7 +246,7 @@ impl DspNode for FVaFilt {
             params.set_frequency(denorm::FVaFilt::freq(freq, 0).clamp(1.0, 20000.0));
             params.set_resonance(denorm::FVaFilt::res(res, 0).clamp(0.0, 1.0));
             params.drive = denorm::FVaFilt::drive(drive, 0).max(0.0);
-            println!("DRIVE={}", params.drive);
+            //d// println!("DRIVE={}", params.drive);
             params.slope = match lslope {
                 0 => LadderSlope::LP6,
                 1 => LadderSlope::LP12,
@@ -255,8 +256,10 @@ impl DspNode for FVaFilt {
         };
 
         for frame in 0..ctx.nframes() {
+            let sig_l = denorm::FVaFilt::inp(inp, frame);
+
             // TODO: Read in second channel!
-            let vframe = f32x4::from_array([denorm::FVaFilt::inp(inp, frame), 0.0, 0.0, 0.0]);
+            let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
             let input = [vframe, f32x4::splat(0.)];
             let mut output = f32x4::splat(0.);
 
@@ -267,6 +270,7 @@ impl DspNode for FVaFilt {
             }
 
             let output = output.as_array();
+
             // TODO: Add output[1] to second output!
             out.write(frame, output[0]);
         }

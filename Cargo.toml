@@ -34,3 +34,6 @@ anyhow      = "1.0.58"
 path       = "src/lib.rs"
 name       = "hexodsp"
 crate-type = ["lib"]
+
+[patch.'https://github.com/WeirdConstructor/synfx-dsp.git']
+synfx-dsp = { path = "../synfx-dsp" }
