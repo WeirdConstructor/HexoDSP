@@ -6,7 +6,7 @@ use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use std::simd::f32x4;
 use std::sync::Arc;
-use synfx_dsp::fh_va::{FilterParams, LadderFilter, SallenKey, Svf};
+use synfx_dsp::fh_va::{FilterParams, LadderFilter, LadderSlope, SallenKey, Svf};
 use synfx_dsp::PolyIIRHalfbandFilter;
 
 #[macro_export]
@@ -245,6 +245,12 @@ impl DspNode for FVaFilt {
             params.set_frequency(denorm::FVaFilt::freq(freq, 0));
             params.set_resonance(denorm::FVaFilt::res(res, 0));
             params.drive = 1.0 + 15.0 * denorm::FVaFilt::drive(drive, 0);
+            params.slope = match lslope {
+                0 => LadderSlope::LP6,
+                1 => LadderSlope::LP12,
+                2 => LadderSlope::LP18,
+                _ => LadderSlope::LP24,
+            };
         };
 
         for frame in 0..ctx.nframes() {
