@@ -1321,7 +1321,7 @@ macro_rules! f_db {
 //          norm   denorm round  min     max
 define_db! {n_vol  d_vol  r_vol  -90.0,  18.0}
 define_db! {n_gain d_gain r_gain -24.0,  24.0}
-define_db! {n_driv d_driv r_driv   0.0,  40.0}
+define_db! {n_driv d_driv r_driv   0.0,  24.0}
 
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
@@ -1473,7 +1473,7 @@ macro_rules! node_list {
                (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)
                (1 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2,   0.0)
                (2 pw    n_id       n_id  r_id  f_def   stp_d  0.0, 1.0,   0.5)
-               {3 0 wtype setting(0) mode fa_bosc_wtype 0 3}
+               {3 0 wtype setting(0) mode fa_bosc_wtype 0 4}
                [0 sig],
             vosc => VOsc UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 440.0)

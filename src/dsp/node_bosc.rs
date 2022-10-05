@@ -16,6 +16,7 @@ macro_rules! fa_bosc_wtype {
             1 => "Tri",
             2 => "Saw",
             3 => "Pulse",
+            4 => "Pulse-DC",
             _ => "?",
         };
         write!($formatter, "{}", s)
@@ -47,7 +48,8 @@ impl BOsc {
           - **Sin**   - Sine Waveform\n\
           - **Tri**   - Triangle Waveform\n\
           - **Saw**   - Sawtooth Waveform\n\
-          - **Pulse** - Pulse Waveform with configurable pulse width";
+          - **Pulse** - Pulse Waveform with configurable pulse width\n\
+          - **Pulse-DC** - Pulse Waveform with configurable pulse width and DC correction";
     pub const sig: &'static str = "Oscillator output";
     pub const DESC: &'static str = r#"Basic Oscillator
 
@@ -118,12 +120,20 @@ impl DspNode for BOsc {
                     out.write(frame, self.osc.next_saw(freq, israte));
                 }
             }
-            3 | _ => {
+            3 => {
                 // pulse
                 for frame in 0..ctx.nframes() {
                     let freq = denorm_offs::BOsc::freq(freq, det.read(frame), frame);
                     let pw = denorm::BOsc::pw(pw, frame);
                     out.write(frame, self.osc.next_pulse_no_dc(freq, israte, pw));
+                }
+            }
+            _ => {
+                // pulse
+                for frame in 0..ctx.nframes() {
+                    let freq = denorm_offs::BOsc::freq(freq, det.read(frame), frame);
+                    let pw = denorm::BOsc::pw(pw, frame);
+                    out.write(frame, self.osc.next_pulse(freq, israte, pw));
                 }
             }
         }
@@ -165,7 +175,8 @@ impl DspNode for BOsc {
                 0 => (osc.next_sin(freq, israte) + 1.0) * 0.5,
                 1 => (osc.next_tri(freq, israte) + 1.0) * 0.5,
                 2 => (osc.next_saw(freq, israte) + 1.0) * 0.5,
-                3 | _ => (osc.next_pulse_no_dc(freq, israte, pw) + 1.0) * 0.5,
+                3 => (osc.next_pulse_no_dc(freq, israte, pw) + 1.0) * 0.5,
+                _ => (osc.next_pulse(freq, israte, pw) + 1.0) * 0.5,
             };
 
             s * 0.9 + 0.05

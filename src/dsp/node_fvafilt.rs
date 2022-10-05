@@ -55,7 +55,9 @@ macro_rules! fa_fvafilt_lslope {
 #[derive(Debug, Clone)]
 pub struct FVaFilt {
     params: Arc<FilterParams>,
+    old_params: Box<(f32, f32, f32)>,
     ladder: Box<LadderFilter>,
+    svf: Box<Svf>,
     oversample: Box<(PolyIIRHalfbandFilter, PolyIIRHalfbandFilter)>,
 }
 
@@ -64,7 +66,9 @@ impl FVaFilt {
         let params = Arc::new(FilterParams::new());
         Self {
             ladder: Box::new(LadderFilter::new(params.clone())),
+            svf: Box::new(Svf::new(params.clone())),
             params,
+            old_params: Box::new((0.0, 0.0, 0.0)),
             oversample: Box::new((
                 PolyIIRHalfbandFilter::new(8, true),
                 PolyIIRHalfbandFilter::new(8, true),
@@ -211,6 +215,7 @@ impl DspNode for FVaFilt {
     }
     fn reset(&mut self) {
         self.ladder.reset();
+        self.svf.reset();
         self.oversample =
             Box::new((PolyIIRHalfbandFilter::new(8, true), PolyIIRHalfbandFilter::new(8, true)));
     }
@@ -243,10 +248,6 @@ impl DspNode for FVaFilt {
 
         unsafe {
             let params = Arc::get_mut_unchecked(&mut self.params);
-            params.set_frequency(denorm::FVaFilt::freq(freq, 0).clamp(1.0, 20000.0));
-            params.set_resonance(denorm::FVaFilt::res(res, 0).clamp(0.0, 1.0));
-            params.drive = denorm::FVaFilt::drive(drive, 0).max(0.0);
-            //d// println!("DRIVE={}", params.drive);
             params.slope = match lslope {
                 0 => LadderSlope::LP6,
                 1 => LadderSlope::LP12,
@@ -255,24 +256,76 @@ impl DspNode for FVaFilt {
             };
         };
 
-        for frame in 0..ctx.nframes() {
-            let sig_l = denorm::FVaFilt::inp(inp, frame);
+        let mut oversample = self.oversample.as_mut();
+        let mut old_params = self.old_params.as_mut();
 
-            // TODO: Read in second channel!
-            let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
-            let input = [vframe, f32x4::splat(0.)];
-            let mut output = f32x4::splat(0.);
+        match ftype {
+            1 => {
+                let mut svf = self.svf.as_mut();
+                for frame in 0..ctx.nframes() {
+                    unsafe {
+                        let params = Arc::get_mut_unchecked(&mut self.params);
+                        let new_params =
+                            (denorm::FVaFilt::freq(freq, frame).clamp(1.0, 20000.0),
+                             denorm::FVaFilt::res(res, frame).clamp(0.0, 1.0),
+                             denorm::FVaFilt::drive(drive, frame).max(0.0));
+                        if new_params != *old_params {
+                            params.set_frequency(new_params.0);
+                            params.set_resonance(new_params.1);
+                            params.drive = new_params.2;
+                            svf.update();
+                            *old_params = new_params;
+                        }
+                    }
 
-            for i in 0..2 {
-                let vframe = self.oversample.0.process(f32x4::splat(2.) * input[i]);
-                let out = self.ladder.tick_newton(vframe);
-                output = self.oversample.1.process(out);
+                    let sig_l = denorm::FVaFilt::inp(inp, frame);
+
+                    // TODO: Read in second channel!
+                    let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
+                    let input = [vframe, f32x4::splat(0.)];
+                    let mut output = f32x4::splat(0.);
+
+                    for i in 0..2 {
+                        let vframe = oversample.0.process(f32x4::splat(2.) * input[i]);
+                        let out = svf.process(vframe);
+                        output = oversample.1.process(out);
+                    }
+
+                    let output = output.as_array();
+
+                    // TODO: Add output[1] to second output!
+                    out.write(frame, output[0]);
+                }
             }
+            _ => {
+                let mut ladder = self.ladder.as_mut();
+                for frame in 0..ctx.nframes() {
+                    unsafe {
+                        let params = Arc::get_mut_unchecked(&mut self.params);
+                        params.set_frequency(denorm::FVaFilt::freq(freq, frame).clamp(1.0, 20000.0));
+                        params.set_resonance(denorm::FVaFilt::res(res, frame).clamp(0.0, 1.0));
+                        params.drive = denorm::FVaFilt::drive(drive, frame).max(0.0);
+                    }
 
-            let output = output.as_array();
+                    let sig_l = denorm::FVaFilt::inp(inp, frame);
 
-            // TODO: Add output[1] to second output!
-            out.write(frame, output[0]);
+                    // TODO: Read in second channel!
+                    let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
+                    let input = [vframe, f32x4::splat(0.)];
+                    let mut output = f32x4::splat(0.);
+
+                    for i in 0..2 {
+                        let vframe = oversample.0.process(f32x4::splat(2.) * input[i]);
+                        let out = ladder.tick_newton(vframe);
+                        output = oversample.1.process(out);
+                    }
+
+                    let output = output.as_array();
+
+                    // TODO: Add output[1] to second output!
+                    out.write(frame, output[0]);
+                }
+            }
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
