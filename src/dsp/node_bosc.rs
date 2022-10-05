@@ -48,8 +48,8 @@ impl BOsc {
           - **Sin**   - Sine Waveform\n\
           - **Tri**   - Triangle Waveform\n\
           - **Saw**   - Sawtooth Waveform\n\
-          - **Pulse** - Pulse Waveform with configurable pulse width\n\
-          - **Pulse-DC** - Pulse Waveform with configurable pulse width and DC correction";
+          - **Pulse** - Pulse Waveform\n\
+          - **Pulse-DC** - Pulse Waveform (DC corrected)";
     pub const sig: &'static str = "Oscillator output";
     pub const DESC: &'static str = r#"Basic Oscillator
 
@@ -60,6 +60,11 @@ A very basic band limited oscillator with a sine, triangle, pulse and sawtooth w
 A very basic band limited oscillator with a sine, triangle, pulse and sawtooth
 waveform.  The pulse width ~~pw~~ parameter only has an effect for the
 **Pulse** waveform.
+
+There are two pulse waveforms: **Pulse** and **Pulse-DC**. Depending on the pulse width
+setting of the oscillator the output of the pulse might introduce DC (direct current) into
+the signal. The **Pulse-DC** variant compensates that DC component by shifting the signal,
+just like a high pass filter would do.
 "#;
 }
 
