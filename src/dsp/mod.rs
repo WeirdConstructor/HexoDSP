@@ -508,6 +508,8 @@ mod node_fbwr_fbrd;
 #[allow(non_upper_case_globals)]
 mod node_formfm;
 #[allow(non_upper_case_globals)]
+mod node_fvafilt;
+#[allow(non_upper_case_globals)]
 mod node_inp;
 #[allow(non_upper_case_globals)]
 mod node_map;
@@ -547,8 +549,6 @@ mod node_tseq;
 mod node_tslfo;
 #[allow(non_upper_case_globals)]
 mod node_vosc;
-#[allow(non_upper_case_globals)]
-mod node_fvafilt;
 
 mod satom;
 pub mod tracker;
@@ -573,6 +573,9 @@ use crate::fa_cqnt;
 use crate::fa_cqnt_omax;
 use crate::fa_cqnt_omin;
 use crate::fa_delay_mode;
+use crate::fa_fvafilt_lslope;
+use crate::fa_fvafilt_svf_mode;
+use crate::fa_fvafilt_type;
 use crate::fa_map_clip;
 use crate::fa_midicc_cc;
 use crate::fa_midip_chan;
@@ -591,9 +594,6 @@ use crate::fa_smap_mode;
 use crate::fa_test_s;
 use crate::fa_tseq_cmode;
 use crate::fa_vosc_ovrsmpl;
-use crate::fa_fvafilt_type;
-use crate::fa_fvafilt_lslope;
-use crate::fa_fvafilt_svf_mode;
 use synfx_dsp::fa_distort;
 
 use node_ad::Ad;
@@ -615,6 +615,7 @@ use node_ext::ExtF;
 use node_fbwr_fbrd::FbRd;
 use node_fbwr_fbrd::FbWr;
 use node_formfm::FormFM;
+use node_fvafilt::FVaFilt;
 use node_inp::Inp;
 use node_map::Map;
 use node_midicc::MidiCC;
@@ -635,7 +636,6 @@ use node_test::Test;
 use node_tseq::TSeq;
 use node_tslfo::TsLFO;
 use node_vosc::VOsc;
-use node_fvafilt::FVaFilt;
 
 pub const MIDI_MAX_FREQ: f32 = 13289.75;
 
@@ -1652,7 +1652,7 @@ macro_rules! node_list {
                [0 sig],
             vfafilt => FVaFilt UIType::Generic UICategory::Signal
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.5647131, 1000.0)
+               (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.55064, 1000.0)
                (2  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
                (3 drive n_driv     d_driv r_driv f_db  stp_v  0.0, 1.0, 1.0)
                {4 0 ftype setting(8) mode fa_fvafilt_type 0 2}
@@ -2280,7 +2280,9 @@ macro_rules! make_node_info_enum {
         #[allow(non_snake_case, unused_variables)]
         pub mod round {
             $(pub mod $variant {
-                $(#[inline] pub fn $para(x: f32, coarse: bool) -> f32 { $r_fun!(x, coarse) })*
+                $(#[inline] pub fn $para(x: f32, coarse: bool) -> f32 {
+                    $r_fun!(x, coarse).clamp($min, $max)
+                })*
             })+
         }
 

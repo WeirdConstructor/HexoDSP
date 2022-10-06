@@ -15,6 +15,8 @@ This allows to get a more linear FM sound from that oscillator.
 out it's DSP code to `synfx_dsp::EnvRetrigAD`.
 * Feature: Added `Matrix::load_patch_from_mem` and `Matrix::save_patch_to_mem`.
 * Feature: The `BOsc` node has now a pulse mode with DC correction.
+* Bugfix: The rounding of the parameters could snap outside the UI min/max range of that
+parameter. It's now clamped properly.
 
 0.2.0 (2022-08-28)
 ==================
