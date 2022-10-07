@@ -155,39 +155,40 @@ impl DspNode for Adsr {
     }
 
     fn graph_fun() -> Option<GraphFun> {
-        Some(Box::new(|gd: &dyn GraphAtomData, _init: bool, x: f32, xn: f32| -> f32 {
-            let atk_idx = NodeId::Adsr(0).inp_param("atk").unwrap().inp();
-            let dcy_idx = NodeId::Adsr(0).inp_param("dcy").unwrap().inp();
-            let ashp_idx = NodeId::Adsr(0).inp_param("ashp").unwrap().inp();
-            let dshp_idx = NodeId::Adsr(0).inp_param("dshp").unwrap().inp();
+        let mut params = EnvADSRParams::default();
+        let mut env = EnvRetrigADSR::new();
+        env.set_sample_rate(200.0);
 
-            let atk = gd.get_norm(atk_idx as u32);
-            let dcy = gd.get_norm(dcy_idx as u32);
-            let ashp = gd.get_denorm(ashp_idx as u32);
-            let dshp = gd.get_denorm(dshp_idx as u32);
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, x: f32, xn: f32| -> f32 {
+            if init {
+                let atk_idx = NodeId::Adsr(0).inp_param("atk").unwrap().inp();
+                let dcy_idx = NodeId::Adsr(0).inp_param("dcy").unwrap().inp();
+                let sus_idx = NodeId::Adsr(0).inp_param("sus").unwrap().inp();
+                let rel_idx = NodeId::Adsr(0).inp_param("rel").unwrap().inp();
+                let ashp_idx = NodeId::Adsr(0).inp_param("ashp").unwrap().inp();
+                let dshp_idx = NodeId::Adsr(0).inp_param("dshp").unwrap().inp();
+                let rshp_idx = NodeId::Adsr(0).inp_param("rshp").unwrap().inp();
 
-            let a = atk * 0.5;
-            let d = dcy * 0.5;
-            if x <= a {
-                if xn > a {
-                    1.0
-                } else if a < 0.0001 {
-                    0.0
-                } else {
-                    let delta = 1.0 - ((a - x) / a);
-                    sqrt4_to_pow4(delta, ashp)
-                }
-            } else if (x - a) <= d {
-                if d < 0.0001 {
-                    0.0
-                } else {
-                    let x = x - a;
-                    let delta = (d - x) / d;
-                    sqrt4_to_pow4(delta, dshp)
-                }
-            } else {
+                params.attack_ms = sq(gd.get_denorm(atk_idx as u32) / 1000.0) * 180.0;
+                params.attack_shape = gd.get_denorm(ashp_idx as u32);
+                params.decay_ms = sq(gd.get_denorm(dcy_idx as u32) / 1000.0) * 180.0;
+                params.decay_shape = 1.0 - gd.get_denorm(dshp_idx as u32).clamp(0.0, 1.0);
+                params.release_ms = sq(gd.get_denorm(rel_idx as u32) / 1000.0) * 180.0;
+                params.release_shape = 1.0 - gd.get_denorm(rshp_idx as u32).clamp(0.0, 1.0);
+                params.sustain = gd.get_denorm(sus_idx as u32).clamp(0.0, 1.0);
+
+                env.reset();
+
                 0.0
+            } else {
+
+                let gate = if x > 0.70 { 0.0 } else { 1.0 };
+
+                let (sig, _) = env.tick(gate, &mut params);
+                sig
             }
         }))
     }
 }
+
+fn sq(x: f32) -> f32 { x.powf(0.3) }
