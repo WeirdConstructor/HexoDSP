@@ -332,7 +332,7 @@ mod tests {
         );
         assert_eq!(
             format!("{:?}", matrix.get_param(&NodeId::Amp(0).inp_param("att").unwrap()).unwrap()),
-            "Param(0.70710677)"
+            "Param(0.5)"
         );
     }
 }

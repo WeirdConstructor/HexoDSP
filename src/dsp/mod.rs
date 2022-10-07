@@ -75,7 +75,7 @@ A `node_list` macro entry looks like this:
      //         norm_fun   fun    fun   fun    def   min  max  default
        (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
        (1 gain  n_gain     d_gain r_gain f_db  stp_v  0.0, 1.0, 1.0)
-       (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
+       (2 att   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 1.0)
      // node_param_idx      UI widget type (mode, knob, sample)
      // | atom_idx          |     format fun
      // | | name constructor|     |     min max
@@ -484,6 +484,8 @@ later!
 #[allow(non_upper_case_globals)]
 mod node_ad;
 #[allow(non_upper_case_globals)]
+mod node_adsr;
+#[allow(non_upper_case_globals)]
 mod node_allp;
 #[allow(non_upper_case_globals)]
 mod node_amp;
@@ -564,6 +566,7 @@ pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 pub use satom::*;
 
 use crate::fa_ad_mult;
+use crate::fa_adsr_mult;
 use crate::fa_amp_neg_att;
 use crate::fa_biqfilt_ord;
 use crate::fa_biqfilt_type;
@@ -597,6 +600,7 @@ use crate::fa_vosc_ovrsmpl;
 use synfx_dsp::fa_distort;
 
 use node_ad::Ad;
+use node_adsr::Adsr;
 use node_allp::AllP;
 use node_amp::Amp;
 use node_biqfilt::BiqFilt;
@@ -1325,8 +1329,6 @@ define_db! {n_driv d_driv r_driv   0.0,  24.0}
 
 //          norm-fun      denorm-min
 //                 denorm-fun  denorm-max
-define_exp! {n_att  d_att  0.0, 1.0}
-
 define_exp! {n_declick d_declick 0.0, 50.0}
 
 define_exp! {n_env d_env 0.0, 1000.0}
@@ -1364,7 +1366,7 @@ macro_rules! node_list {
              //         norm_fun   fun    fun   fun    def   min  max  default
                (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
                (1 gain  n_gain     d_gain r_gain f_db  stp_v  0.0, 1.0, 1.0)
-               (2 att   n_att      d_att  r_id  f_def  stp_d  0.0, 1.0, 1.0)
+               (2 att   n_id       d_id   r_id  f_def  stp_d  0.0, 1.0, 1.0)
                {3 0 neg_att setting(1) mode fa_amp_neg_att 0  1}
                [0 sig],
             mix3 => Mix3 UIType::Generic UICategory::NtoM
@@ -1598,6 +1600,19 @@ macro_rules! node_list {
                (4  ashp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                (5  dshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                {6 0 mult setting(0) mode fa_ad_mult  0 2}
+               [0 sig]
+               [1 eoet],
+            adsr => Adsr UIType::Generic UICategory::Mod
+               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
+               (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (2  atk   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 3.0)
+               (3  dcy   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 10.0)
+               (4  sus   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               (5  rel   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 40.0)
+               (6  ashp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               (7  dshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               (8  rshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
+               {9 0 mult setting(0) mode fa_ad_mult  0 2}
                [0 sig]
                [1 eoet],
             tslfo => TsLFO UIType::Generic UICategory::Mod

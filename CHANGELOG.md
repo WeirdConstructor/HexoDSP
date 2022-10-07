@@ -13,6 +13,8 @@ with proper dB range.
 This allows to get a more linear FM sound from that oscillator.
 * Change: Changed `Ad` envelope node to be properly retriggerable. Refactored
 out it's DSP code to `synfx_dsp::EnvRetrigAD`.
+* Change: Changed the `att` parameter of `Amp` to be linear now. For non linear attenuation
+you can use the `gain` input with a mod amount modification.
 * Feature: Added `Matrix::load_patch_from_mem` and `Matrix::save_patch_to_mem`.
 * Feature: The `BOsc` node has now a pulse mode with DC correction.
 * Bugfix: The rounding of the parameters could snap outside the UI min/max range of that

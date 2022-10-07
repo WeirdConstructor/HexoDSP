@@ -581,7 +581,7 @@ fn check_matrix_amp() {
     matrix.sync().unwrap();
 
     let att_param = amp.inp_param("att").unwrap();
-    matrix.set_param(att_param, SAtom::param(0.5));
+    matrix.set_param(att_param, SAtom::param(0.5 * 0.5));
 
     let (rms, _, _) = run_and_get_l_rms_mimax(&mut node_exec, 50.0);
     assert_float_eq!(rms, 0.031249225);
