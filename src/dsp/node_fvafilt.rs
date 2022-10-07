@@ -7,7 +7,7 @@ use crate::nodes::{NodeAudioContext, NodeExecContext};
 use std::simd::f32x4;
 use std::sync::Arc;
 use synfx_dsp::fh_va::{FilterParams, LadderFilter, LadderSlope, SallenKey, Svf};
-use synfx_dsp::PolyIIRHalfbandFilter;
+use synfx_dsp::{DCFilterX4, PolyIIRHalfbandFilter};
 
 #[macro_export]
 macro_rules! fa_fvafilt_type {
@@ -51,30 +51,43 @@ macro_rules! fa_fvafilt_lslope {
     }};
 }
 
+#[derive(Debug, Clone)]
+struct VaFiltState {
+    ladder: LadderFilter,
+    svf: Svf,
+    sallenkey: SallenKey,
+    oversample: (PolyIIRHalfbandFilter, PolyIIRHalfbandFilter),
+    dc_filter: DCFilterX4,
+}
+
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct FVaFilt {
     params: Arc<FilterParams>,
     old_params: Box<(f32, f32, f32, i8)>,
-    ladder: Box<LadderFilter>,
-    svf: Box<Svf>,
-    sallenkey: Box<SallenKey>,
-    oversample: Box<(PolyIIRHalfbandFilter, PolyIIRHalfbandFilter)>,
+    state: Box<VaFiltState>,
+    //    ladder: Box<LadderFilter>,
+    //    svf: Box<Svf>,
+    //    sallenkey: Box<SallenKey>,
+    //    oversample: Box<(PolyIIRHalfbandFilter, PolyIIRHalfbandFilter)>,
 }
 
 impl FVaFilt {
     pub fn new(nid: &NodeId) -> Self {
         let params = Arc::new(FilterParams::new());
         Self {
-            ladder: Box::new(LadderFilter::new(params.clone())),
-            svf: Box::new(Svf::new(params.clone())),
-            sallenkey: Box::new(SallenKey::new(params.clone())),
+            state: Box::new(VaFiltState {
+                ladder: LadderFilter::new(params.clone()),
+                svf: Svf::new(params.clone()),
+                sallenkey: SallenKey::new(params.clone()),
+                oversample: (
+                    PolyIIRHalfbandFilter::new(8, true),
+                    PolyIIRHalfbandFilter::new(8, true),
+                ),
+                dc_filter: DCFilterX4::default(),
+            }),
             params,
             old_params: Box::new((0.0, 0.0, 0.0, -1)),
-            oversample: Box::new((
-                PolyIIRHalfbandFilter::new(8, true),
-                PolyIIRHalfbandFilter::new(8, true),
-            )),
         }
     }
     pub const inp: &'static str = "Signal input";
@@ -143,11 +156,12 @@ impl DspNode for FVaFilt {
         }
     }
     fn reset(&mut self) {
-        self.ladder.reset();
-        self.sallenkey.reset();
-        self.svf.reset();
-        self.oversample =
-            Box::new((PolyIIRHalfbandFilter::new(8, true), PolyIIRHalfbandFilter::new(8, true)));
+        self.state.ladder.reset();
+        self.state.sallenkey.reset();
+        self.state.svf.reset();
+        self.state.dc_filter.reset();
+        self.state.oversample =
+            (PolyIIRHalfbandFilter::new(8, true), PolyIIRHalfbandFilter::new(8, true));
     }
 
     #[inline]
@@ -186,12 +200,15 @@ impl DspNode for FVaFilt {
             };
         };
 
-        let mut oversample = self.oversample.as_mut();
-        let mut old_params = self.old_params.as_mut();
+        let mut state = self.state.as_mut();
+
+        let mut oversample = &mut state.oversample;
+        let mut old_params = &mut self.old_params;
 
         match ftype {
-            2 => { // SallenKey
-                let mut sallenkey = self.sallenkey.as_mut();
+            2 => {
+                // SallenKey
+                let mut sallenkey = &mut state.sallenkey;
                 for frame in 0..ctx.nframes() {
                     on_param_change!(self, freq, res, drive, ftype, frame, {
                         sallenkey.update();
@@ -201,6 +218,7 @@ impl DspNode for FVaFilt {
 
                     // TODO: Read in second channel!
                     let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
+                    let vframe = state.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
@@ -216,8 +234,9 @@ impl DspNode for FVaFilt {
                     out.write(frame, output[0]);
                 }
             }
-            1 => { // SVF
-                let mut svf = self.svf.as_mut();
+            1 => {
+                // SVF
+                let mut svf = &mut state.svf;
                 for frame in 0..ctx.nframes() {
                     on_param_change!(self, freq, res, drive, ftype, frame, {
                         svf.update();
@@ -227,6 +246,7 @@ impl DspNode for FVaFilt {
 
                     // TODO: Read in second channel!
                     let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
+                    let vframe = state.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
@@ -242,14 +262,16 @@ impl DspNode for FVaFilt {
                     out.write(frame, output[0]);
                 }
             }
-            _ => { // Ladder
-                let mut ladder = self.ladder.as_mut();
+            _ => {
+                // Ladder
+                let mut ladder = &mut state.ladder;
                 for frame in 0..ctx.nframes() {
                     on_param_change!(self, freq, res, drive, ftype, frame, {});
                     let sig_l = denorm::FVaFilt::inp(inp, frame);
 
                     // TODO: Read in second channel!
                     let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
+                    let vframe = state.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
