@@ -1604,7 +1604,7 @@ macro_rules! node_list {
                [1 eoet],
             adsr => Adsr UIType::Generic UICategory::Mod
                (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 1.0)
-               (1  trig  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1  gate  n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (2  atk   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 3.0)
                (3  dcy   n_env     d_env r_ems  f_ms  stp_m  0.0, 1.0, 10.0)
                (4  sus   n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
