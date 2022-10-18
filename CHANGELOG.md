@@ -19,6 +19,7 @@ you can use the `gain` input with a mod amount modification.
 * Feature: The `BOsc` node has now a pulse mode with DC correction.
 * Bugfix: The rounding of the parameters could snap outside the UI min/max range of that
 parameter. It's now clamped properly.
+* Feature: Added `Adsr` node for an ADSR envelope generator.
 
 0.2.0 (2022-08-28)
 ==================
