@@ -67,25 +67,31 @@ macro_rules! assert_f3tupl_eq {
         if ($a.0 - $b.0).abs() > 0.0001 {
             panic!(
                 r#"assertion failed: `(left.0 == right.0)`
+    left: `{:?}`
+   right: `{:?}`
   left.0: `{:?}`,
  right.0: `{:?}`"#,
-                $a.0, $b.0
+                $a, $b, $a.0, $b.0
             )
         }
         if ($a.1 - $b.1).abs() > 0.0001 {
             panic!(
                 r#"assertion failed: `(left.1 == right.1)`
+    left: `{:?}`
+   right: `{:?}`
   left.1: `{:?}`,
  right.1: `{:?}`"#,
-                $a.1, $b.1
+                $a, $b, $a.1, $b.1
             )
         }
         if ($a.2 - $b.2).abs() > 0.0001 {
             panic!(
                 r#"assertion failed: `(left.2 == right.2)`
+    left: `{:?}`
+   right: `{:?}`
   left.2: `{:?}`,
  right.2: `{:?}`"#,
-                $a.2, $b.2
+                $a, $b, $a.2, $b.2
             )
         }
     };
@@ -812,6 +818,18 @@ pub fn run_and_get_fft4096_now(
     fft_thres_at_ms(&mut out_l[..], FFT::F4096, thres, 0.0)
 }
 
+#[allow(unused)]
+pub fn fftr4096_now(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    div: u32,
+    thres: u32,
+) -> Vec<(u16, u32)> {
+    let min_samples_for_fft = 4096.0 * 1.5; // 1.5 for some extra margin
+    let run_len_s = min_samples_for_fft / SAMPLE_RATE;
+    let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+    fftr_thres_at_ms(&mut out_l[..], FFT::F4096, div, thres, 0.0)
+}
+
 /// Takes about 1 second of audio to average 10 ffts
 #[allow(unused)]
 pub fn run_and_get_avg_fft4096_now(
@@ -885,6 +903,19 @@ pub fn fft_thres_at_ms(buf: &mut [f32], size: FFT, amp_thres: u32, ms_idx: f32) 
     fft(&mut buf[idx..(idx + len)], size, amp_thres)
 }
 
+pub fn fftr_thres_at_ms(buf: &mut [f32], size: FFT, divis: u32, amp_thres: u32, ms_idx: f32) -> Vec<(u16, u32)> {
+    let ms_sample_offs = ms_idx * (SAMPLE_RATE / 1000.0);
+    let fft_nbins = size.size();
+    let len = fft_nbins;
+    let idx = ms_sample_offs as usize;
+
+    if (idx + len) > buf.len() {
+        return vec![];
+    }
+
+    fftr(&mut buf[idx..(idx + len)], size, divis, amp_thres)
+}
+
 pub fn fft(buf: &mut [f32], size: FFT, amp_thres: u32) -> Vec<(u16, u32)> {
     let len = size.size();
     let mut res = vec![];
@@ -921,6 +952,50 @@ pub fn fft(buf: &mut [f32], size: FFT, amp_thres: u32) -> Vec<(u16, u32)> {
             }
             //            println!("{:6.0} {}", freq, *amp);
             res.push((freq.round() as u16, *amp));
+        }
+    }
+
+    res
+}
+
+pub fn fftr(buf: &mut [f32], size: FFT, divisor: u32, amp_thres: u32) -> Vec<(u16, u32)> {
+    let len = size.size();
+    let mut res = vec![];
+
+    if len > buf.len() {
+        return res;
+    }
+
+    // Hann window:
+    for (i, s) in buf[0..len].iter_mut().enumerate() {
+        let w = 0.5 * (1.0 - ((2.0 * std::f32::consts::PI * i as f32) / (len as f32 - 1.0)).cos());
+        *s *= w;
+    }
+
+    use rustfft::{num_complex::Complex, FftPlanner};
+
+    let mut complex_buf =
+        buf.iter().map(|s| Complex { re: *s, im: 0.0 }).collect::<Vec<Complex<f32>>>();
+
+    let mut p = FftPlanner::<f32>::new();
+    let fft = p.plan_fft_forward(len);
+
+    fft.process(&mut complex_buf[0..len]);
+
+    let amplitudes: Vec<_> = complex_buf[0..len].iter().map(|c| c.norm() as u32).collect();
+    //    println!("fft: {:?}", &complex_buf[0..len]);
+
+    for (i, amp) in amplitudes.iter().enumerate() {
+        let mut amp = (*amp as f32 / divisor as f32).round() * (divisor as f32);
+        let amp = amp as u32;
+        if amp >= amp_thres {
+            let freq = (i as f32 * SAMPLE_RATE) / len as f32;
+            if freq > 22050.0 {
+                // no freqency images above nyquist...
+                continue;
+            }
+            //            println!("{:6.0} {}", freq, *amp);
+            res.push((freq.round() as u16, amp));
         }
     }
 

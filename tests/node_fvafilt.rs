@@ -50,3 +50,75 @@ fn check_node_fvafilt_ladder() {
     println!("{:#?}", out);
 //    assert!(false);
 }
+
+#[test]
+fn check_overdriven_dc_svf_bug() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("bosc", "sig")
+        .set_atom("wtype", SAtom::setting(3))
+        .set_denorm("freq", 440.0)
+        .node_io("fvafilt", "inp", "sig")
+        .set_norm("drive", 1.0)
+        .set_denorm("freq", 14000.0)
+        .set_atom("ftype", SAtom::setting(1))
+        .node_inp("out", "ch1")
+        .place(&mut matrix, 0, 0).unwrap();
+    matrix.sync().unwrap();
+
+    run_for_ms(&mut node_exec, 2000.0);
+    let rmsmima = run_and_get_l_rms_mimax(&mut node_exec, 100.0);
+    println!("{:#?}", rmsmima);
+    assert_rmsmima!(rmsmima, (1.0, -1.0, -1.0));
+}
+
+#[test]
+fn check_overdriven_dc_sallen_key_ok() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("bosc", "sig")
+        .set_atom("wtype", SAtom::setting(3))
+        .set_denorm("freq", 440.0)
+        .node_io("fvafilt", "inp", "sig")
+        .set_norm("drive", 1.0)
+        .set_denorm("freq", 14000.0)
+        .set_atom("ftype", SAtom::setting(2))
+        .node_inp("out", "ch1")
+        .place(&mut matrix, 0, 0).unwrap();
+    matrix.sync().unwrap();
+
+    run_for_ms(&mut node_exec, 2000.0);
+    let rmsmima = run_and_get_l_rms_mimax(&mut node_exec, 100.0);
+    println!("{:#?}", rmsmima);
+    assert_rmsmima!(rmsmima, (0.96078, -1.1445, 1.1434));
+}
+
+#[test]
+fn check_overdriven_dc_ladder_ok() {
+    let (node_conf, mut node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("bosc", "sig")
+        .set_atom("wtype", SAtom::setting(3))
+        .set_denorm("freq", 440.0)
+        .node_io("fvafilt", "inp", "sig")
+        .set_norm("drive", 1.0)
+        .set_denorm("freq", 14000.0)
+        .set_atom("ftype", SAtom::setting(0))
+        .node_inp("out", "ch1")
+        .place(&mut matrix, 0, 0).unwrap();
+    matrix.sync().unwrap();
+
+    run_for_ms(&mut node_exec, 2000.0);
+    let rmsmima = run_and_get_l_rms_mimax(&mut node_exec, 100.0);
+    println!("{:#?}", rmsmima);
+    assert_rmsmima!(rmsmima, (0.4004, -0.7787, 0.6732));
+}
