@@ -1,12 +1,21 @@
-use hexodsp::*;
+// This example demonstrates the SynthConstructor API with the CPAL backend
+// for standalone audio output.
+//
+// Execute with:
+//      $ cargo +nightly run --release --example cpal_synth_constructor
+
 use hexodsp::synth_constructor::SynthConstructor;
+use hexodsp::*;
 
 use anyhow;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 fn main() {
+    // The SynthConstructor encapsulates the whole audio graph engine in HexoDSP:
     let mut sc = SynthConstructor::new();
 
+    // Pass the NodeExecutor from SynthConstructor to the CPAL backend and start
+    // the frontend thread:
     start_backend(sc.executor().unwrap(), move || {
         use hexodsp::dsp::build::*;
 
@@ -15,6 +24,8 @@ fn main() {
         // Setup an amplifier node with a low gain:
         let amp = amp(0).set().gain(0.1).input().inp(&saw.output().sig());
 
+        // Assign amplifier node output to the two input channels
+        // of the audio device output node:
         let out = out(0).input().ch1(&amp.output().sig());
         let out = out.input().ch2(&amp.output().sig());
 
@@ -23,9 +34,10 @@ fn main() {
         // Setup the "att"enuator input to 0.3 with a modulation amount of 0.0 to 0.7.
         // Redirect the output of the LFO (which oscillated between 0.0 and 1.0) to the
         // "att" input of the Amp node here:
-        let amp = amp.set_mod().att(0.3, 0.7).input().att(&lfo.output().sig());
+        amp.set_mod().att(0.3, 0.7).input().att(&lfo.output().sig());
 
-        sc.upload(&out);
+        // Upload the program:
+        sc.upload(&out).unwrap();
 
         let mut pitch_counter = 0;
         loop {
@@ -43,14 +55,16 @@ fn main() {
             pitch_counter += 1;
 
             println!("Update freq={}", new_pitch);
-            sc.update_params(&bosc(0).set().freq(new_pitch));
-//            node_conf.set_param(sin_freq_param, new_pitch.into());
+            sc.update_params(&bosc(0).set().freq(new_pitch)).unwrap();
 
             std::thread::sleep(std::time::Duration::from_millis(300));
         }
     });
 }
 
+// A bit of interfacing code between HexoDSP NodeExecutor and CPAL.
+// Primarily to adapt from the CPAL buffer sizes to
+// the HexoDSP max buffer size (128 samples usually):
 pub fn run<T, F: FnMut()>(
     device: &cpal::Device,
     config: &cpal::StreamConfig,
@@ -76,8 +90,11 @@ where
 
             let mut out_iter = data.chunks_mut(channels);
 
+            // Process HexoDSP graph changes. This is where the `SynthConstructor::update_params`
+            // and `SynthConstructor::upload` are sending their updates to:
             node_exec.process_graph_updates();
 
+            // Loop to sliced up the output buffer into chunks of HexoDSP buffers:
             while frames_left > 0 {
                 let cur_nframes = if frames_left >= hexodsp::dsp::MAX_BLOCK_SIZE {
                     hexodsp::dsp::MAX_BLOCK_SIZE
