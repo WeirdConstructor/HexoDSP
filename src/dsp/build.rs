@@ -21,16 +21,15 @@ macro_rules! make_node_constructor {
         #[derive(Debug, Clone, PartialEq)]
         pub enum ConstructorOp {
             SetDenorm(String, f32),
-            SetSetting(String, i32),
+            SetDenormModAmt(String, f32, f32),
+            SetSetting(String, i64),
             Input(String, ConstructorNode, String),
-            InputDefault(String, ConstructorNode),
-            InputModAmt(String, f32, f32, ConstructorNode, String),
         }
 
         #[derive(Clone)]
         pub struct ConstructorNode {
-            node_id: crate::dsp::NodeId,
-            ops: Rc<RefCell<Vec<crate::dsp::build::ConstructorOp>>>,
+            pub node_id: crate::dsp::NodeId,
+            pub ops: Rc<RefCell<Vec<crate::dsp::build::ConstructorOp>>>,
         }
 
         impl PartialEq for ConstructorNode {
@@ -53,18 +52,15 @@ macro_rules! make_node_constructor {
                         ConstructorOp::SetDenorm(port, v) => {
                             f.debug_tuple(&node_id_str).field(port).field(v).finish()?;
                         },
+                        ConstructorOp::SetDenormModAmt(port, v, ma) => {
+                            f.debug_tuple(&node_id_str).field(port).field(v).field(ma).finish()?;
+                        },
                         ConstructorOp::SetSetting(port, v) => {
                             f.debug_tuple(&node_id_str).field(port).field(v).finish()?;
                         },
                         ConstructorOp::Input(port, constr, output) => {
                             f.debug_struct(&node_id_str).field("port", port).field("output", output).field("input", constr).finish()?;
                         },
-                        ConstructorOp::InputDefault(port, constr) => {
-                            f.debug_struct(&node_id_str).field("port", port).field("input", constr).finish()?;
-                        },
-                        _ => {
-                            writeln!(f, "   - {:?}", op)?;
-                        }
                     }
                 }
                 writeln!(f, "")
@@ -125,11 +121,7 @@ macro_rules! make_node_constructor {
                         pub fn $para(mut self, node: &dyn super::ConstructorNodeOutputPort) -> super::$variant {
                             let (node, portname) = node.port();
 
-                            if portname.is_empty() {
-                                self.node.ops.borrow_mut().push(
-                                    super::ConstructorOp::InputDefault(
-                                        stringify!($para).to_string(), node));
-                            } else {
+                            if !portname.is_empty() {
                                 self.node.ops.borrow_mut().push(
                                     super::ConstructorOp::Input(
                                         stringify!($para).to_string(), node, portname));
@@ -155,10 +147,26 @@ macro_rules! make_node_constructor {
                         }
                     )*
                     $(
-                        pub fn $atom(mut self, v: i32) -> super::$variant {
+                        pub fn $atom(mut self, v: i64) -> super::$variant {
                             self.node.ops.borrow_mut().push(
                                 super::ConstructorOp::SetSetting(
                                     stringify!($atom).to_string(), v));
+                            self.node
+                        }
+                    )*
+                }
+            )*
+        }
+
+        pub mod SetParaMod {
+            $(
+                pub struct $variant { pub node: super::$variant }
+                impl $variant {
+                    $(
+                        pub fn $para(mut self, v: f32, ma: f32) -> super::$variant {
+                            self.node.ops.borrow_mut().push(
+                                super::ConstructorOp::SetDenormModAmt(
+                                    stringify!($para).to_string(), v, ma));
                             self.node
                         }
                     )*
@@ -176,6 +184,10 @@ macro_rules! make_node_constructor {
             impl $variant {
                 pub fn set(self) -> SetPara::$variant {
                     SetPara::$variant { node: self }
+                }
+
+                pub fn set_mod(self) -> SetParaMod::$variant {
+                    SetParaMod::$variant { node: self }
                 }
 
                 pub fn input(self) -> InputPort::$variant {

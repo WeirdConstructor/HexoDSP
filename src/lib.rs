@@ -331,6 +331,7 @@ pub mod sample_lib;
 pub mod scope_handle;
 mod util;
 pub mod wblockdsp;
+pub mod synth_constructor;
 
 pub use cell_dir::CellDir;
 pub use chain_builder::MatrixCellChain;
