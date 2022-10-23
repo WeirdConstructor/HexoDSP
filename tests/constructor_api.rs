@@ -9,7 +9,7 @@ use common::*;
 
 fn build_basic_api_test_graph() -> Out {
     let f = bosc(0).set().wtype(3).set().freq(440.0);
-    let mix = mix3(0).input().ch1(&f.output().sig());
+    let mix = mix3(0).set().ovol(0.39839).input().ch1(&f.output().sig());
     let mix = mix.input().ch2(&f.output().sig());
     let filt = sfilter(0).input().inp(&mix.output().sig());
     out(0).input().ch1(&filt.output().sig())
@@ -17,16 +17,16 @@ fn build_basic_api_test_graph() -> Out {
 
 fn check_basic_api_rmsbefore_after<F: FnOnce()>(exec: &mut NodeExecutor, mut f: F) {
     let rmsmima = run_and_get_l_rms_mimax(exec, 100.0);
-    assert_rmsmima!(rmsmima, (0.64348, -1.1009, -0.64814));
+    assert_rmsmima!(rmsmima, (0.64348, -1.0887, 1.05413));
     f();
     let rmsmima = run_and_get_l_rms_mimax(exec, 100.0);
-    assert_rmsmima!(rmsmima, (0.3636, -0.82567, -0.4861));
+    assert_rmsmima!(rmsmima, (0.5083, -0.9676, 0.9369));
 }
 
 #[test]
 fn check_basic_api() {
     let f = bosc(0).set().wtype(3).set().freq(440.0);
-    let mix = mix3(0).input().ch1(&f.output().sig());
+    let mix = mix3(0).set().ovol(0.39839).input().ch1(&f.output().sig());
     let mix = mix.input().ch2(&f.output().sig());
     let filt = sfilter(0).input().inp(&mix.output().sig());
 
@@ -40,7 +40,7 @@ fn check_basic_api() {
     sc.upload(&out(0).input().ch1(&filt.output().sig())).unwrap();
 
     check_basic_api_rmsbefore_after(&mut exec, || {
-        mix.set_mod().ch2(0.0, 0.5);
+        mix.set_mod().ch2(0.0, 0.7776);
         assert!(sc.update_params(&out(0).input().ch1(&filt.output().sig())).unwrap());
     });
 }
@@ -54,7 +54,7 @@ fn check_basic_api_update_params() {
 
     let mut exec = sc.executor().unwrap();
     check_basic_api_rmsbefore_after(&mut exec, || {
-        let updated_graph = sc.update_params(&mix3(0).set_mod().ch2(0.0, 0.5)).unwrap();
+        let updated_graph = sc.update_params(&mix3(0).set_mod().ch2(0.0, 0.7776)).unwrap();
         assert!(updated_graph);
     });
 }
