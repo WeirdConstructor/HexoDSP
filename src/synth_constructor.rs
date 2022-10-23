@@ -61,27 +61,43 @@ impl SynthConstructor {
         self.exec.take()
     }
 
-    fn walk_upload(&mut self, node: &ConstructorNode, only_update_params: bool) -> Result<bool, SynthError> {
+    fn walk_upload(
+        &mut self,
+        node: &ConstructorNode,
+        only_update_params: bool,
+    ) -> Result<bool, SynthError> {
         let mut need_rebuild = false;
 
-        if !self.nodes.contains_key(&node.node_id) {
-            self.nodes.insert(node.node_id, Box::new(NodeConfig::new(node.node_id)));
+        let node_id = node.node_id;
+
+        if !self.nodes.contains_key(&node_id) {
+            self.nodes.insert(node_id, Box::new(NodeConfig::new(node_id)));
         }
 
         let mut walk_afterwads = vec![];
 
         let mut changed_params = false;
 
-        if let Some(node_config) = self.nodes.get_mut(&node.node_id) {
+        if let Some(node_config) = self.nodes.get_mut(&node_id) {
             for op in node.ops.borrow().iter() {
                 match op {
                     ConstructorOp::SetDenormModAmt(name, v, ma) => {
-                        node_config.set_param(&name, SAtom::param(*v), Some(*ma));
-                        changed_params = true;
+                        if let Some(param_id) = node_id.inp_param(&name) {
+                            let v = param_id.norm(*v);
+                            node_config.set_param(&name, SAtom::param(v), Some(*ma));
+                            changed_params = true;
+                        } else {
+                            return Err(SynthError::BadParamName(node_id, name.to_string()));
+                        }
                     }
                     ConstructorOp::SetDenorm(name, v) => {
-                        node_config.set_param(&name, SAtom::param(*v), None);
-                        changed_params = true;
+                        if let Some(param_id) = node_id.inp_param(&name) {
+                            let v = param_id.norm(*v);
+                            node_config.set_param(&name, SAtom::param(v), None);
+                            changed_params = true;
+                        } else {
+                            return Err(SynthError::BadParamName(node_id, name.to_string()));
+                        }
                     }
                     ConstructorOp::SetSetting(name, v) => {
                         node_config.set_param(&name, SAtom::setting(*v), None);
@@ -100,7 +116,7 @@ impl SynthConstructor {
         }
 
         if only_update_params && changed_params {
-            if self.update_node_params(node.node_id)? {
+            if self.update_node_params(node_id)? {
                 need_rebuild = true;
             }
         }
