@@ -534,6 +534,8 @@ mod node_quant;
 #[allow(non_upper_case_globals)]
 mod node_rndwk;
 #[allow(non_upper_case_globals)]
+mod node_rust;
+#[allow(non_upper_case_globals)]
 mod node_sampl;
 #[allow(non_upper_case_globals)]
 mod node_scope;
@@ -631,6 +633,7 @@ use node_out::Out;
 use node_pverb::PVerb;
 use node_quant::Quant;
 use node_rndwk::RndWk;
+use node_rust::Rust1x1;
 use node_sampl::Sampl;
 use node_scope::Scope;
 use node_sfilter::SFilter;
@@ -791,6 +794,13 @@ impl ProcBuf {
     #[inline]
     pub fn read(&self, idx: usize) -> f32 {
         unsafe { (*self.0)[idx] }
+    }
+
+    /// Returns a mutable slice to the inner buffer.
+    /// `len` **must not** exceed [MAX_BLOCK_SIZE].
+    #[inline]
+    pub fn slice(&self, len: usize) -> &mut [f32] {
+        unsafe { &mut (*self.0)[0..len] }
     }
 
     /// Fills the [ProcBuf] with the sample `v`.
@@ -1464,6 +1474,13 @@ macro_rules! node_list {
                [0 sig]
                [1 sig1]
                [2 sig2],
+            rust1x1 => Rust1x1 UIType::Generic UICategory::Signal
+               (0 inp   n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (1 alpha n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (2 beta  n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (3 delta n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               (4 gamma n_id       d_id   r_id  f_def  stp_d -1.0, 1.0, 0.0)
+               [0 sig],
             sampl => Sampl UIType::Generic UICategory::Osc
                (0 freq  n_pit      d_pit  r_fq  f_freq   stp_d -1.0, 0.564713133, 440.0)
                (1 trig  n_id       d_id   r_id  f_def    stp_d -1.0, 1.0, 0.0)
