@@ -1453,7 +1453,7 @@ macro_rules! node_list {
                [1 sig1]
                [2 sig2],
             sampl => Sampl UIType::Generic UICategory::Osc
-               (0 freq  n_pit      d_pit  r_fq  f_def    stp_d -1.0, 0.564713133, 440.0)
+               (0 freq  n_pit      d_pit  r_fq  f_freq   stp_d -1.0, 0.564713133, 440.0)
                (1 trig  n_id       d_id   r_id  f_def    stp_d -1.0, 1.0, 0.0)
                (2 offs  n_id       d_id   r_id  f_def    stp_d  0.0, 1.0, 0.0)
                (3 len   n_id       d_id   r_id  f_def    stp_d  0.0, 1.0, 1.0)
