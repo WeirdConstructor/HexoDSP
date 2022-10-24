@@ -244,6 +244,10 @@ impl SynthConstructor {
         }
     }
 
+    pub fn set_dynamic_node1x1(&mut self, index: usize, node: Box<dyn crate::dsp::DynamicNode1x1>) {
+        self.config.set_dynamic_node1x1(index, node);
+    }
+
     pub fn upload(&mut self, node: &dyn ConstructorNodeBuilder) -> Result<(), SynthError> {
         let node = node.build();
         self.walk_upload(&node, false)?;

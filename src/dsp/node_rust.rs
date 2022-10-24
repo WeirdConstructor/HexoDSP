@@ -6,18 +6,28 @@ use crate::dsp::{
     DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use synfx_dsp::{EnvRetrigAD, sqrt4_to_pow4};
+use synfx_dsp::{sqrt4_to_pow4, EnvRetrigAD};
 
-pub trait DynamicNode: Send {
-    fn set_sample_rate(&mut self, sample_rate: f32) { }
-    fn reset(&mut self) { }
+pub trait DynamicNode1x1: Send {
+    fn set_sample_rate(&mut self, sample_rate: f32) {}
+    fn reset(&mut self) {}
     fn process(&mut self, input: &[f32], output: &mut [f32]);
 }
 
-struct RustDummyNode {
+impl<T> crate::dsp::DynamicNode1x1 for T where T: FnMut(&[f32], &mut [f32]) + Send {
+    fn process(&mut self, input: &[f32], output: &mut [f32]) {
+        (self)(input, output)
+    }
 }
 
-impl DynamicNode for RustDummyNode {
+
+struct RustDummyNode {}
+
+pub fn new_dummy_dynamic_node1x1() -> Box<dyn DynamicNode1x1> {
+    Box::new(RustDummyNode {})
+}
+
+impl DynamicNode1x1 for RustDummyNode {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
         for o in output.iter_mut() {
             *o = 0.0;
@@ -26,33 +36,14 @@ impl DynamicNode for RustDummyNode {
 }
 
 /// A native Rust code node that uses trait objects for dispatch
+#[derive(Debug, Clone)]
 pub struct Rust1x1 {
-    node: Box<dyn DynamicNode>,
-}
-
-impl Clone for Rust1x1 {
-    fn clone(&self) -> Self {
-        Self {
-            node: Box::new(RustDummyNode { }),
-        }
-    }
-}
-
-impl std::fmt::Debug for Rust1x1 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Rust1x1()")
-    }
+    index: usize,
 }
 
 impl Rust1x1 {
-    pub fn new(_nid: &NodeId) -> Self {
-        Self {
-            node: Box::new(RustDummyNode {}),
-        }
-    }
-
-    fn swap_node(&mut self, node: &mut Box<dyn DynamicNode>) {
-        std::mem::swap(&mut self.node, node);
+    pub fn new(nid: &NodeId) -> Self {
+        Self { index: nid.instance() as usize }
     }
 
     pub const inp: &'static str =
@@ -95,19 +86,15 @@ impl DspNode for Rust1x1 {
         1
     }
 
-    fn set_sample_rate(&mut self, srate: f32) {
-        self.node.set_sample_rate(srate);
-    }
+    fn set_sample_rate(&mut self, srate: f32) {}
 
-    fn reset(&mut self) {
-        self.node.reset();
-    }
+    fn reset(&mut self) {}
 
     #[inline]
     fn process<T: NodeAudioContext>(
         &mut self,
         ctx: &mut T,
-        _ectx: &mut NodeExecContext,
+        ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],
         inputs: &[ProcBuf],
@@ -119,25 +106,27 @@ impl DspNode for Rust1x1 {
         let inp = inp::Rust1x1::inp(inputs);
         let out = out::Rust1x1::sig(outputs);
 
-        self.node.process(inp.slice(ctx.nframes()), out.slice(ctx.nframes()));
-//        for frame in 0..ctx.nframes() {
-//            let trigger_sig = denorm::Ad::trig(trig, frame);
-//            let atk_ms = mult * denorm::Ad::atk(atk, frame);
-//            let ashp = denorm::Ad::ashp(atk_shape, frame).clamp(0.0, 1.0);
-//            let dcy_ms = mult * denorm::Ad::dcy(dcy, frame);
-//            let dshp = 1.0 - denorm::Ad::dshp(dcy_shape, frame).clamp(0.0, 1.0);
-//
-//            let (value, retrig_sig) = self.env.tick(trigger_sig, atk_ms, ashp, dcy_ms, dshp);
-//
-//            let in_val = denorm::Ad::inp(inp, frame);
-//            let out = out::Ad::sig(outputs);
-//            out.write(frame, in_val * value);
-//
-//            let eoet = out::Ad::eoet(outputs);
-//            eoet.write(frame, retrig_sig);
-//        }
-//
-//        let last_frame = ctx.nframes() - 1;
-//        ctx_vals[0].set(out.read(last_frame));
+        ectx.dynamic_nodes1x1[self.index]
+            .process(inp.slice(ctx.nframes()), out.slice(ctx.nframes()));
+
+        //        for frame in 0..ctx.nframes() {
+        //            let trigger_sig = denorm::Ad::trig(trig, frame);
+        //            let atk_ms = mult * denorm::Ad::atk(atk, frame);
+        //            let ashp = denorm::Ad::ashp(atk_shape, frame).clamp(0.0, 1.0);
+        //            let dcy_ms = mult * denorm::Ad::dcy(dcy, frame);
+        //            let dshp = 1.0 - denorm::Ad::dshp(dcy_shape, frame).clamp(0.0, 1.0);
+        //
+        //            let (value, retrig_sig) = self.env.tick(trigger_sig, atk_ms, ashp, dcy_ms, dshp);
+        //
+        //            let in_val = denorm::Ad::inp(inp, frame);
+        //            let out = out::Ad::sig(outputs);
+        //            out.write(frame, in_val * value);
+        //
+        //            let eoet = out::Ad::eoet(outputs);
+        //            eoet.write(frame, retrig_sig);
+        //        }
+        //
+        //        let last_frame = ctx.nframes() - 1;
+        //        ctx_vals[0].set(out.read(last_frame));
     }
 }

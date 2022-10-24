@@ -3,8 +3,9 @@
 // See README.md and COPYING for details.
 
 use super::{
-    FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg, MAX_ALLOCATED_NODES,
-    MAX_AVAIL_CODE_ENGINES, MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES, UNUSED_MONITOR_IDX,
+    DynNode, FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg,
+    MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES, MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES,
+    UNUSED_MONITOR_IDX,
 };
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
@@ -687,6 +688,20 @@ impl NodeConfigurator {
     /// Retrieve the oscilloscope handle for the scope index `scope`.
     pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
         self.scopes.get(scope).cloned()
+    }
+
+    /// Sets the dynamic node instance for a certain Rust1x1 instance.
+    pub fn set_dynamic_node1x1(
+        &mut self,
+        instance: usize,
+        node: Box<dyn crate::dsp::DynamicNode1x1>,
+    ) {
+        if instance < MAX_ALLOCATED_NODES {
+            let _ = self
+                .shared
+                .graph_update_prod
+                .push(GraphMessage::DynNode { index: instance as u8, node: DynNode::DN1x1(node) });
+        }
     }
 
     /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.

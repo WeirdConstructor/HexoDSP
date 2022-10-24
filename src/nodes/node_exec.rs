@@ -3,9 +3,9 @@
 // See README.md and COPYING for details.
 
 use super::{
-    DropMsg, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent, NodeProg,
-    FB_DELAY_TIME_US, MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE, MAX_INJ_MIDI_EVENTS, MAX_SMOOTHERS,
-    UNUSED_MONITOR_IDX,
+    DropMsg, DynNode, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent,
+    NodeProg, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE, MAX_INJ_MIDI_EVENTS,
+    MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
@@ -20,9 +20,9 @@ use std::sync::Arc;
 
 //use core::arch::x86_64::{
 //    _MM_FLUSH_ZERO_ON,
-    //    _MM_FLUSH_ZERO_OFF,
+//    _MM_FLUSH_ZERO_OFF,
 //    _MM_SET_FLUSH_ZERO_MODE,
-    //    _MM_GET_FLUSH_ZERO_MODE
+//    _MM_GET_FLUSH_ZERO_MODE
 //};
 
 pub const MAX_MIDI_NOTES_PER_BLOCK: usize = 512;
@@ -235,6 +235,7 @@ pub struct NodeExecContext {
     pub midi_notes: Vec<HxTimedEvent>,
     pub midi_ccs: Vec<HxTimedEvent>,
     pub ext_param: Option<Arc<dyn ExternalParams>>,
+    pub dynamic_nodes1x1: Vec<Box<dyn crate::dsp::DynamicNode1x1>>,
 }
 
 impl NodeExecContext {
@@ -243,7 +244,15 @@ impl NodeExecContext {
         fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
         let midi_notes = Vec::with_capacity(MAX_MIDI_NOTES_PER_BLOCK);
         let midi_ccs = Vec::with_capacity(MAX_MIDI_CC_PER_BLOCK);
-        Self { feedback_delay_buffers: fbdb, midi_notes, midi_ccs, ext_param: None }
+        let mut dynamic_nodes1x1 = vec![];
+        dynamic_nodes1x1.resize_with(MAX_ALLOCATED_NODES, crate::dsp::new_dummy_dynamic_node1x1);
+        Self {
+            feedback_delay_buffers: fbdb,
+            midi_notes,
+            midi_ccs,
+            ext_param: None,
+            dynamic_nodes1x1,
+        }
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
@@ -255,6 +264,10 @@ impl NodeExecContext {
     fn clear(&mut self) {
         for b in self.feedback_delay_buffers.iter_mut() {
             b.clear();
+        }
+
+        for dn in self.dynamic_nodes1x1.iter_mut() {
+            dn.reset();
         }
     }
 }
@@ -302,6 +315,20 @@ impl NodeExecutor {
 
                     let _ = self.shared.graph_drop_prod.push(DropMsg::Node { node: prev_node });
                 }
+                GraphMessage::DynNode { index, node } => match node {
+                    DynNode::DN1x1(mut node) => {
+                        std::mem::swap(
+                            &mut self.exec_ctx.dynamic_nodes1x1[index as usize],
+                            &mut node,
+                        );
+                        self.exec_ctx.dynamic_nodes1x1[index as usize]
+                            .set_sample_rate(self.sample_rate);
+                        let _ = self
+                            .shared
+                            .graph_drop_prod
+                            .push(DropMsg::DynNode { node: DynNode::DN1x1(node) });
+                    }
+                },
                 GraphMessage::Clear { prog } => {
                     for n in self.nodes.iter_mut() {
                         if n.to_id(0) != NodeId::Nop {
@@ -325,9 +352,9 @@ impl NodeExecutor {
                 GraphMessage::NewProg { prog, copy_old_out } => {
                     let mut prev_prog = std::mem::replace(&mut self.prog, prog);
 
-//                    unsafe {
-//                        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-//                    }
+                    //                    unsafe {
+                    //                        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+                    //                    }
 
                     self.monitor_signal_cur_inp_indices = [UNUSED_MONITOR_IDX; MON_SIG_CNT];
 

@@ -567,6 +567,9 @@ pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 
 pub use satom::*;
 
+pub use node_rust::DynamicNode1x1;
+pub use node_rust::new_dummy_dynamic_node1x1;
+
 use crate::fa_ad_mult;
 use crate::fa_adsr_mult;
 use crate::fa_amp_neg_att;
@@ -1793,6 +1796,7 @@ fn rand_node_satisfies_spec(nid: NodeId, sel: RandNodeSelector) -> bool {
             NodeId::Out(_) => false,
             NodeId::FbRd(_) => false,
             NodeId::Test(_) => false,
+            NodeId::Rust1x1(_) => false,
             _ => true,
         },
     }

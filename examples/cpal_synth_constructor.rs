@@ -22,12 +22,23 @@ fn main() {
         // Setup a sawtooth oscillator with 440Hz:
         let saw = bosc(0).set().wtype(2).set().freq(440.0);
         // Setup an amplifier node with a low gain:
-        let amp = amp(0).set().gain(0.1).input().inp(&saw.output().sig());
+        let amp = amp(0).set().gain(0.2).input().inp(&saw.output().sig());
+
+        // Insert your own custom Rust function via a NodeId::Rust1x1 node
+        // into the DSP graph:
+        use hexodsp::dsp::DynamicNode1x1;
+        let r1x1 = rust1x1(0).input().inp(&amp.output().sig());
+        // You may replace this function anytime at runtime:
+        sc.set_dynamic_node1x1(0, Box::new(|inp: &[f32], out: &mut [f32]| {
+            for (i, in_sample) in inp.iter().enumerate() {
+                out[i] = in_sample * 0.5;
+            }
+        }));
 
         // Assign amplifier node output to the two input channels
         // of the audio device output node:
-        let out = out(0).input().ch1(&amp.output().sig());
-        let out = out.input().ch2(&amp.output().sig());
+        let out = out(0).input().ch1(&r1x1.output().sig());
+        let out = out.input().ch2(&r1x1.output().sig());
 
         // Setup a triangle LFO with a cycletime of 8 seconds.
         let lfo = tslfo(0).set().time(8000.0);
