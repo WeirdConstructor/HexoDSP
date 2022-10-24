@@ -1,3 +1,7 @@
+// Copyright (c) 2022 Weird Constructor <weirdconstructor@gmail.com>
+// This file is a part of HexoDSP. Released under GPL-3.0-or-later.
+// See README.md and COPYING for details.
+
 use crate::dsp::NodeId;
 use crate::node_list;
 
@@ -29,7 +33,7 @@ macro_rules! make_node_constructor {
         #[derive(Clone)]
         pub struct ConstructorNode {
             pub node_id: crate::dsp::NodeId,
-            pub ops: Rc<RefCell<Vec<crate::dsp::build::ConstructorOp>>>,
+            pub ops: Rc<RefCell<Vec<crate::build::ConstructorOp>>>,
         }
 
         impl PartialEq for ConstructorNode {
@@ -69,19 +73,19 @@ macro_rules! make_node_constructor {
 
         pub trait ConstructorNodeBuilder {
             fn id(&self) -> crate::dsp::NodeId;
-            fn build(&self) -> crate::dsp::build::ConstructorNode;
+            fn build(&self) -> crate::build::ConstructorNode;
         }
 
         pub trait ConstructorNodeOutputPort: ConstructorNodeBuilder {
             fn port(&self) -> (ConstructorNode, String);
         }
 
-        pub mod OutputPort {
+        pub mod output_port {
             $(
                 #[derive(Debug, Clone)]
                 pub struct $variant {
                     pub node_id: crate::dsp::NodeId,
-                    pub node: crate::dsp::build::ConstructorNode,
+                    pub node: crate::build::ConstructorNode,
                     pub port: Option<String>
                 }
 
@@ -97,7 +101,7 @@ macro_rules! make_node_constructor {
                         self.node_id
                     }
 
-                    fn build(&self) -> crate::dsp::build::ConstructorNode {
+                    fn build(&self) -> crate::build::ConstructorNode {
                         self.node.clone()
                     }
                 }
@@ -113,7 +117,7 @@ macro_rules! make_node_constructor {
             )*
         }
 
-        pub mod InputPort {
+        pub mod input_port {
             $(
                 pub struct $variant { pub node: super::$variant }
                 impl $variant {
@@ -134,7 +138,7 @@ macro_rules! make_node_constructor {
             )*
         }
 
-        pub mod SetPara {
+        pub mod set_param {
             $(
                 pub struct $variant { pub node: super::$variant }
                 impl $variant {
@@ -158,7 +162,7 @@ macro_rules! make_node_constructor {
             )*
         }
 
-        pub mod SetParaMod {
+        pub mod set_param_mod {
             $(
                 pub struct $variant { pub node: super::$variant }
                 impl $variant {
@@ -182,20 +186,20 @@ macro_rules! make_node_constructor {
             }
 
             impl $variant {
-                pub fn set(self) -> SetPara::$variant {
-                    SetPara::$variant { node: self }
+                pub fn set(self) -> set_param::$variant {
+                    set_param::$variant { node: self }
                 }
 
-                pub fn set_mod(self) -> SetParaMod::$variant {
-                    SetParaMod::$variant { node: self }
+                pub fn set_mod(self) -> set_param_mod::$variant {
+                    set_param_mod::$variant { node: self }
                 }
 
-                pub fn input(self) -> InputPort::$variant {
-                    InputPort::$variant { node: self }
+                pub fn input(self) -> input_port::$variant {
+                    input_port::$variant { node: self }
                 }
 
-                pub fn output(&self) -> OutputPort::$variant {
-                    OutputPort::$variant {
+                pub fn output(&self) -> output_port::$variant {
+                    output_port::$variant {
                         node_id: self.id(),
                         node: self.build(),
                         port: None
@@ -203,7 +207,7 @@ macro_rules! make_node_constructor {
                 }
             }
 
-            pub fn $str(instance: u8) -> crate::dsp::build::$variant {
+            pub fn $str(instance: u8) -> crate::build::$variant {
                 $variant {
                     node_id: crate::dsp::NodeId::$variant(instance),
                     ops: Rc::new(RefCell::new(vec![])),
@@ -215,7 +219,7 @@ macro_rules! make_node_constructor {
                     self.node_id
                 }
 
-                fn build(&self) -> crate::dsp::build::ConstructorNode {
+                fn build(&self) -> crate::build::ConstructorNode {
                     ConstructorNode {
                         node_id: self.node_id,
                         ops: self.ops.clone()

@@ -332,6 +332,8 @@ pub mod scope_handle;
 mod util;
 pub mod wblockdsp;
 pub mod synth_constructor;
+#[allow(allow_unused)]
+pub mod build;
 
 pub use cell_dir::CellDir;
 pub use chain_builder::MatrixCellChain;
@@ -345,6 +347,7 @@ pub use matrix_repr::save_patch_to_mem;
 pub use nodes::{new_node_engine, HxMidiEvent, NodeConfigurator, NodeExecutor};
 pub use sample_lib::{SampleLibrary, SampleLoadError};
 pub use scope_handle::ScopeHandle;
+pub use synth_constructor::SynthConstructor;
 
 pub struct Context<'a, 'b, 'c, 'd> {
     pub nframes: usize,

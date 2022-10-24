@@ -1,13 +1,60 @@
-use crate::dsp::build::*;
+
+
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
+// This file is a part of HexoDSP. Released under GPL-3.0-or-later.
+// See README.md and COPYING for details.
+
+/*! Provides a high level API to the HexoDSP synthesizer engine.
+
+This module provides you with a simple high level API to build DSP graphs
+and upload them to an audio thread. With [hexodsp::build] you also get a
+simple compile time checked way to construct DSP graphs to upload via [SynthConstructor::upload].
+
+```
+use hexodsp::SynthConstructor;
+use hexodsp::NodeExecutor;
+use hexodsp::build::*;
+
+let mut sc = SynthConstructor::new();
+
+spawn_audio_thread(sc.executor().unwrap());
+
+let oscillator = bosc(0).set().freq(330.0);
+let graph = out(0).set().vol(0.2).input().ch1(&oscillator.output().sig());
+sc.upload(&graph).unwrap();
+
+// start some frontend loop here, or some GUI or whatever you like....
+
+// Later at runtime you might want to change the oscillator
+// frequency from the frontend:
+sc.update_params(&bosc(0).set().freq(440.0));
+
+fn spawn_audio_thread(exec: NodeExecutor) {
+    // Some loop here that interfaces with [NodeExecutor::process] and regularily
+    // calls [NodeExecutor::process_graph_updates].
+}
+```
+
+See also [SynthConstructor::new] and [hexodsp::build].
+*/
+
+use crate::build::*;
 use crate::nodes::{new_node_engine, NodeGraphOrdering};
 use crate::{NodeConfigurator, NodeExecutor, NodeId, ParamId, SAtom};
 use std::collections::{HashMap, HashSet};
 
+/// Returned by [SynthConstructor] if some error occured while updating the graph
+/// or changing paramters.
 #[derive(Debug, Clone, PartialEq)]
 pub enum SynthError {
+    /// A graph cycle was detected. You can not have cycles in your graph, if you
+    /// want to do something with feedback use the `FbWr`/`FbRd` nodes.
     CycleDetected,
-    BadParamName(NodeId, String),
+    /// Unknown output name was passed into SynthConstructor somehow. Should
+    /// not be possible to happen with [hexodsp::build].
     BadOutputName(NodeId, String),
+    /// Unknown parameter name was passed into SynthConstructor somehow. Should
+    /// not be possible to happen with [hexodsp::build].
     UnknownParam(NodeId, String),
 }
 
@@ -51,12 +98,14 @@ impl SynthConstructor {
         }
     }
 
+    /// Clears the DSP graph.
     pub fn clear(&mut self) {
         self.graph_ordering.clear();
         self.nodes.clear();
         self.config.delete_nodes();
     }
 
+    /// Retrieves the [NodeExecutor] for handing to your audio thread.
     pub fn executor(&mut self) -> Option<NodeExecutor> {
         self.exec.take()
     }
@@ -87,7 +136,7 @@ impl SynthConstructor {
                             node_config.set_param(&name, SAtom::param(v), Some(*ma));
                             changed_params = true;
                         } else {
-                            return Err(SynthError::BadParamName(node_id, name.to_string()));
+                            return Err(SynthError::UnknownParam(node_id, name.to_string()));
                         }
                     }
                     ConstructorOp::SetDenorm(name, v) => {
@@ -96,7 +145,7 @@ impl SynthConstructor {
                             node_config.set_param(&name, SAtom::param(v), None);
                             changed_params = true;
                         } else {
-                            return Err(SynthError::BadParamName(node_id, name.to_string()));
+                            return Err(SynthError::UnknownParam(node_id, name.to_string()));
                         }
                     }
                     ConstructorOp::SetSetting(name, v) => {
@@ -171,6 +220,19 @@ impl SynthConstructor {
         Ok(needs_graph_rebuild)
     }
 
+    /// Try to update only DSP node parameters. If you did any graph changes, a new DSP graph will
+    /// be uploaded on the fly though. Call this if you only want to update specific parameters.
+    /// The function returns a boolean flag, that is `true` if the DSP graph was reuploaded.
+    /// It returns an error if something is wrong with the input graph to this function.
+    ///
+    ///```
+    /// use hexodsp::SynthConstructor;
+    /// use hexodsp::build::*;
+    /// let mut sc = SynthConstructor::new();
+    ///
+    /// // Set the `freq` parameter of the BOsc(0) node to 400Hz:
+    /// let uploaded_new_graph = sc.update_params(&bosc(0).set().freq(400.0)).unwrap();
+    ///```
     pub fn update_params(&mut self, node: &dyn ConstructorNodeBuilder) -> Result<bool, SynthError> {
         let built_node = node.build();
 
@@ -232,7 +294,7 @@ impl SynthConstructor {
                             ));
                         }
                     } else {
-                        return Err(SynthError::BadParamName(*node_id, inp_param.to_string()));
+                        return Err(SynthError::UnknownParam(*node_id, inp_param.to_string()));
                     }
                 }
             }
@@ -240,5 +302,62 @@ impl SynthConstructor {
         self.config.upload_prog(prog, true);
 
         Ok(())
+    }
+
+    /// Updates internal states. For instance for providing feedback
+    /// values for [SynthConstructor::out_fb_for].
+    pub fn poll(&mut self) {
+        self.config.update_filters();
+    }
+
+    /// Retrieves the output port feedback for a specific output of the given [NodeId].
+    ///
+    /// Make sure to call [SynthConstructor::poll] regularily to update the feedback values.
+    ///
+    /// See also [NodeConfigurator::out_fb_for].
+    ///
+    ///```
+    /// use hexodsp::{NodeId, SynthConstructor};
+    ///
+    /// let mut sc = SynthConstructor::new();
+    ///
+    /// // Setup stuff with sc here..
+    ///
+    /// // In a loop call eg.:
+    /// sc.poll();
+    /// let node_id = NodeId::BOsc(0);
+    /// let out_idx = NodeId::BOsc(0).out("sig").unwrap();
+    /// if let Some(value) = sc.output_feedback(&node_id, out_idx) {
+    ///     println!("Current min/max output of BOsc(0).sig={}", value);
+    /// }
+    ///```
+    pub fn output_feedback(&self, node_id: &NodeId, out: u8) -> Option<f32> {
+        self.config.out_fb_for(node_id, out)
+    }
+
+    /// Retrieves the output port feedback for a specific output of the given [NodeId].
+    /// The output is slightly filtered and provides the min and max values over a few of the
+    /// most recent calls to [SynthConstructor::poll].
+    ///
+    /// Make sure to call [SynthConstructor::poll] regularily to update the feedback values.
+    ///
+    /// See also [NodeConfigurator::out_fb_for].
+    ///
+    ///```
+    /// use hexodsp::{NodeId, SynthConstructor};
+    ///
+    /// let mut sc = SynthConstructor::new();
+    ///
+    /// // Setup stuff with sc here..
+    ///
+    /// // In a loop call eg.:
+    /// sc.poll();
+    /// let node_id = NodeId::BOsc(0);
+    /// let out_idx = NodeId::BOsc(0).out("sig").unwrap();
+    /// let (min, max) = sc.output_feedback_minmax(&node_id, out_idx);
+    /// println!("Current min/max output of BOsc(0).sig={}/{}", min, max);
+    ///```
+    pub fn output_feedback_minmax(&mut self, node_id: &NodeId, out: u8) -> (f32, f32) {
+        self.config.filtered_out_fb_for(node_id, out)
     }
 }

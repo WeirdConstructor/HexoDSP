@@ -17,7 +17,7 @@ fn main() {
     // Pass the NodeExecutor from SynthConstructor to the CPAL backend and start
     // the frontend thread:
     start_backend(sc.executor().unwrap(), move || {
-        use hexodsp::dsp::build::*;
+        use hexodsp::build::*;
 
         // Setup a sawtooth oscillator with 440Hz:
         let saw = bosc(0).set().wtype(2).set().freq(440.0);
@@ -29,8 +29,8 @@ fn main() {
         let out = out(0).input().ch1(&amp.output().sig());
         let out = out.input().ch2(&amp.output().sig());
 
-        // Setup a triangle LFO with a cycletime of 4 seconds.
-        let lfo = tslfo(0).set().time(4000.0);
+        // Setup a triangle LFO with a cycletime of 8 seconds.
+        let lfo = tslfo(0).set().time(8000.0);
         // Setup the "att"enuator input to 0.3 with a modulation amount of 0.0 to 0.7.
         // Redirect the output of the LFO (which oscillated between 0.0 and 1.0) to the
         // "att" input of the Amp node here:
@@ -54,10 +54,17 @@ fn main() {
             };
             pitch_counter += 1;
 
-            println!("Update freq={}", new_pitch);
+            let tslfo = NodeId::TsLFO(0);
+            let tslfo_sig_idx = tslfo.out("sig").unwrap();
+            println!(
+                "Update freq={}, LFO={:0.3}",
+                new_pitch,
+                sc.output_feedback(&tslfo, tslfo_sig_idx).unwrap_or(0.0)
+            );
             sc.update_params(&bosc(0).set().freq(new_pitch)).unwrap();
 
             std::thread::sleep(std::time::Duration::from_millis(300));
+            sc.poll();
         }
     });
 }
