@@ -7,7 +7,7 @@
 /*! Provides a high level API to the HexoDSP synthesizer engine.
 
 This module provides you with a simple high level API to build DSP graphs
-and upload them to an audio thread. With [hexodsp::build] you also get a
+and upload them to an audio thread. With [crate::build] you also get a
 simple compile time checked way to construct DSP graphs to upload via [SynthConstructor::upload].
 
 ```
@@ -35,7 +35,7 @@ fn spawn_audio_thread(exec: NodeExecutor) {
 }
 ```
 
-See also [SynthConstructor::new] and [hexodsp::build].
+See also [SynthConstructor::new] and [crate::build].
 */
 
 use crate::build::*;
@@ -51,10 +51,10 @@ pub enum SynthError {
     /// want to do something with feedback use the `FbWr`/`FbRd` nodes.
     CycleDetected,
     /// Unknown output name was passed into SynthConstructor somehow. Should
-    /// not be possible to happen with [hexodsp::build].
+    /// not be possible to happen with [crate::build].
     BadOutputName(NodeId, String),
     /// Unknown parameter name was passed into SynthConstructor somehow. Should
-    /// not be possible to happen with [hexodsp::build].
+    /// not be possible to happen with [crate::build].
     UnknownParam(NodeId, String),
 }
 
@@ -305,7 +305,8 @@ impl SynthConstructor {
     }
 
     /// Updates internal states. For instance for providing feedback
-    /// values for [SynthConstructor::out_fb_for].
+    /// values for [SynthConstructor::output_feedback]
+    /// and [SynthConstructor::output_feedback_minmax].
     pub fn poll(&mut self) {
         self.config.update_filters();
     }

@@ -105,8 +105,8 @@ Provides a simple sample player for playing back one loaded audio sample.
 It can be used for purposes like:
 
 * Adding ambient samples to your patches.
-* Using drum samples (set ~~pmode~~ to **OneShot**
-* Having an oscillator with a custom waveform (set ~~pmode~~ to **Loop**
+* Using drum samples (set ~~pmode~~) to **OneShot**
+* Having an oscillator with a custom waveform (set ~~pmode~~) to **Loop**
 * As custom control signal source for very long or very custom envelopes.
 
 Only a single audio sample can be loaded into this player.

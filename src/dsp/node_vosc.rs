@@ -71,6 +71,7 @@ and a ~~vs~~ parameter to add extra spice.
 Distortion can beef up the oscillator output and you can apply oversampling.
 "#;
     pub const HELP: &'static str = r#"Vector Phase Shaping Oscillator
+
 A vector phase shaping oscillator, to create interesting waveforms and
 ways to manipulate them. It has two parameters (~~v~~ and ~~d~~) to shape the
 phase of the sinusoid wave, and a third parameter ~~vs~~ to add extra spice.

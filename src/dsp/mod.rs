@@ -876,6 +876,18 @@ impl UICategory {
             UICategory::IOUtil => 10,
         }
     }
+
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            UICategory::None => "None",
+            UICategory::Osc => "Osc",
+            UICategory::Mod => "Mod",
+            UICategory::NtoM => "NtoM",
+            UICategory::Signal => "Signal",
+            UICategory::Ctrl => "Ctrl",
+            UICategory::IOUtil => "IOUtil",
+        }
+    }
 }
 
 // The following macros define normalize/denormalize functions:

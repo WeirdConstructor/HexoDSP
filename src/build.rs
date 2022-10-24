@@ -2,6 +2,20 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
+/*! Node Reference and Graph Builder for [crate::SynthConstructor]
+
+This module contains function bindings for all DSP nodes that are included
+in HexoDSP. All nodes, their inputs, settings and outputs are accessible via this API.
+You can write type safe and compile time checked graphs for HexoDSP using this API.
+
+Below you will find a comprehensive reference of all HexoDSP nodes, their
+parameters and some of the possible values.
+
+## HexoDSP DSP Node Reference
+*/
+#![allow(rustdoc::invalid_rust_codeblocks)]
+#![doc = include_str!("dsp_nodes_ref.md")]
+
 use crate::dsp::NodeId;
 use crate::node_list;
 
@@ -82,6 +96,7 @@ macro_rules! make_node_constructor {
 
         pub mod output_port {
             $(
+                #[doc = concat!("Output Port API Struct for [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
                 #[derive(Debug, Clone)]
                 pub struct $variant {
                     pub node_id: crate::dsp::NodeId,
@@ -108,6 +123,7 @@ macro_rules! make_node_constructor {
 
                 impl $variant {
                     $(
+                        #[doc = concat!("See also [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ") about details to this output")]
                         pub fn $out(mut self) -> Self {
                             self.port = Some(stringify!($out).to_string());
                             self
@@ -119,9 +135,11 @@ macro_rules! make_node_constructor {
 
         pub mod input_port {
             $(
+                #[doc = concat!("Input Port API Struct for [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
                 pub struct $variant { pub node: super::$variant }
                 impl $variant {
                     $(
+                        #[doc = concat!("Assign to input port for [Node ", stringify!($variant), " Input ", stringify!($para),"](../index.html#nodeid", stringify!($str), "-input-", stringify!($para),")")]
                         pub fn $para(mut self, node: &dyn super::ConstructorNodeOutputPort) -> super::$variant {
                             let (node, portname) = node.port();
 
@@ -140,9 +158,11 @@ macro_rules! make_node_constructor {
 
         pub mod set_param {
             $(
+                #[doc = concat!("Parameter Setter API Struct for [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
                 pub struct $variant { pub node: super::$variant }
                 impl $variant {
                     $(
+                        #[doc = concat!("Set input parameter for [Node ", stringify!($variant), " Input ", stringify!($para),"](../index.html#nodeid", stringify!($str), "-input-", stringify!($para),")")]
                         pub fn $para(mut self, v: f32) -> super::$variant {
                             self.node.ops.borrow_mut().push(
                                 super::ConstructorOp::SetDenorm(
@@ -151,6 +171,7 @@ macro_rules! make_node_constructor {
                         }
                     )*
                     $(
+                        #[doc = concat!("Set setting for [Node ", stringify!($variant), " Setting ", stringify!($atom),"](../index.html#nodeid", stringify!($str), "-setting-", stringify!($atom),")")]
                         pub fn $atom(mut self, v: i64) -> super::$variant {
                             self.node.ops.borrow_mut().push(
                                 super::ConstructorOp::SetSetting(
@@ -164,9 +185,11 @@ macro_rules! make_node_constructor {
 
         pub mod set_param_mod {
             $(
+                #[doc = concat!("Parameter and Modulation Amount Setter API Struct for [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
                 pub struct $variant { pub node: super::$variant }
                 impl $variant {
                     $(
+                        #[doc = concat!("Set input parameter and modulation amount for [Node ", stringify!($variant), " Input ", stringify!($para),"](../index.html#nodeid", stringify!($str), "-input-", stringify!($para),")")]
                         pub fn $para(mut self, v: f32, ma: f32) -> super::$variant {
                             self.node.ops.borrow_mut().push(
                                 super::ConstructorOp::SetDenormModAmt(
@@ -180,24 +203,33 @@ macro_rules! make_node_constructor {
 
         $(
             #[derive(Debug, Clone)]
+            #[doc = concat!("Build API Struct for [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
             pub struct $variant {
                 node_id: crate::dsp::NodeId,
                 ops: Rc<RefCell<Vec<ConstructorOp>>>,
             }
 
             impl $variant {
+                /// Returns a structure with all settable parameters and settings.
+                #[doc = concat!("See also [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
                 pub fn set(self) -> set_param::$variant {
                     set_param::$variant { node: self }
                 }
 
+                /// Returns a structure with all settable parameters with modulation amount.
+                #[doc = concat!("See also [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
                 pub fn set_mod(self) -> set_param_mod::$variant {
                     set_param_mod::$variant { node: self }
                 }
 
+                /// Returns a structure with all input ports/parameters.
+                #[doc = concat!("See also [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
                 pub fn input(self) -> input_port::$variant {
                     input_port::$variant { node: self }
                 }
 
+                /// Returns a structure with all output ports/paramters.
+                #[doc = concat!("See also [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
                 pub fn output(&self) -> output_port::$variant {
                     output_port::$variant {
                         node_id: self.id(),
@@ -207,6 +239,7 @@ macro_rules! make_node_constructor {
                 }
             }
 
+            #[doc = concat!("Build API Function for [Node ", stringify!($variant), "](../index.html#nodeid", stringify!($str), ")")]
             pub fn $str(instance: u8) -> crate::build::$variant {
                 $variant {
                     node_id: crate::dsp::NodeId::$variant(instance),

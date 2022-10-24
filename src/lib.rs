@@ -34,6 +34,8 @@ DSP algorithms at runtime. One possible frontend language is the visual
 
 And following DSP nodes:
 
+For a comprehensive list checkout the [**HexoDSP DSP Node Reference**](build/index.html#hexodsp-dsp-node-reference).
+
 | Category | Name | Function |
 |-|-|-|
 | IO Util | Out         | Audio output (to DAW or Jack) |
@@ -332,7 +334,7 @@ pub mod scope_handle;
 mod util;
 pub mod wblockdsp;
 pub mod synth_constructor;
-#[allow(allow_unused)]
+#[allow(dead_code)]
 pub mod build;
 
 pub use cell_dir::CellDir;
