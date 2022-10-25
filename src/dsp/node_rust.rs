@@ -129,6 +129,7 @@ impl Rust1x1 {
 This node does provide the user of HexoDSP or the SynthConstructor with an API
 to code custom DSP node implementations in pure Rust at compile time.
 It does not have any relevance for HexoSynth.
+See also [crate::SynthConstructor] and [crate::DynamicNode1x1].
 "#;
     pub const HELP: &'static str = r#"Rust Code Node
 
@@ -138,6 +139,8 @@ to code custom DSP node implementations in pure Rust at compile time.
 Treat this node as plugin API into the HexoDSP DSP graph.
 
 This node does nothing in HexoSynth.
+
+See also [crate::SynthConstructor] and [crate::DynamicNode1x1].
 "#;
 }
 

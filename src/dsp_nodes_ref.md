@@ -9,7 +9,7 @@
 | [**CQnt**](#nodeidcqnt) | Ctrl | **Ctrl Pitch Quantizer**:   This special quantizer maps the unipolar **0**..**1** control signal input range on `inp` evenly to the selected keys and octaves.  |
 | [**TSeq**](#nodeidtseq) | Mod | **Tracker Sequencer**:   This node implements a sequencer that can be programmed using the tracker interface in HexoSynth on the right. It provides 6 control signals and 6 gate outputs. |
 | [**Code**](#nodeidcode) | Signal | **WBlockDSP Code Execution**:   This node executes just in time compiled code as fast as machine code. Use this to implement real time DSP code yourself. The inputs are freely useable in your code. All the ports (input and output) can be used either for audio or for control signals. |
-| [**Rust1x1**](#nodeidrust1x1) | Signal | **Rust Code Node**:   This node does provide the user of HexoDSP or the SynthConstructor with an API to code custom DSP node implementations in pure Rust at compile time. It does not have any relevance for HexoSynth.  |
+| [**Rust1x1**](#nodeidrust1x1) | Signal | **Rust Code Node**:   This node does provide the user of HexoDSP or the SynthConstructor with an API to code custom DSP node implementations in pure Rust at compile time. It does not have any relevance for HexoSynth. See also [crate::SynthConstructor] and [crate::DynamicNode1x1].  |
 | [**Sampl**](#nodeidsampl) | Osc | **Sample Player**:  Provides a simple sample player that you can load a single audio sample from a WAV file into. |
 | [**Sin**](#nodeidsin) | Osc | **Sine Oscillator**:   This is a very simple oscillator that generates a sine wave.  |
 | [**BOsc**](#nodeidbosc) | Osc | **Basic Oscillator**:   A very basic band limited oscillator with a sine, triangle, pulse and sawtooth waveform.  |
@@ -931,6 +931,7 @@ Input Parameter Gamma
 This node does provide the user of HexoDSP or the SynthConstructor with an API
 to code custom DSP node implementations in pure Rust at compile time.
 It does not have any relevance for HexoSynth.
+See also [crate::SynthConstructor] and [crate::DynamicNode1x1].
 
 - [input **inp**](#nodeidrust1x1-input-inp) - Signal input. Signal input to the dynamically dispatched Rust node.
 - [input **alpha**](#nodeidrust1x1-input-alpha) - Alpha parameter for the dynamically dispatched Rust node.
@@ -948,6 +949,8 @@ to code custom DSP node implementations in pure Rust at compile time.
 Treat this node as plugin API into the HexoDSP DSP graph.
 
 This node does nothing in HexoSynth.
+
+See also [crate::SynthConstructor] and [crate::DynamicNode1x1].
 
 #### NodeId::Rust1x1 input inp
 Signal input. Signal input to the dynamically dispatched Rust node.
