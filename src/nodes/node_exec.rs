@@ -800,4 +800,40 @@ impl NodeExecutor {
 
         (output_l, output_r)
     }
+
+    pub fn dummy_run(
+        &mut self,
+        seconds: f32,
+    ) -> (Vec<f32>, Vec<f32>) {
+        const SAMPLE_RATE: f32 = 44100.0;
+        let mut nframes = (seconds * SAMPLE_RATE) as i64;
+
+        let input = vec![0.0; MAX_BLOCK_SIZE];
+        let mut output_l = vec![0.0; MAX_BLOCK_SIZE];
+        let mut output_r = vec![0.0; MAX_BLOCK_SIZE];
+
+        for i in 0..MAX_BLOCK_SIZE {
+            output_l[i] = 0.0;
+            output_r[i] = 0.0;
+        }
+        let mut ev_idx = 0;
+        let mut offs = 0;
+        let cur_nframes = MAX_BLOCK_SIZE;
+        while nframes > 0 {
+            nframes -= 128;
+
+            let mut context = crate::Context {
+                nframes: cur_nframes,
+                output: &mut [
+                    &mut output_l[offs..(offs + cur_nframes)],
+                    &mut output_r[offs..(offs + cur_nframes)],
+                ],
+                input: &[&input[offs..(offs + cur_nframes)], &input[offs..(offs + cur_nframes)]],
+            };
+
+            self.process(&mut context);
+        }
+
+        (output_l, output_r)
+    }
 }
