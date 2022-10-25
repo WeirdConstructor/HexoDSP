@@ -42,13 +42,28 @@ triangular to sawtooth waveforms using the ~~rev~~ parameter.
 Using the ~~trig~~ input you can reset the LFO phase, which allows to use it
 kind of like an envelope.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        let mut lfo = TriSawLFO::new();
+        lfo.set_sample_rate(160.0);
+
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
+            if init {
+                lfo.reset();
+                let time_idx = NodeId::TsLFO(0).inp_param("time").unwrap().inp();
+                let rev_idx = NodeId::TsLFO(0).inp_param("rev").unwrap().inp();
+
+                let time = gd.get_norm(time_idx as u32).sqrt();
+                let rev = gd.get_norm(rev_idx as u32);
+                lfo.set(5.0 * (1.0 - time) + time * 1.0, rev);
+            }
+
+            lfo.next_unipolar() as f32
+        }))
+    }
 }
 
 impl DspNode for TsLFO {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.lfo.set_sample_rate(srate as f64);
     }
@@ -59,9 +74,9 @@ impl DspNode for TsLFO {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         _atoms: &[SAtom],
@@ -91,24 +106,5 @@ impl DspNode for TsLFO {
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
-    }
-
-    fn graph_fun() -> Option<GraphFun> {
-        let mut lfo = TriSawLFO::new();
-        lfo.set_sample_rate(160.0);
-
-        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
-            if init {
-                lfo.reset();
-                let time_idx = NodeId::TsLFO(0).inp_param("time").unwrap().inp();
-                let rev_idx = NodeId::TsLFO(0).inp_param("rev").unwrap().inp();
-
-                let time = gd.get_norm(time_idx as u32).sqrt();
-                let rev = gd.get_norm(rev_idx as u32);
-                lfo.set(5.0 * (1.0 - time) + time * 1.0, rev);
-            }
-
-            lfo.next_unipolar() as f32
-        }))
     }
 }

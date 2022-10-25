@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    at, denorm, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    at, denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
 use synfx_dsp::{GateSignal, TrigSignal};
@@ -78,13 +78,13 @@ The **Gate Len** setting allows you to overwrite the gate length with a
 custom and fixed gate length. However, if new note is played on this
 MIDI channel, the gate will restart after a very short pause.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for MidiP {
-    fn outputs() -> usize {
-        0
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.trig_sig.set_sample_rate(srate);
         self.gate_sig.set_sample_rate(srate);
@@ -95,9 +95,9 @@ impl DspNode for MidiP {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],

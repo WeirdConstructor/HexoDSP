@@ -90,13 +90,44 @@ With the ~~eoet~~ output you can either trigger other envelopes or via
 `FbWr`/`FbRd` retrigger the same envelope. You could also make a chain of multiple
 envelopes following each other.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        let mut params = EnvADSRParams::default();
+        let mut env = EnvRetrigADSR::new();
+        env.set_sample_rate(200.0);
+
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, x: f32, xn: f32| -> f32 {
+            if init {
+                let atk_idx = NodeId::Adsr(0).inp_param("atk").unwrap().inp();
+                let dcy_idx = NodeId::Adsr(0).inp_param("dcy").unwrap().inp();
+                let sus_idx = NodeId::Adsr(0).inp_param("sus").unwrap().inp();
+                let rel_idx = NodeId::Adsr(0).inp_param("rel").unwrap().inp();
+                let ashp_idx = NodeId::Adsr(0).inp_param("ashp").unwrap().inp();
+                let dshp_idx = NodeId::Adsr(0).inp_param("dshp").unwrap().inp();
+                let rshp_idx = NodeId::Adsr(0).inp_param("rshp").unwrap().inp();
+
+                params.attack_ms = sq(gd.get_denorm(atk_idx as u32) / 1000.0) * 180.0;
+                params.attack_shape = gd.get_denorm(ashp_idx as u32);
+                params.decay_ms = sq(gd.get_denorm(dcy_idx as u32) / 1000.0) * 180.0;
+                params.decay_shape = 1.0 - gd.get_denorm(dshp_idx as u32).clamp(0.0, 1.0);
+                params.release_ms = sq(gd.get_denorm(rel_idx as u32) / 1000.0) * 180.0;
+                params.release_shape = 1.0 - gd.get_denorm(rshp_idx as u32).clamp(0.0, 1.0);
+                params.sustain = gd.get_denorm(sus_idx as u32).clamp(0.0, 1.0);
+
+                env.reset();
+
+                0.0
+            } else {
+                let gate = if x > 0.70 { 0.0 } else { 1.0 };
+
+                let (sig, _) = env.tick(gate, &mut params);
+                sig
+            }
+        }))
+    }
 }
 
 impl DspNode for Adsr {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.env.set_sample_rate(srate);
     }
@@ -106,9 +137,9 @@ impl DspNode for Adsr {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],
@@ -160,41 +191,6 @@ impl DspNode for Adsr {
         let last_frame = ctx.nframes() - 1;
         let out = out::Adsr::sig(outputs);
         ctx_vals[0].set(out.read(last_frame));
-    }
-
-    fn graph_fun() -> Option<GraphFun> {
-        let mut params = EnvADSRParams::default();
-        let mut env = EnvRetrigADSR::new();
-        env.set_sample_rate(200.0);
-
-        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, x: f32, xn: f32| -> f32 {
-            if init {
-                let atk_idx = NodeId::Adsr(0).inp_param("atk").unwrap().inp();
-                let dcy_idx = NodeId::Adsr(0).inp_param("dcy").unwrap().inp();
-                let sus_idx = NodeId::Adsr(0).inp_param("sus").unwrap().inp();
-                let rel_idx = NodeId::Adsr(0).inp_param("rel").unwrap().inp();
-                let ashp_idx = NodeId::Adsr(0).inp_param("ashp").unwrap().inp();
-                let dshp_idx = NodeId::Adsr(0).inp_param("dshp").unwrap().inp();
-                let rshp_idx = NodeId::Adsr(0).inp_param("rshp").unwrap().inp();
-
-                params.attack_ms = sq(gd.get_denorm(atk_idx as u32) / 1000.0) * 180.0;
-                params.attack_shape = gd.get_denorm(ashp_idx as u32);
-                params.decay_ms = sq(gd.get_denorm(dcy_idx as u32) / 1000.0) * 180.0;
-                params.decay_shape = 1.0 - gd.get_denorm(dshp_idx as u32).clamp(0.0, 1.0);
-                params.release_ms = sq(gd.get_denorm(rel_idx as u32) / 1000.0) * 180.0;
-                params.release_shape = 1.0 - gd.get_denorm(rshp_idx as u32).clamp(0.0, 1.0);
-                params.sustain = gd.get_denorm(sus_idx as u32).clamp(0.0, 1.0);
-
-                env.reset();
-
-                0.0
-            } else {
-                let gate = if x > 0.70 { 0.0 } else { 1.0 };
-
-                let (sig, _) = env.tick(gate, &mut params);
-                sig
-            }
-        }))
     }
 }
 

@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    denorm, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
@@ -34,20 +34,20 @@ You can build an effects plugin with this node and the `Out` node.
 Or a synthesizer that reacts to audio rate control signals on these two
 input ports.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for Inp {
-    fn outputs() -> usize {
-        0
-    }
-
     fn set_sample_rate(&mut self, _srate: f32) {}
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         _atoms: &[SAtom],

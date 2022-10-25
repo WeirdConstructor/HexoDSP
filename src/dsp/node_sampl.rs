@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{at, denorm, denorm_offs, inp, out}; //, inp, denorm, denorm_v, inp_dir, at};
+use crate::dsp::{at, denorm, denorm_offs, inp, out, GraphFun}; //, inp, denorm, denorm_v, inp_dir, at};
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{cubic_interpolate, Trigger};
@@ -129,6 +129,10 @@ To start samples when ~~pmode~~ is set to **OneShot** a trigger input needs to
 be provided on the ~~trig~~ input port. The ~~trig~~ input also works in
 **Loop** mode to retrigger the sample.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl Sampl {
@@ -285,10 +289,6 @@ impl Sampl {
 }
 
 impl DspNode for Sampl {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate = srate.into();
     }
@@ -297,9 +297,9 @@ impl DspNode for Sampl {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],

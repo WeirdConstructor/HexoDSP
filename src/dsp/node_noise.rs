@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom, GraphFun};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::Rng;
 
@@ -64,13 +64,11 @@ The ~~atv~~ attenuverter and ~~offs~~ parameters control the value range
 of the noise, and the ~~mode~~ allows to switch the oscillator between
 unipolar and bipolar output.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> { None }
 }
 
 impl DspNode for Noise {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, _srate: f32) {}
 
     fn reset(&mut self) {
@@ -78,9 +76,9 @@ impl DspNode for Noise {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],

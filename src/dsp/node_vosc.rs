@@ -78,13 +78,38 @@ phase of the sinusoid wave, and a third parameter ~~vs~~ to add extra spice.
 With distortion you can beef up the oscillator output even more and to
 make it more harmonic you can apply oversampling.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        let mut osc = VPSOscillator::new(0.0);
+        let israte = 1.0 / 128.0;
+
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
+            if init {
+                osc.reset();
+            }
+
+            let v = NodeId::VOsc(0).inp_param("v").unwrap().inp();
+            let vs = NodeId::VOsc(0).inp_param("vs").unwrap().inp();
+            let d = NodeId::VOsc(0).inp_param("d").unwrap().inp();
+            let damt = NodeId::VOsc(0).inp_param("damt").unwrap().inp();
+            let dist = NodeId::VOsc(0).inp_param("dist").unwrap().inp();
+
+            let v = gd.get_denorm(v as u32).clamp(0.0, 1.0);
+            let d = gd.get_denorm(d as u32).clamp(0.0, 1.0);
+            let vs = gd.get_denorm(vs as u32).clamp(0.0, 20.0);
+            let damt = gd.get_denorm(damt as u32);
+            let dist = gd.get(dist as u32).map(|a| a.i()).unwrap_or(0);
+
+            let v = VPSOscillator::limit_v(d, v + vs);
+            let s = osc.next(1.0, israte, d, v);
+            let s = apply_distortion(s, damt, dist as u8);
+
+            (s + 1.0) * 0.5
+        }))
+    }
 }
 
 impl DspNode for VOsc {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.israte = 1.0 / (srate * (OVERSAMPLING as f32));
         self.oversampling.set_sample_rate(srate);
@@ -96,9 +121,9 @@ impl DspNode for VOsc {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],
@@ -160,34 +185,5 @@ impl DspNode for VOsc {
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
-    }
-
-    fn graph_fun() -> Option<GraphFun> {
-        let mut osc = VPSOscillator::new(0.0);
-        let israte = 1.0 / 128.0;
-
-        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
-            if init {
-                osc.reset();
-            }
-
-            let v = NodeId::VOsc(0).inp_param("v").unwrap().inp();
-            let vs = NodeId::VOsc(0).inp_param("vs").unwrap().inp();
-            let d = NodeId::VOsc(0).inp_param("d").unwrap().inp();
-            let damt = NodeId::VOsc(0).inp_param("damt").unwrap().inp();
-            let dist = NodeId::VOsc(0).inp_param("dist").unwrap().inp();
-
-            let v = gd.get_denorm(v as u32).clamp(0.0, 1.0);
-            let d = gd.get_denorm(d as u32).clamp(0.0, 1.0);
-            let vs = gd.get_denorm(vs as u32).clamp(0.0, 20.0);
-            let damt = gd.get_denorm(damt as u32);
-            let dist = gd.get(dist as u32).map(|a| a.i()).unwrap_or(0);
-
-            let v = VPSOscillator::limit_v(d, v + vs);
-            let s = osc.next(1.0, israte, d, v);
-            let s = apply_distortion(s, damt, dist as u8);
-
-            (s + 1.0) * 0.5
-        }))
     }
 }

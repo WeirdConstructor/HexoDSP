@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::Trigger;
 
@@ -111,20 +111,20 @@ Tip:
     or `ESlew`) if less harsh transitions between the input routings is
     desired.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for Mux9 {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, _srate: f32) {}
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         nctx: &NodeContext,
         atoms: &[SAtom],
@@ -154,7 +154,8 @@ impl DspNode for Mux9 {
 
         if nctx.in_connected & 0x1 == 0x1 {
             for frame in 0..ctx.nframes() {
-                self.idx = (max as f32 * (denorm::Mux9::slct(slct, frame) - 0.00001)).floor() as u8 % max;
+                self.idx =
+                    (max as f32 * (denorm::Mux9::slct(slct, frame) - 0.00001)).floor() as u8 % max;
 
                 out.write(
                     frame,

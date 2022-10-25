@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{at, denorm, inp, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    at, denorm, inp, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
 #[macro_export]
@@ -50,20 +52,20 @@ or tracks in your DAW. If you need a stereo output but only have a mono
 signal you can use the ~~mono~~ setting to duplicate the signal on the ~~ch1~~
 input to the second channel ~~ch2~~.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for Out {
-    fn outputs() -> usize {
-        0
-    }
-
     fn set_sample_rate(&mut self, _srate: f32) {}
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],

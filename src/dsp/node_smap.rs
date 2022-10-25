@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
 #[macro_export]
@@ -42,8 +42,7 @@ impl SMap {
     pub const inp: &'static str = "Signal input";
     pub const min: &'static str = "Minimum of the output signal range.";
     pub const max: &'static str = "Maximum of the output signal range.";
-    pub const clip: &'static str =
-        "The **Clip** mode allows you to limit the output \
+    pub const clip: &'static str = "The **Clip** mode allows you to limit the output \
         exactly to the ~~min~~/~~max~~ range. If this is **Off**, the output \
         may be outside the output signal range.";
     pub const mode: &'static str = "This mode defines what kind of input signal is expected \
@@ -82,20 +81,20 @@ And **1** to ~~min~~ and **-1** to ~~max~~ for **BiInv**.
 
 For a more sophisticated version of this node see also `Map`.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for SMap {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, _srate: f32) {}
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],

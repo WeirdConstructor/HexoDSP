@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
 /// A simple amplifier
@@ -37,20 +37,20 @@ inputs.
 The delay is always **3.14ms**, regardless of the sampling rate the synthesizer
 is running at.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for FbWr {
-    fn outputs() -> usize {
-        0
-    }
-
     fn set_sample_rate(&mut self, _srate: f32) {}
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         _atoms: &[SAtom],
@@ -107,20 +107,20 @@ is running at.
 The ~~vol~~ parameter is a convenience parameter to allow to control the
 volume of the feedback.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for FbRd {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, _srate: f32) {}
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         _atoms: &[SAtom],

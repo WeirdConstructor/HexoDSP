@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{crossfade, DelayBuffer, TriggerSampleClock};
 
@@ -63,13 +63,13 @@ signal to an audio signal.
 
 For other kinds of delay/feedback please see also the `FbWr`/`FbRd` nodes.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for Delay {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.buffer.set_sample_rate(srate);
     }
@@ -80,9 +80,9 @@ impl DspNode for Delay {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],

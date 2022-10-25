@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    at, denorm, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    at, denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
 use synfx_dsp::SlewValue;
@@ -65,20 +65,20 @@ try to limit the speed of change with the ~~slew~~ limiter.
 If you need different ~~slew~~ values for the CCs, I recommend creating other
 `MidiCC` instances with different ~~slew~~ settings.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for MidiCC {
-    fn outputs() -> usize {
-        0
-    }
-
     fn set_sample_rate(&mut self, _srate: f32) {}
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],

@@ -58,13 +58,13 @@ impl Test {
 
     pub const DESC: &'static str = r#""#;
     pub const HELP: &'static str = r#""#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        Some(Box::new(|_gd: &dyn GraphAtomData, _init: bool, x: f32, _xn: f32| -> f32 { x }))
+    }
 }
 
 impl DspNode for Test {
-    fn outputs() -> usize {
-        2
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.trig_sig.set_sample_rate(srate);
     }
@@ -74,9 +74,9 @@ impl DspNode for Test {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         nctx: &NodeContext,
         atoms: &[SAtom],
@@ -121,9 +121,5 @@ impl DspNode for Test {
             out3.write(frame, if is_in_con::Test::f(nctx) { 1.0 } else { 0.0 });
             outc.write(frame, nctx.out_connected as f32);
         }
-    }
-
-    fn graph_fun() -> Option<GraphFun> {
-        Some(Box::new(|_gd: &dyn GraphAtomData, _init: bool, x: f32, _xn: f32| -> f32 { x }))
     }
 }

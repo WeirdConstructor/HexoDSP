@@ -8,7 +8,7 @@
 // Copyright by Andrew Belt, 2021
 
 //use super::helpers::{sqrt4_to_pow4, TrigSignal, Trigger};
-use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::SCOPE_SAMPLES;
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::ScopeHandle;
@@ -99,13 +99,13 @@ the input signals up/down.
     pub fn set_scope_handle(&mut self, handle: Arc<ScopeHandle>) {
         self.handle = handle;
     }
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for Scope {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate_ms = srate / 1000.0;
     }
@@ -113,9 +113,9 @@ impl DspNode for Scope {
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         nctx: &NodeContext,
         atoms: &[SAtom],

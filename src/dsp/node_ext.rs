@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    denorm, inp, out_idx, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::SlewValue;
@@ -53,20 +53,18 @@ If you absolutely need more parameters to control the HexoSynth patch:
 Keep in mind, that there is also the `MidiCC` node, that allows HexoSynth to
 react to MIDI CC messages.
 "#;
+
+            fn graph_fun() -> Option<GraphFun> { None }
         }
 
         impl DspNode for $name {
-            fn outputs() -> usize {
-                0
-            }
-
             fn set_sample_rate(&mut self, _srate: f32) {}
             fn reset(&mut self) {}
 
             #[inline]
-            fn process<T: NodeAudioContext>(
+            fn process(
                 &mut self,
-                ctx: &mut T,
+                ctx: &mut dyn NodeAudioContext,
                 ectx: &mut NodeExecContext,
                 _nctx: &NodeContext,
                 _atoms: &[SAtom],

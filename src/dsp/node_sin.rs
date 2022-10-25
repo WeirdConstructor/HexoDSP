@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    denorm, denorm_offs, inp, out, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    denorm, denorm_offs, inp, out, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf,
+    SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::fast_sin;
@@ -61,13 +62,13 @@ should not detune by the amount of modulation in low frequencies.
 You can do exponential FM with this node using the ~~det~~ or ~~freq~~ input,
 but for easy exponential FM synthesis there might be other nodes available.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for Sin {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate = srate;
     }
@@ -77,9 +78,9 @@ impl DspNode for Sin {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         _atoms: &[SAtom],

@@ -66,13 +66,51 @@ setting of the oscillator the output of the pulse might introduce DC (direct cur
 the signal. The **Pulse-DC** variant compensates that DC component by shifting the signal,
 just like a high pass filter would do.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        let mut osc = Box::new(PolyBlepOscillator::new(0.0));
+        let israte = 1.0 / 128.0;
+
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
+            let wtype = NodeId::BOsc(0).inp_param("wtype").unwrap().inp();
+            let pw = NodeId::BOsc(0).inp_param("pw").unwrap().inp();
+            // let det   = NodeId::BOsc(0).inp_param("det").unwrap().inp();
+
+            let wtype = gd.get(wtype as u32).map(|a| a.i()).unwrap_or(0);
+            let pw = gd.get_denorm(pw as u32);
+            // let det   = gd.get_norm(det as u32);
+
+            // the detune scaling with lerp is wrong...
+            // let pow = lerp((det + 0.2) * (1.0 / 0.4), 0.25, 4.0);
+            // let freq = (2.0_f32).powf(pow);
+            let freq = 2.0;
+
+            if init {
+                osc.reset();
+                if wtype == 1 {
+                    // we need to initialize the leaky integrator
+                    // in the triangle wave form, or it would look
+                    // a bit weird.
+                    for _ in 0..256 {
+                        osc.next_tri(freq, israte);
+                    }
+                }
+            }
+
+            let s = match wtype {
+                0 => (osc.next_sin(freq, israte) + 1.0) * 0.5,
+                1 => (osc.next_tri(freq, israte) + 1.0) * 0.5,
+                2 => (osc.next_saw(freq, israte) + 1.0) * 0.5,
+                3 => (osc.next_pulse_no_dc(freq, israte, pw) + 1.0) * 0.5,
+                _ => (osc.next_pulse(freq, israte, pw) + 1.0) * 0.5,
+            };
+
+            s * 0.9 + 0.05
+        }))
+    }
 }
 
 impl DspNode for BOsc {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.israte = 1.0 / srate;
     }
@@ -82,9 +120,9 @@ impl DspNode for BOsc {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],
@@ -144,47 +182,5 @@ impl DspNode for BOsc {
         }
 
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
-    }
-
-    fn graph_fun() -> Option<GraphFun> {
-        let mut osc = Box::new(PolyBlepOscillator::new(0.0));
-        let israte = 1.0 / 128.0;
-
-        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, _x: f32, _xn: f32| -> f32 {
-            let wtype = NodeId::BOsc(0).inp_param("wtype").unwrap().inp();
-            let pw = NodeId::BOsc(0).inp_param("pw").unwrap().inp();
-            // let det   = NodeId::BOsc(0).inp_param("det").unwrap().inp();
-
-            let wtype = gd.get(wtype as u32).map(|a| a.i()).unwrap_or(0);
-            let pw = gd.get_denorm(pw as u32);
-            // let det   = gd.get_norm(det as u32);
-
-            // the detune scaling with lerp is wrong...
-            // let pow = lerp((det + 0.2) * (1.0 / 0.4), 0.25, 4.0);
-            // let freq = (2.0_f32).powf(pow);
-            let freq = 2.0;
-
-            if init {
-                osc.reset();
-                if wtype == 1 {
-                    // we need to initialize the leaky integrator
-                    // in the triangle wave form, or it would look
-                    // a bit weird.
-                    for _ in 0..256 {
-                        osc.next_tri(freq, israte);
-                    }
-                }
-            }
-
-            let s = match wtype {
-                0 => (osc.next_sin(freq, israte) + 1.0) * 0.5,
-                1 => (osc.next_tri(freq, israte) + 1.0) * 0.5,
-                2 => (osc.next_saw(freq, israte) + 1.0) * 0.5,
-                3 => (osc.next_pulse_no_dc(freq, israte, pw) + 1.0) * 0.5,
-                _ => (osc.next_pulse(freq, israte, pw) + 1.0) * 0.5,
-            };
-
-            s * 0.9 + 0.05
-        }))
     }
 }

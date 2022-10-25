@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::tracker::TrackerBackend;
-use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{Trigger, TriggerPhaseClock};
 
@@ -159,13 +159,13 @@ something else, eg. switching to a different `TSeq` and restart
 it using it's ~~trig~~ input, you will need to use the gate output
 of a value column and invert it.
 "#;
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for TSeq {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.srate = srate as f64;
     }
@@ -177,9 +177,9 @@ impl DspNode for TSeq {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],

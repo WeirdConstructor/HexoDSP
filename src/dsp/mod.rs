@@ -330,7 +330,7 @@ Consider also providing a visualization graph if possible. You can look eg at `n
 or `node_tslfo.rs` or many others how to provide a visualization graph function:
 
 ```ignore
-    impl DspNode for TsLFO {
+    impl TsLFO {
         fn graph_fun() -> Option<GraphFun> {
             Some(Box::new(|gd: &dyn GraphAtomData, _init: bool, x: f32, xn: f32| -> f32 {
                 // ...
@@ -567,8 +567,8 @@ pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 
 pub use satom::*;
 
-pub use node_rust::{DynamicNode1x1, DynNode1x1Context};
 pub use node_rust::new_dummy_dynamic_node1x1;
+pub use node_rust::{DynNode1x1Context, DynamicNode1x1};
 
 use crate::fa_ad_mult;
 use crate::fa_adsr_mult;
@@ -678,10 +678,7 @@ pub trait GraphAtomData {
 pub type GraphFun = Box<dyn FnMut(&dyn GraphAtomData, bool, f32, f32) -> f32>;
 
 /// This trait represents a DspNode for the [crate::matrix::Matrix]
-pub trait DspNode {
-    /// Number of outputs this node has.
-    fn outputs() -> usize;
-
+pub trait DspNode: std::fmt::Debug {
     /// Updates the sample rate for the node.
     fn set_sample_rate(&mut self, _srate: f32);
 
@@ -703,9 +700,9 @@ pub trait DspNode {
     /// * `inputs` contain all the possible inputs. In contrast to `params`
     /// these inputs might be overwritten by outputs of other nodes.
     /// * `outputs` are the output buffers of this node.
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         ectx: &mut NodeExecContext,
         nctx: &NodeContext,
         atoms: &[SAtom],
@@ -713,11 +710,6 @@ pub trait DspNode {
         outputs: &mut [ProcBuf],
         led: LedPhaseVals,
     );
-
-    /// A function factory for generating a graph for the generic node UI.
-    fn graph_fun() -> Option<GraphFun> {
-        None
-    }
 }
 
 /// A processing buffer with the exact right maximum size.
@@ -2571,91 +2563,149 @@ macro_rules! make_node_info_enum {
     }
 }
 
-macro_rules! make_node_enum {
-    ($s1: ident => $v1: ident,
-        $($str: ident => $variant: ident
-            UIType:: $gui_type: ident
-            UICategory:: $ui_cat: ident
-            $(($in_idx: literal $para: ident
-               $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
-               $steps: ident $min: expr, $max: expr, $def: expr))*
-            $({$in_at_idx: literal $at_idx: literal $atom: ident
-               $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
-               $amin: literal $amax: literal})*
-            $([$out_idx: literal $out: ident])*
-            ,)+
-    ) => {
-        /// Represents the actually by the DSP thread ([crate::NodeExecutor])
-        /// executed [Node]. You don't construct this directly, but let the
-        /// [crate::NodeConfigurator] or more abstract types like
-        /// [crate::Matrix] do this for you. See also [NodeId] for a way to
-        /// refer to these.
-        ///
-        /// The method [Node::process] is called by [crate::NodeExecutor]
-        /// and comes with the overhead of a big `match` statement.
-        ///
-        /// This is the only point of primitive polymorphism inside
-        /// the DSP graph. Dynamic polymorphism via the trait object
-        /// is not done, as I hope the `match` dispatch is a slight bit faster
-        /// because it's more static.
-        ///
-        /// The size of a [Node] is also limited and protected by a test
-        /// in the test suite. The size should not be needlessly increased
-        /// by implementations, in the hope to achieve better
-        /// cache locality. All allocated [Node]s are held in a big
-        /// continuous vector inside the [crate::NodeExecutor].
-        ///
-        /// The function [node_factory] is responsible for actually creating
-        /// the [Node].
-        #[derive(Debug, Clone)]
-        pub enum Node {
-            /// An empty node that does nothing. It's a placeholder
-            /// for non allocated nodes.
-            $v1,
-            $($variant { node: $variant },)+
-        }
+//macro_rules! make_node_enum {
+//    ($s1: ident => $v1: ident,
+//        $($str: ident => $variant: ident
+//            UIType:: $gui_type: ident
+//            UICategory:: $ui_cat: ident
+//            $(($in_idx: literal $para: ident
+//               $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
+//               $steps: ident $min: expr, $max: expr, $def: expr))*
+//            $({$in_at_idx: literal $at_idx: literal $atom: ident
+//               $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
+//               $amin: literal $amax: literal})*
+//            $([$out_idx: literal $out: ident])*
+//            ,)+
+//    ) => {
+//        /// Represents the actually by the DSP thread ([crate::NodeExecutor])
+//        /// executed [Node]. You don't construct this directly, but let the
+//        /// [crate::NodeConfigurator] or more abstract types like
+//        /// [crate::Matrix] do this for you. See also [NodeId] for a way to
+//        /// refer to these.
+//        ///
+//        /// The method [Node::process] is called by [crate::NodeExecutor]
+//        /// and comes with the overhead of a big `match` statement.
+//        ///
+//        /// This is the only point of primitive polymorphism inside
+//        /// the DSP graph. Dynamic polymorphism via the trait object
+//        /// is not done, as I hope the `match` dispatch is a slight bit faster
+//        /// because it's more static.
+//        ///
+//        /// The size of a [Node] is also limited and protected by a test
+//        /// in the test suite. The size should not be needlessly increased
+//        /// by implementations, in the hope to achieve better
+//        /// cache locality. All allocated [Node]s are held in a big
+//        /// continuous vector inside the [crate::NodeExecutor].
+//        ///
+//        /// The function [node_factory] is responsible for actually creating
+//        /// the [Node].
+//        #[derive(Debug, Clone)]
+//        pub enum Node {
+//            /// An empty node that does nothing. It's a placeholder
+//            /// for non allocated nodes.
+//            $v1,
+//            $($variant { node: $variant },)+
+//        }
+//
+//        impl Node {
+//            /// Returns the [NodeId] that can be used to refer to this node.
+//            /// The node does not store it's instance index, so you have to
+//            /// provide it. If the instance is of no meaning for the
+//            /// use case pass 0 to `instance`.
+//            pub fn to_id(&self, instance: usize) -> NodeId {
+//                match self {
+//                    Node::$v1               => NodeId::$v1,
+//                    $(Node::$variant { .. } => NodeId::$variant(instance as u8)),+
+//                }
+//            }
+//
+//            /// Resets any state of this [Node], such as
+//            /// any internal state variables or counters or whatever.
+//            /// The [Node] should just behave as if it was freshly returned
+//            /// from [node_factory].
+//            pub fn reset(&mut self) {
+//                match self {
+//                    Node::$v1           => {},
+//                    $(Node::$variant { node } => {
+//                        node.reset();
+//                    }),+
+//                }
+//            }
+//
+//            /// Sets the current sample rate this [Node] should operate at.
+//            pub fn set_sample_rate(&mut self, sample_rate: f32) {
+//                match self {
+//                    Node::$v1           => {},
+//                    $(Node::$variant { node } => {
+//                        node.set_sample_rate(sample_rate);
+//                    }),+
+//                }
+//            }
+//
+//        }
+//    }
+//}
+//
+node_list! {make_node_info_enum}
+//node_list! {make_node_enum}
+pub struct Node(pub Box<dyn DspNode>);
 
-        impl Node {
-            /// Returns the [NodeId] that can be used to refer to this node.
-            /// The node does not store it's instance index, so you have to
-            /// provide it. If the instance is of no meaning for the
-            /// use case pass 0 to `instance`.
-            pub fn to_id(&self, instance: usize) -> NodeId {
-                match self {
-                    Node::$v1               => NodeId::$v1,
-                    $(Node::$variant { .. } => NodeId::$variant(instance as u8)),+
-                }
-            }
+impl DspNode for Node {
+    #[inline]
+    fn set_sample_rate(&mut self, srate: f32) {
+        self.0.set_sample_rate(srate);
+    }
 
-            /// Resets any state of this [Node], such as
-            /// any internal state variables or counters or whatever.
-            /// The [Node] should just behave as if it was freshly returned
-            /// from [node_factory].
-            pub fn reset(&mut self) {
-                match self {
-                    Node::$v1           => {},
-                    $(Node::$variant { node } => {
-                        node.reset();
-                    }),+
-                }
-            }
+    #[inline]
+    fn reset(&mut self) {
+        self.0.reset();
+    }
 
-            /// Sets the current sample rate this [Node] should operate at.
-            pub fn set_sample_rate(&mut self, sample_rate: f32) {
-                match self {
-                    Node::$v1           => {},
-                    $(Node::$variant { node } => {
-                        node.set_sample_rate(sample_rate);
-                    }),+
-                }
-            }
-
-        }
+    #[inline]
+    fn process(
+        &mut self,
+        ctx: &mut dyn NodeAudioContext,
+        ectx: &mut NodeExecContext,
+        nctx: &NodeContext,
+        atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf],
+        led: LedPhaseVals,
+    ) {
+        self.0.process(ctx, ectx, nctx, atoms, inputs, outputs, led);
     }
 }
 
-node_list! {make_node_info_enum}
-node_list! {make_node_enum}
+impl std::fmt::Debug for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+
+#[derive(Debug)]
+pub struct NopNode();
+
+impl NopNode {
+    fn new_node() -> Node {
+        Node(Box::new(Self {}))
+    }
+}
+
+impl DspNode for NopNode {
+    fn set_sample_rate(&mut self, srate: f32) {}
+    fn reset(&mut self) {}
+    fn process(
+        &mut self,
+        ctx: &mut dyn NodeAudioContext,
+        ectx: &mut NodeExecContext,
+        nctx: &NodeContext,
+        atoms: &[SAtom],
+        inputs: &[ProcBuf],
+        outputs: &mut [ProcBuf],
+        led: LedPhaseVals,
+    ) {
+    }
+}
 
 pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
     macro_rules! make_node_factory_match {

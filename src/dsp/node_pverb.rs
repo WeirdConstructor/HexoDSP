@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{denorm, DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{denorm, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{crossfade, DattorroReverb, DattorroReverbParams};
 
@@ -26,6 +26,10 @@ impl DatParams {
     #[inline]
     pub fn set_frame(&mut self, frame: usize) {
         self.frame = frame;
+    }
+
+    fn graph_fun() -> Option<GraphFun> {
+        None
     }
 }
 
@@ -103,7 +107,8 @@ impl PVerb {
     pub const mspeed: &'static str = "The internal LFO speed, that modulates the internal \
         diffusion inside the reverb tank. Keeping this low (< **0.2**) will sound \
         a bit more natural than a fast LFO.";
-    pub const mshp: &'static str = "The shape of the LFO. **0.0** is a down ramp, **1.0** is an up \
+    pub const mshp: &'static str =
+        "The shape of the LFO. **0.0** is a down ramp, **1.0** is an up \
         ramp and **0.0** is a triangle. Setting this to **0.5** is a good choice. The \
         extreme values of **0.0** and **1.0** can lead to audible artifacts.";
     pub const mdepth: &'static str = "The depth of the LFO change that is applied to the \
@@ -165,10 +170,6 @@ Structure of the reverb is:
 }
 
 impl DspNode for PVerb {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {
         self.verb.set_sample_rate(srate as f64);
     }
@@ -178,9 +179,9 @@ impl DspNode for PVerb {
     }
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         _ectx: &mut NodeExecContext,
         nctx: &NodeContext,
         _atoms: &[SAtom],

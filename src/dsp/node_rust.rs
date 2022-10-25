@@ -143,21 +143,19 @@ This node does nothing in HexoSynth.
 
 See also [crate::SynthConstructor] and [crate::DynamicNode1x1].
 "#;
+
+    fn graph_fun() -> Option<GraphFun> { None }
 }
 
 impl DspNode for Rust1x1 {
-    fn outputs() -> usize {
-        1
-    }
-
     fn set_sample_rate(&mut self, srate: f32) {}
 
     fn reset(&mut self) {}
 
     #[inline]
-    fn process<T: NodeAudioContext>(
+    fn process(
         &mut self,
-        ctx: &mut T,
+        ctx: &mut dyn NodeAudioContext,
         ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         atoms: &[SAtom],
