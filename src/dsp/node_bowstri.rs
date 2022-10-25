@@ -97,10 +97,6 @@ impl BowedString {
 
         output
     }
-
-    fn graph_fun() -> Option<GraphFun> {
-        None
-    }
 }
 
 /// A bowed string simulation oscillator
@@ -139,6 +135,10 @@ works and what doesn't. It plays find in the area from **~55Hz** up to
 I can recommend to apply an envelope to the ~~vel~~ parameter,
 which is basically the bow's velocity.
 "#;
+
+    pub fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for BowStri {

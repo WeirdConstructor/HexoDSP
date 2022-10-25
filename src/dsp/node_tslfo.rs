@@ -43,7 +43,7 @@ Using the ~~trig~~ input you can reset the LFO phase, which allows to use it
 kind of like an envelope.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         let mut lfo = TriSawLFO::new();
         lfo.set_sample_rate(160.0);
 

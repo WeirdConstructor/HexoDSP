@@ -81,7 +81,7 @@ to the available note range. It will result in more evenly played notes
 if you sweep across the input signal range.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

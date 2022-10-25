@@ -100,7 +100,7 @@ the input signals up/down.
         self.handle = handle;
     }
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

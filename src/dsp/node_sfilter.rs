@@ -104,7 +104,7 @@ as it can become quite unstable.
 
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

@@ -53,7 +53,7 @@ signal you can use the ~~mono~~ setting to duplicate the signal on the ~~ch1~~
 input to the second channel ~~ch2~~.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

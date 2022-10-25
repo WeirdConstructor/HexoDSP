@@ -51,7 +51,7 @@ This also controls the bandwidth of the effect, where lower means a higher
 bandwidth, and thus more audible formant.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

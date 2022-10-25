@@ -27,10 +27,6 @@ impl DatParams {
     pub fn set_frame(&mut self, frame: usize) {
         self.frame = frame;
     }
-
-    fn graph_fun() -> Option<GraphFun> {
-        None
-    }
 }
 
 impl DattorroReverbParams for DatParams {
@@ -167,6 +163,10 @@ Structure of the reverb is:
 ```
 
 "#;
+
+    pub fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for PVerb {

@@ -144,7 +144,7 @@ This node does nothing in HexoSynth.
 See also [crate::SynthConstructor] and [crate::DynamicNode1x1].
 "#;
 
-    fn graph_fun() -> Option<GraphFun> { None }
+    pub fn graph_fun() -> Option<GraphFun> { None }
 }
 
 impl DspNode for Rust1x1 {

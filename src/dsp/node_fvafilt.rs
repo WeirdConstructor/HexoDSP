@@ -117,7 +117,7 @@ but that comes with the price that they are more expensive.
     pub const HELP: &'static str = r#"Frederik Halkjær Virtual Analog Stereo Filters
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

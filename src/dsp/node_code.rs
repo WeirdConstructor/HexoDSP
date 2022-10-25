@@ -83,7 +83,7 @@ Some ideas how to use this, you can build your own:
 - ... and many more things!
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

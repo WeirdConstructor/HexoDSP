@@ -38,7 +38,7 @@ The delay is always **3.14ms**, regardless of the sampling rate the synthesizer
 is running at.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }
@@ -108,7 +108,7 @@ The ~~vol~~ parameter is a convenience parameter to allow to control the
 volume of the feedback.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

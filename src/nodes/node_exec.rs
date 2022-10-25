@@ -7,7 +7,7 @@ use super::{
     NodeProg, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE, MAX_INJ_MIDI_EVENTS,
     MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
-use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE};
+use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE, DspNode};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
 use crate::util::Smoother;
 use synfx_dsp::AtomicFloat;
@@ -282,7 +282,7 @@ impl NodeExecContext {
 impl NodeExecutor {
     pub(crate) fn new(shared: SharedNodeExec) -> Self {
         let mut nodes = Vec::new();
-        nodes.resize_with(MAX_ALLOCATED_NODES, || Node::Nop);
+        nodes.resize_with(MAX_ALLOCATED_NODES, || crate::dsp::NopNode::new_node());
 
         let mut smoothers = Vec::new();
         smoothers.resize_with(MAX_SMOOTHERS, || (0, Smoother::new()));
@@ -338,11 +338,9 @@ impl NodeExecutor {
                 },
                 GraphMessage::Clear { prog } => {
                     for n in self.nodes.iter_mut() {
-                        if n.to_id(0) != NodeId::Nop {
-                            let prev_node = std::mem::replace(n, Node::Nop);
-                            let _ =
-                                self.shared.graph_drop_prod.push(DropMsg::Node { node: prev_node });
-                        }
+                        let prev_node = std::mem::replace(n, crate::dsp::NopNode::new_node());
+                        let _ =
+                            self.shared.graph_drop_prod.push(DropMsg::Node { node: prev_node });
                     }
 
                     self.exec_ctx.clear();

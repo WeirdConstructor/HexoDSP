@@ -79,7 +79,7 @@ With distortion you can beef up the oscillator output even more and to
 make it more harmonic you can apply oversampling.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         let mut osc = VPSOscillator::new(0.0);
         let israte = 1.0 / 128.0;
 

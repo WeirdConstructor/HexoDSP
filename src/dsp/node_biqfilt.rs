@@ -74,7 +74,7 @@ It is not meant for fast automation and might blow up if you
 treat it too rough. Please use other nodes like eg. `SFilter` for that.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

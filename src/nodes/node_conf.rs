@@ -785,26 +785,27 @@ impl NodeConfigurator {
         if let Some((mut node, info)) = node_factory(ni) {
             let mut index: Option<usize> = None;
 
-            if let Node::TSeq { node } = &mut node {
-                let tracker_idx = ni.instance();
-                if let Some(trk) = self.trackers.get_mut(tracker_idx) {
-                    node.set_backend(trk.get_backend());
-                }
-            }
-
-            #[cfg(feature = "synfx-dsp-jit")]
-            if let Node::Code { node } = &mut node {
-                let code_idx = ni.instance();
-                if let Some(cod) = self.code_engines.get_mut(code_idx) {
-                    node.set_backend(cod.get_backend());
-                }
-            }
-
-            if let Node::Scope { node } = &mut node {
-                if let Some(handle) = self.scopes.get(ni.instance()) {
-                    node.set_scope_handle(handle.clone());
-                }
-            }
+// TODO FIXME
+//            if let Node::TSeq { node } = &mut node {
+//                let tracker_idx = ni.instance();
+//                if let Some(trk) = self.trackers.get_mut(tracker_idx) {
+//                    node.set_backend(trk.get_backend());
+//                }
+//            }
+//
+//            #[cfg(feature = "synfx-dsp-jit")]
+//            if let Node::Code { node } = &mut node {
+//                let code_idx = ni.instance();
+//                if let Some(cod) = self.code_engines.get_mut(code_idx) {
+//                    node.set_backend(cod.get_backend());
+//                }
+//            }
+//
+//            if let Node::Scope { node } = &mut node {
+//                if let Some(handle) = self.scopes.get(ni.instance()) {
+//                    node.set_scope_handle(handle.clone());
+//                }
+//            }
 
             for i in 0..self.nodes.len() {
                 if let NodeId::Nop = self.nodes[i].0.to_id() {

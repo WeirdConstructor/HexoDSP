@@ -130,7 +130,7 @@ be provided on the ~~trig~~ input port. The ~~trig~~ input also works in
 **Loop** mode to retrigger the sample.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

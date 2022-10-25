@@ -160,7 +160,7 @@ it using it's ~~trig~~ input, you will need to use the gate output
 of a value column and invert it.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

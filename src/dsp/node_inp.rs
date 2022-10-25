@@ -35,7 +35,7 @@ Or a synthesizer that reacts to audio rate control signals on these two
 input ports.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

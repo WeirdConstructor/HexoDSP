@@ -67,7 +67,7 @@ the signal. The **Pulse-DC** variant compensates that DC component by shifting t
 just like a high pass filter would do.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         let mut osc = Box::new(PolyBlepOscillator::new(0.0));
         let israte = 1.0 / 128.0;
 

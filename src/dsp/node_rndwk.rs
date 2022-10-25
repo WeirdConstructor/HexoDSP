@@ -67,7 +67,7 @@ to a (way) longer time than the ~~trig~~ interval. It will smooth
 off the step widths and the overall motion even more.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }
@@ -141,7 +141,7 @@ impl DspNode for RndWk {
         ctx_vals[0].set(out.read(ctx.nframes() - 1));
     }
 
-    //    fn graph_fun() -> Option<GraphFun> {
+    //    pub fn graph_fun() -> Option<GraphFun> {
     //        let mut osc = VPSOscillator::new(0.0);
     //        let israte = 1.0 / 128.0;
     //

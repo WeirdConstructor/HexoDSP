@@ -71,7 +71,7 @@ This can also be used to invert the signal.
 For a more simplified version of this node see also `SMap`.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

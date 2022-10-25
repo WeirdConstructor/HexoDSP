@@ -63,7 +63,7 @@ You can do exponential FM with this node using the ~~det~~ or ~~freq~~ input,
 but for easy exponential FM synthesis there might be other nodes available.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

@@ -66,7 +66,7 @@ If you need different ~~slew~~ values for the CCs, I recommend creating other
 `MidiCC` instances with different ~~slew~~ settings.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

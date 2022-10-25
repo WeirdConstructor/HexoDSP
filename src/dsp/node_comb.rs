@@ -57,7 +57,7 @@ For typical arrangements in combination with allpass filters,
 see the documentation of the `AllP` node!
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

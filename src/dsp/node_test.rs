@@ -59,7 +59,7 @@ impl Test {
     pub const DESC: &'static str = r#""#;
     pub const HELP: &'static str = r#""#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         Some(Box::new(|_gd: &dyn GraphAtomData, _init: bool, x: f32, _xn: f32| -> f32 { x }))
     }
 }

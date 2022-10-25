@@ -54,7 +54,7 @@ Keep in mind, that there is also the `MidiCC` node, that allows HexoSynth to
 react to MIDI CC messages.
 "#;
 
-            fn graph_fun() -> Option<GraphFun> { None }
+            pub fn graph_fun() -> Option<GraphFun> { None }
         }
 
         impl DspNode for $name {

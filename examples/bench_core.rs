@@ -19,12 +19,16 @@ fn main() {
     // Setup a sawtooth oscillator with 440Hz:
     let saw = bosc(0).set().wtype(2).set().freq(440.0);
     // Setup an amplifier node with a low gain:
-    let amp = amp(0).set().gain(0.2).input().inp(&saw.output().sig());
+    let mut am = amp(0).set().gain(0.2).input().inp(&saw.output().sig());
+
+    for i in 1..100 {
+        am = amp(i).input().inp(&am.output().sig());
+    }
 
 //    // Insert your own custom Rust function via a NodeId::Rust1x1 node
 //    // into the DSP graph:
 //    use hexodsp::dsp::{DynamicNode1x1, DynNode1x1Context};
-    let r1x1 = rust1x1(0).input().inp(&amp.output().sig());
+    let r1x1 = rust1x1(0).input().inp(&am.output().sig());
     let r1x1 = r1x1.set().alpha(0.75);
 //    // You may replace this function anytime at runtime:
 //    sc.set_dynamic_node1x1(0, Box::new(|inp: &[f32], out: &mut [f32], ctx: &DynNode1x1Context| {
@@ -40,7 +44,7 @@ fn main() {
     // Assign amplifier node output to the two input channels
     // of the audio device output node:
 //    let out = out(0).input().ch1(&r1x1.output().sig());
-    let out = out(0).input().ch1(&amp.output().sig());
+    let out = out(0).input().ch1(&am.output().sig());
     let out = out.input().ch2(&r1x1.output().sig());
 
     // Setup a triangle LFO with a cycletime of 8 seconds.
@@ -49,7 +53,7 @@ fn main() {
     // Setup the "att"enuator input to 0.3 with a modulation amount of 0.0 to 0.7.
     // Redirect the output of the LFO (which oscillated between 0.0 and 1.0) to the
     // "att" input of the Amp node here:
-    amp.set_mod().att(0.3, 0.7).input().att(&lfo.output().sig());
+    am.set_mod().att(0.3, 0.7).input().att(&lfo.output().sig());
 
     // Upload the program:
     sc.upload(&out).unwrap();
@@ -62,7 +66,7 @@ fn main() {
     for i in 0..10 {
         let now = Instant::now();
 //        exec.dummy_run(100.0);
-        exec.test_run(100.0, false, &[]);
+        exec.test_run(50.0, false, &[]);
         let millis = now.elapsed().as_millis();
         cnt += 1;
         avg += millis;

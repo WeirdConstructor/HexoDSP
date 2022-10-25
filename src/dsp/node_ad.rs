@@ -75,7 +75,7 @@ With the ~~eoet~~ output you can either trigger other envelopes or via
 `FbWr`/`FbRd` retrigger the envelope.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         Some(Box::new(|gd: &dyn GraphAtomData, _init: bool, x: f32, xn: f32| -> f32 {
             let atk_idx = NodeId::Ad(0).inp_param("atk").unwrap().inp();
             let dcy_idx = NodeId::Ad(0).inp_param("dcy").unwrap().inp();

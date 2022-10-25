@@ -91,7 +91,7 @@ With the ~~eoet~~ output you can either trigger other envelopes or via
 envelopes following each other.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         let mut params = EnvADSRParams::default();
         let mut env = EnvRetrigADSR::new();
         env.set_sample_rate(200.0);

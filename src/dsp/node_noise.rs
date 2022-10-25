@@ -65,7 +65,7 @@ of the noise, and the ~~mode~~ allows to switch the oscillator between
 unipolar and bipolar output.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> { None }
+    pub fn graph_fun() -> Option<GraphFun> { None }
 }
 
 impl DspNode for Noise {

@@ -64,7 +64,7 @@ signal to an audio signal.
 For other kinds of delay/feedback please see also the `FbWr`/`FbRd` nodes.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

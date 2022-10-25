@@ -52,7 +52,7 @@ across the pitch input. If you want a more evenly distributed pitch selection
 please see also the `CQnt` node.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

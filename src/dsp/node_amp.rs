@@ -54,7 +54,7 @@ the ~~att~~ parameter. The ~~neg~~ setting then defines what happens with
 negative inputs on the ~~att~~ port.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

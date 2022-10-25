@@ -331,7 +331,7 @@ or `node_tslfo.rs` or many others how to provide a visualization graph function:
 
 ```ignore
     impl TsLFO {
-        fn graph_fun() -> Option<GraphFun> {
+        pub fn graph_fun() -> Option<GraphFun> {
             Some(Box::new(|gd: &dyn GraphAtomData, _init: bool, x: f32, xn: f32| -> f32 {
                 // ...
             }))
@@ -678,7 +678,7 @@ pub trait GraphAtomData {
 pub type GraphFun = Box<dyn FnMut(&dyn GraphAtomData, bool, f32, f32) -> f32>;
 
 /// This trait represents a DspNode for the [crate::matrix::Matrix]
-pub trait DspNode: std::fmt::Debug {
+pub trait DspNode: std::fmt::Debug + Send {
     /// Updates the sample rate for the node.
     fn set_sample_rate(&mut self, _srate: f32);
 
@@ -2686,7 +2686,7 @@ impl std::fmt::Debug for Node {
 pub struct NopNode();
 
 impl NopNode {
-    fn new_node() -> Node {
+    pub fn new_node() -> Node {
         Node(Box::new(Self {}))
     }
 }
@@ -2724,7 +2724,7 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
         ) => {
             match node_id {
                 $(NodeId::$variant(_) => Some((
-                    Node::$variant { node: $variant::new(&node_id) },
+                    Node(Box::new($variant::new(&node_id))),
                     NodeInfo::from_node_id(node_id),
                 )),)+
                 _ => None,
@@ -2735,77 +2735,78 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
     node_list! {make_node_factory_match}
 }
 
-impl Node {
-    /// This function is the heart of any DSP.
-    /// It dispatches this call to the corresponding [Node] implementation.
-    ///
-    /// You don't want to call this directly, but let [crate::NodeConfigurator] and
-    /// [crate::NodeExecutor] do their magic for you.
-    ///
-    /// The slices get passed a [ProcBuf] which is a super _unsafe_
-    /// buffer, that requires special care and invariants to work safely.
-    ///
-    /// Arguments:
-    /// * `ctx`: The [NodeAudioContext] usually provides global context information
-    /// such as access to the actual buffers of the audio driver or access to
-    /// MIDI events.
-    /// * `atoms`: The [SAtom] settings the user can set in the UI or via
-    /// other means. These are usually non interpolated/smoothed settings.
-    /// * `params`: The smoothed input parameters as set by the user (eg. in the UI).
-    /// There is usually no reason to use these, because any parameter can be
-    /// overridden by assigning an output port to the corresponding input.
-    /// This is provided for the rare case that you still want to use the
-    /// value the user set in the interface, and not the input Ctrl signal.
-    /// * `inputs`: For each `params` parameter there is a input port.
-    /// This slice will contain either a buffer from `params` or some output
-    /// buffer from some other (previously executed) [Node]s output.
-    /// * `outputs`: The output buffers this node will write it's signal/Ctrl
-    /// results to.
-    /// * `led`: Contains the feedback [LedPhaseVals], which are used
-    /// to communicate the current value (set once per `process()` call, usually at the end)
-    /// of the most important internal signal. Usually stuff like the output
-    /// value of an oscillator, envelope or the current sequencer output
-    /// value. It also provides a second value, a so called _phase_
-    /// which is usually used by graphical frontends to determine
-    /// the phase of the oscillator, envelope or the sequencer to
-    /// display some kind of position indicator.
-    #[inline]
-    pub fn process<T: NodeAudioContext>(
-        &mut self,
-        ctx: &mut T,
-        ectx: &mut NodeExecContext,
-        nctx: &NodeContext,
-        atoms: &[SAtom],
-        inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf],
-        led: LedPhaseVals,
-    ) {
-        macro_rules! make_node_process {
-            ($s1: ident => $v1: ident,
-                $($str: ident => $variant: ident
-                    UIType:: $gui_type: ident
-                    UICategory:: $ui_cat: ident
-                    $(($in_idx: literal $para: ident
-                       $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
-                       $steps: ident $min: expr, $max: expr, $def: expr))*
-                    $({$in_at_idx: literal $at_idx: literal $atom: ident
-                       $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
-                       $amin: literal $amax: literal})*
-                    $([$out_idx: literal $out: ident])*
-                ,)+
-            ) => {
-                match self {
-                    Node::$v1 => {},
-                    $(Node::$variant { node } =>
-                        node.process(ctx, ectx, nctx, atoms,
-                                     inputs, outputs, led),)+
-                }
-            }
-        }
-
-        node_list! {make_node_process}
-    }
-}
+//impl Node {
+//    /// This function is the heart of any DSP.
+//    /// It dispatches this call to the corresponding [Node] implementation.
+//    ///
+//    /// You don't want to call this directly, but let [crate::NodeConfigurator] and
+//    /// [crate::NodeExecutor] do their magic for you.
+//    ///
+//    /// The slices get passed a [ProcBuf] which is a super _unsafe_
+//    /// buffer, that requires special care and invariants to work safely.
+//    ///
+//    /// Arguments:
+//    /// * `ctx`: The [NodeAudioContext] usually provides global context information
+//    /// such as access to the actual buffers of the audio driver or access to
+//    /// MIDI events.
+//    /// * `atoms`: The [SAtom] settings the user can set in the UI or via
+//    /// other means. These are usually non interpolated/smoothed settings.
+//    /// * `params`: The smoothed input parameters as set by the user (eg. in the UI).
+//    /// There is usually no reason to use these, because any parameter can be
+//    /// overridden by assigning an output port to the corresponding input.
+//    /// This is provided for the rare case that you still want to use the
+//    /// value the user set in the interface, and not the input Ctrl signal.
+//    /// * `inputs`: For each `params` parameter there is a input port.
+//    /// This slice will contain either a buffer from `params` or some output
+//    /// buffer from some other (previously executed) [Node]s output.
+//    /// * `outputs`: The output buffers this node will write it's signal/Ctrl
+//    /// results to.
+//    /// * `led`: Contains the feedback [LedPhaseVals], which are used
+//    /// to communicate the current value (set once per `process()` call, usually at the end)
+//    /// of the most important internal signal. Usually stuff like the output
+//    /// value of an oscillator, envelope or the current sequencer output
+//    /// value. It also provides a second value, a so called _phase_
+//    /// which is usually used by graphical frontends to determine
+//    /// the phase of the oscillator, envelope or the sequencer to
+//    /// display some kind of position indicator.
+//    #[inline]
+//    pub fn process<T: NodeAudioContext>(
+//        &mut self,
+//        ctx: &mut T,
+//        ectx: &mut NodeExecContext,
+//        nctx: &NodeContext,
+//        atoms: &[SAtom],
+//        inputs: &[ProcBuf],
+//        outputs: &mut [ProcBuf],
+//        led: LedPhaseVals,
+//    ) {
+//        macro_rules! make_node_process {
+//            ($s1: ident => $v1: ident,
+//                $($str: ident => $variant: ident
+//                    UIType:: $gui_type: ident
+//                    UICategory:: $ui_cat: ident
+//                    $(($in_idx: literal $para: ident
+//                       $n_fun: ident $d_fun: ident $r_fun: ident $f_fun: ident
+//                       $steps: ident $min: expr, $max: expr, $def: expr))*
+//                    $({$in_at_idx: literal $at_idx: literal $atom: ident
+//                       $at_fun: ident ($at_init: expr) $at_ui: ident $fa_fun: ident
+//                       $amin: literal $amax: literal})*
+//                    $([$out_idx: literal $out: ident])*
+//                ,)+
+//            ) => {
+//                match self {
+//                    Node::$v1 => {},
+//                    $(Node::$variant { node } =>
+//                        node.process(ctx, ectx, nctx, atoms,
+//                                     inputs, outputs, led),)+
+//                }
+//            }
+//        }
+//
+//        node_list! {make_node_process}
+//    }
+//}
+//
 
 #[cfg(test)]
 mod tests {

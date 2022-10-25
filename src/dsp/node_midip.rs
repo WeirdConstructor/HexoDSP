@@ -79,7 +79,7 @@ custom and fixed gate length. However, if new note is played on this
 MIDI channel, the gate will restart after a very short pause.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

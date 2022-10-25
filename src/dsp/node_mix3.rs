@@ -35,7 +35,7 @@ There is even a convenient output volume knob,
 to turn down the output.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

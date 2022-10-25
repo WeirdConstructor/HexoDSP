@@ -61,7 +61,7 @@ Building your own reverbs is fun!
 (And don't forget that you can create feedback using the `FbWr` and `FbRd` nodes!)
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }

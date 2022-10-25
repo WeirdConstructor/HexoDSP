@@ -82,7 +82,7 @@ And **1** to ~~min~~ and **-1** to ~~max~~ for **BiInv**.
 For a more sophisticated version of this node see also `Map`.
 "#;
 
-    fn graph_fun() -> Option<GraphFun> {
+    pub fn graph_fun() -> Option<GraphFun> {
         None
     }
 }
