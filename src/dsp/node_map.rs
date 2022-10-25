@@ -55,7 +55,9 @@ range. It's main use is for precise control of an input of another node.
 It processes the input signal as follows. First the input is attenuverted
 using the ~~atv~~ parameter and then the ~~offs~~ offset parameter is added:
 
+```text
     inp * atv + offs
+```
 
 The resulting signal is then processed by the mapping, that maps
 the input signal range ~~imin~~/~~imax~~ to the ouput signal range ~~min~~/~~max~~.

@@ -133,6 +133,7 @@ Internal modulation keeps the sound alive and spreads it even more.
 
 Structure of the reverb is:
 
+```text
       Left       Right
         |         |
         \----+----/
@@ -158,6 +159,8 @@ Structure of the reverb is:
 
       Multiple Taps into Left/Right Diffusors 1/2 and Delays 1/2
       are then fed to the left and right output channels.
+```
+
 "#;
 }
 

@@ -108,6 +108,7 @@ or contain nothing at all. For step and value columns these values
 are mapped to the **0.0-1.0** control signal range, with **0xFFF** being **1.0**
 and **0x000** being **0.0**.
 
+```text
     Value examples:     1.0   0.9  0.75   0.5  0.25   0.1
                       0xFFF 0xE70 0xC00 0x800 0x400 0x19A
     Gate examples:
@@ -120,6 +121,7 @@ and **0x000** being **0.0**.
          75%  0xC00   4   0x0C0  12/16  0x00C    rare short pulse: 0xEF0
          87%  0xE00   2   0x0E0  15/16  0x00E   50/50 short pulse: 0x7F0
         100%  0xF00   1   0x0F0  16/16  0x00F   50/50 full gate:   0x7FF
+```
 
 ## Gate Input and Output
 

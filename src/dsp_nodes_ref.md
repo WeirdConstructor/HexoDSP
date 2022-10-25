@@ -488,7 +488,9 @@ range. It's main use is for precise control of an input of another node.
 It processes the input signal as follows. First the input is attenuverted
 using the `atv` parameter and then the `offs` offset parameter is added:
 
+```text
     inp * atv + offs
+```
 
 The resulting signal is then processed by the mapping, that maps
 the input signal range `imin`/`imax` to the ouput signal range `min`/`max`.
@@ -749,6 +751,7 @@ or contain nothing at all. For step and value columns these values
 are mapped to the **0.0-1.0** control signal range, with **0xFFF** being **1.0**
 and **0x000** being **0.0**.
 
+```text
     Value examples:     1.0   0.9  0.75   0.5  0.25   0.1
                       0xFFF 0xE70 0xC00 0x800 0x400 0x19A
     Gate examples:
@@ -761,6 +764,7 @@ and **0x000** being **0.0**.
          75%  0xC00   4   0x0C0  12/16  0x00C    rare short pulse: 0xEF0
          87%  0xE00   2   0x0E0  15/16  0x00E   50/50 short pulse: 0x7F0
         100%  0xF00   1   0x0F0  16/16  0x00F   50/50 full gate:   0x7FF
+```
 
 ## Gate Input and Output
 
@@ -3136,19 +3140,23 @@ or anything you might find it useful for.
 
 Typical arrangements are (Schroeder Reverb):
 
+```text
                     t=4.5ms
                     g=0.7   -> Comb
     AllP -> AllP -> AllP -> -> Comb
     t=42ms  t=13.5ms        -> Comb
     g=0.7   g=0.7           -> Comb
+```
 
 Or:
 
+```text
     Comb ->                 t=0.48ms
     Comb ->                 g=0.7
     Comb -> AllP -> AllP -> AllP
     Comb -> t=5ms   t=1.68ms
             g=0.7   g=0.7
+```
 
 Typical values for the comb filters are in the range `g`=**0.6** to **0.9**
 and time in the range of **30ms** to **250ms**.
@@ -3691,6 +3699,7 @@ Internal modulation keeps the sound alive and spreads it even more.
 
 Structure of the reverb is:
 
+```text
       Left       Right
         |         |
         \----+----/
@@ -3716,6 +3725,8 @@ Structure of the reverb is:
 
       Multiple Taps into Left/Right Diffusors 1/2 and Delays 1/2
       are then fed to the left and right output channels.
+```
+
 
 #### NodeId::PVerb input in_l
 Left input channel, will be summed with the right channel. So you can just feed in a mono signal without harm.
