@@ -9,6 +9,7 @@
 | [**CQnt**](#nodeidcqnt) | Ctrl | **Ctrl Pitch Quantizer**:   This special quantizer maps the unipolar **0**..**1** control signal input range on `inp` evenly to the selected keys and octaves.  |
 | [**TSeq**](#nodeidtseq) | Mod | **Tracker Sequencer**:   This node implements a sequencer that can be programmed using the tracker interface in HexoSynth on the right. It provides 6 control signals and 6 gate outputs. |
 | [**Code**](#nodeidcode) | Signal | **WBlockDSP Code Execution**:   This node executes just in time compiled code as fast as machine code. Use this to implement real time DSP code yourself. The inputs are freely useable in your code. All the ports (input and output) can be used either for audio or for control signals. |
+| [**Rust1x1**](#nodeidrust1x1) | Signal | **Rust Code Node**:   This node does provide the user of HexoDSP or the SynthConstructor with an API to code custom DSP node implementations in pure Rust at compile time. It does not have any relevance for HexoSynth.  |
 | [**Sampl**](#nodeidsampl) | Osc | **Sample Player**:  Provides a simple sample player that you can load a single audio sample from a WAV file into. |
 | [**Sin**](#nodeidsin) | Osc | **Sine Oscillator**:   This is a very simple oscillator that generates a sine wave.  |
 | [**BOsc**](#nodeidbosc) | Osc | **Basic Oscillator**:   A very basic band limited oscillator with a sine, triangle, pulse and sawtooth waveform.  |
@@ -924,6 +925,75 @@ Input Parameter Gamma
 | **min** | -1.0000 |     -1.00 | -1.000 | `code(0).set().gamma(-1)` | `NodeId::Code(0).inp_param("gamma")` |
 | **mid** |  0.0000 |      0.00 |  0.000 | `code(0).set().gamma(0)` | `NodeId::Code(0).inp_param("gamma")` |
 | **max** |  1.0000 |      1.00 |  1.000 | `code(0).set().gamma(1)` | `NodeId::Code(0).inp_param("gamma")` |
+### NodeId::Rust1x1
+**Rust Code Node**
+
+This node does provide the user of HexoDSP or the SynthConstructor with an API
+to code custom DSP node implementations in pure Rust at compile time.
+It does not have any relevance for HexoSynth.
+
+- [input **inp**](#nodeidrust1x1-input-inp) - Signal input. Signal input to the dynamically dispatched Rust node.
+- [input **alpha**](#nodeidrust1x1-input-alpha) - Alpha parameter for the dynamically dispatched Rust node.
+- [input **beta**](#nodeidrust1x1-input-beta) - Beta parameter for the dynamically dispatched Rust node.
+- [input **delta**](#nodeidrust1x1-input-delta) - Delta parameter for the dynamically dispatched Rust node.
+- [input **gamma**](#nodeidrust1x1-input-gamma) - Gamma parameter for the dynamically dispatched Rust node.
+- output **sig**
+Signal output. Signal output of the dynamically dispatched Rust node.
+#### NodeId::Rust1x1 Help
+**Rust Code Node**
+
+This node does provide the user of HexoDSP or the SynthConstructor with an API
+to code custom DSP node implementations in pure Rust at compile time.
+
+Treat this node as plugin API into the HexoDSP DSP graph.
+
+This node does nothing in HexoSynth.
+
+#### NodeId::Rust1x1 input inp
+Signal input. Signal input to the dynamically dispatched Rust node.
+
+| | value | denormalized | fmt | build API | [crate::ParamId] |
+|-|-------|--------------|-----|-----------|------------------|
+| **default** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().inp(0)` | `NodeId::Rust1x1(0).inp_param("inp")` |
+| **min** | -1.0000 |     -1.00 | -1.000 | `rust1x1(0).set().inp(-1)` | `NodeId::Rust1x1(0).inp_param("inp")` |
+| **mid** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().inp(0)` | `NodeId::Rust1x1(0).inp_param("inp")` |
+| **max** |  1.0000 |      1.00 |  1.000 | `rust1x1(0).set().inp(1)` | `NodeId::Rust1x1(0).inp_param("inp")` |
+#### NodeId::Rust1x1 input alpha
+Alpha parameter for the dynamically dispatched Rust node.
+
+| | value | denormalized | fmt | build API | [crate::ParamId] |
+|-|-------|--------------|-----|-----------|------------------|
+| **default** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().alpha(0)` | `NodeId::Rust1x1(0).inp_param("alpha")` |
+| **min** | -1.0000 |     -1.00 | -1.000 | `rust1x1(0).set().alpha(-1)` | `NodeId::Rust1x1(0).inp_param("alpha")` |
+| **mid** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().alpha(0)` | `NodeId::Rust1x1(0).inp_param("alpha")` |
+| **max** |  1.0000 |      1.00 |  1.000 | `rust1x1(0).set().alpha(1)` | `NodeId::Rust1x1(0).inp_param("alpha")` |
+#### NodeId::Rust1x1 input beta
+Beta parameter for the dynamically dispatched Rust node.
+
+| | value | denormalized | fmt | build API | [crate::ParamId] |
+|-|-------|--------------|-----|-----------|------------------|
+| **default** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().beta(0)` | `NodeId::Rust1x1(0).inp_param("beta")` |
+| **min** | -1.0000 |     -1.00 | -1.000 | `rust1x1(0).set().beta(-1)` | `NodeId::Rust1x1(0).inp_param("beta")` |
+| **mid** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().beta(0)` | `NodeId::Rust1x1(0).inp_param("beta")` |
+| **max** |  1.0000 |      1.00 |  1.000 | `rust1x1(0).set().beta(1)` | `NodeId::Rust1x1(0).inp_param("beta")` |
+#### NodeId::Rust1x1 input delta
+Delta parameter for the dynamically dispatched Rust node.
+
+| | value | denormalized | fmt | build API | [crate::ParamId] |
+|-|-------|--------------|-----|-----------|------------------|
+| **default** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().delta(0)` | `NodeId::Rust1x1(0).inp_param("delta")` |
+| **min** | -1.0000 |     -1.00 | -1.000 | `rust1x1(0).set().delta(-1)` | `NodeId::Rust1x1(0).inp_param("delta")` |
+| **mid** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().delta(0)` | `NodeId::Rust1x1(0).inp_param("delta")` |
+| **max** |  1.0000 |      1.00 |  1.000 | `rust1x1(0).set().delta(1)` | `NodeId::Rust1x1(0).inp_param("delta")` |
+#### NodeId::Rust1x1 input gamma
+Gamma parameter for the dynamically dispatched Rust node.
+
+| | value | denormalized | fmt | build API | [crate::ParamId] |
+|-|-------|--------------|-----|-----------|------------------|
+| **default** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().gamma(0)` | `NodeId::Rust1x1(0).inp_param("gamma")` |
+| **min** | -1.0000 |     -1.00 | -1.000 | `rust1x1(0).set().gamma(-1)` | `NodeId::Rust1x1(0).inp_param("gamma")` |
+| **mid** |  0.0000 |      0.00 |  0.000 | `rust1x1(0).set().gamma(0)` | `NodeId::Rust1x1(0).inp_param("gamma")` |
+| **max** |  1.0000 |      1.00 |  1.000 | `rust1x1(0).set().gamma(1)` | `NodeId::Rust1x1(0).inp_param("gamma")` |
 ### NodeId::Sampl
 **Sample Player**
 Provides a simple sample player that you can load a single audio sample from a WAV file into.
