@@ -33,19 +33,23 @@ or anything you might find it useful for.
 
 Typical arrangements are (Schroeder Reverb):
 
+```text
                     t=4.5ms
                     g=0.7   -> Comb
     AllP -> AllP -> AllP -> -> Comb
     t=42ms  t=13.5ms        -> Comb
     g=0.7   g=0.7           -> Comb
+```
 
 Or:
 
+```text
     Comb ->                 t=0.48ms
     Comb ->                 g=0.7
     Comb -> AllP -> AllP -> AllP
     Comb -> t=5ms   t=1.68ms
             g=0.7   g=0.7
+```
 
 Typical values for the comb filters are in the range ~~g~~=**0.6** to **0.9**
 and time in the range of **30ms** to **250ms**.

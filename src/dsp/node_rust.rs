@@ -63,6 +63,7 @@ impl DynNode1x1Context {
 ///
 ///```
 /// use hexodsp::{SynthConstructor, DynamicNode1x1, DynNode1x1Context};
+/// use hexodsp::build::*;
 ///
 /// let mut sc = SynthConstructor::new();
 ///
@@ -70,7 +71,7 @@ impl DynNode1x1Context {
 ///     // Your code here!
 /// }));
 ///
-/// sc.upload(&out(0).input().ch1(&r1x1.output().sig()));
+/// sc.upload(&out(0).input().ch1(&rust1x1(0).output().sig()));
 ///```
 /// See also: [crate::SynthConstructor::set_dynamic_node1x1] for a more detailed example.
 pub trait DynamicNode1x1: Send {

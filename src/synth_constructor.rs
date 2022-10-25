@@ -258,9 +258,12 @@ impl SynthConstructor {
     ///
     ///```
     /// use hexodsp::{SynthConstructor, DynamicNode1x1, DynNode1x1Context};
+    /// use hexodsp::build::*;
+    ///
+    /// let mut sc = SynthConstructor::new();
     ///
     /// // Setup the input of the Rust1x1 node to receive an 880Hz sine.
-    /// let sine_gen_out = &sin(0).set().freq(880.0).output().sig()
+    /// let sine_gen_out = &sin(0).set().freq(880.0).output().sig();
     /// let r1x1 = rust1x1(0).input().inp(sine_gen_out);
     ///
     /// // you can provide up to 4 extra parameters (alpha, beta, gamma, delta):
@@ -278,7 +281,7 @@ impl SynthConstructor {
     ///     ctx.led_value().set(out[0]);
     /// }));
     ///
-    /// sc.upload(&out(0).input().ch1(&r1x1(0).output().sig()));
+    /// sc.upload(&out(0).input().ch1(&r1x1.output().sig()));
     ///
     ///```
     pub fn set_dynamic_node1x1(&mut self, index: usize, node: Box<dyn crate::dsp::DynamicNode1x1>) {

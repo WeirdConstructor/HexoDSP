@@ -231,10 +231,17 @@ pub trait ExternalParams: Send + Sync {
 /// Contains global state that all nodes can access.
 /// This is used for instance to implement the feedbackd delay nodes.
 pub struct NodeExecContext {
+    /// Feedback delay buffers, used for instance by the FbWr/FbRd nodes.
     pub feedback_delay_buffers: Vec<FeedbackBuffer>,
+    /// List of current MIDI note events that were passed into HexoDSP in this buffer period.
     pub midi_notes: Vec<HxTimedEvent>,
+    /// List of current MIDI CC events that were passed into HexoDSP in this buffer period.
     pub midi_ccs: Vec<HxTimedEvent>,
+    /// Handle to the external parameters, external meaning parameters that come in via eg. the
+    /// plugin API or are provided elsewhere on the audio thread.
     pub ext_param: Option<Arc<dyn ExternalParams>>,
+    /// The current deposited dynamic nodes for the Rust1x1 node. They can be swapped out
+    /// at runtime with [crate::NodeConfigurator::set_dynamic_node1x1].
     pub dynamic_nodes1x1: Vec<Box<dyn crate::dsp::DynamicNode1x1>>,
 }
 
