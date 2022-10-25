@@ -691,6 +691,7 @@ impl NodeConfigurator {
     }
 
     /// Sets the dynamic node instance for a certain Rust1x1 instance.
+    /// See also [crate::SynthConstructor::set_dynamic_node1x1] for more details.
     pub fn set_dynamic_node1x1(
         &mut self,
         instance: usize,

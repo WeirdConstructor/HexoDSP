@@ -567,7 +567,7 @@ pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 
 pub use satom::*;
 
-pub use node_rust::DynamicNode1x1;
+pub use node_rust::{DynamicNode1x1, DynNode1x1Context};
 pub use node_rust::new_dummy_dynamic_node1x1;
 
 use crate::fa_ad_mult;
@@ -1006,6 +1006,7 @@ macro_rules! define_db {
 }
 
 #[macro_export]
+/// This macro calculates the normalized pitch value from a pitch in Hz.
 macro_rules! n_pit {
     ($x: expr) => {
         0.1 * (($x as f32).max(0.01) / 440.0).log2()
@@ -1013,6 +1014,7 @@ macro_rules! n_pit {
 }
 
 #[macro_export]
+/// This macro denormalizes a pitch value and returns the pitch in Hz.
 macro_rules! d_pit {
     ($x: expr) => {{
         let note: f32 = ($x as f32) * 10.0;
@@ -2388,6 +2390,15 @@ macro_rules! make_node_info_enum {
             $(pub mod $variant {
                 $(#[inline] pub fn $para(inputs: &[crate::dsp::ProcBuf]) -> &crate::dsp::ProcBuf {
                     &inputs[$in_idx]
+                })*
+            })+
+        }
+
+        #[allow(non_snake_case)]
+        pub mod inp_buf {
+            $(pub mod $variant {
+                $(#[inline] pub fn $para(inputs: &[crate::dsp::ProcBuf]) -> crate::dsp::ProcBuf {
+                    inputs[$in_idx]
                 })*
             })+
         }

@@ -59,7 +59,7 @@ pub enum SynthError {
 }
 
 #[derive(Debug, Clone)]
-pub struct NodeConfig {
+struct NodeConfig {
     node_id: NodeId,
     edges: HashMap<String, (NodeId, String)>,
     params: HashMap<String, (SAtom, Option<f32>)>,
@@ -79,6 +79,14 @@ impl NodeConfig {
     }
 }
 
+/// A convenient highlevel API to HexoDSP for building custom synthesizers
+/// from HexoDSP nodes.
+///
+/// This API combines with the [crate::build] API for defining compile time checked
+/// HexoDSP graphs in Rust.
+///
+/// You also have the possibility of providing your own DSP nodes using the
+/// [SynthConstructor::set_dynamic_node1x1] function and the [crate::DynamicNode1x1] trait.
 pub struct SynthConstructor {
     config: NodeConfigurator,
     exec: Option<NodeExecutor>,
@@ -244,8 +252,47 @@ impl SynthConstructor {
         }
     }
 
+    /// Updates the dynamic node for the Rust1x1 nodes. The `index` refers to the
+    /// instance `NodeId::Rust1x1(index)`. The new DSP code is preserved for the first use
+    /// of that node, and can also be swapped out at runtime anytime while the DSP graph is working.
+    ///
+    ///```
+    /// use hexodsp::{SynthConstructor, DynamicNode1x1, DynNode1x1Context};
+    ///
+    /// // Setup the input of the Rust1x1 node to receive an 880Hz sine.
+    /// let sine_gen_out = &sin(0).set().freq(880.0).output().sig()
+    /// let r1x1 = rust1x1(0).input().inp(sine_gen_out);
+    ///
+    /// // you can provide up to 4 extra parameters (alpha, beta, gamma, delta):
+    /// let r1x1 = r1x1.set().alpha(0.75);
+    ///
+    /// // You may replace this function anytime at runtime:
+    /// sc.set_dynamic_node1x1(0, Box::new(|inp: &[f32], out: &mut [f32], ctx: &DynNode1x1Context| {
+    ///     let alpha = ctx.alpha_slice();
+    ///
+    ///     for (i, in_sample) in inp.iter().enumerate() {
+    ///         out[i] = in_sample * alpha[i];
+    ///     }
+    ///
+    ///     // This sets an atomic float that can be read out using SynthConstructor::led_value()!
+    ///     ctx.led_value().set(out[0]);
+    /// }));
+    ///
+    /// sc.upload(&out(0).input().ch1(&r1x1(0).output().sig()));
+    ///
+    ///```
     pub fn set_dynamic_node1x1(&mut self, index: usize, node: Box<dyn crate::dsp::DynamicNode1x1>) {
         self.config.set_dynamic_node1x1(index, node);
+    }
+
+    /// Returns the atomic phase value for [NodeId].
+    pub fn phase_value(&self, ni: &NodeId) -> f32 {
+        self.config.phase_value_for(ni)
+    }
+
+    /// Returns the atomic LED value for [NodeId].
+    pub fn led_value(&self, ni: &NodeId) -> f32 {
+        self.config.led_value_for(ni)
     }
 
     pub fn upload(&mut self, node: &dyn ConstructorNodeBuilder) -> Result<(), SynthError> {

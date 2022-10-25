@@ -26,13 +26,18 @@ fn main() {
 
         // Insert your own custom Rust function via a NodeId::Rust1x1 node
         // into the DSP graph:
-        use hexodsp::dsp::DynamicNode1x1;
+        use hexodsp::dsp::{DynamicNode1x1, DynNode1x1Context};
         let r1x1 = rust1x1(0).input().inp(&amp.output().sig());
+        let r1x1 = r1x1.set().alpha(0.75);
         // You may replace this function anytime at runtime:
-        sc.set_dynamic_node1x1(0, Box::new(|inp: &[f32], out: &mut [f32]| {
+        sc.set_dynamic_node1x1(0, Box::new(|inp: &[f32], out: &mut [f32], ctx: &DynNode1x1Context| {
+            let alpha = ctx.alpha_slice();
             for (i, in_sample) in inp.iter().enumerate() {
-                out[i] = in_sample * 0.5;
+                out[i] = in_sample * alpha[i];
             }
+
+            // This sets an atomic float that can be read out using SynthConstructor::led_value()!
+            ctx.led_value().set(out[0]);
         }));
 
         // Assign amplifier node output to the two input channels
@@ -68,9 +73,10 @@ fn main() {
             let tslfo = NodeId::TsLFO(0);
             let tslfo_sig_idx = tslfo.out("sig").unwrap();
             println!(
-                "Update freq={}, LFO={:0.3}",
+                "Update freq={}, LFO={:0.3}, 1x1LED={:0.3}",
                 new_pitch,
-                sc.output_feedback(&tslfo, tslfo_sig_idx).unwrap_or(0.0)
+                sc.output_feedback(&tslfo, tslfo_sig_idx).unwrap_or(0.0),
+                sc.led_value(&NodeId::Rust1x1(0)),
             );
             sc.update_params(&bosc(0).set().freq(new_pitch)).unwrap();
 

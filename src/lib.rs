@@ -350,6 +350,7 @@ pub use nodes::{new_node_engine, HxMidiEvent, NodeConfigurator, NodeExecutor};
 pub use sample_lib::{SampleLibrary, SampleLoadError};
 pub use scope_handle::ScopeHandle;
 pub use synth_constructor::SynthConstructor;
+pub use dsp::{DynamicNode1x1, DynNode1x1Context};
 
 pub struct Context<'a, 'b, 'c, 'd> {
     pub nframes: usize,

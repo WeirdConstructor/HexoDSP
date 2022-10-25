@@ -38,7 +38,7 @@ use crate::dsp::{Node, SAtom};
 pub use crate::monitor::MinMaxMonitorSamples;
 use crate::monitor::MON_SIG_CNT;
 
-/// Holds a DynamicNode instance. For example for [NodeConfigurator::set_dynamic_nodes1x1].
+/// Holds a DynamicNode instance. For example for [NodeConfigurator::set_dynamic_node1x1].
 pub enum DynNode {
     DN1x1(Box<dyn crate::dsp::DynamicNode1x1>),
 }
