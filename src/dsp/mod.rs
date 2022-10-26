@@ -560,8 +560,28 @@ pub mod tracker;
 use crate::nodes::NodeAudioContext;
 use crate::nodes::NodeExecContext;
 
+use std::cell::UnsafeCell;
 use std::sync::Arc;
 use synfx_dsp::AtomicFloat;
+
+#[derive(Debug)]
+pub struct SyncUnsafeCell<T: ?Sized> {
+    value: UnsafeCell<T>,
+}
+
+impl<T> SyncUnsafeCell<T> {
+    pub fn new(t: T) -> Self {
+        Self { value: UnsafeCell::new(t) }
+    }
+}
+
+impl<T: ?Sized> SyncUnsafeCell<T> {
+    pub unsafe fn get(&self) -> *mut T {
+        self.value.get()
+    }
+}
+
+unsafe impl<T: ?Sized> Sync for SyncUnsafeCell<T> {}
 
 pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 
@@ -2648,17 +2668,32 @@ macro_rules! make_node_info_enum {
 //
 node_list! {make_node_info_enum}
 //node_list! {make_node_enum}
-pub struct Node(pub Box<dyn DspNode>);
+
+/// A warpper type for [DspNode] trait objects.
+///
+/// Make sure to call methods on this **only from one thread** at a time.
+/// The common lifetime cycle of this is:
+/// 1. Instanciation in [crate::NodeConfigurator::create_node] on eg. the frontend thread
+/// 2. Sent wrapped in a [crate::nodes::NodeProg] to the audio/DSP thread.
+/// 3. DSP thread calls methods on this.
+/// 4. Upon update of the [crate::nodes::NodeProg] on the DSP thread it is disposed
+/// by being sent to the drop thread.
+#[derive(Clone)]
+pub struct Node(pub Arc<SyncUnsafeCell<dyn DspNode>>);
 
 impl DspNode for Node {
     #[inline]
     fn set_sample_rate(&mut self, srate: f32) {
-        self.0.set_sample_rate(srate);
+        unsafe {
+            (*self.0.get()).set_sample_rate(srate);
+        }
     }
 
     #[inline]
     fn reset(&mut self) {
-        self.0.reset();
+        unsafe {
+            (*self.0.get()).reset();
+        }
     }
 
     #[inline]
@@ -2672,13 +2707,13 @@ impl DspNode for Node {
         outputs: &mut [ProcBuf],
         led: LedPhaseVals,
     ) {
-        self.0.process(ctx, ectx, nctx, atoms, inputs, outputs, led);
+        unsafe { (*self.0.get()).process(ctx, ectx, nctx, atoms, inputs, outputs, led) };
     }
 }
 
 impl std::fmt::Debug for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.0)
+        write!(f, "Node[{:?}]", unsafe { self.0.get() })
     }
 }
 
@@ -2687,7 +2722,7 @@ pub struct NopNode();
 
 impl NopNode {
     pub fn new_node() -> Node {
-        Node(Box::new(Self {}))
+        Node(Arc::new(SyncUnsafeCell::new(Self {})))
     }
 }
 
@@ -2724,7 +2759,7 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
         ) => {
             match node_id {
                 $(NodeId::$variant(_) => Some((
-                    Node(Box::new($variant::new(&node_id))),
+                    Node(Arc::new(SyncUnsafeCell::new($variant::new(&node_id)))),
                     NodeInfo::from_node_id(node_id),
                 )),)+
                 _ => None,
