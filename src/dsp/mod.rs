@@ -2679,26 +2679,28 @@ node_list! {make_node_info_enum}
 /// 4. Upon update of the [crate::nodes::NodeProg] on the DSP thread it is disposed
 /// by being sent to the drop thread.
 #[derive(Clone)]
-pub struct Node(pub Arc<SyncUnsafeCell<dyn DspNode>>);
+pub struct Node(pub Arc<SyncUnsafeCell<dyn DspNode>>, NodeId);
 
-impl DspNode for Node {
+impl Node {
+    pub fn id(&self) -> NodeId { self.1 }
+
     #[inline]
-    fn set_sample_rate(&mut self, srate: f32) {
+    pub fn set_sample_rate(&self, srate: f32) {
         unsafe {
             (*self.0.get()).set_sample_rate(srate);
         }
     }
 
     #[inline]
-    fn reset(&mut self) {
+    pub fn reset(&self) {
         unsafe {
             (*self.0.get()).reset();
         }
     }
 
     #[inline]
-    fn process(
-        &mut self,
+    pub fn process(
+        &self,
         ctx: &mut dyn NodeAudioContext,
         ectx: &mut NodeExecContext,
         nctx: &NodeContext,
@@ -2722,7 +2724,7 @@ pub struct NopNode();
 
 impl NopNode {
     pub fn new_node() -> Node {
-        Node(Arc::new(SyncUnsafeCell::new(Self {})))
+        Node(Arc::new(SyncUnsafeCell::new(Self {})), NodeId::Nop)
     }
 }
 
@@ -2759,7 +2761,7 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
         ) => {
             match node_id {
                 $(NodeId::$variant(_) => Some((
-                    Node(Arc::new(SyncUnsafeCell::new($variant::new(&node_id)))),
+                    Node(Arc::new(SyncUnsafeCell::new($variant::new(&node_id))), node_id),
                     NodeInfo::from_node_id(node_id),
                 )),)+
                 _ => None,
@@ -2848,8 +2850,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn check_node_size_staying_small() {
-        assert_eq!(std::mem::size_of::<Node>(), 56);
+    fn check_id_sizes_staying_small() {
         assert_eq!(std::mem::size_of::<NodeId>(), 2);
         assert_eq!(std::mem::size_of::<ParamId>(), 24);
     }

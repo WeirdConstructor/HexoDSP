@@ -2,8 +2,8 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use hexodsp::dsp::build::*;
 use hexodsp::synth_constructor::SynthConstructor;
+use hexodsp::build::*;
 mod common;
 use common::*;
 

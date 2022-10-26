@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{ProcBuf, SAtom};
+use crate::dsp::{ProcBuf, SAtom, Node};
 use std::cell::RefCell;
 use triple_buffer::{Input, Output, TripleBuffer};
 
@@ -71,6 +71,8 @@ impl ModOp {
 pub struct NodeOp {
     /// Stores the index of the node
     pub idx: u8,
+    /// Stores the reference to the node.
+    pub node: Node,
     /// Output index and length of the node:
     pub out_idxlen: (usize, usize),
     /// Input index and length of the node:

@@ -36,15 +36,6 @@ pub const MAX_MIDI_CC_PER_BLOCK: usize = 1024;
 /// have to push buffers of the program around.
 ///
 pub struct NodeExecutor {
-    /// Contains the nodes and their state.
-    /// Is loaded from the input ring buffer when a corresponding
-    /// message arrives.
-    ///
-    /// In case the previous node contained something that needs
-    /// deallocation, the nodes are replaced and the contents
-    /// is sent back using the free-ringbuffer.
-    pub(crate) nodes: Vec<Node>,
-
     /// Contains the stand-by smoothing operators for incoming parameter changes.
     pub(crate) smoothers: Vec<(usize, Smoother)>,
 
@@ -281,9 +272,6 @@ impl NodeExecContext {
 
 impl NodeExecutor {
     pub(crate) fn new(shared: SharedNodeExec) -> Self {
-        let mut nodes = Vec::new();
-        nodes.resize_with(MAX_ALLOCATED_NODES, || crate::dsp::NopNode::new_node());
-
         let mut smoothers = Vec::new();
         smoothers.resize_with(MAX_SMOOTHERS, || (0, Smoother::new()));
 
@@ -291,7 +279,6 @@ impl NodeExecutor {
         let injected_midi = Vec::with_capacity(MAX_INJ_MIDI_EVENTS);
 
         NodeExecutor {
-            nodes,
             smoothers,
             target_refresh,
             sample_rate: 44100.0,
@@ -312,16 +299,6 @@ impl NodeExecutor {
     pub fn process_graph_updates(&mut self) {
         while let Some(upd) = self.shared.graph_update_con.pop() {
             match upd {
-                GraphMessage::NewNode { index, mut node } => {
-                    node.set_sample_rate(self.sample_rate);
-                    let prev_node = std::mem::replace(&mut self.nodes[index as usize], node);
-
-                    log(|w| {
-                        let _ = write!(w, "[dbg] Create node index={}", index);
-                    });
-
-                    let _ = self.shared.graph_drop_prod.push(DropMsg::Node { node: prev_node });
-                }
                 GraphMessage::DynNode { index, node } => match node {
                     DynNode::DN1x1(mut node) => {
                         std::mem::swap(
@@ -337,12 +314,6 @@ impl NodeExecutor {
                     }
                 },
                 GraphMessage::Clear { prog } => {
-                    for n in self.nodes.iter_mut() {
-                        let prev_node = std::mem::replace(n, crate::dsp::NopNode::new_node());
-                        let _ =
-                            self.shared.graph_drop_prod.push(DropMsg::Node { node: prev_node });
-                    }
-
                     self.exec_ctx.clear();
 
                     self.monitor_signal_cur_inp_indices = [UNUSED_MONITOR_IDX; MON_SIG_CNT];
@@ -454,8 +425,9 @@ impl NodeExecutor {
     pub fn set_sample_rate(&mut self, sample_rate: f32) {
         self.sample_rate = sample_rate;
         self.exec_ctx.set_sample_rate(sample_rate);
-        for n in self.nodes.iter_mut() {
-            n.set_sample_rate(sample_rate);
+
+        for op in self.prog.prog.iter() {
+            op.node.set_sample_rate(sample_rate);
         }
 
         for sm in self.smoothers.iter_mut() {
@@ -501,13 +473,12 @@ impl NodeExecutor {
     }
 
     #[inline]
-    pub fn get_nodes(&self) -> &Vec<Node> {
-        &self.nodes
-    }
-
-    #[inline]
     pub fn get_prog(&self) -> &NodeProg {
         &self.prog
+    }
+
+    pub fn get_nodes(&self) -> Vec<Node> {
+        self.prog.prog.iter().map(|op| op.node.clone()).collect::<Vec<Node>>()
     }
 
     #[inline]
@@ -581,7 +552,6 @@ impl NodeExecutor {
 
         self.process_smoothers(ctx.nframes());
 
-        let nodes = &mut self.nodes;
         let ctx_vals = &mut self.shared.node_ctx_values;
         let prog = &mut self.prog;
         let exec_ctx = &mut self.exec_ctx;
@@ -601,7 +571,7 @@ impl NodeExecutor {
                 modop.process(nframes);
             }
 
-            nodes[op.idx as usize].process(
+            op.node.process(
                 ctx,
                 exec_ctx,
                 &NodeContext {

@@ -1508,9 +1508,9 @@ mod tests {
         node_exec.process_graph_updates();
 
         let nodes = node_exec.get_nodes();
-        assert!(nodes[0].to_id(0) == NodeId::Sin(0));
-        assert!(nodes[1].to_id(1) == NodeId::Sin(1));
-        assert!(nodes[2].to_id(2) == NodeId::Sin(2));
+        assert!(nodes[0].id() == NodeId::Sin(0));
+        assert!(nodes[1].id() == NodeId::Sin(1));
+        assert!(nodes[2].id() == NodeId::Sin(2));
 
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog[0].to_string(), "Op(i=0 out=(0-1|1) in=(0-3|0) at=(0-0) mod=(0-0))");
@@ -1608,8 +1608,8 @@ mod tests {
         node_exec.process_graph_updates();
 
         let nodes = node_exec.get_nodes();
-        let ex_nodes: Vec<&Node> = nodes.iter().filter(|n| n.to_id(0) != NodeId::Nop).collect();
-        assert_eq!(ex_nodes.len(), 9 * 9 + 1);
+        let ex_nodes: Vec<&Node> = nodes.iter().filter(|n| n.id() != NodeId::Nop).collect();
+        assert_eq!(ex_nodes.len(), 9 * 9);
     }
 
     #[test]
@@ -1631,8 +1631,8 @@ mod tests {
         node_exec.process_graph_updates();
 
         let nodes = node_exec.get_nodes();
-        assert!(nodes[0].to_id(0) == NodeId::Sin(0));
-        assert!(nodes[1].to_id(0) == NodeId::Out(0));
+        assert!(nodes[0].id() == NodeId::Sin(0));
+        assert!(nodes[1].id() == NodeId::Out(0));
 
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog.len(), 2);
@@ -1662,10 +1662,10 @@ mod tests {
         node_exec.process_graph_updates();
 
         let nodes = node_exec.get_nodes();
-        assert!(nodes[0].to_id(0) == NodeId::Sin(0));
-        assert!(nodes[1].to_id(0) == NodeId::Sin(0));
-        assert!(nodes[2].to_id(0) == NodeId::Sin(0));
-        assert!(nodes[3].to_id(0) == NodeId::Out(0));
+        assert!(nodes[0].id().to_instance(0) == NodeId::Sin(0));
+//        assert!(nodes[1].id().to_instance(0) == NodeId::Sin(0));
+//        assert!(nodes[2].id().to_instance(0) == NodeId::Sin(0));
+        assert!(nodes[1].id().to_instance(0) == NodeId::Out(0));
 
         let prog = node_exec.get_prog();
         assert_eq!(prog.prog.len(), 2);

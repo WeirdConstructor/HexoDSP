@@ -63,10 +63,6 @@ pub(crate) enum DropMsg {
 /// the [NodeExecutor] thread. And also parameter updates of course.
 #[derive(Debug)]
 pub enum GraphMessage {
-    NewNode {
-        index: u8,
-        node: Node,
-    },
     DynNode {
         index: u8,
         node: DynNode,

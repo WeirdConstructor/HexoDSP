@@ -26,9 +26,10 @@ use triple_buffer::Output;
 
 /// A NodeInstance describes the input/output/atom ports of a Node
 /// and holds other important house keeping information for the [NodeConfigurator].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone)]
 pub struct NodeInstance {
     id: NodeId,
+    node: Node,
     in_use: bool,
     prog_idx: usize,
     out_start: usize,
@@ -49,9 +50,10 @@ pub struct NodeInstance {
 }
 
 impl NodeInstance {
-    pub fn new(id: NodeId) -> Self {
+    pub fn new(id: NodeId, node: Node) -> Self {
         Self {
             id,
+            node,
             in_use: false,
             prog_idx: 0,
             out_start: 0,
@@ -76,6 +78,7 @@ impl NodeInstance {
     pub fn as_op(&self) -> NodeOp {
         NodeOp {
             idx: self.prog_idx as u8,
+            node: self.node.clone(),
             out_idxlen: (self.out_start, self.out_end),
             in_idxlen: (self.in_start, self.in_end),
             at_idxlen: (self.at_start, self.at_end),
@@ -173,7 +176,7 @@ struct NodeInputAtom {
 /// as facade for the executed node graph in the backend.
 pub struct NodeConfigurator {
     /// Holds all the nodes, their parameters and type.
-    pub(crate) nodes: Vec<(NodeInfo, Option<NodeInstance>)>,
+    pub(crate) nodes: Vec<(NodeInfo, Option<NodeInstance>, Node)>,
     /// An index of all nodes ever instanciated.
     /// Be aware, that currently there is no cleanup implemented.
     /// That means, any instanciated NodeId will persist throughout
@@ -285,7 +288,6 @@ impl SharedNodeConf {
 impl NodeConfigurator {
     pub(crate) fn new() -> (Self, SharedNodeExec) {
         let mut nodes = Vec::new();
-        nodes.resize_with(MAX_ALLOCATED_NODES, || (NodeInfo::from_node_id(NodeId::Nop), None));
 
         let (shared, shared_exec) = SharedNodeConf::new();
 
@@ -372,12 +374,12 @@ impl NodeConfigurator {
         self.node2idx.get(&ni).copied()
     }
 
-    pub fn node_by_id(&self, ni: &NodeId) -> Option<&(NodeInfo, Option<NodeInstance>)> {
+    pub(crate) fn node_by_id(&self, ni: &NodeId) -> Option<&(NodeInfo, Option<NodeInstance>, Node)> {
         let idx = self.unique_index_for(ni)?;
         self.nodes.get(idx)
     }
 
-    pub fn node_by_id_mut(&mut self, ni: &NodeId) -> Option<&mut (NodeInfo, Option<NodeInstance>)> {
+    pub(crate) fn node_by_id_mut(&mut self, ni: &NodeId) -> Option<&mut (NodeInfo, Option<NodeInstance>, Node)> {
         let idx = self.unique_index_for(ni)?;
         self.nodes.get_mut(idx)
     }
@@ -659,7 +661,7 @@ impl NodeConfigurator {
     pub fn monitor(&mut self, node_id: &NodeId, inputs: &[Option<u8>], outputs: &[Option<u8>]) {
         let mut bufs = [UNUSED_MONITOR_IDX; MON_SIG_CNT];
 
-        if let Some((_node_info, Some(node_instance))) = self.node_by_id(node_id) {
+        if let Some((_node_info, Some(node_instance), _)) = self.node_by_id(node_id) {
             let mut i = 0;
             for inp_idx in inputs.iter().take(MON_SIG_CNT / 2) {
                 if let Some(inp_idx) = inp_idx {
@@ -771,7 +773,7 @@ impl NodeConfigurator {
 
     pub fn delete_nodes(&mut self) {
         self.node2idx.clear();
-        self.nodes.fill_with(|| (NodeInfo::from_node_id(NodeId::Nop), None));
+        self.nodes.clear();
         self.params.clear();
         self.param_values.clear();
         self.param_modamt.clear();
@@ -783,66 +785,33 @@ impl NodeConfigurator {
 
     pub fn create_node(&mut self, ni: NodeId) -> Option<(&NodeInfo, u8)> {
         if let Some((mut node, info)) = node_factory(ni) {
-            let mut index: Option<usize> = None;
 
-// TODO FIXME
-//            if let Node::TSeq { node } = &mut node {
-//                let tracker_idx = ni.instance();
-//                if let Some(trk) = self.trackers.get_mut(tracker_idx) {
-//                    node.set_backend(trk.get_backend());
-//                }
-//            }
-//
-//            #[cfg(feature = "synfx-dsp-jit")]
-//            if let Node::Code { node } = &mut node {
-//                let code_idx = ni.instance();
-//                if let Some(cod) = self.code_engines.get_mut(code_idx) {
-//                    node.set_backend(cod.get_backend());
-//                }
-//            }
-//
-//            if let Node::Scope { node } = &mut node {
-//                if let Some(handle) = self.scopes.get(ni.instance()) {
-//                    node.set_scope_handle(handle.clone());
-//                }
-//            }
+            // TODO FIXME
+            //            if let Node::TSeq { node } = &mut node {
+            //                let tracker_idx = ni.instance();
+            //                if let Some(trk) = self.trackers.get_mut(tracker_idx) {
+            //                    node.set_backend(trk.get_backend());
+            //                }
+            //            }
+            //
+            //            #[cfg(feature = "synfx-dsp-jit")]
+            //            if let Node::Code { node } = &mut node {
+            //                let code_idx = ni.instance();
+            //                if let Some(cod) = self.code_engines.get_mut(code_idx) {
+            //                    node.set_backend(cod.get_backend());
+            //                }
+            //            }
+            //
+            //            if let Node::Scope { node } = &mut node {
+            //                if let Some(handle) = self.scopes.get(ni.instance()) {
+            //                    node.set_scope_handle(handle.clone());
+            //                }
+            //            }
 
-            for i in 0..self.nodes.len() {
-                if let NodeId::Nop = self.nodes[i].0.to_id() {
-                    index = Some(i);
-                    break;
-                } else if ni == self.nodes[i].0.to_id() {
-                    return Some((&self.nodes[i].0, i as u8));
-                }
-            }
-
-            if let Some(index) = index {
-                self.node2idx.insert(ni, index);
-
-                self.nodes[index] = (info, None);
-
-                let _ = self
-                    .shared
-                    .graph_update_prod
-                    .push(GraphMessage::NewNode { index: index as u8, node });
-
-                Some((&self.nodes[index].0, index as u8))
-            } else {
-                let index = self.nodes.len();
-                self.node2idx.insert(ni, index);
-
-                self.nodes.resize_with((self.nodes.len() + 1) * 2, || {
-                    (NodeInfo::from_node_id(NodeId::Nop), None)
-                });
-                self.nodes[index] = (info, None);
-
-                let _ = self
-                    .shared
-                    .graph_update_prod
-                    .push(GraphMessage::NewNode { index: index as u8, node });
-
-                Some((&self.nodes[index].0, index as u8))
-            }
+            let index = self.nodes.len();
+            self.node2idx.insert(ni, index);
+            self.nodes.push((info, None, node.clone()));
+            Some((&self.nodes[index].0, index as u8))
         } else {
             None
         }
@@ -860,7 +829,7 @@ impl NodeConfigurator {
     /// If new nodes were created/deleted/reordered in between this function
     /// might not work properly and assign already used instances.
     pub fn unused_instance_node_id(&self, mut id: NodeId) -> NodeId {
-        while let Some((_, Some(ni))) = self.node_by_id(&id) {
+        while let Some((_, Some(ni), _)) = self.node_by_id(&id) {
             if !ni.is_used() {
                 return ni.id;
             }
@@ -889,7 +858,7 @@ impl NodeConfigurator {
         let mut at_len = 0;
         let mut mod_len = 0;
 
-        for (i, (node_info, node_instance)) in self.nodes.iter_mut().enumerate() {
+        for (i, (node_info, node_instance, node)) in self.nodes.iter_mut().enumerate() {
             let id = node_info.to_id();
 
             // - calculate size of output vector.
@@ -911,7 +880,7 @@ impl NodeConfigurator {
                 break;
             }
 
-            let mut ni = NodeInstance::new(id);
+            let mut ni = NodeInstance::new(id, node.clone());
             ni.set_index(i)
                 .set_output(out_idx, out_len)
                 .set_input(in_idx, in_len)
@@ -988,7 +957,7 @@ impl NodeConfigurator {
     /// [NodeConfigurator::rebuild_node_ports] was not called before. So make sure this is the
     /// case or don't expect the node and input to be executed.
     pub fn add_prog_node(&mut self, prog: &mut NodeProg, node_id: &NodeId) {
-        if let Some((_node_info, Some(node_instance))) = self.node_by_id_mut(node_id) {
+        if let Some((_node_info, Some(node_instance), _)) = self.node_by_id_mut(node_id) {
             node_instance.mark_used();
             let op = node_instance.as_op();
             prog.append_op(op);
@@ -1011,13 +980,13 @@ impl NodeConfigurator {
         adjacent_output: (NodeId, u8),
     ) {
         let output_index =
-            if let Some((_, Some(node_instance))) = self.node_by_id(&adjacent_output.0) {
+            if let Some((_, Some(node_instance), _)) = self.node_by_id(&adjacent_output.0) {
                 node_instance.out_local2global(adjacent_output.1)
             } else {
                 return;
             };
 
-        if let Some((_node_info, Some(node_instance))) = self.node_by_id_mut(&node_input.0) {
+        if let Some((_node_info, Some(node_instance), _)) = self.node_by_id_mut(&node_input.0) {
             node_instance.mark_used();
             let op = node_instance.as_op();
 
@@ -1095,7 +1064,7 @@ impl NodeConfigurator {
     /// See also [NodeConfigurator::filtered_out_fb_for] for a
     /// filtered variant suitable for UI usage.
     pub fn out_fb_for(&self, node_id: &NodeId, out: u8) -> Option<f32> {
-        if let Some((_, Some(node_instance))) = self.node_by_id(node_id) {
+        if let Some((_, Some(node_instance), _)) = self.node_by_id(node_id) {
             self.output_fb_values.get(node_instance.out_local2global(out)?).copied()
         } else {
             None
