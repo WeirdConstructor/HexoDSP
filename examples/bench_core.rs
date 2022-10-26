@@ -21,8 +21,9 @@ fn main() {
     // Setup an amplifier node with a low gain:
     let mut am = amp(0).set().gain(0.2).input().inp(&saw.output().sig());
 
+    let mut am = sin(0).input().freq(&am.output().sig());
     for i in 1..100 {
-        am = amp(i).input().inp(&am.output().sig());
+        am = sin(i).input().freq(&am.output().sig());
     }
 
 //    // Insert your own custom Rust function via a NodeId::Rust1x1 node
@@ -53,7 +54,7 @@ fn main() {
     // Setup the "att"enuator input to 0.3 with a modulation amount of 0.0 to 0.7.
     // Redirect the output of the LFO (which oscillated between 0.0 and 1.0) to the
     // "att" input of the Amp node here:
-    am.set_mod().att(0.3, 0.7).input().att(&lfo.output().sig());
+//    am.set_mod().att(0.3, 0.7).input().att(&lfo.output().sig());
 
     // Upload the program:
     sc.upload(&out).unwrap();
@@ -66,7 +67,7 @@ fn main() {
     for i in 0..10 {
         let now = Instant::now();
 //        exec.dummy_run(100.0);
-        exec.test_run(50.0, false, &[]);
+        exec.test_run(10.0, false, &[]);
         let millis = now.elapsed().as_millis();
         cnt += 1;
         avg += millis;
