@@ -83,6 +83,8 @@ pub(crate) struct SharedNodeExec {
     pub(crate) graph_event_prod: Producer<GraphEvent>,
     /// For sending feedback to the frontend thread.
     pub(crate) monitor_backend: MonitorBackend,
+    /// The current sample rate of the backend
+    pub(crate) sample_rate: Arc<AtomicFloat>,
 }
 
 /// Contains audio driver context informations. Such as the number
@@ -424,6 +426,7 @@ impl NodeExecutor {
 
     pub fn set_sample_rate(&mut self, sample_rate: f32) {
         self.sample_rate = sample_rate;
+        self.shared.sample_rate.set(sample_rate);
         self.exec_ctx.set_sample_rate(sample_rate);
 
         for op in self.prog.prog.iter() {

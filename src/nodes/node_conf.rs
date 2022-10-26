@@ -240,6 +240,8 @@ pub(crate) struct SharedNodeConf {
     /// Handles deallocation of dead nodes from the backend.
     #[allow(dead_code)]
     pub(crate) drop_thread: DropThread,
+    /// Sample rate of the backend
+    pub(crate) sample_rate: Arc<AtomicFloat>,
 }
 
 use super::node_exec::SharedNodeExec;
@@ -266,6 +268,8 @@ impl SharedNodeConf {
             exec_node_ctx_vals.push(ctx_val.clone());
         }
 
+        let sample_rate = Arc::new(AtomicFloat::new(44100.0));
+
         (
             Self {
                 node_ctx_values,
@@ -273,6 +277,7 @@ impl SharedNodeConf {
                 graph_event_cons: rb_ev_con,
                 monitor,
                 drop_thread,
+                sample_rate: sample_rate.clone(),
             },
             SharedNodeExec {
                 node_ctx_values: exec_node_ctx_vals,
@@ -280,6 +285,7 @@ impl SharedNodeConf {
                 graph_drop_prod: rb_drop_prod,
                 graph_event_prod: rb_ev_prod,
                 monitor_backend,
+                sample_rate,
             },
         )
     }
@@ -807,6 +813,8 @@ impl NodeConfigurator {
             //                    node.set_scope_handle(handle.clone());
             //                }
             //            }
+
+            node.set_sample_rate(self.shared.sample_rate.get());
 
             let index = self.nodes.len();
             self.node2idx.insert(ni, index);
