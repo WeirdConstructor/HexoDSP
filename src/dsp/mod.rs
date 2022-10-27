@@ -557,6 +557,7 @@ mod node_vosc;
 mod satom;
 pub mod tracker;
 
+use crate::NodeGlobalRef;
 use crate::nodes::NodeAudioContext;
 use crate::nodes::NodeExecContext;
 
@@ -2744,7 +2745,7 @@ impl DspNode for NopNode {
     }
 }
 
-pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
+pub fn node_factory(node_id: NodeId, node_global: &NodeGlobalRef) -> Option<(Node, NodeInfo)> {
     macro_rules! make_node_factory_match {
         ($s1: expr => $v1: ident,
             $($str: ident => $variant: ident
@@ -2761,7 +2762,7 @@ pub fn node_factory(node_id: NodeId) -> Option<(Node, NodeInfo)> {
         ) => {
             match node_id {
                 $(NodeId::$variant(_) => Some((
-                    Node(Arc::new(SyncUnsafeCell::new($variant::new(&node_id))), node_id),
+                    Node(Arc::new(SyncUnsafeCell::new($variant::new(&node_id, node_global))), node_id),
                     NodeInfo::from_node_id(node_id),
                 )),)+
                 _ => None,

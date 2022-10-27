@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
 /// A simple amplifier
@@ -12,7 +14,7 @@ pub struct FbWr {
 }
 
 impl FbWr {
-    pub fn new(nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self { fb_index: nid.instance() as u8 }
     }
     pub const inp: &'static str = "Signal input";
@@ -77,7 +79,7 @@ pub struct FbRd {
 }
 
 impl FbRd {
-    pub fn new(nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self { fb_index: nid.instance() as u8 }
     }
     pub const vol: &'static str = "Volume of the input.\n\

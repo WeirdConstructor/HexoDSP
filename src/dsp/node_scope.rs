@@ -8,7 +8,9 @@
 // Copyright by Andrew Belt, 2021
 
 //use super::helpers::{sqrt4_to_pow4, TrigSignal, Trigger};
-use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::SCOPE_SAMPLES;
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use crate::ScopeHandle;
@@ -40,9 +42,15 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId, node_global: &NodeGlobalRef) -> Self {
+        let handle = if let Ok(mut handle) = node_global.lock() {
+            handle.get_scope_handle(nid.instance() as usize)
+        } else {
+            ScopeHandle::new_shared()
+        };
+
         Self {
-            handle: ScopeHandle::new_shared(),
+            handle,
             idx: 0,
             srate_ms: 44.1,
             frame_time: 0.0,

@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId,
+    ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::SlewValue;
@@ -18,7 +19,7 @@ macro_rules! define_ext {
         }
 
         impl $name {
-            pub fn new(_nid: &NodeId) -> Self {
+            pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
                 Self { slew1: SlewValue::new(), slew2: SlewValue::new(), slew3: SlewValue::new() }
             }
 

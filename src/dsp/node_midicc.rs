@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    at, denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    at, denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId,
+    ProcBuf, SAtom,
 };
 use crate::nodes::{HxMidiEvent, MidiEventPointer, NodeAudioContext, NodeExecContext};
 use synfx_dsp::SlewValue;
@@ -26,7 +27,7 @@ pub struct MidiCC {
 }
 
 impl MidiCC {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self {
             cur_cc1: 0.0,
             cur_cc2: 0.0,

@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf,
+    SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{apply_distortion, Oversampling, VPSOscillator};
@@ -31,7 +32,7 @@ pub struct VOsc {
 }
 
 impl VOsc {
-    pub fn new(nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         let init_phase = nid.init_phase();
 
         Self {

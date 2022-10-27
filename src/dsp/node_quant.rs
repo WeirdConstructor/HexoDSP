@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{ChangeTrig, Quantizer};
 
@@ -21,7 +23,7 @@ pub struct Quant {
 }
 
 impl Quant {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self { quant: Box::new(Quantizer::new()), change_trig: ChangeTrig::new() }
     }
     pub const freq: &'static str = "Any signal that is to be pitch quantized.";

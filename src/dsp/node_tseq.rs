@@ -3,7 +3,9 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::tracker::TrackerBackend;
-use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{Trigger, TriggerPhaseClock};
 
@@ -38,12 +40,16 @@ pub struct TSeq {
 
 impl Clone for TSeq {
     fn clone(&self) -> Self {
-        Self::new(&NodeId::Nop)
+        Self {
+            backend: None,
+            srate: self.srate,
+            time: Box::new(TSeqTime { clock: TriggerPhaseClock::new(), trigger: Trigger::new() }),
+        }
     }
 }
 
 impl TSeq {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self {
             backend: None,
             srate: 48000.0,

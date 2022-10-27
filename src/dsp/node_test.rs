@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf,
+    SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::TrigSignal;
@@ -37,7 +38,7 @@ pub struct Test {
 }
 
 impl Test {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self { trigger: false, trig_sig: TrigSignal::new() }
     }
 

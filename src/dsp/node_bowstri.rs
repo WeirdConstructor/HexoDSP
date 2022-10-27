@@ -3,8 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    denorm, denorm_offs, inp, out, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf,
-    SAtom,
+    denorm, denorm_offs, inp, out, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef,
+    NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{Biquad, DelayBuffer, FixedOnePole};
@@ -106,7 +106,7 @@ pub struct BowStri {
 }
 
 impl BowStri {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self { bstr: Box::new(BowedString::new()) }
     }
     pub const freq: &'static str = "Frequency of the bowed string oscillator.\n";

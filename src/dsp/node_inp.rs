@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    denorm, inp, out_idx, DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId,
+    ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 
@@ -12,7 +13,7 @@ use crate::nodes::{NodeAudioContext, NodeExecContext};
 pub struct Inp {}
 
 impl Inp {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self {}
     }
 

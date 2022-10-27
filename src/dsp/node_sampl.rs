@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{at, denorm, denorm_offs, inp, out, GraphFun}; //, inp, denorm, denorm_v, inp_dir, at};
+use crate::dsp::{at, denorm, denorm_offs, inp, out, GraphFun, NodeGlobalRef}; //, inp, denorm, denorm_v, inp_dir, at};
 use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{cubic_interpolate, Trigger};
@@ -55,7 +55,7 @@ pub struct Sampl {
 }
 
 impl Sampl {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self {
             phase: 0.0,
             srate: 44100.0,

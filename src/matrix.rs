@@ -583,14 +583,18 @@ impl Matrix {
         self.config.filtered_out_fb_for(ni, out)
     }
 
-    /// Retrieve the oscilloscope handle for the scope index `scope`.
+    /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.
     pub fn get_pattern_data(&self, tracker_id: usize) -> Option<Arc<Mutex<PatternData>>> {
         self.config.get_pattern_data(tracker_id)
     }
 
-    /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.
+    /// Retrieve the oscilloscope handle for the scope index `scope`.
     pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
-        self.config.get_scope_handle(scope)
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            Some(node_global.get_scope_handle(scope))
+        } else {
+            None
+        }
     }
 
     /// Checks if there are any updates to send for the pattern data that belongs to the

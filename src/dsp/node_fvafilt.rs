@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use std::simd::f32x4;
 use std::sync::Arc;
@@ -73,7 +75,7 @@ pub struct FVaFilt {
 }
 
 impl FVaFilt {
-    pub fn new(nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         let params = Arc::new(FilterParams::new());
         Self {
             state: Box::new(VaFiltState {

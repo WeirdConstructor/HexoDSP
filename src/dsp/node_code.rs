@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 #[cfg(feature = "synfx-dsp-jit")]
 use synfx_dsp_jit::engine::CodeEngineBackend;
@@ -24,12 +26,15 @@ impl std::fmt::Debug for Code {
 
 impl Clone for Code {
     fn clone(&self) -> Self {
-        Self::new(&NodeId::Nop)
+        Self {
+            backend: None,
+            srate: self.srate,
+        }
     }
 }
 
 impl Code {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self {
             #[cfg(feature = "synfx-dsp-jit")]
             backend: None,

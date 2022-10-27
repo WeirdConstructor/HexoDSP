@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom, GraphFun};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::Rng;
 
@@ -26,7 +28,7 @@ pub struct Noise {
 }
 
 impl Noise {
-    pub fn new(nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         let mut rng = Rng::new();
         rng.seed((0x193a67f4a8a6d769_u64).wrapping_add(0x131415 * (nid.instance() as u64 + 1)));
 
@@ -65,7 +67,9 @@ of the noise, and the ~~mode~~ allows to switch the oscillator between
 unipolar and bipolar output.
 "#;
 
-    pub fn graph_fun() -> Option<GraphFun> { None }
+    pub fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for Noise {

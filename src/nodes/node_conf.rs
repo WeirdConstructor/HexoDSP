@@ -7,13 +7,13 @@ use super::{
     MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES, MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES,
     UNUSED_MONITOR_IDX,
 };
+use crate::{NodeGlobalRef, NodeGlobalData};
 use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
 use crate::wblockdsp::*;
 use crate::SampleLibrary;
-use crate::ScopeHandle;
 #[cfg(feature = "synfx-dsp-jit")]
 use synfx_dsp_jit::engine::CodeEngine;
 
@@ -185,8 +185,6 @@ pub struct NodeConfigurator {
     pub(crate) node2idx: HashMap<NodeId, usize>,
     /// Holding the tracker sequencers
     pub(crate) trackers: Vec<Tracker>,
-    /// Holding the scope buffers:
-    pub(crate) scopes: Vec<Arc<ScopeHandle>>,
     /// Holding the WBlockDSP code engine backends:
     #[cfg(feature = "synfx-dsp-jit")]
     pub(crate) code_engines: Vec<CodeEngine>,
@@ -198,6 +196,10 @@ pub struct NodeConfigurator {
     /// The shared parts of the [NodeConfigurator]
     /// and the [crate::nodes::NodeExecutor].
     pub(crate) shared: SharedNodeConf,
+
+    /// Reference to the [crate::NodeGlobalData] that is used to initialize the
+    /// [crate::dsp::DspNode] instances creates by this [NodeConfigurator].
+    pub(crate) node_global: NodeGlobalRef,
 
     feedback_filter: FeedbackFilter,
 
@@ -297,8 +299,7 @@ impl NodeConfigurator {
 
         let (shared, shared_exec) = SharedNodeConf::new();
 
-        let mut scopes = vec![];
-        scopes.resize_with(MAX_SCOPES, || ScopeHandle::new_shared());
+        let node_global = NodeGlobalData::new_ref();
 
         #[cfg(feature = "synfx-dsp-jit")]
         let (code_engines, block_functions) = {
@@ -317,6 +318,7 @@ impl NodeConfigurator {
             NodeConfigurator {
                 nodes,
                 shared,
+                node_global,
                 errors: vec![],
                 sample_lib: SampleLibrary::new(),
                 feedback_filter: FeedbackFilter::new(),
@@ -333,7 +335,6 @@ impl NodeConfigurator {
                 code_engines,
                 #[cfg(feature = "synfx-dsp-jit")]
                 block_functions,
-                scopes,
             },
             shared_exec,
         )
@@ -693,9 +694,8 @@ impl NodeConfigurator {
         }
     }
 
-    /// Retrieve the oscilloscope handle for the scope index `scope`.
-    pub fn get_scope_handle(&self, scope: usize) -> Option<Arc<ScopeHandle>> {
-        self.scopes.get(scope).cloned()
+    pub fn get_node_global(&self) -> NodeGlobalRef {
+        self.node_global.clone()
     }
 
     /// Sets the dynamic node instance for a certain Rust1x1 instance.
@@ -790,7 +790,7 @@ impl NodeConfigurator {
     }
 
     pub fn create_node(&mut self, ni: NodeId) -> Option<(&NodeInfo, u8)> {
-        if let Some((mut node, info)) = node_factory(ni) {
+        if let Some((mut node, info)) = node_factory(ni, &self.node_global) {
 
             // TODO FIXME
             //            if let Node::TSeq { node } = &mut node {

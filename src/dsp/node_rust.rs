@@ -3,11 +3,12 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf,
+    SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use synfx_dsp::{sqrt4_to_pow4, EnvRetrigAD, AtomicFloat};
 use std::sync::Arc;
+use synfx_dsp::{sqrt4_to_pow4, AtomicFloat, EnvRetrigAD};
 
 /// A context structure for supporting the [DynamicNode1x1::process] function.
 ///
@@ -113,7 +114,7 @@ pub struct Rust1x1 {
 }
 
 impl Rust1x1 {
-    pub fn new(nid: &NodeId) -> Self {
+    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self { index: nid.instance() as usize }
     }
 
@@ -144,7 +145,9 @@ This node does nothing in HexoSynth.
 See also [crate::SynthConstructor] and [crate::DynamicNode1x1].
 "#;
 
-    pub fn graph_fun() -> Option<GraphFun> { None }
+    pub fn graph_fun() -> Option<GraphFun> {
+        None
+    }
 }
 
 impl DspNode for Rust1x1 {

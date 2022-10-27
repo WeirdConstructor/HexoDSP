@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom,
+    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom, NodeGlobalRef
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{EnvRetrigAD, sqrt4_to_pow4};
@@ -28,7 +28,7 @@ pub struct Ad {
 }
 
 impl Ad {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self { env: EnvRetrigAD::new() }
     }
     pub const inp: &'static str =

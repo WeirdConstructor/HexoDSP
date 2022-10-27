@@ -336,6 +336,7 @@ pub mod wblockdsp;
 pub mod synth_constructor;
 #[allow(dead_code)]
 pub mod build;
+mod global;
 
 pub use cell_dir::CellDir;
 pub use chain_builder::MatrixCellChain;
@@ -351,6 +352,7 @@ pub use sample_lib::{SampleLibrary, SampleLoadError};
 pub use scope_handle::ScopeHandle;
 pub use synth_constructor::SynthConstructor;
 pub use dsp::{DynamicNode1x1, DynNode1x1Context};
+pub use global::{NodeGlobalData, NodeGlobalRef};
 
 pub struct Context<'a, 'b, 'c, 'd> {
     pub nframes: usize,

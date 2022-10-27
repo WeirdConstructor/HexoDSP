@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{
     process_1pole_highpass, process_1pole_lowpass, process_1pole_tpt_highpass,
@@ -47,7 +49,7 @@ pub struct SFilter {
 }
 
 impl SFilter {
-    pub fn new(_nid: &NodeId) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         Self { israte: 1.0 / 44100.0, z: 0.0, y: 0.0, k: 0.0, h: 0.0, delay: [0.0; 4], otype: -1 }
     }
     pub const inp: &'static str = "Signal input";
