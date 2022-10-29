@@ -337,6 +337,7 @@ pub mod synth_constructor;
 #[allow(dead_code)]
 pub mod build;
 mod global;
+pub mod shared_feedback;
 
 pub use cell_dir::CellDir;
 pub use chain_builder::MatrixCellChain;
