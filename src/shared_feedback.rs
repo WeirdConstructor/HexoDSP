@@ -45,6 +45,12 @@ impl SharedFeedback {
     }
 }
 
+/// This instance writes into the [SharedFeedback] buffer.
+///
+/// Even though it's safe to have multiple writers of this will not work
+/// or produce any meaningful results. The goal is really, that one `FbWr` DSP node
+/// in the audio thread writes the buffer, and one (or multiple) `FbRd` DSP nodes
+/// read from that [SharedFeedback] buffer via a [SharedFeedbackReader].
 #[derive(Clone)]
 pub struct SharedFeedbackWriter {
     buffer: Arc<Vec<AtomicFloat>>,
@@ -53,7 +59,7 @@ pub struct SharedFeedbackWriter {
 }
 
 impl SharedFeedbackWriter {
-    pub fn new(sfb: &SharedFeedback, sample_rate: f32) -> Self {
+    pub fn new(sfb: &SharedFeedback) -> Self {
         let buffer = sfb.buffer.clone();
         Self {
             buffer,
@@ -62,12 +68,25 @@ impl SharedFeedbackWriter {
         }
     }
 
+    /// Write the next sample in to the feedback buffer.
+    ///
+    /// Even though it's safe to have multiple writers of this will not work
+    /// or produce any meaningful results. The goal is really, that one `FbWr` DSP node
+    /// on the audio thread writing the buffer per buffer iteration. And then one or more
+    /// `FbRd` DSP node reading from that buffer.
     pub fn write(&mut self, s: f32) {
         self.buffer[self.write_ptr].set(s);
         self.write_ptr = (self.write_ptr + 1) % self.delay_sample_count;
     }
 }
 
+/// A reader for the [SharedFeedback] buffer, used to implement the `FbRd` DSP node.
+///
+/// Multiple readers are okay, and you can even read from the buffer across the threads.
+/// It is sound to read from another thread. But keep in mind, that this is not a ring buffer
+/// and you will get partially written buffer contents. There is also only a per sample reading
+/// API, that means without the current sample rate you will not know how many samples the 3.14ms
+/// buffer is big.
 #[derive(Clone)]
 pub struct SharedFeedbackReader {
     buffer: Arc<Vec<AtomicFloat>>,
@@ -76,7 +95,7 @@ pub struct SharedFeedbackReader {
 }
 
 impl SharedFeedbackReader {
-    pub fn new(sfb: &SharedFeedback, sample_rate: f32) -> Self {
+    pub fn new(sfb: &SharedFeedback) -> Self {
         Self {
             buffer: sfb.buffer.clone(),
             delay_sample_count: sfb.delay_sample_count,
@@ -84,6 +103,9 @@ impl SharedFeedbackReader {
         }
     }
 
+    /// Read the next sample from the buffer. Wraps around after some internal buffer
+    /// size (that is consistent with the [SharedFeedback] buffer size). Used by `FbRd` DSP node
+    /// to do it's functionality.
     pub fn read(&mut self) -> f32 {
         let ret = self.buffer[self.read_ptr].get();
         self.read_ptr = (self.read_ptr + 1) % self.delay_sample_count;

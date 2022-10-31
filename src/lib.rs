@@ -351,6 +351,7 @@ pub use matrix_repr::save_patch_to_mem;
 pub use nodes::{new_node_engine, HxMidiEvent, NodeConfigurator, NodeExecutor};
 pub use sample_lib::{SampleLibrary, SampleLoadError};
 pub use scope_handle::ScopeHandle;
+pub use shared_feedback::*;
 pub use synth_constructor::SynthConstructor;
 pub use dsp::{DynamicNode1x1, DynNode1x1Context};
 pub use global::{NodeGlobalData, NodeGlobalRef};
