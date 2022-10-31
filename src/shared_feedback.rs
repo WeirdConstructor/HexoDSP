@@ -19,7 +19,7 @@ pub const FB_DELAY_LENGTH_MS: f32 = 3.14;
 /// Below that the delay might be longer to accomodate the [crate::dsp::MAX_BLOCK_SIZE].
 ///
 /// See also [crate::NodeGlobalData] which provides the [SharedFeedback] to the DSP nodes.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SharedFeedback {
     buffer: Arc<Vec<AtomicFloat>>,
     delay_sample_count: usize,
@@ -51,7 +51,7 @@ impl SharedFeedback {
 /// or produce any meaningful results. The goal is really, that one `FbWr` DSP node
 /// in the audio thread writes the buffer, and one (or multiple) `FbRd` DSP nodes
 /// read from that [SharedFeedback] buffer via a [SharedFeedbackReader].
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SharedFeedbackWriter {
     buffer: Arc<Vec<AtomicFloat>>,
     write_ptr: usize,
@@ -87,7 +87,7 @@ impl SharedFeedbackWriter {
 /// and you will get partially written buffer contents. There is also only a per sample reading
 /// API, that means without the current sample rate you will not know how many samples the 3.14ms
 /// buffer is big.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SharedFeedbackReader {
     buffer: Arc<Vec<AtomicFloat>>,
     read_ptr: usize,

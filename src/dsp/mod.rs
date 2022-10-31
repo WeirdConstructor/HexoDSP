@@ -244,7 +244,7 @@ This is done using the buffer access modules in `dsp/mod.rs` that are defined us
     fn process<T: NodeAudioContext>(
         &mut self,
         ctx: &mut T, // DSP execution context holding the DSP graph input and output buffers.
-        _ectx: &mut NodeExecContext, // Contains special stuff, like the FeedbackBuffers
+        _ectx: &mut NodeExecContext, // For providing access to external MIDI events and parameters from the DAW
         _nctx: &NodeContext, // Holds context info about the node, for instance which ports
                              // are connected.
         _atoms: &[SAtom],    // An array holding the Atom parameters

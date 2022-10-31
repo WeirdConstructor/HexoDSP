@@ -6,16 +6,25 @@ use crate::dsp::{
     DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
+use crate::{SharedFeedback, SharedFeedbackReader, SharedFeedbackWriter};
 
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct FbWr {
-    fb_index: u8,
+    fb_wr: Box<SharedFeedbackWriter>,
 }
 
 impl FbWr {
-    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
-        Self { fb_index: nid.instance() as u8 }
+    pub fn new(nid: &NodeId, node_global: &NodeGlobalRef) -> Self {
+        let fb_wr = if let Ok(mut node_global) = node_global.lock() {
+            node_global.get_feedback_writer(nid.instance() as usize)
+        } else {
+            // If we can't get the lock, other issues are active and I would
+            // rather not crash, so I just make a dummy feedback buffer:
+            let sfb = SharedFeedback::new(44100.0);
+            Box::new(SharedFeedbackWriter::new(&sfb))
+        };
+        Self { fb_wr }
     }
     pub const inp: &'static str = "Signal input";
 
@@ -53,7 +62,7 @@ impl DspNode for FbWr {
     fn process(
         &mut self,
         ctx: &mut dyn NodeAudioContext,
-        ectx: &mut NodeExecContext,
+        _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         _atoms: &[SAtom],
         inputs: &[ProcBuf],
@@ -65,7 +74,7 @@ impl DspNode for FbWr {
         let inp = inp::FbWr::inp(inputs);
 
         for frame in 0..ctx.nframes() {
-            ectx.feedback_delay_buffers[self.fb_index as usize].write(inp.read(frame));
+            self.fb_wr.write(inp.read(frame));
         }
 
         ctx_vals[0].set(inp.read(ctx.nframes() - 1));
@@ -75,12 +84,20 @@ impl DspNode for FbWr {
 /// A simple amplifier
 #[derive(Debug, Clone)]
 pub struct FbRd {
-    fb_index: u8,
+    fb_rd: Box<SharedFeedbackReader>,
 }
 
 impl FbRd {
-    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
-        Self { fb_index: nid.instance() as u8 }
+    pub fn new(nid: &NodeId, node_global: &NodeGlobalRef) -> Self {
+        let fb_rd = if let Ok(mut node_global) = node_global.lock() {
+            node_global.get_feedback_reader(nid.instance() as usize)
+        } else {
+            // If we can't get the lock, other issues are active and I would
+            // rather not crash, so I just make a dummy feedback buffer:
+            let sfb = SharedFeedback::new(44100.0);
+            Box::new(SharedFeedbackReader::new(&sfb))
+        };
+        Self { fb_rd }
     }
     pub const vol: &'static str = "Volume of the input.\n\
          Use this to adjust the feedback amount.";
@@ -123,7 +140,7 @@ impl DspNode for FbRd {
     fn process(
         &mut self,
         ctx: &mut dyn NodeAudioContext,
-        ectx: &mut NodeExecContext,
+        _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         _atoms: &[SAtom],
         inputs: &[ProcBuf],
@@ -137,7 +154,7 @@ impl DspNode for FbRd {
 
         let mut last_val = 0.0;
         for frame in 0..ctx.nframes() {
-            last_val = ectx.feedback_delay_buffers[self.fb_index as usize].read();
+            last_val = self.fb_rd.read();
             last_val *= denorm::FbRd::vol(vol, frame);
             sig.write(frame, last_val);
         }

@@ -1106,12 +1106,12 @@ fn check_matrix_node_feedback() {
 
     let (mut out_l, mut out_r) = run_for_ms(&mut node_exec, 50.0);
     let fft_res_l = fft_thres_at_ms(&mut out_l[..], FFT::F1024, 100, 0.0);
-    assert_eq!(fft_res_l[0], (431, 245));
-    assert_eq!(fft_res_l[1], (474, 170));
+    assert_eq!(fft_res_l[0], (431, 248));
+    assert_eq!(fft_res_l[1], (474, 169));
 
     let fft_res_r = fft_thres_at_ms(&mut out_r[..], FFT::F1024, 100, 0.0);
-    assert_eq!(fft_res_r[0], (861, 224));
-    assert_eq!(fft_res_r[1], (904, 206));
+    assert_eq!(fft_res_r[0], (861, 226));
+    assert_eq!(fft_res_r[1], (904, 207));
 }
 
 #[test]

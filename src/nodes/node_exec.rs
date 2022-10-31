@@ -96,78 +96,6 @@ pub trait NodeAudioContext {
     fn input(&mut self, channel: usize, frame: usize) -> f32;
 }
 
-/// Implements a trivial buffer for the feedback nodes
-/// FbWr and FbRd.
-///
-/// Note that the previous audio period or even the first one ever may
-/// produce less than 128 samples. This means we need to keep track
-/// how many samples were actually written to the feedback buffer!
-/// See also `sample_count` field.
-pub struct FeedbackBuffer {
-    /// The feedback buffer that holds the samples of the previous period.
-    buffer: [f32; MAX_FB_DELAY_SIZE],
-    /// The write pointer.
-    write_ptr: usize,
-    /// Read pointer, is always behind write_ptr by an initial amount
-    read_ptr: usize,
-}
-
-impl FeedbackBuffer {
-    pub fn new() -> Self {
-        let delay_sample_count = (44100.0 as usize * FB_DELAY_TIME_US) / 1000000;
-        Self {
-            buffer: [0.0; MAX_FB_DELAY_SIZE],
-            write_ptr: delay_sample_count % MAX_FB_DELAY_SIZE,
-            read_ptr: 0,
-        }
-    }
-
-    pub fn clear(&mut self) {
-        self.buffer = [0.0; MAX_FB_DELAY_SIZE];
-    }
-
-    pub fn set_sample_rate(&mut self, sr: f32) {
-        self.buffer = [0.0; MAX_FB_DELAY_SIZE];
-        // The delay sample count maximum is defined by MAX_FB_DELAY_SRATE,
-        // after that the feedback delays become shorter than they should be
-        // and things won't sound the same at sample rate
-        // exceeding MAX_FB_DELAY_SRATE.
-        //
-        // This is a tradeoff of wasted memory and not having to reallocate
-        // these delays for sample rate changes and providing delay buffers
-        // for all 256 theoretical feedback delay nodes.
-        //
-        // For more elaborate and longer delays an extra delay node should
-        // be used before FbWr or after FbRd.
-
-        let delay_sample_count = (sr as usize * FB_DELAY_TIME_US) / 1000000;
-        self.write_ptr = delay_sample_count % MAX_FB_DELAY_SIZE;
-        self.read_ptr = 0;
-    }
-
-    #[inline]
-    pub fn write(&mut self, s: f32) {
-        self.write_ptr = (self.write_ptr + 1) % MAX_FB_DELAY_SIZE;
-        self.buffer[self.write_ptr] = s;
-        //d// println!("WRITE[{}] = {:8.3}", self.write_ptr, s);
-    }
-
-    #[inline]
-    pub fn read(&mut self) -> f32 {
-        self.read_ptr = (self.read_ptr + 1) % MAX_FB_DELAY_SIZE;
-        self.buffer[self.read_ptr]
-        //d// let s = self.buffer[self.read_ptr];
-        //d// println!("READ[{}] = {:8.3}", self.read_ptr, s);
-        //d// s
-    }
-}
-
-impl Default for FeedbackBuffer {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 /// This trait needs to be implemented by the caller of the [NodeExecutor]
 /// if it wants to provide the parameters for the "ExtA" to "ExtL" nodes.
 pub trait ExternalParams: Send + Sync {
@@ -222,10 +150,10 @@ pub trait ExternalParams: Send + Sync {
 }
 
 /// Contains global state that all nodes can access.
-/// This is used for instance to implement the feedbackd delay nodes.
+/// This is used for instance to implement the MIDI functionality or the external parameters
+/// for the HexoSynth plugin. Can also be used by other components outside HexoDSP on the audio
+/// thread to send MIDI and provide external parameters.
 pub struct NodeExecContext {
-    /// Feedback delay buffers, used for instance by the FbWr/FbRd nodes.
-    pub feedback_delay_buffers: Vec<FeedbackBuffer>,
     /// List of current MIDI note events that were passed into HexoDSP in this buffer period.
     pub midi_notes: Vec<HxTimedEvent>,
     /// List of current MIDI CC events that were passed into HexoDSP in this buffer period.
@@ -240,14 +168,11 @@ pub struct NodeExecContext {
 
 impl NodeExecContext {
     fn new() -> Self {
-        let mut fbdb = vec![];
-        fbdb.resize_with(MAX_ALLOCATED_NODES, FeedbackBuffer::new);
         let midi_notes = Vec::with_capacity(MAX_MIDI_NOTES_PER_BLOCK);
         let midi_ccs = Vec::with_capacity(MAX_MIDI_CC_PER_BLOCK);
         let mut dynamic_nodes1x1 = vec![];
         dynamic_nodes1x1.resize_with(MAX_ALLOCATED_NODES, crate::dsp::new_dummy_dynamic_node1x1);
         Self {
-            feedback_delay_buffers: fbdb,
             midi_notes,
             midi_ccs,
             ext_param: None,
@@ -256,16 +181,9 @@ impl NodeExecContext {
     }
 
     fn set_sample_rate(&mut self, srate: f32) {
-        for b in self.feedback_delay_buffers.iter_mut() {
-            b.set_sample_rate(srate);
-        }
     }
 
     fn clear(&mut self) {
-        for b in self.feedback_delay_buffers.iter_mut() {
-            b.clear();
-        }
-
         for dn in self.dynamic_nodes1x1.iter_mut() {
             dn.reset();
         }
