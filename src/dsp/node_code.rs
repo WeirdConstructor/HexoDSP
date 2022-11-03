@@ -27,6 +27,7 @@ impl std::fmt::Debug for Code {
 impl Clone for Code {
     fn clone(&self) -> Self {
         Self {
+            #[cfg(feature = "synfx-dsp-jit")]
             backend: None,
             srate: self.srate,
         }
