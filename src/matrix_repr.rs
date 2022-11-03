@@ -656,11 +656,16 @@ mod tests {
             );
             matrix.sync().unwrap();
 
+            println!("FOEFOEOFO3");
             let freq_param = sin.inp_param("freq").unwrap();
             matrix.set_param(freq_param, SAtom::param(-0.1));
+            println!("FOEFOEOFO2");
 
             let mut mr = matrix.to_repr();
+            println!("FOEFOEOFO4");
             let s2 = mr.serialize().to_string();
+
+            println!("FOEFOEOFO");
 
             save_patch_to_file(&mut matrix, "hexosynth_test_patch.hxy").unwrap();
 

@@ -4,11 +4,10 @@
 
 use super::{
     DynNode, FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg,
-    MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES, MAX_AVAIL_TRACKERS, MAX_INPUTS, MAX_SCOPES,
+    MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES, MAX_INPUTS,
     UNUSED_MONITOR_IDX,
 };
 use crate::{NodeGlobalRef, NodeGlobalData};
-use crate::dsp::tracker::{PatternData, Tracker};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
@@ -183,8 +182,6 @@ pub struct NodeConfigurator {
     /// the whole runtime. A garbage collector might be implemented
     /// when saving presets.
     pub(crate) node2idx: HashMap<NodeId, usize>,
-    /// Holding the tracker sequencers
-    pub(crate) trackers: Vec<Tracker>,
     /// Holding the WBlockDSP code engine backends:
     #[cfg(feature = "synfx-dsp-jit")]
     pub(crate) code_engines: Vec<CodeEngine>,
@@ -330,7 +327,6 @@ impl NodeConfigurator {
                 atoms: std::collections::HashMap::new(),
                 atom_values: std::collections::HashMap::new(),
                 node2idx: HashMap::new(),
-                trackers: vec![Tracker::new(); MAX_AVAIL_TRACKERS],
                 #[cfg(feature = "synfx-dsp-jit")]
                 code_engines,
                 #[cfg(feature = "synfx-dsp-jit")]
@@ -713,27 +709,6 @@ impl NodeConfigurator {
         }
     }
 
-    /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.
-    pub fn get_pattern_data(&self, tracker_id: usize) -> Option<Arc<Mutex<PatternData>>> {
-        if tracker_id >= self.trackers.len() {
-            return None;
-        }
-
-        Some(self.trackers[tracker_id].data())
-    }
-
-    /// Checks if there are any updates to send for the pattern data that belongs to the
-    /// tracker `tracker_id`. Call this repeatedly, eg. once per frame in a GUI, in case the user
-    /// modified the pattern data. It will make sure that the modifications are sent to the
-    /// audio thread.
-    pub fn check_pattern_data(&mut self, tracker_id: usize) {
-        if tracker_id >= self.trackers.len() {
-            return;
-        }
-
-        self.trackers[tracker_id].send_one_update();
-    }
-
     /// Checks the block function for the id `id`. If the block function did change,
     /// updates are then sent to the audio thread.
     /// See also [NodeConfigurator::get_block_function].
@@ -793,24 +768,11 @@ impl NodeConfigurator {
         if let Some((mut node, info)) = node_factory(ni, &self.node_global) {
 
             // TODO FIXME
-            //            if let Node::TSeq { node } = &mut node {
-            //                let tracker_idx = ni.instance();
-            //                if let Some(trk) = self.trackers.get_mut(tracker_idx) {
-            //                    node.set_backend(trk.get_backend());
-            //                }
-            //            }
-            //
             //            #[cfg(feature = "synfx-dsp-jit")]
             //            if let Node::Code { node } = &mut node {
             //                let code_idx = ni.instance();
             //                if let Some(cod) = self.code_engines.get_mut(code_idx) {
             //                    node.set_backend(cod.get_backend());
-            //                }
-            //            }
-            //
-            //            if let Node::Scope { node } = &mut node {
-            //                if let Some(handle) = self.scopes.get(ni.instance()) {
-            //                    node.set_scope_handle(handle.clone());
             //                }
             //            }
 

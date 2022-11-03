@@ -583,9 +583,23 @@ impl Matrix {
         self.config.filtered_out_fb_for(ni, out)
     }
 
-    /// Retrieve a handle to the tracker pattern data of the tracker `tracker_id`.
+    /// Returns the [PatternData] handle for the tracker `tracker_id`.
+    /// Implicitly allocates the [Tracker] instance.
     pub fn get_pattern_data(&self, tracker_id: usize) -> Option<Arc<Mutex<PatternData>>> {
-        self.config.get_pattern_data(tracker_id)
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            Some(node_global.get_pattern_data(tracker_id))
+        } else {
+            None
+        }
+    }
+
+    /// Returns true if the tracker or pattern data for `tracker_id` has been allocated/used yet.
+    pub fn has_tracker(&self, tracker_id: usize) -> bool {
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            node_global.has_tracker(tracker_id)
+        } else {
+            false
+        }
     }
 
     /// Retrieve the oscilloscope handle for the scope index `scope`.
@@ -602,7 +616,9 @@ impl Matrix {
     /// modified the pattern data. It will make sure that the modifications are sent to the
     /// audio thread.
     pub fn check_pattern_data(&mut self, tracker_id: usize) {
-        self.config.check_pattern_data(tracker_id)
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            node_global.check_pattern_data(tracker_id);
+        }
     }
 
     /// Checks the block function for the id `id`. If the block function did change,
@@ -842,12 +858,14 @@ impl Matrix {
 
         let mut patterns: Vec<Option<PatternRepr>> = vec![];
         let mut tracker_id = 0;
-        while let Some(pdata) = self.get_pattern_data(tracker_id) {
-            patterns.push(if pdata.lock().unwrap().is_unset() {
-                None
-            } else {
-                Some(pdata.lock().unwrap().to_repr())
-            });
+        while tracker_id < 128 || self.has_tracker(tracker_id) {
+            if let Some(pdata) = self.get_pattern_data(tracker_id) {
+                patterns.push(if pdata.lock().unwrap().is_unset() {
+                    None
+                } else {
+                    Some(pdata.lock().unwrap().to_repr())
+                });
+            }
 
             tracker_id += 1;
         }

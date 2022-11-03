@@ -49,9 +49,15 @@ impl Clone for TSeq {
 }
 
 impl TSeq {
-    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
+    pub fn new(nid: &NodeId, node_global: &NodeGlobalRef) -> Self {
+        let backend = if let Ok(mut handle) = node_global.lock() {
+            Some(Box::new(handle.get_tracker_backend(nid.instance() as usize)))
+        } else {
+            None
+        };
+
         Self {
-            backend: None,
+            backend,
             srate: 48000.0,
             time: Box::new(TSeqTime { clock: TriggerPhaseClock::new(), trigger: Trigger::new() }),
         }

@@ -4,6 +4,7 @@
 
 use std::sync::{Arc, Mutex};
 use crate::{NodeId, ScopeHandle, SharedFeedback, SharedFeedbackWriter, SharedFeedbackReader};
+use crate::dsp::tracker::{PatternData, Tracker, TrackerBackend};
 use std::collections::HashMap;
 
 /// Reference to a [crate::NodeGlobalData] instance.
@@ -20,10 +21,12 @@ pub type NodeGlobalRef = Arc<Mutex<NodeGlobalData>>;
 /// Also the [crate::ScopeHandle] instances used to connect the `Scope` nodes to the
 /// frontend are exchanged through this structure.
 pub struct NodeGlobalData {
-    /// Holding the scope buffers:
+    /// Holding the scope buffers
     scopes: HashMap<usize, Arc<ScopeHandle>>,
-    /// Holds the shared feedback buffers:
+    /// Holds the shared feedback buffers
     feedback: HashMap<usize, SharedFeedback>,
+    /// Holds the handles to the tracker sequencers
+    trackers: HashMap<usize, Tracker>,
 }
 
 impl NodeGlobalData {
@@ -31,6 +34,7 @@ impl NodeGlobalData {
         Arc::new(Mutex::new(Self {
             scopes: HashMap::new(),
             feedback: HashMap::new(),
+            trackers: HashMap::new(),
         }))
     }
 
@@ -61,5 +65,42 @@ impl NodeGlobalData {
 
     pub fn get_feedback_writer(&mut self, instance: usize) -> Box<SharedFeedbackWriter> {
         return Box::new(SharedFeedbackWriter::new(self.get_shared_feedback(instance)));
+    }
+
+    /// Returns the [PatternData] handle for the tracker `index`.
+    /// Implicitly allocates the [Tracker] instance.
+    pub fn get_pattern_data(&mut self, index: usize) -> Arc<Mutex<PatternData>> {
+        if !self.trackers.contains_key(&index) {
+            self.trackers.insert(index, Tracker::new());
+        }
+
+        self.trackers.get(&index).unwrap().data()
+    }
+
+    /// Returns true, if the tracker and patterndata for `index` has already been allocated.
+    pub fn has_tracker(&self, index: usize) -> bool {
+        self.trackers.contains_key(&index)
+    }
+
+    /// Returns the [TrackerBackend] handle for the tracker `index`.
+    /// Implicitly allocates the [Tracker] instance.
+    /// The returned [TrackerBackend] will invalidate the other backend handles
+    /// for the corresponding tracker `index`.
+    pub fn get_tracker_backend(&mut self, index: usize) -> TrackerBackend {
+        if !self.trackers.contains_key(&index) {
+            self.trackers.insert(index, Tracker::new());
+        }
+
+        self.trackers.get_mut(&index).unwrap().get_backend()
+    }
+
+    /// Checks if there are any updates to send for the pattern data that belongs to the
+    /// tracker `index`. Call this repeatedly, eg. once per frame in a GUI, in case the user
+    /// modified the pattern data. It will make sure that the modifications are sent to the
+    /// audio thread.
+    pub fn check_pattern_data(&mut self, index: usize) {
+        if let Some(tracker) = self.trackers.get_mut(&index) {
+            tracker.send_one_update();
+        }
     }
 }
