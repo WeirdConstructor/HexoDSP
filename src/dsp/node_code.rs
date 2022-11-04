@@ -14,7 +14,7 @@ use synfx_dsp_jit::engine::CodeEngineBackend;
 /// A WBlockDSP code execution node for JIT'ed DSP code
 pub struct Code {
     #[cfg(feature = "synfx-dsp-jit")]
-    backend: Option<Box<CodeEngineBackend>>,
+    backend: Option<CodeEngineBackend>,
     srate: f64,
 }
 
@@ -35,17 +35,25 @@ impl Clone for Code {
 }
 
 impl Code {
-    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
+    pub fn new(nid: &NodeId, node_global: &NodeGlobalRef) -> Self {
+        let backend = if let Ok(mut handle) = node_global.lock() {
+            #[cfg(feature = "synfx-dsp-jit")]
+            {
+                Some(handle.get_code_engine_backend(nid.instance() as usize))
+            }
+            #[cfg(not(feature = "synfx-dsp-jit"))]
+            {
+                None
+            }
+        } else {
+            None
+        };
+
         Self {
             #[cfg(feature = "synfx-dsp-jit")]
-            backend: None,
+            backend,
             srate: 48000.0,
         }
-    }
-
-    #[cfg(feature = "synfx-dsp-jit")]
-    pub fn set_backend(&mut self, backend: CodeEngineBackend) {
-        self.backend = Some(Box::new(backend));
     }
 
     pub const in1: &'static str = "Input Signal 1";

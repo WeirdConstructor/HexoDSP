@@ -8,7 +8,7 @@ use crate::{NodeId, ScopeHandle, SharedFeedback, SharedFeedbackReader, SharedFee
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 #[cfg(feature = "synfx-dsp-jit")]
-use synfx_dsp_jit::engine::CodeEngine;
+use synfx_dsp_jit::engine::{CodeEngine, CodeEngineBackend};
 
 /// Reference to a [crate::NodeGlobalData] instance.
 pub type NodeGlobalRef = Arc<Mutex<NodeGlobalData>>;
@@ -153,16 +153,27 @@ impl NodeGlobalData {
         }
     }
 
+    /// Returns the [synfx-dsp::CodeEngineBackend] for the corresponding code engine at `index`.
+    ///
+    /// Any call of this function clears the connection of the corresponding [CodeEngine]
+    /// to the previously returned [CodeEngineBackend].
+    #[cfg(feature = "synfx-dsp-jit")]
+    pub fn get_code_engine_backend(&mut self, index: usize) -> CodeEngineBackend {
+        self.get_code_engine(index).get_backend()
+    }
+
     /// Retrieve a handle to the block function `id`. In case you modify the block function,
     /// make sure to call [NodeGlobalData::check_code].
     ///
     /// Only returns `None` if the feature `synfx-dsp-jit` is disabled!
-    pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
+    pub fn get_block_function(&mut self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
         #[cfg(feature = "synfx-dsp-jit")]
         {
-            if !self.block_functions.contains_key(&index) {
+            let lang = setup_hxdsp_block_language(self.get_code_engine(id).get_lib());
+
+            if !self.block_functions.contains_key(&id) {
                 self.block_functions
-                    .insert(index, (0, Arc::new(Mutex::new(BlockFun::new(lang.clone())))));
+                    .insert(id, (0, Arc::new(Mutex::new(BlockFun::new(lang.clone())))));
             }
 
             self.block_functions.get(&id).map(|pair| pair.1.clone())
@@ -189,7 +200,7 @@ impl NodeGlobalData {
                         let mut compiler = Block2JITCompiler::new(block_fun.block_language());
                         let ast = compiler.compile(&block_fun)?;
 
-                        if let Some(cod) = self.code_engines.get_mut(id) {
+                        if let Some(cod) = self.code_engines.get_mut(&id) {
                             match cod.upload(ast) {
                                 Err(e) => return Err(BlkJITCompileError::JITCompileError(e)),
                                 Ok(()) => (),

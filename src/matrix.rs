@@ -625,13 +625,30 @@ impl Matrix {
     /// updates are then sent to the audio thread.
     /// See also [Matrix::get_block_function].
     pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
-        self.config.check_block_function(id)
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            node_global.check_code(id)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Returns true if the code engine or block function for `tracker_id` has been allocated/used yet.
+    pub fn has_code_engine(&self, id: usize) -> bool {
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            node_global.has_code_engine(id)
+        } else {
+            false
+        }
     }
 
     /// Retrieve a handle to the block function `id`. In case you modify the block function,
     /// make sure to call [Matrix::check_block_function].
     pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
-        self.config.get_block_function(id)
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            node_global.get_block_function(id)
+        } else {
+            None
+        }
     }
 
     /// Saves the state of the hexagonal grid layout.
@@ -872,12 +889,14 @@ impl Matrix {
 
         let mut block_funs: Vec<Option<BlockFunSnapshot>> = vec![];
         let mut bf_id = 0;
-        while let Some(bf) = self.get_block_function(bf_id) {
-            block_funs.push(if bf.lock().unwrap().is_unset() {
-                None
-            } else {
-                Some(bf.lock().unwrap().save_snapshot())
-            });
+        while bf_id < 32 || self.has_code_engine(bf_id) {
+            if let Some(bf) = self.get_block_function(bf_id) {
+                block_funs.push(if bf.lock().unwrap().is_unset() {
+                    None
+                } else {
+                    Some(bf.lock().unwrap().save_snapshot())
+                });
+            }
 
             bf_id += 1;
         }

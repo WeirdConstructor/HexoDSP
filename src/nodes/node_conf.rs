@@ -11,10 +11,7 @@ use crate::{NodeGlobalRef, NodeGlobalData};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
-use crate::wblockdsp::*;
 use crate::SampleLibrary;
-#[cfg(feature = "synfx-dsp-jit")]
-use synfx_dsp_jit::engine::CodeEngine;
 
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::collections::HashMap;
@@ -182,14 +179,6 @@ pub struct NodeConfigurator {
     /// the whole runtime. A garbage collector might be implemented
     /// when saving presets.
     pub(crate) node2idx: HashMap<NodeId, usize>,
-    /// Holding the WBlockDSP code engine backends:
-    #[cfg(feature = "synfx-dsp-jit")]
-    pub(crate) code_engines: Vec<CodeEngine>,
-    /// Holds the block functions that are JIT compiled to DSP code
-    /// for the `Code` nodes. The code is then sent via the [CodeEngine]
-    /// in [NodeConfigurator::check_block_function].
-    #[cfg(feature = "synfx-dsp-jit")]
-    pub(crate) block_functions: Vec<(u64, Arc<Mutex<BlockFun>>)>,
     /// The shared parts of the [NodeConfigurator]
     /// and the [crate::nodes::NodeExecutor].
     pub(crate) shared: SharedNodeConf,
@@ -298,19 +287,6 @@ impl NodeConfigurator {
 
         let node_global = NodeGlobalData::new_ref();
 
-        #[cfg(feature = "synfx-dsp-jit")]
-        let (code_engines, block_functions) = {
-            let code_engines = vec![CodeEngine::new_stdlib(); MAX_AVAIL_CODE_ENGINES];
-
-            let lang = setup_hxdsp_block_language(code_engines[0].get_lib());
-            let mut block_functions = vec![];
-            block_functions.resize_with(MAX_AVAIL_CODE_ENGINES, || {
-                (0, Arc::new(Mutex::new(BlockFun::new(lang.clone()))))
-            });
-
-            (code_engines, block_functions)
-        };
-
         (
             NodeConfigurator {
                 nodes,
@@ -327,10 +303,6 @@ impl NodeConfigurator {
                 atoms: std::collections::HashMap::new(),
                 atom_values: std::collections::HashMap::new(),
                 node2idx: HashMap::new(),
-                #[cfg(feature = "synfx-dsp-jit")]
-                code_engines,
-                #[cfg(feature = "synfx-dsp-jit")]
-                block_functions,
             },
             shared_exec,
         )
@@ -709,49 +681,6 @@ impl NodeConfigurator {
         }
     }
 
-    /// Checks the block function for the id `id`. If the block function did change,
-    /// updates are then sent to the audio thread.
-    /// See also [NodeConfigurator::get_block_function].
-    pub fn check_block_function(&mut self, id: usize) -> Result<(), BlkJITCompileError> {
-        #[cfg(feature = "synfx-dsp-jit")]
-        if let Some(cod) = self.code_engines.get_mut(id) {
-            cod.query_returns();
-        }
-
-        #[cfg(feature = "synfx-dsp-jit")]
-        if let Some((generation, block_fun)) = self.block_functions.get_mut(id) {
-            if let Ok(block_fun) = block_fun.lock() {
-                if *generation != block_fun.generation() {
-                    *generation = block_fun.generation();
-                    let mut compiler = Block2JITCompiler::new(block_fun.block_language());
-                    let ast = compiler.compile(&block_fun)?;
-
-                    if let Some(cod) = self.code_engines.get_mut(id) {
-                        match cod.upload(ast) {
-                            Err(e) => return Err(BlkJITCompileError::JITCompileError(e)),
-                            Ok(()) => (),
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Retrieve a handle to the block function `id`. In case you modify the block function,
-    /// make sure to call [NodeConfigurator::check_block_function].
-    pub fn get_block_function(&self, id: usize) -> Option<Arc<Mutex<BlockFun>>> {
-        #[cfg(feature = "synfx-dsp-jit")]
-        {
-            self.block_functions.get(id).map(|pair| pair.1.clone())
-        }
-        #[cfg(not(feature = "synfx-dsp-jit"))]
-        {
-            None
-        }
-    }
-
     pub fn delete_nodes(&mut self) {
         self.node2idx.clear();
         self.nodes.clear();
@@ -766,16 +695,6 @@ impl NodeConfigurator {
 
     pub fn create_node(&mut self, ni: NodeId) -> Option<(&NodeInfo, u8)> {
         if let Some((mut node, info)) = node_factory(ni, &self.node_global) {
-
-            // TODO FIXME
-            //            #[cfg(feature = "synfx-dsp-jit")]
-            //            if let Node::Code { node } = &mut node {
-            //                let code_idx = ni.instance();
-            //                if let Some(cod) = self.code_engines.get_mut(code_idx) {
-            //                    node.set_backend(cod.get_backend());
-            //                }
-            //            }
-
             node.set_sample_rate(self.shared.sample_rate.get());
 
             let index = self.nodes.len();
