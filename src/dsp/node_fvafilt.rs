@@ -75,7 +75,7 @@ pub struct FVaFilt {
 }
 
 impl FVaFilt {
-    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
+    pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         let params = Arc::new(FilterParams::new());
         Self {
             state: Box::new(VaFiltState {
@@ -152,7 +152,7 @@ macro_rules! on_param_change {
 impl DspNode for FVaFilt {
     fn set_sample_rate(&mut self, srate: f32) {
         unsafe {
-            let mut params = Arc::get_mut_unchecked(&mut self.params);
+            let params = Arc::get_mut_unchecked(&mut self.params);
             // TODO: Set oversampling dependent on the sample rate, and not pass 2.0*sr here!
             params.set_sample_rate(srate * 2.0);
         }
@@ -189,7 +189,7 @@ impl DspNode for FVaFilt {
         let out = out::FVaFilt::sig(outputs);
 
         let ftype = ftype.i() as i8;
-        let smode = smode.i() as i8;
+        let _smode = smode.i() as i8;
         let lslope = lslope.i() as i8;
 
         unsafe {
@@ -202,15 +202,15 @@ impl DspNode for FVaFilt {
             };
         };
 
-        let mut state = self.state.as_mut();
+        let state = self.state.as_mut();
 
-        let mut oversample = &mut state.oversample;
-        let mut old_params = &mut self.old_params;
+        let oversample = &mut state.oversample;
+        let mut _old_params = &mut self.old_params;
 
         match ftype {
             2 => {
                 // SallenKey
-                let mut sallenkey = &mut state.sallenkey;
+                let sallenkey = &mut state.sallenkey;
                 for frame in 0..ctx.nframes() {
                     on_param_change!(self, freq, res, drive, ftype, frame, {
                         sallenkey.update();
@@ -238,7 +238,7 @@ impl DspNode for FVaFilt {
             }
             1 => {
                 // SVF
-                let mut svf = &mut state.svf;
+                let svf = &mut state.svf;
                 for frame in 0..ctx.nframes() {
                     on_param_change!(self, freq, res, drive, ftype, frame, {
                         svf.update();
@@ -266,7 +266,7 @@ impl DspNode for FVaFilt {
             }
             _ => {
                 // Ladder
-                let mut ladder = &mut state.ladder;
+                let ladder = &mut state.ladder;
                 for frame in 0..ctx.nframes() {
                     on_param_change!(self, freq, res, drive, ftype, frame, {});
                     let sig_l = denorm::FVaFilt::inp(inp, frame);

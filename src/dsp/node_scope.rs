@@ -104,10 +104,6 @@ waveform in the scope view. Use ~~gain1~~, ~~gain2~~ and ~~gain3~~ for scaling
 the input signals up/down.
 "#;
 
-    pub fn set_scope_handle(&mut self, handle: Arc<ScopeHandle>) {
-        self.handle = handle;
-    }
-
     pub fn graph_fun() -> Option<GraphFun> {
         None
     }

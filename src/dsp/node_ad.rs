@@ -6,7 +6,7 @@ use crate::dsp::{
     DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom, NodeGlobalRef
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use synfx_dsp::{EnvRetrigAD, sqrt4_to_pow4};
+use synfx_dsp::{sqrt4_to_pow4, EnvRetrigAD};
 
 #[macro_export]
 macro_rules! fa_ad_mult {

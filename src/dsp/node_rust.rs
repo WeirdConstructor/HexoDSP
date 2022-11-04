@@ -3,12 +3,12 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf,
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf,
     SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use std::sync::Arc;
-use synfx_dsp::{sqrt4_to_pow4, AtomicFloat, EnvRetrigAD};
+use synfx_dsp::AtomicFloat;
 
 /// A context structure for supporting the [DynamicNode1x1::process] function.
 ///
@@ -77,11 +77,11 @@ impl DynNode1x1Context {
 /// See also: [crate::SynthConstructor::set_dynamic_node1x1] for a more detailed example.
 pub trait DynamicNode1x1: Send {
     /// The sample rate function sets the sample rate the DSP graph is currently running at.
-    fn set_sample_rate(&mut self, sample_rate: f32) {}
+    fn set_sample_rate(&mut self, _sample_rate: f32) {}
     /// This is called whenever the DSP in the audio thread is resetted.
     fn reset(&mut self) {}
     /// You implement this method with your own custom DSP code.
-    fn process(&mut self, input: &[f32], output: &mut [f32], ctx: &DynNode1x1Context);
+    fn process(&mut self, _input: &[f32], _output: &mut [f32], _ctx: &DynNode1x1Context);
 }
 
 impl<T> crate::dsp::DynamicNode1x1 for T
@@ -100,7 +100,7 @@ pub fn new_dummy_dynamic_node1x1() -> Box<dyn DynamicNode1x1> {
 }
 
 impl DynamicNode1x1 for RustDummyNode {
-    fn process(&mut self, input: &[f32], output: &mut [f32], ctx: &DynNode1x1Context) {
+    fn process(&mut self, _input: &[f32], output: &mut [f32], _ctx: &DynNode1x1Context) {
         for o in output.iter_mut() {
             *o = 0.0;
         }
@@ -151,7 +151,7 @@ See also [crate::SynthConstructor] and [crate::DynamicNode1x1].
 }
 
 impl DspNode for Rust1x1 {
-    fn set_sample_rate(&mut self, srate: f32) {}
+    fn set_sample_rate(&mut self, _srate: f32) {}
 
     fn reset(&mut self) {}
 
@@ -161,12 +161,12 @@ impl DspNode for Rust1x1 {
         ctx: &mut dyn NodeAudioContext,
         ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
-        atoms: &[SAtom],
+        _atoms: &[SAtom],
         inputs: &[ProcBuf],
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{at, denorm, inp, inp_buf, out};
+        use crate::dsp::{inp, inp_buf, out};
 
         let inp = inp::Rust1x1::inp(inputs);
         let out = out::Rust1x1::sig(outputs);

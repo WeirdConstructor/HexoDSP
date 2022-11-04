@@ -63,10 +63,6 @@ impl TSeq {
         }
     }
 
-    pub fn set_backend(&mut self, backend: TrackerBackend) {
-        self.backend = Some(Box::new(backend));
-    }
-
     pub const clock: &'static str = "Clock input";
     pub const trig: &'static str = "Synchronization trigger which restarts the sequence.";
     pub const cmode: &'static str = "~~clock~~ input signal mode:\n\

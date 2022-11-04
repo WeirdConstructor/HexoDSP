@@ -4,10 +4,10 @@
 
 use super::{
     DropMsg, DynNode, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent,
-    NodeProg, FB_DELAY_TIME_US, MAX_ALLOCATED_NODES, MAX_FB_DELAY_SIZE, MAX_INJ_MIDI_EVENTS,
+    NodeProg, MAX_ALLOCATED_NODES, MAX_INJ_MIDI_EVENTS,
     MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
-use crate::dsp::{Node, NodeContext, NodeId, MAX_BLOCK_SIZE, DspNode};
+use crate::dsp::{Node, NodeContext, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
 use crate::util::Smoother;
 use synfx_dsp::AtomicFloat;
@@ -180,7 +180,7 @@ impl NodeExecContext {
         }
     }
 
-    fn set_sample_rate(&mut self, srate: f32) {
+    fn set_sample_rate(&mut self, _srate: f32) {
     }
 
     fn clear(&mut self) {
@@ -705,8 +705,7 @@ impl NodeExecutor {
             output_l[i] = 0.0;
             output_r[i] = 0.0;
         }
-        let mut ev_idx = 0;
-        let mut offs = 0;
+        let offs = 0;
         let cur_nframes = MAX_BLOCK_SIZE;
         while nframes > 0 {
             nframes -= 128;

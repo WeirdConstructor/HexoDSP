@@ -16,7 +16,6 @@ parameters and some of the possible values.
 #![allow(rustdoc::invalid_rust_codeblocks)]
 #![doc = include_str!("dsp_nodes_ref.md")]
 
-use crate::dsp::NodeId;
 use crate::node_list;
 
 macro_rules! make_node_constructor {
@@ -106,7 +105,6 @@ macro_rules! make_node_constructor {
 
                 impl super::ConstructorNodeOutputPort for $variant {
                     fn port(&self) -> (super::ConstructorNode, String) {
-                        use super::ConstructorNodeBuilder;
                         (self.node.clone(), self.port.clone().unwrap_or_else(|| "".to_string()))
                     }
                 }
@@ -140,7 +138,7 @@ macro_rules! make_node_constructor {
                 impl $variant {
                     $(
                         #[doc = concat!("Assign to input port for [Node ", stringify!($variant), " Input ", stringify!($para),"](../index.html#nodeid", stringify!($str), "-input-", stringify!($para),")")]
-                        pub fn $para(mut self, node: &dyn super::ConstructorNodeOutputPort) -> super::$variant {
+                        pub fn $para(self, node: &dyn super::ConstructorNodeOutputPort) -> super::$variant {
                             let (node, portname) = node.port();
 
                             if !portname.is_empty() {
@@ -163,7 +161,7 @@ macro_rules! make_node_constructor {
                 impl $variant {
                     $(
                         #[doc = concat!("Set input parameter for [Node ", stringify!($variant), " Input ", stringify!($para),"](../index.html#nodeid", stringify!($str), "-input-", stringify!($para),")")]
-                        pub fn $para(mut self, v: f32) -> super::$variant {
+                        pub fn $para(self, v: f32) -> super::$variant {
                             self.node.ops.borrow_mut().push(
                                 super::ConstructorOp::SetDenorm(
                                     stringify!($para).to_string(), v));
@@ -172,7 +170,7 @@ macro_rules! make_node_constructor {
                     )*
                     $(
                         #[doc = concat!("Set setting for [Node ", stringify!($variant), " Setting ", stringify!($atom),"](../index.html#nodeid", stringify!($str), "-setting-", stringify!($atom),")")]
-                        pub fn $atom(mut self, v: i64) -> super::$variant {
+                        pub fn $atom(self, v: i64) -> super::$variant {
                             self.node.ops.borrow_mut().push(
                                 super::ConstructorOp::SetSetting(
                                     stringify!($atom).to_string(), v));
@@ -190,7 +188,7 @@ macro_rules! make_node_constructor {
                 impl $variant {
                     $(
                         #[doc = concat!("Set input parameter and modulation amount for [Node ", stringify!($variant), " Input ", stringify!($para),"](../index.html#nodeid", stringify!($str), "-input-", stringify!($para),")")]
-                        pub fn $para(mut self, v: f32, ma: f32) -> super::$variant {
+                        pub fn $para(self, v: f32, ma: f32) -> super::$variant {
                             self.node.ops.borrow_mut().push(
                                 super::ConstructorOp::SetDenormModAmt(
                                     stringify!($para).to_string(), v, ma));
@@ -263,5 +261,4 @@ macro_rules! make_node_constructor {
     }
 }
 
-#[allow(allow_unused)]
 node_list! {make_node_constructor}

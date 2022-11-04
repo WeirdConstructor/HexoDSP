@@ -4,7 +4,7 @@
 
 use crate::dsp::tracker::{PatternData, Tracker, TrackerBackend};
 use crate::wblockdsp::*;
-use crate::{NodeId, ScopeHandle, SharedFeedback, SharedFeedbackReader, SharedFeedbackWriter};
+use crate::{ScopeHandle, SharedFeedback, SharedFeedbackReader, SharedFeedbackWriter};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 #[cfg(feature = "synfx-dsp-jit")]

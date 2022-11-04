@@ -4,18 +4,17 @@
 
 use super::{
     DynNode, FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg,
-    MAX_ALLOCATED_NODES, MAX_AVAIL_CODE_ENGINES, MAX_INPUTS,
-    UNUSED_MONITOR_IDX,
+    MAX_ALLOCATED_NODES, MAX_INPUTS, UNUSED_MONITOR_IDX,
 };
-use crate::{NodeGlobalRef, NodeGlobalData};
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
 use crate::nodes::drop_thread::DropThread;
 use crate::SampleLibrary;
+use crate::{NodeGlobalData, NodeGlobalRef};
 
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use synfx_dsp::AtomicFloat;
 use triple_buffer::Output;
@@ -281,7 +280,7 @@ impl SharedNodeConf {
 
 impl NodeConfigurator {
     pub(crate) fn new() -> (Self, SharedNodeExec) {
-        let mut nodes = Vec::new();
+        let nodes = Vec::new();
 
         let (shared, shared_exec) = SharedNodeConf::new();
 
@@ -349,12 +348,18 @@ impl NodeConfigurator {
         self.node2idx.get(&ni).copied()
     }
 
-    pub(crate) fn node_by_id(&self, ni: &NodeId) -> Option<&(NodeInfo, Option<NodeInstance>, Node)> {
+    pub(crate) fn node_by_id(
+        &self,
+        ni: &NodeId,
+    ) -> Option<&(NodeInfo, Option<NodeInstance>, Node)> {
         let idx = self.unique_index_for(ni)?;
         self.nodes.get(idx)
     }
 
-    pub(crate) fn node_by_id_mut(&mut self, ni: &NodeId) -> Option<&mut (NodeInfo, Option<NodeInstance>, Node)> {
+    pub(crate) fn node_by_id_mut(
+        &mut self,
+        ni: &NodeId,
+    ) -> Option<&mut (NodeInfo, Option<NodeInstance>, Node)> {
         let idx = self.unique_index_for(ni)?;
         self.nodes.get_mut(idx)
     }
@@ -694,7 +699,7 @@ impl NodeConfigurator {
     }
 
     pub fn create_node(&mut self, ni: NodeId) -> Option<(&NodeInfo, u8)> {
-        if let Some((mut node, info)) = node_factory(ni, &self.node_global) {
+        if let Some((node, info)) = node_factory(ni, &self.node_global) {
             node.set_sample_rate(self.shared.sample_rate.get());
 
             let index = self.nodes.len();

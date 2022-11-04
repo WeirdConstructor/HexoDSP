@@ -6,7 +6,7 @@ use crate::dsp::{
     DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom, NodeGlobalRef,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
-use synfx_dsp::{sqrt4_to_pow4, EnvADSRParams, EnvRetrigADSR};
+use synfx_dsp::{EnvADSRParams, EnvRetrigADSR};
 
 #[macro_export]
 macro_rules! fa_adsr_mult {
@@ -96,7 +96,7 @@ envelopes following each other.
         let mut env = EnvRetrigADSR::new();
         env.set_sample_rate(200.0);
 
-        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, x: f32, xn: f32| -> f32 {
+        Some(Box::new(move |gd: &dyn GraphAtomData, init: bool, x: f32, _xn: f32| -> f32 {
             if init {
                 let atk_idx = NodeId::Adsr(0).inp_param("atk").unwrap().inp();
                 let dcy_idx = NodeId::Adsr(0).inp_param("dcy").unwrap().inp();

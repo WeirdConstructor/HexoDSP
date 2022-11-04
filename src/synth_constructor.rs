@@ -1,5 +1,3 @@
-
-
 // Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
@@ -40,8 +38,8 @@ See also [SynthConstructor::new] and [crate::build].
 
 use crate::build::*;
 use crate::nodes::{new_node_engine, NodeGraphOrdering};
-use crate::{NodeConfigurator, NodeExecutor, NodeId, ParamId, SAtom};
-use std::collections::{HashMap, HashSet};
+use crate::{NodeConfigurator, NodeExecutor, NodeId, SAtom};
+use std::collections::HashMap;
 
 /// Returned by [SynthConstructor] if some error occured while updating the graph
 /// or changing paramters.
@@ -60,14 +58,13 @@ pub enum SynthError {
 
 #[derive(Debug, Clone)]
 struct NodeConfig {
-    node_id: NodeId,
     edges: HashMap<String, (NodeId, String)>,
     params: HashMap<String, (SAtom, Option<f32>)>,
 }
 
 impl NodeConfig {
-    pub fn new(node_id: NodeId) -> Self {
-        Self { node_id, edges: HashMap::new(), params: HashMap::new() }
+    pub fn new(_node_id: NodeId) -> Self {
+        Self { edges: HashMap::new(), params: HashMap::new() }
     }
 
     pub fn set_edge(&mut self, param_name: &str, node_id: NodeId, output: &str) {

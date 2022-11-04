@@ -595,7 +595,7 @@ impl Matrix {
 
     /// Returns true if the tracker or pattern data for `tracker_id` has been allocated/used yet.
     pub fn has_tracker(&self, tracker_id: usize) -> bool {
-        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+        if let Ok(node_global) = self.config.get_node_global().lock() {
             node_global.has_tracker(tracker_id)
         } else {
             false

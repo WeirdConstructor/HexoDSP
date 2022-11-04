@@ -1660,7 +1660,7 @@ macro_rules! node_list {
                (6  ashp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                (7  dshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
                (8  rshp  n_id      d_id  r_id   f_def stp_d  0.0, 1.0, 0.5)
-               {9 0 mult setting(0) mode fa_ad_mult  0 2}
+               {9 0 mult setting(0) mode fa_adsr_mult  0 2}
                [0 sig]
                [1 eoet],
             tslfo => TsLFO UIType::Generic UICategory::Mod
@@ -2730,17 +2730,17 @@ impl NopNode {
 }
 
 impl DspNode for NopNode {
-    fn set_sample_rate(&mut self, srate: f32) {}
+    fn set_sample_rate(&mut self, _srate: f32) {}
     fn reset(&mut self) {}
     fn process(
         &mut self,
-        ctx: &mut dyn NodeAudioContext,
-        ectx: &mut NodeExecContext,
-        nctx: &NodeContext,
-        atoms: &[SAtom],
-        inputs: &[ProcBuf],
-        outputs: &mut [ProcBuf],
-        led: LedPhaseVals,
+        _ctx: &mut dyn NodeAudioContext,
+        _ectx: &mut NodeExecContext,
+        _nctx: &NodeContext,
+        _atoms: &[SAtom],
+        _inputs: &[ProcBuf],
+        _outputs: &mut [ProcBuf],
+        _led: LedPhaseVals,
     ) {
     }
 }
