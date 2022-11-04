@@ -3,7 +3,8 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom, NodeGlobalRef
+    DspNode, GraphAtomData, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf,
+    SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::{sqrt4_to_pow4, EnvRetrigAD};
@@ -170,5 +171,4 @@ impl DspNode for Ad {
         let out = out::Ad::sig(outputs);
         ctx_vals[0].set(out.read(last_frame));
     }
-
 }

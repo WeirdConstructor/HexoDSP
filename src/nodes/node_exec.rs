@@ -4,8 +4,7 @@
 
 use super::{
     DropMsg, DynNode, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent,
-    NodeProg, MAX_ALLOCATED_NODES, MAX_INJ_MIDI_EVENTS,
-    MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
+    NodeProg, MAX_ALLOCATED_NODES, MAX_INJ_MIDI_EVENTS, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{Node, NodeContext, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
@@ -172,16 +171,10 @@ impl NodeExecContext {
         let midi_ccs = Vec::with_capacity(MAX_MIDI_CC_PER_BLOCK);
         let mut dynamic_nodes1x1 = vec![];
         dynamic_nodes1x1.resize_with(MAX_ALLOCATED_NODES, crate::dsp::new_dummy_dynamic_node1x1);
-        Self {
-            midi_notes,
-            midi_ccs,
-            ext_param: None,
-            dynamic_nodes1x1,
-        }
+        Self { midi_notes, midi_ccs, ext_param: None, dynamic_nodes1x1 }
     }
 
-    fn set_sample_rate(&mut self, _srate: f32) {
-    }
+    fn set_sample_rate(&mut self, _srate: f32) {}
 
     fn clear(&mut self) {
         for dn in self.dynamic_nodes1x1.iter_mut() {
@@ -690,10 +683,7 @@ impl NodeExecutor {
         (output_l, output_r)
     }
 
-    pub fn dummy_run(
-        &mut self,
-        seconds: f32,
-    ) -> (Vec<f32>, Vec<f32>) {
+    pub fn dummy_run(&mut self, seconds: f32) -> (Vec<f32>, Vec<f32>) {
         const SAMPLE_RATE: f32 = 44100.0;
         let mut nframes = (seconds * SAMPLE_RATE) as i64;
 

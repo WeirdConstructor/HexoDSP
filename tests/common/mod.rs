@@ -903,7 +903,13 @@ pub fn fft_thres_at_ms(buf: &mut [f32], size: FFT, amp_thres: u32, ms_idx: f32) 
     fft(&mut buf[idx..(idx + len)], size, amp_thres)
 }
 
-pub fn fftr_thres_at_ms(buf: &mut [f32], size: FFT, divis: u32, amp_thres: u32, ms_idx: f32) -> Vec<(u16, u32)> {
+pub fn fftr_thres_at_ms(
+    buf: &mut [f32],
+    size: FFT,
+    divis: u32,
+    amp_thres: u32,
+    ms_idx: f32,
+) -> Vec<(u16, u32)> {
     let ms_sample_offs = ms_idx * (SAMPLE_RATE / 1000.0);
     let fft_nbins = size.size();
     let len = fft_nbins;

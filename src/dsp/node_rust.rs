@@ -3,8 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::{
-    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf,
-    SAtom,
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
 };
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use std::sync::Arc;

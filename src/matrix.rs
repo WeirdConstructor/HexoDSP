@@ -1704,8 +1704,8 @@ mod tests {
 
         let nodes = node_exec.get_nodes();
         assert!(nodes[0].id().to_instance(0) == NodeId::Sin(0));
-//        assert!(nodes[1].id().to_instance(0) == NodeId::Sin(0));
-//        assert!(nodes[2].id().to_instance(0) == NodeId::Sin(0));
+        //        assert!(nodes[1].id().to_instance(0) == NodeId::Sin(0));
+        //        assert!(nodes[2].id().to_instance(0) == NodeId::Sin(0));
         assert!(nodes[1].id().to_instance(0) == NodeId::Out(0));
 
         let prog = node_exec.get_prog();

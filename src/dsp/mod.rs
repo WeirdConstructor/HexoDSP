@@ -557,9 +557,9 @@ mod node_vosc;
 mod satom;
 pub mod tracker;
 
-use crate::NodeGlobalRef;
 use crate::nodes::NodeAudioContext;
 use crate::nodes::NodeExecContext;
+use crate::NodeGlobalRef;
 
 use std::cell::UnsafeCell;
 use std::sync::Arc;
@@ -2683,7 +2683,9 @@ node_list! {make_node_info_enum}
 pub struct Node(pub Arc<SyncUnsafeCell<dyn DspNode>>, NodeId);
 
 impl Node {
-    pub fn id(&self) -> NodeId { self.1 }
+    pub fn id(&self) -> NodeId {
+        self.1
+    }
 
     #[inline]
     pub fn set_sample_rate(&self, srate: f32) {

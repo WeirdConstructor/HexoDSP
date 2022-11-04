@@ -2,7 +2,9 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{DspNode, GraphFun, LedPhaseVals, NodeContext, NodeId, ProcBuf, SAtom, NodeGlobalRef};
+use crate::dsp::{
+    DspNode, GraphFun, LedPhaseVals, NodeContext, NodeGlobalRef, NodeId, ProcBuf, SAtom,
+};
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use synfx_dsp::AllPass;
 

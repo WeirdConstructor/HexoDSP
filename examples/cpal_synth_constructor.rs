@@ -26,19 +26,22 @@ fn main() {
 
         // Insert your own custom Rust function via a NodeId::Rust1x1 node
         // into the DSP graph:
-        use hexodsp::dsp::{DynamicNode1x1, DynNode1x1Context};
+        use hexodsp::dsp::{DynNode1x1Context, DynamicNode1x1};
         let r1x1 = rust1x1(0).input().inp(&amp.output().sig());
         let r1x1 = r1x1.set().alpha(0.75);
         // You may replace this function anytime at runtime:
-        sc.set_dynamic_node1x1(0, Box::new(|inp: &[f32], out: &mut [f32], ctx: &DynNode1x1Context| {
-            let alpha = ctx.alpha_slice();
-            for (i, in_sample) in inp.iter().enumerate() {
-                out[i] = in_sample * alpha[i];
-            }
+        sc.set_dynamic_node1x1(
+            0,
+            Box::new(|inp: &[f32], out: &mut [f32], ctx: &DynNode1x1Context| {
+                let alpha = ctx.alpha_slice();
+                for (i, in_sample) in inp.iter().enumerate() {
+                    out[i] = in_sample * alpha[i];
+                }
 
-            // This sets an atomic float that can be read out using SynthConstructor::led_value()!
-            ctx.led_value().set(out[0]);
-        }));
+                // This sets an atomic float that can be read out using SynthConstructor::led_value()!
+                ctx.led_value().set(out[0]);
+            }),
+        );
 
         // Assign amplifier node output to the two input channels
         // of the audio device output node:

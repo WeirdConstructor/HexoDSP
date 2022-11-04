@@ -14,7 +14,8 @@ fn setup_fvafilt_matrix() -> (Matrix, NodeExecutor) {
         .node_out("noise", "sig")
         .node_io("fvafilt", "inp", "sig")
         .node_inp("out", "ch1")
-        .place(&mut matrix, 0, 0).unwrap();
+        .place(&mut matrix, 0, 0)
+        .unwrap();
     matrix.sync().unwrap();
 
     (matrix, node_exec)
@@ -48,7 +49,7 @@ fn check_node_fvafilt_ladder() {
     let out = run_and_get_fft4096(&mut node_exec, 2, 500.0);
 
     println!("{:#?}", out);
-//    assert!(false);
+    //    assert!(false);
 }
 
 #[test]
@@ -66,7 +67,8 @@ fn check_overdriven_dc_svf_bug() {
         .set_denorm("freq", 14000.0)
         .set_atom("ftype", SAtom::setting(1))
         .node_inp("out", "ch1")
-        .place(&mut matrix, 0, 0).unwrap();
+        .place(&mut matrix, 0, 0)
+        .unwrap();
     matrix.sync().unwrap();
 
     run_for_ms(&mut node_exec, 2000.0);
@@ -90,7 +92,8 @@ fn check_overdriven_dc_sallen_key_ok() {
         .set_denorm("freq", 14000.0)
         .set_atom("ftype", SAtom::setting(2))
         .node_inp("out", "ch1")
-        .place(&mut matrix, 0, 0).unwrap();
+        .place(&mut matrix, 0, 0)
+        .unwrap();
     matrix.sync().unwrap();
 
     run_for_ms(&mut node_exec, 2000.0);
@@ -114,7 +117,8 @@ fn check_overdriven_dc_ladder_ok() {
         .set_denorm("freq", 14000.0)
         .set_atom("ftype", SAtom::setting(0))
         .node_inp("out", "ch1")
-        .place(&mut matrix, 0, 0).unwrap();
+        .place(&mut matrix, 0, 0)
+        .unwrap();
     matrix.sync().unwrap();
 
     run_for_ms(&mut node_exec, 2000.0);

@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::dsp::{ProcBuf, SAtom, Node};
+use crate::dsp::{Node, ProcBuf, SAtom};
 use std::cell::RefCell;
 use triple_buffer::{Input, Output, TripleBuffer};
 

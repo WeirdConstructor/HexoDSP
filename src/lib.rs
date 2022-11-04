@@ -320,10 +320,13 @@ projects and authors, I can't relicense it.
 #![feature(portable_simd)]
 #![feature(get_mut_unchecked)]
 
+#[allow(dead_code)]
+pub mod build;
 pub mod cell_dir;
 pub mod chain_builder;
 #[allow(unused_macros, non_snake_case)]
 pub mod dsp;
+mod global;
 pub mod log;
 pub mod matrix;
 pub mod matrix_repr;
@@ -331,17 +334,16 @@ pub mod monitor;
 pub mod nodes;
 pub mod sample_lib;
 pub mod scope_handle;
+pub mod shared_feedback;
+pub mod synth_constructor;
 mod util;
 pub mod wblockdsp;
-pub mod synth_constructor;
-#[allow(dead_code)]
-pub mod build;
-mod global;
-pub mod shared_feedback;
 
 pub use cell_dir::CellDir;
 pub use chain_builder::MatrixCellChain;
+pub use dsp::{DynNode1x1Context, DynamicNode1x1};
 pub use dsp::{NodeId, NodeInfo, ParamId, SAtom};
+pub use global::{NodeGlobalData, NodeGlobalRef};
 pub use log::log;
 pub use matrix::{Cell, Matrix};
 pub use matrix_repr::load_patch_from_file;
@@ -353,8 +355,6 @@ pub use sample_lib::{SampleLibrary, SampleLoadError};
 pub use scope_handle::ScopeHandle;
 pub use shared_feedback::*;
 pub use synth_constructor::SynthConstructor;
-pub use dsp::{DynamicNode1x1, DynNode1x1Context};
-pub use global::{NodeGlobalData, NodeGlobalRef};
 
 pub struct Context<'a, 'b, 'c, 'd> {
     pub nframes: usize,

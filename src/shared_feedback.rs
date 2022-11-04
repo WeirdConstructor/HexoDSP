@@ -38,10 +38,7 @@ impl SharedFeedback {
         // but I'm anxious about off by one bugs :-)
         buf.resize_with(3 * delay_sample_count, || AtomicFloat::new(0.0));
 
-        Self {
-            buffer: Arc::new(buf),
-            delay_sample_count,
-        }
+        Self { buffer: Arc::new(buf), delay_sample_count }
     }
 }
 
@@ -96,11 +93,7 @@ pub struct SharedFeedbackReader {
 
 impl SharedFeedbackReader {
     pub fn new(sfb: &SharedFeedback) -> Self {
-        Self {
-            buffer: sfb.buffer.clone(),
-            delay_sample_count: sfb.delay_sample_count,
-            read_ptr: 0,
-        }
+        Self { buffer: sfb.buffer.clone(), delay_sample_count: sfb.delay_sample_count, read_ptr: 0 }
     }
 
     /// Read the next sample from the buffer. Wraps around after some internal buffer
