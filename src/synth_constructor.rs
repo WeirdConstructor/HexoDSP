@@ -281,7 +281,9 @@ impl SynthConstructor {
     ///
     ///```
     pub fn set_dynamic_node1x1(&mut self, index: usize, node: Box<dyn crate::dsp::DynamicNode1x1>) {
-        self.config.set_dynamic_node1x1(index, node);
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            node_global.send_dynamic_node1x1(index, node);
+        }
     }
 
     /// Returns the atomic phase value for [NodeId].

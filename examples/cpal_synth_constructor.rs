@@ -26,7 +26,6 @@ fn main() {
 
         // Insert your own custom Rust function via a NodeId::Rust1x1 node
         // into the DSP graph:
-        use hexodsp::dsp::{DynNode1x1Context, DynamicNode1x1};
         let r1x1 = rust1x1(0).input().inp(&amp.output().sig());
         let r1x1 = r1x1.set().alpha(0.75);
         // You may replace this function anytime at runtime:

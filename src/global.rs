@@ -3,6 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::tracker::{PatternData, Tracker, TrackerBackend};
+use crate::dsp::{DynNodeHandle, DynNodeBuffer, DynamicNode1x1};
 use crate::wblockdsp::*;
 use crate::{ScopeHandle, SharedFeedback, SharedFeedbackReader, SharedFeedbackWriter};
 use std::collections::HashMap;
@@ -33,12 +34,15 @@ pub struct NodeGlobalData {
     /// Holding the synfx-dsp-jit code engine backends
     /// (which are used for the WBlockDSP block functions, but can also be directly used):
     #[cfg(feature = "synfx-dsp-jit")]
-    pub(crate) code_engines: HashMap<usize, CodeEngine>,
+    code_engines: HashMap<usize, CodeEngine>,
     /// Holds the block functions that are JIT compiled to DSP code
     /// for the `Code` nodes. The code is then sent via the [CodeEngine]
     /// in [NodeConfigurator::check_block_function].
     #[cfg(feature = "synfx-dsp-jit")]
-    pub(crate) block_functions: HashMap<usize, (u64, Arc<Mutex<BlockFun>>)>,
+    block_functions: HashMap<usize, (u64, Arc<Mutex<BlockFun>>)>,
+    /// Holds the communication handles to send [crate::dsp::DynamicNode1x1] instances
+    /// to their corresponding `Rust1x1` DSP nodes.
+    dyn_nodes1x1: HashMap<usize, DynNodeHandle<Box<dyn DynamicNode1x1>>>,
 }
 
 impl NodeGlobalData {
@@ -51,6 +55,7 @@ impl NodeGlobalData {
             code_engines: HashMap::new(),
             #[cfg(feature = "synfx-dsp-jit")]
             block_functions: HashMap::new(),
+            dyn_nodes1x1: HashMap::new(),
         }))
     }
 
@@ -212,5 +217,33 @@ impl NodeGlobalData {
         }
 
         Ok(())
+    }
+
+    /// Updates the dynamic node for the Rust1x1 nodes. The `id` refers to the
+    /// instance `NodeId::Rust1x1(id)`. The new DSP code is preserved for the first use
+    /// of that node, and can also be swapped out at runtime anytime while the DSP graph is working.
+    ///
+    /// See also [crate::SynthConstructor::set_dynamic_node1x1]
+    pub fn send_dynamic_node1x1(&mut self, id: usize, node: Box<dyn DynamicNode1x1>) {
+        if !self.dyn_nodes1x1.contains_key(&id) {
+            self.dyn_nodes1x1.insert(id, DynNodeHandle::new());
+        }
+
+        self.dyn_nodes1x1.get_mut(&id).unwrap().write(node);
+    }
+
+    /// This method is to be used by the `Rust1x1` node, to receive the dynamic node buffer.
+    ///
+    /// Attention: If the buffer was already requested by a Rust1x1 constructor, a new internal buffer
+    /// will be allocated and the previous DynNodeBuffer won't receive any more updates.
+    /// That means, after construction of a new Rust1x1, you should update the DynamicNode1x1
+    /// using [NodeGlobalData::send_dynamic_node1x1].
+    /// This will be very relevant to do after [crate::NodeConfigurator::set_sample_rate].
+    pub(crate) fn get_dynamic_node1x1_buffer(&mut self, id: usize) -> DynNodeBuffer<Box<dyn DynamicNode1x1>> {
+        if !self.dyn_nodes1x1.contains_key(&id) {
+            self.dyn_nodes1x1.insert(id, DynNodeHandle::new());
+        }
+
+        self.dyn_nodes1x1.get_mut(&id).unwrap().get_output_buffer()
     }
 }

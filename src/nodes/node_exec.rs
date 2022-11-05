@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use super::{
-    DropMsg, DynNode, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent,
+    DropMsg, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent,
     NodeProg, MAX_INJ_MIDI_EVENTS, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{Node, NodeContext, MAX_BLOCK_SIZE};
@@ -160,27 +160,18 @@ pub struct NodeExecContext {
     /// Handle to the external parameters, external meaning parameters that come in via eg. the
     /// plugin API or are provided elsewhere on the audio thread.
     pub ext_param: Option<Arc<dyn ExternalParams>>,
-    /// The current deposited dynamic nodes for the Rust1x1 node. They can be swapped out
-    /// at runtime with [crate::NodeConfigurator::set_dynamic_node1x1].
-    pub dynamic_nodes1x1: Vec<Box<dyn crate::dsp::DynamicNode1x1>>,
 }
 
 impl NodeExecContext {
     fn new() -> Self {
         let midi_notes = Vec::with_capacity(MAX_MIDI_NOTES_PER_BLOCK);
         let midi_ccs = Vec::with_capacity(MAX_MIDI_CC_PER_BLOCK);
-        let mut dynamic_nodes1x1 = vec![];
-        dynamic_nodes1x1.resize_with(std::u8::MAX.into(), crate::dsp::new_dummy_dynamic_node1x1);
-        Self { midi_notes, midi_ccs, ext_param: None, dynamic_nodes1x1 }
+        Self { midi_notes, midi_ccs, ext_param: None }
     }
 
     fn set_sample_rate(&mut self, _srate: f32) {}
 
-    fn clear(&mut self) {
-        for dn in self.dynamic_nodes1x1.iter_mut() {
-            dn.reset();
-        }
-    }
+    fn clear(&mut self) { }
 }
 
 impl NodeExecutor {
@@ -212,20 +203,6 @@ impl NodeExecutor {
     pub fn process_graph_updates(&mut self) {
         while let Some(upd) = self.shared.graph_update_con.pop() {
             match upd {
-                GraphMessage::DynNode { index, node } => match node {
-                    DynNode::DN1x1(mut node) => {
-                        std::mem::swap(
-                            &mut self.exec_ctx.dynamic_nodes1x1[index as usize],
-                            &mut node,
-                        );
-                        self.exec_ctx.dynamic_nodes1x1[index as usize]
-                            .set_sample_rate(self.sample_rate);
-                        let _ = self
-                            .shared
-                            .graph_drop_prod
-                            .push(DropMsg::DynNode { node: DynNode::DN1x1(node) });
-                    }
-                },
                 GraphMessage::Clear { prog } => {
                     self.exec_ctx.clear();
 

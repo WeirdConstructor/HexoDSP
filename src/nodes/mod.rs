@@ -29,22 +29,10 @@ use crate::dsp::{Node, SAtom};
 pub use crate::monitor::MinMaxMonitorSamples;
 use crate::monitor::MON_SIG_CNT;
 
-/// Holds a DynamicNode instance. For example for [NodeConfigurator::set_dynamic_node1x1].
-pub enum DynNode {
-    DN1x1(Box<dyn crate::dsp::DynamicNode1x1>),
-}
-
-impl std::fmt::Debug for DynNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "DynNode::Enum")
-    }
-}
-
 #[derive(Debug)]
 #[allow(dead_code)]
 pub(crate) enum DropMsg {
     Node { node: Node },
-    DynNode { node: DynNode },
     Prog { prog: NodeProg },
     Atom { atom: SAtom },
 }
@@ -54,10 +42,6 @@ pub(crate) enum DropMsg {
 /// the [NodeExecutor] thread. And also parameter updates of course.
 #[derive(Debug)]
 pub enum GraphMessage {
-    DynNode {
-        index: u8,
-        node: DynNode,
-    },
     NewProg {
         prog: NodeProg,
         copy_old_out: bool,

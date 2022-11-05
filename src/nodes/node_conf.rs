@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use super::{
-    DynNode, FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg, MAX_DSP_NODE_INPUTS,
+    FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg, MAX_DSP_NODE_INPUTS,
     UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
@@ -672,19 +672,6 @@ impl NodeConfigurator {
 
     pub fn get_node_global(&self) -> NodeGlobalRef {
         self.node_global.clone()
-    }
-
-    /// Sets the dynamic node instance for a certain Rust1x1 instance.
-    /// See also [crate::SynthConstructor::set_dynamic_node1x1] for more details.
-    pub fn set_dynamic_node1x1(
-        &mut self,
-        instance: usize,
-        node: Box<dyn crate::dsp::DynamicNode1x1>,
-    ) {
-        let _ = self
-            .shared
-            .graph_update_prod
-            .push(GraphMessage::DynNode { index: instance as u8, node: DynNode::DN1x1(node) });
     }
 
     pub fn delete_nodes(&mut self) {

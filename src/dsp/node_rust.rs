@@ -114,19 +114,15 @@ pub struct DynNodeBuffer<T: Send> {
 
 impl<T> DynNodeBuffer<T> where T: Send {
     #[inline]
-    pub fn update(&mut self) {
-        self.output.update();
-    }
-
-    #[inline]
     pub fn access(&mut self) -> &mut T {
+        self.output.update();
         self.output.output_buffer()
     }
 }
 
-struct DynNode1x1Handle {
-    input: Input<Box<dyn DynamicNode1x1>>,
-    output: Option<Output<Box<dyn DynamicNode1x1>>>,
+pub struct DynNodeHandle<T: Send + Default> {
+    input: Input<T>,
+    output: Option<Output<T>>,
 }
 
 impl Default for Box<dyn DynamicNode1x1> {
@@ -135,7 +131,7 @@ impl Default for Box<dyn DynamicNode1x1> {
     }
 }
 
-impl DynNode1x1Handle {
+impl<T> DynNodeHandle<T> where T: Send + Default {
     pub fn new() -> Self {
         let (input, output) = TripleBuffer::default().split();
         Self {
@@ -144,11 +140,11 @@ impl DynNode1x1Handle {
         }
     }
 
-    pub fn write(&mut self, node: Box<dyn DynamicNode1x1>) {
+    pub fn write(&mut self, node: T) {
         self.input.write(node);
     }
 
-    pub fn get_output_buffer(&mut self) -> DynNodeBuffer<Box<dyn DynamicNode1x1>> {
+    pub fn get_output_buffer(&mut self) -> DynNodeBuffer<T> {
         let output =
             if let Some(output) = self.output.take() {
                 output
@@ -161,15 +157,27 @@ impl DynNode1x1Handle {
     }
 }
 
+impl std::fmt::Debug for Rust1x1 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Rust1x1()")
+    }
+}
+
 /// A native Rust code node that uses trait objects for dispatch
-#[derive(Debug, Clone)]
 pub struct Rust1x1 {
-    index: usize,
+    buffer: DynNodeBuffer<Box<dyn DynamicNode1x1>>,
 }
 
 impl Rust1x1 {
-    pub fn new(nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
-        Self { index: nid.instance() as usize }
+    pub fn new(nid: &NodeId, node_global: &NodeGlobalRef) -> Self {
+        let buffer =
+            if let Ok(mut handle) = node_global.lock() {
+                handle.get_dynamic_node1x1_buffer(nid.instance() as usize)
+            } else {
+                let mut handle = DynNodeHandle::<Box<dyn DynamicNode1x1>>::new();
+                handle.get_output_buffer()
+            };
+        Self { buffer }
     }
 
     pub const inp: &'static str =
@@ -213,7 +221,7 @@ impl DspNode for Rust1x1 {
     fn process(
         &mut self,
         ctx: &mut dyn NodeAudioContext,
-        ectx: &mut NodeExecContext,
+        _ectx: &mut NodeExecContext,
         _nctx: &NodeContext,
         _atoms: &[SAtom],
         inputs: &[ProcBuf],
@@ -235,7 +243,7 @@ impl DspNode for Rust1x1 {
             phase_value: ctx_vals[1].clone(),
         };
 
-        ectx.dynamic_nodes1x1[self.index].process(
+        self.buffer.access().process(
             inp.slice(ctx.nframes()),
             out.slice_mut(ctx.nframes()),
             &n1x1ctx,
