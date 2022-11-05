@@ -8,6 +8,8 @@ use crate::dsp::{
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use std::sync::Arc;
 use synfx_dsp::AtomicFloat;
+use triple_buffer::{TripleBuffer, Input, Output};
+
 
 /// A context structure for supporting the [DynamicNode1x1::process] function.
 ///
@@ -103,6 +105,59 @@ impl DynamicNode1x1 for RustDummyNode {
         for o in output.iter_mut() {
             *o = 0.0;
         }
+    }
+}
+
+pub struct DynNodeBuffer<T: Send> {
+    output: Output<T>,
+}
+
+impl<T> DynNodeBuffer<T> where T: Send {
+    #[inline]
+    pub fn update(&mut self) {
+        self.output.update();
+    }
+
+    #[inline]
+    pub fn access(&mut self) -> &mut T {
+        self.output.output_buffer()
+    }
+}
+
+struct DynNode1x1Handle {
+    input: Input<Box<dyn DynamicNode1x1>>,
+    output: Option<Output<Box<dyn DynamicNode1x1>>>,
+}
+
+impl Default for Box<dyn DynamicNode1x1> {
+    fn default() -> Self {
+        new_dummy_dynamic_node1x1()
+    }
+}
+
+impl DynNode1x1Handle {
+    pub fn new() -> Self {
+        let (input, output) = TripleBuffer::default().split();
+        Self {
+            input,
+            output: Some(output),
+        }
+    }
+
+    pub fn write(&mut self, node: Box<dyn DynamicNode1x1>) {
+        self.input.write(node);
+    }
+
+    pub fn get_output_buffer(&mut self) -> DynNodeBuffer<Box<dyn DynamicNode1x1>> {
+        let output =
+            if let Some(output) = self.output.take() {
+                output
+            } else {
+                let (input, output) = TripleBuffer::default().split();
+                self.input = input;
+                output
+            };
+        DynNodeBuffer { output }
     }
 }
 

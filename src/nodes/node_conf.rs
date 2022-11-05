@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use super::{
-    DynNode, FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg, MAX_INPUTS,
+    DynNode, FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg, MAX_DSP_NODE_INPUTS,
     UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
@@ -43,7 +43,7 @@ pub struct NodeInstance {
     /// This is used later to send [GraphMessage::ModamtUpdate].
     /// The input index into this array is the index returned from
     /// routines like [NodeId::inp_param].
-    in2mod_map: [Option<usize>; MAX_INPUTS],
+    in2mod_map: [Option<usize>; MAX_DSP_NODE_INPUTS],
 }
 
 impl NodeInstance {
@@ -61,7 +61,7 @@ impl NodeInstance {
             at_end: 0,
             mod_start: 0,
             mod_end: 0,
-            in2mod_map: [None; MAX_INPUTS],
+            in2mod_map: [None; MAX_DSP_NODE_INPUTS],
         }
     }
 
