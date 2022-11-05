@@ -3,7 +3,6 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::NodeId;
-use crate::nodes::MAX_ALLOCATED_NODES;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -47,9 +46,9 @@ impl Node {
 pub struct NodeGraphOrdering {
     node2idx: HashMap<NodeId, usize>,
     node_count: usize,
-    nodes: [Node; MAX_ALLOCATED_NODES],
+    nodes: Vec<Node>,
 
-    in_degree: [usize; MAX_ALLOCATED_NODES],
+    in_degree: Vec<usize>,
 }
 
 impl NodeGraphOrdering {
@@ -57,8 +56,8 @@ impl NodeGraphOrdering {
         Self {
             node2idx: HashMap::new(),
             node_count: 0,
-            nodes: [Node::new(); MAX_ALLOCATED_NODES],
-            in_degree: [0; MAX_ALLOCATED_NODES],
+            nodes: vec![Node::new(); 256],
+            in_degree: vec![0; 256],
         }
     }
 
@@ -73,6 +72,11 @@ impl NodeGraphOrdering {
         } else {
             let idx = self.node_count;
             self.node_count += 1;
+
+            if self.nodes.len() < self.node_count {
+                self.nodes.resize(self.node_count, Node::new());
+                self.in_degree.resize(self.node_count, 0);
+            }
 
             self.nodes[idx].clear();
             self.nodes[idx].node_id = node_id;
@@ -101,9 +105,9 @@ impl NodeGraphOrdering {
     }
 
     pub fn has_path(&self, from_node_id: NodeId, to_node_id: NodeId) -> Option<bool> {
-        let mut visited_set: HashSet<NodeId> = HashSet::with_capacity(MAX_ALLOCATED_NODES);
+        let mut visited_set: HashSet<NodeId> = HashSet::with_capacity(self.node_count);
 
-        let mut node_stack = Vec::with_capacity(MAX_ALLOCATED_NODES);
+        let mut node_stack = Vec::with_capacity(self.node_count);
         node_stack.push(from_node_id);
 
         while let Some(node_id) = node_stack.pop() {
@@ -133,7 +137,7 @@ impl NodeGraphOrdering {
     /// and no proper order can be computed. `out` will be cleared
     /// in this case.
     pub fn calculate_order(&mut self, out: &mut Vec<NodeId>) -> bool {
-        let mut deq = std::collections::VecDeque::with_capacity(MAX_ALLOCATED_NODES);
+        let mut deq = std::collections::VecDeque::with_capacity(self.node_count);
 
         for indeg in self.in_degree.iter_mut() {
             *indeg = 0;
@@ -183,12 +187,6 @@ impl NodeGraphOrdering {
         } else {
             true
         }
-    }
-}
-
-impl Default for NodeGraphOrdering {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

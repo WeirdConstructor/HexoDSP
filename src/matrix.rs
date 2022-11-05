@@ -7,9 +7,7 @@ use crate::dsp::{NodeId, NodeInfo, ParamId, SAtom};
 use crate::matrix_repr::*;
 pub use crate::monitor::MON_SIG_CNT;
 pub use crate::nodes::MinMaxMonitorSamples;
-use crate::nodes::{
-    GraphEvent, HxMidiEvent, NodeConfigurator, NodeGraphOrdering, NodeProg, MAX_ALLOCATED_NODES,
-};
+use crate::nodes::{GraphEvent, HxMidiEvent, NodeConfigurator, NodeGraphOrdering, NodeProg};
 use crate::wblockdsp::{BlkJITCompileError, BlockFun, BlockFunSnapshot};
 pub use crate::CellDir;
 use crate::ScopeHandle;
@@ -535,7 +533,7 @@ impl Matrix {
             gen_counter: 0,
             saved_matrix: None,
             graph_ordering: NodeGraphOrdering::new(),
-            edges: Vec::with_capacity(MAX_ALLOCATED_NODES * 2),
+            edges: Vec::with_capacity((w * h) * 2),
             assigned_inputs: HashSet::new(),
             properties: HashMap::new(),
             observer: None,

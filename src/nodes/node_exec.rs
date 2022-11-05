@@ -4,7 +4,7 @@
 
 use super::{
     DropMsg, DynNode, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent,
-    NodeProg, MAX_ALLOCATED_NODES, MAX_INJ_MIDI_EVENTS, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
+    NodeProg, MAX_INJ_MIDI_EVENTS, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{Node, NodeContext, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
@@ -170,7 +170,7 @@ impl NodeExecContext {
         let midi_notes = Vec::with_capacity(MAX_MIDI_NOTES_PER_BLOCK);
         let midi_ccs = Vec::with_capacity(MAX_MIDI_CC_PER_BLOCK);
         let mut dynamic_nodes1x1 = vec![];
-        dynamic_nodes1x1.resize_with(MAX_ALLOCATED_NODES, crate::dsp::new_dummy_dynamic_node1x1);
+        dynamic_nodes1x1.resize_with(std::u8::MAX.into(), crate::dsp::new_dummy_dynamic_node1x1);
         Self { midi_notes, midi_ccs, ext_param: None, dynamic_nodes1x1 }
     }
 

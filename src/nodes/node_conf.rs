@@ -3,8 +3,8 @@
 // See README.md and COPYING for details.
 
 use super::{
-    DynNode, FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg,
-    MAX_ALLOCATED_NODES, MAX_INPUTS, UNUSED_MONITOR_IDX,
+    DynNode, FeedbackFilter, GraphEvent, GraphMessage, HxMidiEvent, NodeOp, NodeProg, MAX_INPUTS,
+    UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{node_factory, Node, NodeId, NodeInfo, ParamId, SAtom};
 use crate::monitor::{new_monitor_processor, MinMaxMonitorSamples, Monitor, MON_SIG_CNT};
@@ -18,6 +18,8 @@ use std::sync::Arc;
 
 use synfx_dsp::AtomicFloat;
 use triple_buffer::Output;
+
+const NODE_COMMUNICATION_BUFFER_SIZE: usize = 512;
 
 /// A NodeInstance describes the input/output/atom ports of a Node
 /// and holds other important house keeping information for the [NodeConfigurator].
@@ -235,9 +237,9 @@ use super::node_exec::SharedNodeExec;
 
 impl SharedNodeConf {
     pub(crate) fn new() -> (Self, SharedNodeExec) {
-        let rb_graph = RingBuffer::new(MAX_ALLOCATED_NODES * 2);
-        let rb_drop = RingBuffer::new(MAX_ALLOCATED_NODES * 2);
-        let rb_ev = RingBuffer::new(MAX_ALLOCATED_NODES * 2);
+        let rb_graph = RingBuffer::new(NODE_COMMUNICATION_BUFFER_SIZE);
+        let rb_drop = RingBuffer::new(NODE_COMMUNICATION_BUFFER_SIZE);
+        let rb_ev = RingBuffer::new(NODE_COMMUNICATION_BUFFER_SIZE);
 
         let (rb_graph_prod, rb_graph_con) = rb_graph.split();
         let (rb_drop_prod, rb_drop_con) = rb_drop.split();
@@ -248,7 +250,8 @@ impl SharedNodeConf {
         let (monitor_backend, monitor) = new_monitor_processor();
 
         let mut node_ctx_values = Vec::new();
-        node_ctx_values.resize_with(2 * MAX_ALLOCATED_NODES, || Arc::new(AtomicFloat::new(0.0)));
+        node_ctx_values
+            .resize_with(NODE_COMMUNICATION_BUFFER_SIZE, || Arc::new(AtomicFloat::new(0.0)));
 
         let mut exec_node_ctx_vals = Vec::new();
         for ctx_val in node_ctx_values.iter() {
@@ -678,12 +681,10 @@ impl NodeConfigurator {
         instance: usize,
         node: Box<dyn crate::dsp::DynamicNode1x1>,
     ) {
-        if instance < MAX_ALLOCATED_NODES {
-            let _ = self
-                .shared
-                .graph_update_prod
-                .push(GraphMessage::DynNode { index: instance as u8, node: DynNode::DN1x1(node) });
-        }
+        let _ = self
+            .shared
+            .graph_update_prod
+            .push(GraphMessage::DynNode { index: instance as u8, node: DynNode::DN1x1(node) });
     }
 
     pub fn delete_nodes(&mut self) {
