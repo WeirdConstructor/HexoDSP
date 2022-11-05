@@ -242,10 +242,8 @@ impl Block2JITCompiler {
             if let Some(tmpvar) = self.get_var_for_idout(id, out) {
                 return Ok(BlkASTNode::new_get(0, tmpvar));
             }
-        } else {
-            if let Some(tmpvar) = self.get_var_for_idout(id, "") {
-                return Ok(BlkASTNode::new_get(0, tmpvar));
-            }
+        } else if let Some(tmpvar) = self.get_var_for_idout(id, "") {
+            return Ok(BlkASTNode::new_get(0, tmpvar));
         }
 
         match &node.0.borrow().typ[..] {

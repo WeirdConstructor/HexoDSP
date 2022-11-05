@@ -169,10 +169,8 @@ impl SynthConstructor {
             }
         }
 
-        if only_update_params && changed_params {
-            if self.update_node_params(node_id)? {
-                need_rebuild = true;
-            }
+        if only_update_params && changed_params && self.update_node_params(node_id)? {
+            need_rebuild = true;
         }
 
         for node in walk_afterwads.iter() {
@@ -210,10 +208,11 @@ impl SynthConstructor {
 
                     if changed_value {
                         self.config.set_param(param_id, value.clone());
-                        if changed_modamt && !param_id.is_atom() {
-                            if self.config.set_param_modamt(param_id, *modamt) {
-                                needs_graph_rebuild = true;
-                            }
+                        if changed_modamt
+                            && !param_id.is_atom()
+                            && self.config.set_param_modamt(param_id, *modamt)
+                        {
+                            needs_graph_rebuild = true;
                         }
                     }
                 } else {

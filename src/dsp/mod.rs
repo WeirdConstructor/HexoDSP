@@ -577,6 +577,18 @@ impl<T> SyncUnsafeCell<T> {
 }
 
 impl<T: ?Sized> SyncUnsafeCell<T> {
+    /// Gets a pointer to a mutable memory cell that is marked being Sync.
+    ///
+    /// # Safety
+    /// This method is used together with [std::sync::Arc] in an usually
+    /// unsafe way to directly get write access to something that is potentially
+    /// unsafely shared across multiple threads.
+    ///
+    /// In HexoDSP this is used for accessing [DspNode] state in the audio thread.
+    /// The architecture of HexoDSP makes sure, that the
+    /// `Arc<SyncUnsafeCell<dyn DspNode>>` is only accessed from the audio thread
+    /// at a given time. Any UI or frontend thread is not going to access these
+    /// in [crate::nodes::NodeConfigurator].
     pub unsafe fn get(&self) -> *mut T {
         self.value.get()
     }
@@ -815,7 +827,14 @@ impl ProcBuf {
     /// Returns a mutable slice to the inner buffer.
     /// `len` **must not** exceed [MAX_BLOCK_SIZE].
     #[inline]
-    pub fn slice(&self, len: usize) -> &mut [f32] {
+    pub fn slice(&self, len: usize) -> &[f32] {
+        unsafe { &(*self.0)[0..len] }
+    }
+
+    /// Returns a mutable slice to the inner buffer.
+    /// `len` **must not** exceed [MAX_BLOCK_SIZE].
+    #[inline]
+    pub fn slice_mut(&mut self, len: usize) -> &mut [f32] {
         unsafe { &mut (*self.0)[0..len] }
     }
 

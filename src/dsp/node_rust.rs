@@ -182,7 +182,7 @@ impl DspNode for Rust1x1 {
 
         ectx.dynamic_nodes1x1[self.index].process(
             inp.slice(ctx.nframes()),
-            out.slice(ctx.nframes()),
+            out.slice_mut(ctx.nframes()),
             &n1x1ctx,
         );
     }

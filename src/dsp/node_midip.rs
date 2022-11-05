@@ -85,6 +85,7 @@ MIDI channel, the gate will restart after a very short pause.
     }
 }
 
+#[allow(clippy::comparison_chain)]
 impl DspNode for MidiP {
     fn set_sample_rate(&mut self, srate: f32) {
         self.trig_sig.set_sample_rate(srate);

@@ -152,7 +152,7 @@ impl DspNode for Mux9 {
         let out = out::Mux9::sig(outputs);
 
         let max: u8 = at::Mux9::in_cnt(atoms).i() as u8 + 1;
-        self.idx = self.idx % max;
+        self.idx %= max;
 
         if nctx.in_connected & 0x1 == 0x1 {
             for frame in 0..ctx.nframes() {

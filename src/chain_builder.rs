@@ -254,7 +254,7 @@ impl MatrixCellChain {
         for link in self.chain.iter() {
             let (x, y) = pos;
 
-            let mut cell = link.cell.clone();
+            let mut cell = link.cell;
 
             let node_id = cell.node_id();
             let node_name = node_id.name();

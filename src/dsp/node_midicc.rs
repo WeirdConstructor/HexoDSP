@@ -112,24 +112,21 @@ impl DspNode for MidiCC {
             let slew_ms = denorm::MidiCC::slew(slew, frame);
 
             while let Some(ev) = ptr.next_at(frame) {
-                match ev {
-                    HxMidiEvent::CC { channel, cc, value } => {
-                        if channel != midicc_channel {
-                            continue;
-                        }
-
-                        if cc == midicc_cc1 {
-                            self.cur_cc1 = value;
-                            change = true;
-                        } else if cc == midicc_cc2 {
-                            self.cur_cc2 = value;
-                            change = true;
-                        } else if cc == midicc_cc3 {
-                            self.cur_cc3 = value;
-                            change = true;
-                        }
+                if let HxMidiEvent::CC { channel, cc, value } = ev {
+                    if channel != midicc_channel {
+                        continue;
                     }
-                    _ => (),
+
+                    if cc == midicc_cc1 {
+                        self.cur_cc1 = value;
+                        change = true;
+                    } else if cc == midicc_cc2 {
+                        self.cur_cc2 = value;
+                        change = true;
+                    } else if cc == midicc_cc3 {
+                        self.cur_cc3 = value;
+                        change = true;
+                    }
                 }
             }
 

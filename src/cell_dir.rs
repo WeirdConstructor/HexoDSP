@@ -140,11 +140,11 @@ impl CellDir {
             // out 1 - TR
             CellDir::TR => (1, if even { -1 } else { 0 }),
             // out 2 - BR
-            CellDir::BR => (1, if even { 0 } else { 1 }),
+            CellDir::BR => (1, i32::from(!even)),
             // out 3 - B
             CellDir::B => (0, 1),
             // in 3 - BL
-            CellDir::BL => (-1, if even { 0 } else { 1 }),
+            CellDir::BL => (-1, i32::from(!even)),
             // in 2 - TL
             CellDir::TL => (-1, if even { -1 } else { 0 }),
             // in 1 - T

@@ -155,10 +155,11 @@ impl Sampl {
         self.phase = i as f64 + f + sr_factor * speed;
 
         let (i, f) = if reverse { (((sd_len - 1) - i), 1.0 - f) } else { (i, f) };
-        cubic_interpolate(&sample_data[..], sd_len, i, f as f32)
+        cubic_interpolate(sample_data, sd_len, i, f as f32)
     }
 
     #[allow(clippy::float_cmp)]
+    #[allow(clippy::too_many_arguments)]
     #[inline]
     fn play(
         &mut self,

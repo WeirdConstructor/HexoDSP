@@ -182,14 +182,11 @@ impl DspNode for Scope {
                     self.idx = self.idx.saturating_add(copy_count);
                 }
 
-                if self.idx >= SCOPE_SAMPLES {
-                    if self.trig.check_trigger(trigger_input.read(frame)) {
-                        self.frame_time = 0.0;
-                        self.idx = 0;
-                    } else if trigger_disabled {
-                        self.frame_time = 0.0;
-                        self.idx = 0;
-                    }
+                if self.idx >= SCOPE_SAMPLES
+                    && (trigger_disabled || self.trig.check_trigger(trigger_input.read(frame)))
+                {
+                    self.frame_time = 0.0;
+                    self.idx = 0;
                 }
             }
         } else {
@@ -205,8 +202,8 @@ impl DspNode for Scope {
                     }
 
                     if self.frame_time >= time_per_block {
-                        for i in 0..input_bufs.len() {
-                            self.handle.write(i, self.idx, cur_mm[i]);
+                        for (i, cur_mm) in cur_mm.iter().enumerate().take(input_bufs.len()) {
+                            self.handle.write(i, self.idx, *cur_mm);
                         }
                         *cur_mm = [(-99999.0, 99999.0); 3];
                         self.idx = self.idx.saturating_add(1);

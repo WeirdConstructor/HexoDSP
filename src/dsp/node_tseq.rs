@@ -215,7 +215,7 @@ impl DspNode for TSeq {
 
         let time = &mut self.time;
 
-        for frame in 0..ctx.nframes() {
+        for (frame, phase_out) in phase_out.iter_mut().enumerate().take(ctx.nframes()) {
             if time.trigger.check_trigger(denorm::TSeq::trig(trig, frame)) {
                 time.clock.sync();
                 println!("CLOCK SYNC");
@@ -224,10 +224,10 @@ impl DspNode for TSeq {
             let phase = match cmode {
                 0 => time.clock.next_phase(plen, clock.read(frame)) / plen,
                 1 => time.clock.next_phase(1.0, clock.read(frame)),
-                2 | _ => (clock.read(frame).abs() as f64).fract(),
+                _ => (clock.read(frame).abs() as f64).fract(),
             };
 
-            phase_out[frame] = phase as f32;
+            *phase_out = phase as f32;
         }
 
         let mut col_out: [f32; MAX_BLOCK_SIZE] = [0.0; MAX_BLOCK_SIZE];

@@ -165,15 +165,17 @@ impl PatternData {
                         let delta_rows = end_idx - start_idx;
 
                         if delta_rows > 1 {
-                            for idx in (start_idx + 1)..end_idx {
+                            for (idx, out) in
+                                out_col.iter_mut().enumerate().take(end_idx).skip(start_idx + 1)
+                            {
                                 let x = (idx - start_idx) as f32 / (delta_rows as f32);
-                                out_col[idx] = (start_value * (1.0 - x) + end_value * x, 0);
+                                *out = (start_value * (1.0 - x) + end_value * x, 0);
                             }
                         }
 
                         start_value = end_value;
                         start_idx = end_idx;
-                        end_idx = end_idx + 1;
+                        end_idx += 1;
 
                         if break_after_write {
                             break;
@@ -186,27 +188,27 @@ impl PatternData {
             PatternColType::Note => {
                 let mut cur_value = (0.0, 0);
 
-                for row in 0..out_col.len() {
+                for (row, out) in out_col.iter_mut().enumerate() {
                     if let Some(new_value) = self.data[row][col] {
                         cur_value = (((new_value as i32 - 69) as f32 * 0.1) / 12.0, 1);
                     } else {
                         cur_value.1 = 0;
                     }
 
-                    out_col[row] = (cur_value.0.clamp(-1.0, 1.0), cur_value.1);
+                    *out = (cur_value.0.clamp(-1.0, 1.0), cur_value.1);
                 }
             }
             PatternColType::Step => {
                 let mut cur_value = (0.0, 0);
 
-                for row in 0..out_col.len() {
+                for (row, out) in out_col.iter_mut().enumerate() {
                     if let Some(new_value) = self.data[row][col] {
                         cur_value = (((new_value & 0xFFF) as f32) / (0xFFF as f32), 1);
                     } else {
                         cur_value.1 = 0;
                     }
 
-                    out_col[row] = cur_value;
+                    *out = cur_value;
                 }
             }
             PatternColType::Gate => {
@@ -215,11 +217,11 @@ impl PatternData {
                 //      are not equal to float 0.0. Maybe we should change
                 //      this internal format!? But in either case we transmit
                 //      a full row to the backend anyways.
-                for row in 0..out_col.len() {
-                    out_col[row] = if let Some(new_value) = self.data[row][col] {
+                for (row, out) in out_col.iter_mut().enumerate() {
+                    *out = if let Some(new_value) = self.data[row][col] {
                         (f32::from_bits(new_value as u32), 1)
                     } else {
-                        (f32::from_bits(0xF000 as u32), 0)
+                        (f32::from_bits(0xF000_u32), 0)
                     };
                 }
             }

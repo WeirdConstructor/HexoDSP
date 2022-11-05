@@ -63,6 +63,12 @@ impl std::fmt::Debug for TrackerBackend {
     }
 }
 
+impl Default for Tracker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Tracker {
     pub fn new() -> Self {
         let rb = RingBuffer::new(MAX_RINGBUF_SIZE);

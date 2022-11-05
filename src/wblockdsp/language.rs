@@ -766,11 +766,9 @@ impl BlockArea {
                     return Some((block, xo, yo, port_y));
                 }
             }
-        } else {
-            if let Some(i) = block.inputs.get(port_y) {
-                if i.is_some() {
-                    return Some((block, xo, yo, port_y));
-                }
+        } else if let Some(i) = block.inputs.get(port_y) {
+            if i.is_some() {
+                return Some((block, xo, yo, port_y));
             }
         }
 

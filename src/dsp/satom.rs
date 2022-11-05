@@ -43,11 +43,7 @@ impl SAtom {
     }
 
     pub fn is_continous(&self) -> bool {
-        if let SAtom::Param(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, SAtom::Param(_))
     }
 
     pub fn i(&self) -> i64 {

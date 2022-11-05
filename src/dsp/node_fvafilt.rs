@@ -224,8 +224,8 @@ impl DspNode for FVaFilt {
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
-                    for i in 0..2 {
-                        let vframe = oversample.0.process(f32x4::splat(2.) * input[i]);
+                    for inp in &input {
+                        let vframe = oversample.0.process(f32x4::splat(2.) * inp);
                         let out = sallenkey.process(vframe);
                         output = oversample.1.process(out);
                     }
@@ -252,8 +252,8 @@ impl DspNode for FVaFilt {
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
-                    for i in 0..2 {
-                        let vframe = oversample.0.process(f32x4::splat(2.) * input[i]);
+                    for inp in &input {
+                        let vframe = oversample.0.process(f32x4::splat(2.) * inp);
                         let out = svf.process(vframe);
                         output = oversample.1.process(out);
                     }
@@ -277,8 +277,8 @@ impl DspNode for FVaFilt {
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
-                    for i in 0..2 {
-                        let vframe = oversample.0.process(f32x4::splat(2.) * input[i]);
+                    for inp in &input {
+                        let vframe = oversample.0.process(f32x4::splat(2.) * inp);
                         let out = ladder.tick_newton(vframe);
                         output = oversample.1.process(out);
                     }
