@@ -1,4 +1,4 @@
-0.2.1 (unreleased)
+0.2.1 (2022-11-06)
 ==================
 
 * Breaking Change: `Amp` gain knob got a more useful -24dB to 24dB range.
@@ -9,6 +9,7 @@ with proper dB range.
 * Breaking Change: `FbRd` got a volume knob with proper dB range.
 * Breaking Change: `BigFilt` got also an output gain knob with dB range.
 * Breaking Change: `Scope` gain knobs now have a -24db to 24db range.
+* Change: Removed any fixed limits regarding the maximum number of nodes in a graph.
 * Feature: Added PM input to the Sin node for phase modulation/distortion.
 This allows to get a more linear FM sound from that oscillator.
 * Change: Changed `Ad` envelope node to be properly retriggerable. Refactored
@@ -20,6 +21,7 @@ you can use the `gain` input with a mod amount modification.
 * Bugfix: The rounding of the parameters could snap outside the UI min/max range of that
 parameter. It's now clamped properly.
 * Feature: Added `Adsr` node for an ADSR envelope generator.
+* Feature: Added the `SynthConstructor` API.
 
 0.2.0 (2022-08-28)
 ==================

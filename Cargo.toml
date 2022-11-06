@@ -1,6 +1,6 @@
 [package]
 name        = "hexodsp"
-version     = "0.2.0"
+version     = "0.2.1"
 authors     = ["Weird Constructor <weirdconstructor@m8geil.de>"]
 license     = "GPL-3.0-or-later"
 edition     = "2021"
@@ -18,10 +18,10 @@ ringbuf       = "0.2.2"
 triple_buffer = "5.0.6"
 lazy_static   = "1.4.0"
 hound         = "3.4.0"
-#synfx-dsp-jit = { version = "0.6.0", optional = true }
-synfx-dsp-jit = { git = "https://github.com/WeirdConstructor/synfx-dsp-jit.git", optional = true }
-#synfx-dsp     = { version = "0.5.5" }
-synfx-dsp = { git = "https://github.com/WeirdConstructor/synfx-dsp.git" }
+synfx-dsp-jit = { version = "0.6.1", optional = true }
+#synfx-dsp-jit = { git = "https://github.com/WeirdConstructor/synfx-dsp-jit.git", optional = true }
+synfx-dsp     = { version = "0.5.5" }
+#synfx-dsp = { git = "https://github.com/WeirdConstructor/synfx-dsp.git" }
 
 [dev-dependencies]
 num-complex = "0.2"
@@ -35,5 +35,5 @@ path       = "src/lib.rs"
 name       = "hexodsp"
 crate-type = ["lib"]
 
-[patch.'https://github.com/WeirdConstructor/synfx-dsp.git']
-synfx-dsp = { path = "../synfx-dsp" }
+#[patch.'https://github.com/WeirdConstructor/synfx-dsp.git']
+#synfx-dsp = { path = "../synfx-dsp" }

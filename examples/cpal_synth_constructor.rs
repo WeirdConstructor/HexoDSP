@@ -14,8 +14,8 @@ fn main() {
     // The SynthConstructor encapsulates the whole audio graph engine in HexoDSP:
     let mut sc = SynthConstructor::new();
 
-    // Pass the NodeExecutor from SynthConstructor to the CPAL backend and start
-    // the frontend thread:
+    // Pass the NodeExecutor from SynthConstructor to the
+    // CPAL backend and start the frontend thread:
     start_backend(sc.executor().unwrap(), move || {
         use hexodsp::build::*;
 
@@ -24,34 +24,17 @@ fn main() {
         // Setup an amplifier node with a low gain:
         let amp = amp(0).set().gain(0.2).input().inp(&saw.output().sig());
 
-        // Insert your own custom Rust function via a NodeId::Rust1x1 node
-        // into the DSP graph:
-        let r1x1 = rust1x1(0).input().inp(&amp.output().sig());
-        let r1x1 = r1x1.set().alpha(0.75);
-        // You may replace this function anytime at runtime:
-        sc.set_dynamic_node1x1(
-            0,
-            Box::new(|inp: &[f32], out: &mut [f32], ctx: &DynNode1x1Context| {
-                let alpha = ctx.alpha_slice();
-                for (i, in_sample) in inp.iter().enumerate() {
-                    out[i] = in_sample * alpha[i];
-                }
-
-                // This sets an atomic float that can be read out using SynthConstructor::led_value()!
-                ctx.led_value().set(out[0]);
-            }),
-        );
-
         // Assign amplifier node output to the two input channels
         // of the audio device output node:
-        let out = out(0).input().ch1(&r1x1.output().sig());
-        let out = out.input().ch2(&r1x1.output().sig());
+        let out = out(0).input().ch1(&amp.output().sig());
+        let out = out.input().ch2(&amp.output().sig());
 
         // Setup a triangle LFO with a cycletime of 8 seconds.
         let lfo = tslfo(0).set().time(8000.0);
-        // Setup the "att"enuator input to 0.3 with a modulation amount of 0.0 to 0.7.
-        // Redirect the output of the LFO (which oscillated between 0.0 and 1.0) to the
-        // "att" input of the Amp node here:
+        // Setup the "att"enuator input to 0.3 with a modulation
+        // amount of 0.0 to 0.7. Redirect the output of the LFO (which
+        // oscillated between 0.0 and 1.0) to the "att" input of the
+        // Amp node here:
         amp.set_mod().att(0.3, 0.7).input().att(&lfo.output().sig());
 
         // Upload the program:

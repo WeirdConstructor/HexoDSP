@@ -32,6 +32,9 @@ DSP algorithms at runtime. One possible frontend language is the visual
 
 And following DSP nodes:
 
+For a comprehensive list checkout the
+[**HexoDSP DSP Node Reference**](http://m8geil.de/hexodsp_doc/hexodsp/build/index.html#hexodsp-dsp-node-reference).
+
 | Category | Name | Function |
 |-|-|-|
 | IO Util | Out         | Audio output (to DAW or Jack) |
@@ -55,13 +58,15 @@ And following DSP nodes:
 | Ctrl    | CQnt        | Control signal pitch quantizer |
 | Ctrl    | Quant       | Pitch signal quantizer |
 | Mod     | TSeq        | Tracker/pattern sequencer |
-| Mod     | Ad          | Attack-Decay envelope |
+| Mod     | Ad          | Attack-Decay (AD) envelope |
+| Mod     | Adsr        | Attack-Decay-Sustain-Release (ADSR) envelope |
 | Mod     | TsLFO       | Tri/Saw waveform low frequency oscillator (LFO) |
 | Mod     | RndWk       | Random walker, a Sample & Hold noise generator |
 | IO Util | FbWr / FbRd | Utility modules for feedback in patches |
 | IO Util | Scope       | Oscilloscope for up to 3 channels |
 | IO Util | MidiP       | MIDI Pitch/Note input from plugin host, DAW or hardware |
 | IO Util | MidiCC      | MIDI CC input from plugin host, DAW or hardware |
+| IO Util | ExtA - ExtF | Access to plugin parameter sets A to F |
 
 ### API Examples
 
@@ -71,39 +76,63 @@ The development documentation with all private fields and functions can be
 found separately hosted:
 [HexoDSP API Developer Documentation](http://m8geil.de/hexodsp_doc/hexodsp/).
 
-#### Raw `NodeConfigurator` API
+#### High Level SynthConstructor API
 
-This API is the most low level API provided by HexoDSP.
-It shows how to create nodes and connect them.
-The execution of the nodes in the audio thread is
-controlled by a `NodeProg`, which defines the order
-the nodes are executed in.
+HexoDSP offers a high level API for constructing DSP graphs, which is known
+as the [crate::SynthConstructor]. In combination with the [crate::build] module it
+allows you to define DSP graphs that connect DSP nodes in Rust.
 
-This only showcases the non-realtime generation of audio
-samples. For a real time application of this library please
-refer to the examples that come with this library.
+HexoDSP offers you a set of readily available DSP nodes. You can check out the
+reference documentation of the nodes here:
+[**HexoDSP DSP Node Reference**](http://m8geil.de/hexodsp_doc/hexodsp/build/index.html#hexodsp-dsp-node-reference).
+
+Additionally you can check out the [DynamicNode1x1](http://m8geil.de/hexodsp_doc/hexodsp/trait.DynamicNode1x1.html)
+DSP node, that allows you define your own DSP nodes to plug into a HexoDSP graph.
+
+Here is a short example that shows how this [crate::SynthConstructor] API works:
 
 ```rust
 use hexodsp::*;
+use hexodsp::build::*;
 
-let (mut node_conf, mut node_exec) = new_node_engine();
+let mut sc = SynthConstructor::new();
 
-node_conf.create_node(NodeId::Sin(0));
-node_conf.create_node(NodeId::Amp(0));
+spawn_audio_thread(sc.executor().unwrap());
 
-let mut prog = node_conf.rebuild_node_ports();
+// Define a sine oscillator at 110Hz. The `0` is used to identify
+// the oscillator instance. `sin(1)` would be a second and independent sine oscillator.
+// `sin(2)` a third sine oscillator and so on... You may use up to 256 sine oscillators
+// if your CPU is fast enough.
+let sin = sin(0).set().freq(110.0);
 
-node_conf.add_prog_node(&mut prog, &NodeId::Sin(0));
-node_conf.add_prog_node(&mut prog, &NodeId::Amp(0));
+// (Bandlimited) Sawtooth oscillator at 220Hz
+let saw = bosc(0).set().wtype(2).set().freq(220.0);
 
-node_conf.set_prog_node_exec_connection(
-    &mut prog,
-    (NodeId::Amp(0), NodeId::Amp(0).inp("inp").unwrap()),
-    (NodeId::Sin(0), NodeId::Sin(0).out("sig").unwrap()));
+// Setup a mixer node to sum the two oscillators:
+let mix = mix3(0).input().ch1(&sin.output().sig());
+let mix = mix3(0).input().ch2(&saw.output().sig());
 
-node_conf.upload_prog(prog, true);
+// Turn down the initial output volume of the mixer a bit:
+let mix = mix3(0).set().ovol(0.7);
 
-let (out_l, out_r) = node_exec.test_run(0.1, false);
+// Plug the mixer into the audio output node:
+let out = out(0).input().ch1(&mix.output().sig());
+
+// Upload the DSP graph:
+sc.upload(&out).unwrap();
+
+// start some frontend loop here, or some GUI or whatever you like....
+
+// Later at runtime you might want to change the oscillator
+// frequency from the frontend:
+sc.update_params(&bosc(0).set().freq(440.0));
+
+fn spawn_audio_thread(exec: NodeExecutor) {
+    // Some loop here that interfaces with [NodeExecutor::process] and regularily
+    // calls [NodeExecutor::process_graph_updates].
+    //
+    // Please refer to the examples that come with HexoDSP!
+}
 ```
 
 #### Hexagonal Matrix API
@@ -137,7 +166,7 @@ matrix.sync().unwrap();
 let gain_p = amp.inp_param("gain").unwrap();
 matrix.set_param(gain_p, SAtom::param(0.25));
 
-let (out_l, out_r) = node_exec.test_run(0.11, true);
+let (out_l, out_r) = node_exec.test_run(0.11, true, &[]);
 // out_l and out_r contain two channels of audio
 // samples now.
 ```
@@ -161,7 +190,7 @@ chain.node_out("sin", "sig")
     .place(&mut matrix, 0, 0);
 matrix.sync().unwrap();
 
-let (out_l, out_r) = node_exec.test_run(0.11, true);
+let (out_l, out_r) = node_exec.test_run(0.11, true, &[]);
 // out_l and out_r contain two channels of audio
 // samples now.
 ```

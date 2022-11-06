@@ -898,7 +898,7 @@ pub enum UIType {
     OscA,
 }
 
-#[derive(Debug, Clone, Copy, PartialOrd, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 pub enum UICategory {
     None,
     Osc,

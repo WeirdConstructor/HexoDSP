@@ -45,9 +45,28 @@ fn reformat_desc(s: &str, title: bool) -> String {
 }
 
 fn main() {
+    let mut node_ids = hexodsp::dsp::ALL_NODE_IDS.to_vec();
+    node_ids.sort_by(|a, b| {
+        if a.ui_category() == b.ui_category() {
+            a.name().cmp(b.name())
+        } else {
+            a.ui_category().cmp(&b.ui_category())
+        }
+    });
+
+    println!("| Category | Dscription |");
+    println!("|----------|------------|");
+    println!("| Osc | Oscillators / Signal generators (sine oscillator, noise generator, ...) |");
+    println!("| Mod | Modulation Signal generators (envelope generators, sequencers, ...) |");
+    println!("| NtoM | Signal routing, routing N signals to M outputs (mixer, router, ...) |");
+    println!("| Signal | Signal filtering and shaping (filters, delays, reverbs, ...) |");
+    println!("| Ctrl | Control signal generators and shapers (for instance quantizers) |");
+    println!("| IOUtil | Input, output and utility nodes (audio output, feedback nodes, MIDI CC, ...) |");
+    println!("");
+
     println!("| Node | Category | Description |");
     println!("|-|-|-|");
-    for node_id in hexodsp::dsp::ALL_NODE_IDS.iter() {
+    for node_id in node_ids.iter() {
         let info = NodeInfo::from_node_id(*node_id);
 
         println!(
@@ -59,7 +78,7 @@ fn main() {
         );
     }
 
-    for node_id in hexodsp::dsp::ALL_NODE_IDS.iter() {
+    for node_id in node_ids.iter() {
         let info = NodeInfo::from_node_id(*node_id);
 
         println!("### NodeId::{}", node_id.label());
@@ -90,6 +109,11 @@ fn main() {
         for out_idx in 0..info.out_count() {
             println!("- output **{}**", node_id.out_name_by_idx(out_idx as u8).unwrap());
             println!("{}", reformat_inline_desc(info.out_help(out_idx).unwrap_or(""), false));
+            println!(
+                " `{}(0).output().{}()`",
+                node_id.name(),
+                node_id.out_name_by_idx(out_idx as u8).unwrap()
+            );
         }
 
         println!("#### NodeId::{} Help", node_id.label());
@@ -99,6 +123,9 @@ fn main() {
             let param = node_id.inp_param_by_idx(in_idx).unwrap();
             println!("#### NodeId::{} input {}", node_id.label(), param.name());
             println!("{}", reformat_desc(info.in_help(in_idx).unwrap_or(""), false));
+            println!("");
+            println!("API example for connecting the input:");
+            println!("`{}(0).input().{}(&amp(1).output().sig())`", node_id.name(), param.name());
             println!("");
 
             println!("| | value | denormalized | fmt | build API | [crate::ParamId] |");
