@@ -278,7 +278,7 @@ You can support me (and the development of this project) via Liberapay:
 
 ## License
 
-This project is licensed under the GNU Affero General Public License Version 3 or
+This project is licensed under the GNU General Public License Version 3 or
 later.
 
 ### Why GPL?
