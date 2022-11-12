@@ -1501,6 +1501,16 @@ impl Matrix {
         self.config.update_output_feedback();
     }
 
+    /// Updates the dynamic node for the Rust1x1 nodes. The `index` refers to the
+    /// instance `NodeId::Rust1x1(index)`.
+    ///
+    /// See also [crate::SynthConstructor::set_dynamic_node1x1].
+    pub fn set_dynamic_node1x1(&self, index: usize, node: Box<dyn crate::dsp::DynamicNode1x1>) {
+        if let Ok(mut node_global) = self.config.get_node_global().lock() {
+            node_global.send_dynamic_node1x1(index, node);
+        }
+    }
+
     /// Injects a [HxMidiEvent] directly into audio thread, so that it can trickle
     /// back to the GUI thread the standard way. This is mostly used for automated testing.
     /// And maybe some day for some kind of remote control script from WLambda?

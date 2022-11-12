@@ -280,7 +280,7 @@ impl SynthConstructor {
     /// sc.upload(&out(0).input().ch1(&r1x1.output().sig()));
     ///
     ///```
-    pub fn set_dynamic_node1x1(&mut self, index: usize, node: Box<dyn crate::dsp::DynamicNode1x1>) {
+    pub fn set_dynamic_node1x1(&self, index: usize, node: Box<dyn crate::dsp::DynamicNode1x1>) {
         if let Ok(mut node_global) = self.config.get_node_global().lock() {
             node_global.send_dynamic_node1x1(index, node);
         }
