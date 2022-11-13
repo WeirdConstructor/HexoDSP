@@ -321,6 +321,74 @@ macro_rules! dump_table {
 }
 
 #[allow(dead_code)]
+pub fn vis_fft(table: &[(u16, u32)], max: Option<f32>) -> Vec<String> {
+    let max = if let Some(max) = max {
+        max
+    } else {
+        let mut max = 0.0;
+        for (_freq, amt) in table.iter() {
+            max = (*amt as f32).max(max);
+        }
+        max
+    };
+
+    table
+        .iter()
+        .map(|(freq, amt)| {
+            let amt_ratio = ((*amt as f32).round() / max).clamp(0.0, 1.0);
+            format!(
+                "{:5} {:5} {}",
+                freq,
+                amt,
+                "#".repeat((amt_ratio * 20.0).ceil() as usize)
+            )
+        })
+        .collect::<Vec<String>>()
+}
+
+#[macro_export]
+macro_rules! assert_vis_fft {
+    ($left: expr, $right:expr) => {{
+        let mut max = 0.0;
+        for (_freq, amt) in $left.iter() {
+            max = (*amt as f32).max(max);
+        }
+
+        let left_lines = vis_fft(&($left), Some(max));
+        let right_lines = vis_fft(&($right), Some(max));
+
+        let mut does_diff = left_lines.len() != right_lines.len();
+        if !does_diff {
+            for (left, right) in left_lines.iter().zip(right_lines.iter()) {
+                if *left != *right {
+                    does_diff = true;
+                    break;
+                }
+            }
+        }
+
+        if does_diff {
+            panic!(
+                "FFT diff:\n{}\n\nleft: {:?}\n",
+                left_lines
+                    .iter()
+                    .zip(right_lines.iter())
+                    .map(|(left, right)| {
+                        if *left != *right {
+                            format!("{:32} !! {}", *left, *right)
+                        } else {
+                            format!("{:32} == {}", *left, *right)
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n"),
+                $left
+            );
+        }
+    }};
+}
+
+#[allow(dead_code)]
 pub fn collect_signal_changes(inp: &[f32], thres: i64) -> Vec<(usize, i64)> {
     let mut idxs = vec![];
     let mut last_sig = 0.0;
@@ -819,7 +887,7 @@ pub fn run_and_get_fft4096_now(
 }
 
 #[allow(unused)]
-pub fn fftr4096_now(
+pub fn fftr4096_now_long(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     div: u32,
     thres: u32,
@@ -827,7 +895,59 @@ pub fn fftr4096_now(
     let min_samples_for_fft = 4096.0 * 1.5; // 1.5 for some extra margin
     let run_len_s = min_samples_for_fft / SAMPLE_RATE;
     let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
-    fftr_thres_at_ms(&mut out_l[..], FFT::F4096, div, thres, 0.0)
+    let mut avg_fft = fftr_thres_at_ms(&mut out_l[..], FFT::F4096, 0.0);
+
+    for _ in 0..4 {
+        let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+        let res = fftr_thres_at_ms(&mut out_l[..], FFT::F4096, 0.0);
+        for (i, (_freq, amp)) in res.iter().enumerate() {
+            avg_fft[i].1 += amp;
+        }
+    }
+
+    let div = div as f32;
+    let mut out = vec![];
+    for (freq, amp) in avg_fft.iter() {
+        let amp = *amp as f32 / 5.0;
+        let amp = ((amp / div).round() * div) as u32;
+        if amp >= thres {
+            out.push((*freq, amp));
+        }
+    }
+
+    out
+}
+
+#[allow(unused)]
+pub fn fftr512_now_long(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    div: u32,
+    thres: u32,
+) -> Vec<(u16, u32)> {
+    let min_samples_for_fft = 512.0 * 1.5; // 1.5 for some extra margin
+    let run_len_s = min_samples_for_fft / SAMPLE_RATE;
+    let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+    let mut avg_fft = fftr_thres_at_ms(&mut out_l[..], FFT::F512, 0.0);
+
+    for _ in 0..4 {
+        let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+        let res = fftr_thres_at_ms(&mut out_l[..], FFT::F512, 0.0);
+        for (i, (_freq, amp)) in res.iter().enumerate() {
+            avg_fft[i].1 += amp;
+        }
+    }
+
+    let div = div as f32;
+    let mut out = vec![];
+    for (freq, amp) in avg_fft.iter() {
+        let amp = *amp as f32 / 5.0;
+        let amp = ((amp / div).round() * div) as u32;
+        if amp >= thres {
+            out.push((*freq, amp));
+        }
+    }
+
+    out
 }
 
 /// Takes about 1 second of audio to average 10 ffts
@@ -903,13 +1023,7 @@ pub fn fft_thres_at_ms(buf: &mut [f32], size: FFT, amp_thres: u32, ms_idx: f32) 
     fft(&mut buf[idx..(idx + len)], size, amp_thres)
 }
 
-pub fn fftr_thres_at_ms(
-    buf: &mut [f32],
-    size: FFT,
-    divis: u32,
-    amp_thres: u32,
-    ms_idx: f32,
-) -> Vec<(u16, u32)> {
+pub fn fftr_thres_at_ms(buf: &mut [f32], size: FFT, ms_idx: f32) -> Vec<(u16, u32)> {
     let ms_sample_offs = ms_idx * (SAMPLE_RATE / 1000.0);
     let fft_nbins = size.size();
     let len = fft_nbins;
@@ -919,7 +1033,7 @@ pub fn fftr_thres_at_ms(
         return vec![];
     }
 
-    fftr(&mut buf[idx..(idx + len)], size, divis, amp_thres)
+    fftr(&mut buf[idx..(idx + len)], size)
 }
 
 pub fn fft(buf: &mut [f32], size: FFT, amp_thres: u32) -> Vec<(u16, u32)> {
@@ -964,7 +1078,7 @@ pub fn fft(buf: &mut [f32], size: FFT, amp_thres: u32) -> Vec<(u16, u32)> {
     res
 }
 
-pub fn fftr(buf: &mut [f32], size: FFT, divisor: u32, amp_thres: u32) -> Vec<(u16, u32)> {
+pub fn fftr(buf: &mut [f32], size: FFT) -> Vec<(u16, u32)> {
     let len = size.size();
     let mut res = vec![];
 
@@ -992,17 +1106,13 @@ pub fn fftr(buf: &mut [f32], size: FFT, divisor: u32, amp_thres: u32) -> Vec<(u1
     //    println!("fft: {:?}", &complex_buf[0..len]);
 
     for (i, amp) in amplitudes.iter().enumerate() {
-        let mut amp = (*amp as f32 / divisor as f32).round() * (divisor as f32);
-        let amp = amp as u32;
-        if amp >= amp_thres {
-            let freq = (i as f32 * SAMPLE_RATE) / len as f32;
-            if freq > 22050.0 {
-                // no freqency images above nyquist...
-                continue;
-            }
-            //            println!("{:6.0} {}", freq, *amp);
-            res.push((freq.round() as u16, amp));
+        let freq = (i as f32 * SAMPLE_RATE) / len as f32;
+        if freq > 22050.0 {
+            // no freqency images above nyquist...
+            continue;
         }
+
+        res.push((freq.round() as u16, *amp));
     }
 
     res

@@ -66,7 +66,7 @@ struct VaFiltState {
 #[derive(Debug, Clone)]
 pub struct FVaFilt {
     params: Arc<FilterParams>,
-    old_params: Box<(f32, f32, f32, i8)>,
+    old_params: Box<(f32, f32, f32, i8, i8)>,
     state: Box<VaFiltState>,
     //    ladder: Box<LadderFilter>,
     //    svf: Box<Svf>,
@@ -89,7 +89,7 @@ impl FVaFilt {
                 dc_filter: DCFilterX4::default(),
             }),
             params,
-            old_params: Box::new((0.0, 0.0, 0.0, -1)),
+            old_params: Box::new((0.0, 0.0, 0.0, 0, -1)),
         }
     }
     pub const inp: &'static str = "Signal input";
@@ -125,7 +125,7 @@ but that comes with the price that they are more expensive.
 }
 
 macro_rules! on_param_change {
-    ($self: ident, $freq: ident, $res: ident, $drive: ident, $ftype: ident, $frame: ident,
+    ($self: ident, $freq: ident, $res: ident, $drive: ident, $ftype: ident, $lslope: ident, $frame: ident,
      $on_change: block) => {
         unsafe {
             let params = Arc::get_mut_unchecked(&mut $self.params);
@@ -134,12 +134,19 @@ macro_rules! on_param_change {
                 denorm::FVaFilt::res($res, $frame).clamp(0.0, 1.0),
                 denorm::FVaFilt::drive($drive, $frame).max(0.0),
                 $ftype,
+                $lslope,
             );
 
             if new_params != *$self.old_params {
                 params.set_frequency(new_params.0);
                 params.set_resonance(new_params.1);
                 params.drive = new_params.2;
+                params.slope = match new_params.4 {
+                    0 => LadderSlope::LP6,
+                    1 => LadderSlope::LP12,
+                    2 => LadderSlope::LP18,
+                    _ => LadderSlope::LP24,
+                };
 
                 $on_change;
 
@@ -192,16 +199,6 @@ impl DspNode for FVaFilt {
         let _smode = smode.i() as i8;
         let lslope = lslope.i() as i8;
 
-        unsafe {
-            let params = Arc::get_mut_unchecked(&mut self.params);
-            params.slope = match lslope {
-                0 => LadderSlope::LP6,
-                1 => LadderSlope::LP12,
-                2 => LadderSlope::LP18,
-                _ => LadderSlope::LP24,
-            };
-        };
-
         let state = self.state.as_mut();
 
         let oversample = &mut state.oversample;
@@ -212,7 +209,7 @@ impl DspNode for FVaFilt {
                 // SallenKey
                 let sallenkey = &mut state.sallenkey;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, frame, {
+                    on_param_change!(self, freq, res, drive, ftype, lslope, frame, {
                         sallenkey.update();
                     });
 
@@ -240,7 +237,7 @@ impl DspNode for FVaFilt {
                 // SVF
                 let svf = &mut state.svf;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, frame, {
+                    on_param_change!(self, freq, res, drive, ftype, lslope, frame, {
                         svf.update();
                     });
 
@@ -268,7 +265,7 @@ impl DspNode for FVaFilt {
                 // Ladder
                 let ladder = &mut state.ladder;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, frame, {});
+                    on_param_change!(self, freq, res, drive, ftype, lslope, frame, {});
                     let sig_l = denorm::FVaFilt::inp(inp, frame);
 
                     // TODO: Read in second channel!
