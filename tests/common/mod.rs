@@ -948,6 +948,37 @@ pub fn fftr512_now_peaks(
     out
 }
 
+#[allow(unused)]
+pub fn fftr64_now_peaks(
+    node_exec: &mut hexodsp::nodes::NodeExecutor,
+    div: u32,
+    thres: u32,
+) -> Vec<(u16, u32)> {
+    let min_samples_for_fft = 64.0 * 1.5; // 1.5 for some extra margin
+    let run_len_s = min_samples_for_fft / SAMPLE_RATE;
+    let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+    let mut avg_fft = fftr_thres_at_ms(&mut out_l[..], FFT::F64, 0.0);
+
+    for _ in 0..16 {
+        let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
+        let res = fftr_thres_at_ms(&mut out_l[..], FFT::F64, 0.0);
+        for (i, (_freq, amp)) in res.iter().enumerate() {
+            avg_fft[i].1 = avg_fft[i].1.max(*amp);
+        }
+    }
+
+    let div = div as f32;
+    let mut out = vec![];
+    for (freq, amp) in avg_fft.iter() {
+        let amp = ((*amp as f32 / div).round() * div) as u32;
+        if amp >= thres {
+            out.push((*freq, amp));
+        }
+    }
+
+    out
+}
+
 /// Takes about 1 second of audio to average 10 ffts
 #[allow(unused)]
 pub fn run_and_get_avg_fft4096_now(
@@ -981,6 +1012,7 @@ pub enum FFT {
     F32,
     F64,
     F128,
+    F256,
     F512,
     F1024,
     F2048,
@@ -997,6 +1029,7 @@ impl FFT {
             FFT::F32 => 32,
             FFT::F64 => 64,
             FFT::F128 => 128,
+            FFT::F256 => 256,
             FFT::F512 => 512,
             FFT::F1024 => 1024,
             FFT::F2048 => 2048,
