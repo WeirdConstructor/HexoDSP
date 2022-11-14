@@ -887,7 +887,7 @@ pub fn run_and_get_fft4096_now(
 }
 
 #[allow(unused)]
-pub fn fftr4096_now_long(
+pub fn fftr4096_now_peaks(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     div: u32,
     thres: u32,
@@ -897,19 +897,18 @@ pub fn fftr4096_now_long(
     let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
     let mut avg_fft = fftr_thres_at_ms(&mut out_l[..], FFT::F4096, 0.0);
 
-    for _ in 0..4 {
+    for _ in 0..6 {
         let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
         let res = fftr_thres_at_ms(&mut out_l[..], FFT::F4096, 0.0);
         for (i, (_freq, amp)) in res.iter().enumerate() {
-            avg_fft[i].1 += amp;
+            avg_fft[i].1 = avg_fft[i].1.max(*amp);
         }
     }
 
     let div = div as f32;
     let mut out = vec![];
     for (freq, amp) in avg_fft.iter() {
-        let amp = *amp as f32 / 5.0;
-        let amp = ((amp / div).round() * div) as u32;
+        let amp = ((*amp as f32 / div).round() * div) as u32;
         if amp >= thres {
             out.push((*freq, amp));
         }
@@ -919,7 +918,7 @@ pub fn fftr4096_now_long(
 }
 
 #[allow(unused)]
-pub fn fftr512_now_long(
+pub fn fftr512_now_peaks(
     node_exec: &mut hexodsp::nodes::NodeExecutor,
     div: u32,
     thres: u32,
@@ -929,19 +928,18 @@ pub fn fftr512_now_long(
     let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
     let mut avg_fft = fftr_thres_at_ms(&mut out_l[..], FFT::F512, 0.0);
 
-    for _ in 0..4 {
+    for _ in 0..6 {
         let (mut out_l, _out_r) = run_no_input(node_exec, run_len_s);
         let res = fftr_thres_at_ms(&mut out_l[..], FFT::F512, 0.0);
         for (i, (_freq, amp)) in res.iter().enumerate() {
-            avg_fft[i].1 += amp;
+            avg_fft[i].1 = avg_fft[i].1.max(*amp);
         }
     }
 
     let div = div as f32;
     let mut out = vec![];
     for (freq, amp) in avg_fft.iter() {
-        let amp = *amp as f32 / 5.0;
-        let amp = ((amp / div).round() * div) as u32;
+        let amp = ((*amp as f32 / div).round() * div) as u32;
         if amp >= thres {
             out.push((*freq, amp));
         }
