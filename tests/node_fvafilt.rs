@@ -28,10 +28,10 @@ fn check_node_fvafilt_ladder_400hz() {
     let va = NodeId::FVaFilt(0);
 
     pset_s(&mut matrix, va, "ftype", 0);
-    pset_s(&mut matrix, va, "lslope", 0);
+    pset_s(&mut matrix, va, "lmode", 0);
     pset_d(&mut matrix, va, "freq", 400.0);
     pset_d(&mut matrix, va, "res", 0.0);
-    pset_d(&mut matrix, NodeId::Out(0), "vol", 3.0);
+    pset_d(&mut matrix, NodeId::Out(0), "vol", 4.5);
     pset_d_wait(&mut matrix, &mut node_exec, va, "drive", 1.0);
 
     // 6dB slope
@@ -43,65 +43,45 @@ fn check_node_fvafilt_ladder_400hz() {
             (0, 27),
             (86, 21),
             (172, 21),
-            (258, 18),
-            (345, 24),
-            (431, 18),
+            (258, 15),
+            (345, 21),
+            (431, 15),
             (517, 12),
             (603, 12),
-            (689, 18),
+            (689, 15),
             (775, 12),
-            (861, 12),
+            (861, 9),
             (947, 12),
             (1034, 9),
-            (1120, 15),
+            (1120, 12),
             (1206, 12),
             (1292, 6),
             (1378, 6),
             (1464, 6),
             (1550, 6),
             (1637, 6),
-            (1723, 6),
-            (3101, 6)
+            (1723, 6)
         ]
     );
 
     // 24dB slope
-    pset_s(&mut matrix, va, "lslope", 3);
+    pset_s(&mut matrix, va, "lmode", 3);
     let out = fftr512_now_peaks(&mut node_exec, 3, 2);
 
     assert_vis_fft!(
         out,
-        [(0, 24), (86, 24), (172, 21), (258, 9), (345, 12), (431, 6), (517, 3), (603, 3)]
+        [(0, 21), (86, 21), (172, 18), (258, 9), (345, 12), (431, 6), (517, 3), (603, 3)]
     );
 
     // 24dB with resonance = 0.5
     pset_d_wait(&mut matrix, &mut node_exec, va, "res", 0.5);
     let out = fftr512_now_peaks(&mut node_exec, 3, 6);
-    assert_vis_fft!(
-        out,
-        [(0, 60), (86, 42), (172, 39), (258, 42), (345, 45), (431, 24), (517, 12), (603, 9)]
-    );
+    assert_vis_fft!(out, [(0, 24), (86, 15), (172, 15), (258, 18), (345, 18), (431, 9)]);
 
     // 24dB with resonance = 1.0
     pset_d_wait(&mut matrix, &mut node_exec, va, "res", 1.0);
     let out = fftr512_now_peaks(&mut node_exec, 3, 6);
-    assert_vis_fft!(
-        out,
-        [
-            (0, 48),
-            (86, 36),
-            (172, 36),
-            (258, 90),
-            (345, 303),
-            (431, 336),
-            (517, 102),
-            (603, 18),
-            (689, 15),
-            (775, 6),
-            (861, 6),
-            (947, 6)
-        ]
-    );
+    assert_vis_fft!(out, [(0, 6), (86, 6), (172, 6), (258, 12), (345, 42), (431, 48), (517, 15)]);
 }
 
 #[test]
@@ -111,10 +91,10 @@ fn check_node_fvafilt_ladder_1000hz() {
     let va = NodeId::FVaFilt(0);
 
     pset_s(&mut matrix, va, "ftype", 0);
-    pset_s(&mut matrix, va, "lslope", 0);
+    pset_s(&mut matrix, va, "lmode", 0);
     pset_d(&mut matrix, va, "freq", 1000.0);
     pset_d(&mut matrix, va, "res", 0.0);
-    pset_d(&mut matrix, NodeId::Out(0), "vol", 2.0);
+    pset_d(&mut matrix, NodeId::Out(0), "vol", 3.2);
     pset_d_wait(&mut matrix, &mut node_exec, va, "drive", 1.0);
 
     // 6dB slope
@@ -166,7 +146,7 @@ fn check_node_fvafilt_ladder_1000hz() {
     );
 
     // 24dB slope
-    pset_s(&mut matrix, va, "lslope", 3);
+    pset_s(&mut matrix, va, "lmode", 3);
     let out = fftr512_now_peaks(&mut node_exec, 3, 4);
 
     assert_vis_fft!(
@@ -193,51 +173,43 @@ fn check_node_fvafilt_ladder_1000hz() {
     assert_vis_fft!(
         out,
         [
-            (0, 39),
-            (86, 27),
-            (172, 24),
-            (258, 24),
-            (345, 42),
-            (431, 27),
-            (517, 36),
-            (603, 33),
-            (689, 27),
-            (775, 24),
-            (861, 21),
-            (947, 15),
-            (1034, 9),
-            (1120, 12)
+            (0, 18),
+            (86, 12),
+            (172, 9),
+            (258, 9),
+            (345, 18),
+            (431, 12),
+            (517, 15),
+            (603, 12),
+            (689, 12),
+            (775, 9),
+            (861, 9)
         ]
     );
 
     // 24dB with resonance = 1.0
     pset_d_wait(&mut matrix, &mut node_exec, va, "res", 1.0);
-    let out = fftr512_now_peaks(&mut node_exec, 3, 9);
+    let out = fftr512_now_peaks(&mut node_exec, 3, 3);
     assert_vis_fft!(
         out,
         [
-            (0, 33),
-            (86, 24),
-            (172, 18),
-            (258, 24),
-            (345, 21),
-            (431, 24),
-            (517, 24),
-            (603, 36),
-            (689, 42),
-            (775, 51),
-            (861, 135),
-            (947, 201),
-            (1034, 219),
-            (1120, 75),
-            (1206, 39),
-            (1292, 18),
-            (1378, 15),
-            (1464, 12),
-            (1550, 9),
-            (1637, 12),
-            (1723, 12),
-            (1809, 9)
+            (0, 3),
+            (86, 3),
+            (172, 3),
+            (258, 3),
+            (345, 3),
+            (431, 3),
+            (517, 3),
+            (603, 6),
+            (689, 6),
+            (775, 6),
+            (861, 21),
+            (947, 30),
+            (1034, 33),
+            (1120, 12),
+            (1206, 6),
+            (1292, 3),
+            (1378, 3)
         ]
     );
 }
@@ -1015,6 +987,7 @@ fn check_overdriven_dc_ladder_ok() {
         .set_denorm("freq", 14000.0)
         .set_atom("ftype", SAtom::setting(0))
         .node_inp("out", "ch1")
+        .set_denorm("vol", 0.3219)
         .place(&mut matrix, 0, 0)
         .unwrap();
     matrix.sync().unwrap();
@@ -1022,5 +995,5 @@ fn check_overdriven_dc_ladder_ok() {
     run_for_ms(&mut node_exec, 2000.0);
     let rmsmima = run_and_get_l_rms_mimax(&mut node_exec, 100.0);
     println!("{:#?}", rmsmima);
-    assert_rmsmima!(rmsmima, (0.4004, -0.7787, 0.6732));
+    assert_rmsmima!(rmsmima, (0.70314854, -0.8921491, 1.0319022));
 }

@@ -8,7 +8,7 @@ use crate::dsp::{
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use std::simd::f32x4;
 use std::sync::Arc;
-use synfx_dsp::fh_va::{FilterParams, LadderFilter, LadderSlope, SallenKey, Svf, SvfMode};
+use synfx_dsp::fh_va::{FilterParams, LadderFilter, LadderMode, SallenKey, Svf, SvfMode};
 use synfx_dsp::{DCFilterX4, PolyIIRHalfbandFilter};
 
 #[macro_export]
@@ -40,26 +40,24 @@ macro_rules! fa_fvafilt_svf_mode {
 }
 
 #[macro_export]
-macro_rules! fa_fvafilt_lslope {
+macro_rules! fa_fvafilt_lmode {
     ($formatter: expr, $v: expr, $denorm_v: expr) => {{
         let s = match ($v.round() as usize) {
-            0 => "Ladder 6dB",
-            1 => "Ladder 12dB",
-            2 => "Ladder 18dB",
-            3 => "Ladder 24dB",
+            0  => "LP 6dB",
+            1  => "LP 12dB",
+            2  => "LP 18dB",
+            3  => "LP 24dB",
+            4  => "HP 6dB",
+            5  => "HP 12dB",
+            6  => "HP 18dB",
+            7  => "HP 24dB",
+            8  => "BP 12dB",
+            9  => "BP 24dB",
+            10 => "N 12dB",
             _ => "?",
         };
         write!($formatter, "{}", s)
     }};
-}
-
-#[derive(Debug, Clone)]
-struct VaFiltState {
-    ladder: LadderFilter,
-    svf: Svf,
-    sallenkey: SallenKey,
-    oversample: (PolyIIRHalfbandFilter, PolyIIRHalfbandFilter),
-    dc_filter: DCFilterX4,
 }
 
 /// A simple amplifier
@@ -67,27 +65,25 @@ struct VaFiltState {
 pub struct FVaFilt {
     params: Arc<FilterParams>,
     old_params: Box<(f32, f32, f32, i8, i8, i8)>,
-    state: Box<VaFiltState>,
-    //    ladder: Box<LadderFilter>,
-    //    svf: Box<Svf>,
-    //    sallenkey: Box<SallenKey>,
-    //    oversample: Box<(PolyIIRHalfbandFilter, PolyIIRHalfbandFilter)>,
+    ladder: LadderFilter,
+    svf: Svf,
+    sallenkey: SallenKey,
+    oversample: (PolyIIRHalfbandFilter, PolyIIRHalfbandFilter),
+    dc_filter: DCFilterX4,
 }
 
 impl FVaFilt {
     pub fn new(_nid: &NodeId, _node_global: &NodeGlobalRef) -> Self {
         let params = Arc::new(FilterParams::new());
         Self {
-            state: Box::new(VaFiltState {
-                ladder: LadderFilter::new(params.clone()),
-                svf: Svf::new(params.clone()),
-                sallenkey: SallenKey::new(params.clone()),
-                oversample: (
-                    PolyIIRHalfbandFilter::new(8, true),
-                    PolyIIRHalfbandFilter::new(8, true),
-                ),
-                dc_filter: DCFilterX4::default(),
-            }),
+            ladder: LadderFilter::new(params.clone()),
+            svf: Svf::new(params.clone()),
+            sallenkey: SallenKey::new(params.clone()),
+            oversample: (
+                PolyIIRHalfbandFilter::new(8, true),
+                PolyIIRHalfbandFilter::new(8, true),
+            ),
+            dc_filter: DCFilterX4::default(),
             params,
             old_params: Box::new((0.0, 0.0, 0.0, 0, 0, -1)),
         }
@@ -107,8 +103,19 @@ impl FVaFilt {
     - **BP1** - Band pass 1\n\
     - **BP2** - Band pass 2\n\
     - **Notch** - Notch\n";
-    pub const lslope: &'static str = "Ladder Slope\n\
-    Available slopes: **6dB**, **12dB**, **18dB**, **24dB**";
+    pub const lmode: &'static str = "Ladder Slope\n\
+        - **LP 6dB** - Low pass 6dB\n\
+        - **LP 12dB** - Low pass 12dB\n\
+        - **LP 18dB** - Low pass 18dB\n\
+        - **LP 24dB** - Low pass 24dB\n\
+        - **HP 6dB** - High pass 6dB\n\
+        - **HP 12dB** - High pass 12dB\n\
+        - **HP 18dB** - High pass 18dB\n\
+        - **HP 24dB** - High pass 24dB\n\
+        - **BP 12dB** - Band pass 12dB\n\
+        - **BP 24dB** - Band pass 24dB\n\
+        - **N 12dB** - Notch 12dB\n\
+    ";
     pub const sig: &'static str = "Filtered signal output.";
     pub const DESC: &'static str = r#"F's Virtual Analog (Stereo) Filter
 
@@ -125,7 +132,8 @@ but that comes with the price that they are more expensive.
 }
 
 macro_rules! on_param_change {
-    ($self: ident, $freq: ident, $res: ident, $drive: ident, $ftype: ident, $smode: ident, $lslope: ident, $frame: ident,
+    ($self: ident, $freq: ident, $res: ident, $drive: ident, $ftype: ident, $smode: ident, $lmode: ident, $frame: ident,
+     $ladder_mode_changed: ident,
      $on_change: block) => {
         unsafe {
             let params = Arc::get_mut_unchecked(&mut $self.params);
@@ -134,19 +142,31 @@ macro_rules! on_param_change {
                 denorm::FVaFilt::res($res, $frame).clamp(0.0, 1.0),
                 denorm::FVaFilt::drive($drive, $frame).max(0.0),
                 $ftype,
-                $lslope,
+                $lmode,
                 $smode
             );
 
             if new_params != *$self.old_params {
+                #[allow(unused_assignments)]
+                if new_params.4 != $self.old_params.4 {
+                    $ladder_mode_changed = true;
+                }
+
                 params.set_frequency(new_params.0);
                 params.set_resonance(new_params.1);
                 params.drive = new_params.2;
-                params.slope = match new_params.4 {
-                    0 => LadderSlope::LP6,
-                    1 => LadderSlope::LP12,
-                    2 => LadderSlope::LP18,
-                    _ => LadderSlope::LP24,
+                params.ladder_mode = match new_params.4 {
+                    0 => LadderMode::LP6,
+                    1 => LadderMode::LP12,
+                    2 => LadderMode::LP18,
+                    3 => LadderMode::LP24,
+                    4 => LadderMode::HP6,
+                    5 => LadderMode::HP12,
+                    6 => LadderMode::HP18,
+                    7 => LadderMode::HP24,
+                    8 => LadderMode::BP12,
+                    9 => LadderMode::BP24,
+                    _ => LadderMode::N12,
                 };
                 params.mode = match new_params.5 {
                     0 => SvfMode::LP,
@@ -173,11 +193,11 @@ impl DspNode for FVaFilt {
         }
     }
     fn reset(&mut self) {
-        self.state.ladder.reset();
-        self.state.sallenkey.reset();
-        self.state.svf.reset();
-        self.state.dc_filter.reset();
-        self.state.oversample =
+        self.ladder.reset();
+        self.sallenkey.reset();
+        self.svf.reset();
+        self.dc_filter.reset();
+        self.oversample =
             (PolyIIRHalfbandFilter::new(8, true), PolyIIRHalfbandFilter::new(8, true));
     }
 
@@ -200,24 +220,23 @@ impl DspNode for FVaFilt {
         let drive = inp::FVaFilt::drive(inputs);
         let ftype = at::FVaFilt::ftype(atoms);
         let smode = at::FVaFilt::smode(atoms);
-        let lslope = at::FVaFilt::lslope(atoms);
+        let lmode = at::FVaFilt::lmode(atoms);
         let out = out::FVaFilt::sig(outputs);
 
         let ftype = ftype.i() as i8;
         let smode = smode.i() as i8;
-        let lslope = lslope.i() as i8;
+        let lmode = lmode.i() as i8;
 
-        let state = self.state.as_mut();
-
-        let oversample = &mut state.oversample;
+        let oversample = &mut self.oversample;
         let mut _old_params = &mut self.old_params;
+        let mut ladder_mode_changed = false;
 
         match ftype {
             2 => {
                 // SallenKey
-                let sallenkey = &mut state.sallenkey;
+                let sallenkey = &mut self.sallenkey;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, smode, lslope, frame, {
+                    on_param_change!(self, freq, res, drive, ftype, smode, lmode, frame, ladder_mode_changed, {
                         sallenkey.update();
                     });
 
@@ -225,7 +244,7 @@ impl DspNode for FVaFilt {
 
                     // TODO: Read in second channel!
                     let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
-                    let vframe = state.dc_filter.process(vframe);
+                    let vframe = self.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
@@ -243,9 +262,9 @@ impl DspNode for FVaFilt {
             }
             1 => {
                 // SVF
-                let svf = &mut state.svf;
+                let svf = &mut self.svf;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, smode, lslope, frame, {
+                    on_param_change!(self, freq, res, drive, ftype, smode, lmode, frame, ladder_mode_changed, {
                         svf.update();
                     });
 
@@ -253,7 +272,7 @@ impl DspNode for FVaFilt {
 
                     // TODO: Read in second channel!
                     let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
-                    let vframe = state.dc_filter.process(vframe);
+                    let vframe = self.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
@@ -271,14 +290,18 @@ impl DspNode for FVaFilt {
             }
             _ => {
                 // Ladder
-                let ladder = &mut state.ladder;
+                let ladder = &mut self.ladder;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, smode, lslope, frame, {});
+                    on_param_change!(self, freq, res, drive, ftype, smode, lmode, frame, ladder_mode_changed, {
+                        if ladder_mode_changed {
+                            ladder.set_mix(self.params.ladder_mode);
+                        }
+                    });
                     let sig_l = denorm::FVaFilt::inp(inp, frame);
 
                     // TODO: Read in second channel!
                     let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
-                    let vframe = state.dc_filter.process(vframe);
+                    let vframe = self.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
 
