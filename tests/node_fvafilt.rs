@@ -12,7 +12,23 @@ fn setup_fvafilt_matrix() -> (Matrix, NodeExecutor) {
     let mut chain = MatrixCellChain::new(CellDir::B);
     chain
         .node_out("noise", "sig")
-        .node_io("fvafilt", "inp", "sig")
+        .node_io("fvafilt", "in_l", "sig_l")
+        .node_inp("out", "ch1")
+        .place(&mut matrix, 0, 0)
+        .unwrap();
+    matrix.sync().unwrap();
+
+    (matrix, node_exec)
+}
+
+fn setup_fvafilt_matrix_sig_r() -> (Matrix, NodeExecutor) {
+    let (node_conf, node_exec) = new_node_engine();
+    let mut matrix = Matrix::new(node_conf, 3, 3);
+
+    let mut chain = MatrixCellChain::new(CellDir::B);
+    chain
+        .node_out("noise", "sig")
+        .node_io("fvafilt", "in_r", "sig_r")
         .node_inp("out", "ch1")
         .place(&mut matrix, 0, 0)
         .unwrap();
@@ -82,6 +98,50 @@ fn check_node_fvafilt_ladder_400hz() {
     pset_d_wait(&mut matrix, &mut node_exec, va, "res", 1.0);
     let out = fftr512_now_peaks(&mut node_exec, 3, 6);
     assert_vis_fft!(out, [(0, 6), (86, 6), (172, 6), (258, 12), (345, 42), (431, 48), (517, 15)]);
+}
+
+#[test]
+fn check_node_fvafilt_ladder_sig_r() {
+    let (mut matrix, mut node_exec) = setup_fvafilt_matrix_sig_r();
+
+    let va = NodeId::FVaFilt(0);
+
+    pset_s(&mut matrix, va, "ftype", 0);
+    pset_s(&mut matrix, va, "lmode", 0);
+    pset_d(&mut matrix, va, "freq", 400.0);
+    pset_d(&mut matrix, va, "res", 0.0);
+    pset_d(&mut matrix, NodeId::Out(0), "vol", 4.5);
+    pset_d_wait(&mut matrix, &mut node_exec, va, "drive", 1.0);
+
+    // 6dB slope
+    let out = fftr512_now_peaks(&mut node_exec, 3, 4);
+
+    assert_vis_fft!(
+        out,
+        [
+            (0, 27),
+            (86, 21),
+            (172, 21),
+            (258, 15),
+            (345, 21),
+            (431, 15),
+            (517, 12),
+            (603, 12),
+            (689, 15),
+            (775, 12),
+            (861, 9),
+            (947, 12),
+            (1034, 9),
+            (1120, 12),
+            (1206, 12),
+            (1292, 6),
+            (1378, 6),
+            (1464, 6),
+            (1550, 6),
+            (1637, 6),
+            (1723, 6)
+        ]
+    );
 }
 
 #[test]
@@ -323,6 +383,49 @@ fn check_node_fvafilt_svf_lp_1000hz() {
             (1981, 15),
             (3531, 21),
             (3618, 18)
+        ]
+    );
+}
+
+#[test]
+fn check_node_fvafilt_svf_lp_sig_r() {
+    let (mut matrix, mut node_exec) = setup_fvafilt_matrix_sig_r();
+
+    let va = NodeId::FVaFilt(0);
+
+    pset_s(&mut matrix, va, "ftype", 1);
+    pset_d(&mut matrix, va, "freq", 1000.0);
+    pset_d(&mut matrix, va, "res", 0.0);
+    pset_d(&mut matrix, NodeId::Out(0), "vol", 8.0);
+    pset_d_wait(&mut matrix, &mut node_exec, va, "drive", 1.0);
+
+    // resonance 0.0
+    let out = fftr512_now_peaks(&mut node_exec, 3, 7);
+
+    assert_vis_fft!(
+        out,
+        [
+            (0, 21),
+            (86, 18),
+            (172, 21),
+            (258, 18),
+            (345, 27),
+            (431, 21),
+            (517, 15),
+            (603, 18),
+            (689, 27),
+            (775, 21),
+            (861, 18),
+            (947, 24),
+            (1034, 18),
+            (1120, 27),
+            (1206, 24),
+            (1292, 12),
+            (1378, 12),
+            (1464, 15),
+            (1550, 9),
+            (1637, 12),
+            (1723, 9)
         ]
     );
 }
@@ -920,6 +1023,51 @@ fn check_node_fvafilt_sallenkey_1000hz() {
     );
 }
 
+#[test]
+fn check_node_fvafilt_sallenkey_sig_r() {
+    let (mut matrix, mut node_exec) = setup_fvafilt_matrix_sig_r();
+
+    let va = NodeId::FVaFilt(0);
+
+    pset_s(&mut matrix, va, "ftype", 2);
+    pset_d(&mut matrix, va, "freq", 1000.0);
+    pset_d(&mut matrix, va, "res", 0.0);
+    pset_d(&mut matrix, NodeId::Out(0), "vol", 8.0);
+    pset_d_wait(&mut matrix, &mut node_exec, va, "drive", 1.0);
+
+    // resonance 0.0
+    let out = fftr512_now_peaks(&mut node_exec, 3, 7);
+
+    assert_vis_fft!(
+        out,
+        [
+            (0, 45),
+            (86, 36),
+            (172, 42),
+            (258, 36),
+            (345, 54),
+            (431, 39),
+            (517, 27),
+            (603, 30),
+            (689, 42),
+            (775, 33),
+            (861, 27),
+            (947, 33),
+            (1034, 24),
+            (1120, 33),
+            (1206, 30),
+            (1292, 15),
+            (1378, 15),
+            (1464, 18),
+            (1550, 12),
+            (1637, 15),
+            (1723, 9),
+            (2067, 9),
+            (2239, 9)
+        ]
+    );
+}
+
 // It is known, that driving the SVF filter too hard will cause
 // weird numeric behavior in the SVF filter.
 #[test]
@@ -932,7 +1080,7 @@ fn check_overdriven_dc_svf_bug() {
         .node_out("bosc", "sig")
         .set_atom("wtype", SAtom::setting(3))
         .set_denorm("freq", 440.0)
-        .node_io("fvafilt", "inp", "sig")
+        .node_io("fvafilt", "in_l", "sig_l")
         .set_norm("drive", 1.0)
         .set_denorm("freq", 14000.0)
         .set_atom("ftype", SAtom::setting(1))
@@ -957,7 +1105,7 @@ fn check_overdriven_dc_sallen_key_ok() {
         .node_out("bosc", "sig")
         .set_atom("wtype", SAtom::setting(3))
         .set_denorm("freq", 440.0)
-        .node_io("fvafilt", "inp", "sig")
+        .node_io("fvafilt", "in_r", "sig_r")
         .set_norm("drive", 1.0)
         .set_denorm("freq", 14000.0)
         .set_atom("ftype", SAtom::setting(2))
@@ -982,7 +1130,7 @@ fn check_overdriven_dc_ladder_ok() {
         .node_out("bosc", "sig")
         .set_atom("wtype", SAtom::setting(3))
         .set_denorm("freq", 440.0)
-        .node_io("fvafilt", "inp", "sig")
+        .node_io("fvafilt", "in_r", "sig_r")
         .set_norm("drive", 1.0)
         .set_denorm("freq", 14000.0)
         .set_atom("ftype", SAtom::setting(0))

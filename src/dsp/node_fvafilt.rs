@@ -88,7 +88,8 @@ impl FVaFilt {
             old_params: Box::new((0.0, 0.0, 0.0, 0, 0, -1)),
         }
     }
-    pub const inp: &'static str = "Signal input";
+    pub const in_l: &'static str = "Signal left channel input";
+    pub const in_r: &'static str = "Signal right channel input";
     pub const freq: &'static str = "Filter cutoff frequency.";
     pub const res: &'static str = "Filter resonance.";
     pub const drive: &'static str = "Filter (over) drive.";
@@ -116,7 +117,8 @@ impl FVaFilt {
         - **BP 24dB** - Band pass 24dB\n\
         - **N 12dB** - Notch 12dB\n\
     ";
-    pub const sig: &'static str = "Filtered signal output.";
+    pub const sig_l: &'static str = "Filtered signal left channel output.";
+    pub const sig_r: &'static str = "Filtered signal right channel output.";
     pub const DESC: &'static str = r#"F's Virtual Analog (Stereo) Filter
 
 This is a collection of virtual analog filters that were implemented
@@ -212,16 +214,21 @@ impl DspNode for FVaFilt {
         outputs: &mut [ProcBuf],
         ctx_vals: LedPhaseVals,
     ) {
-        use crate::dsp::{at, denorm, inp, out};
+        use crate::dsp::{at, denorm, inp, out_idx};
 
-        let inp = inp::FVaFilt::inp(inputs);
+        let in_l = inp::FVaFilt::in_l(inputs);
+        let in_r = inp::FVaFilt::in_r(inputs);
         let freq = inp::FVaFilt::freq(inputs);
         let res = inp::FVaFilt::res(inputs);
         let drive = inp::FVaFilt::drive(inputs);
         let ftype = at::FVaFilt::ftype(atoms);
         let smode = at::FVaFilt::smode(atoms);
         let lmode = at::FVaFilt::lmode(atoms);
-        let out = out::FVaFilt::sig(outputs);
+
+        let out_i = out_idx::FVaFilt::sig_r();
+        let (out_l, out_r) = outputs.split_at_mut(out_i);
+        let out_l = &mut out_l[0];
+        let out_r = &mut out_r[0];
 
         let ftype = ftype.i() as i8;
         let smode = smode.i() as i8;
@@ -240,10 +247,10 @@ impl DspNode for FVaFilt {
                         sallenkey.update();
                     });
 
-                    let sig_l = denorm::FVaFilt::inp(inp, frame);
+                    let sig_l = denorm::FVaFilt::in_l(in_l, frame);
+                    let sig_r = denorm::FVaFilt::in_r(in_r, frame);
 
-                    // TODO: Read in second channel!
-                    let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
+                    let vframe = f32x4::from_array([sig_l, sig_r, 0.0, 0.0]);
                     let vframe = self.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
@@ -256,8 +263,8 @@ impl DspNode for FVaFilt {
 
                     let output = output.as_array();
 
-                    // TODO: Add output[1] to second output!
-                    out.write(frame, output[0]);
+                    out_l.write(frame, output[0]);
+                    out_r.write(frame, output[1]);
                 }
             }
             1 => {
@@ -268,10 +275,10 @@ impl DspNode for FVaFilt {
                         svf.update();
                     });
 
-                    let sig_l = denorm::FVaFilt::inp(inp, frame);
+                    let sig_l = denorm::FVaFilt::in_l(in_l, frame);
+                    let sig_r = denorm::FVaFilt::in_r(in_r, frame);
 
-                    // TODO: Read in second channel!
-                    let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
+                    let vframe = f32x4::from_array([sig_l, sig_r, 0.0, 0.0]);
                     let vframe = self.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
@@ -284,8 +291,8 @@ impl DspNode for FVaFilt {
 
                     let output = output.as_array();
 
-                    // TODO: Add output[1] to second output!
-                    out.write(frame, output[0]);
+                    out_l.write(frame, output[0]);
+                    out_r.write(frame, output[1]);
                 }
             }
             _ => {
@@ -297,10 +304,11 @@ impl DspNode for FVaFilt {
                             ladder.set_mix(self.params.ladder_mode);
                         }
                     });
-                    let sig_l = denorm::FVaFilt::inp(inp, frame);
 
-                    // TODO: Read in second channel!
-                    let vframe = f32x4::from_array([sig_l, 0.0, 0.0, 0.0]);
+                    let sig_l = denorm::FVaFilt::in_l(in_l, frame);
+                    let sig_r = denorm::FVaFilt::in_r(in_r, frame);
+
+                    let vframe = f32x4::from_array([sig_l, sig_r, 0.0, 0.0]);
                     let vframe = self.dc_filter.process(vframe);
                     let input = [vframe, f32x4::splat(0.)];
                     let mut output = f32x4::splat(0.);
@@ -313,12 +321,18 @@ impl DspNode for FVaFilt {
 
                     let output = output.as_array();
 
-                    // TODO: Add output[1] to second output!
-                    out.write(frame, output[0]);
+                    out_l.write(frame, output[0]);
+                    out_r.write(frame, output[1]);
                 }
             }
         }
 
-        ctx_vals[0].set(out.read(ctx.nframes() - 1));
+        let o_l = out_l.read(ctx.nframes() - 1);
+        let o_r = out_r.read(ctx.nframes() - 1);
+        if o_l.abs() > o_r.abs() {
+            ctx_vals[0].set(o_l);
+        } else {
+            ctx_vals[0].set(o_r);
+        }
     }
 }

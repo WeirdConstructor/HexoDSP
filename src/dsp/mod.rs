@@ -1733,14 +1733,16 @@ macro_rules! node_list {
                {3 0 ftype setting(8) mode fa_sfilter_type 0 13}
                [0 sig],
             fvafilt => FVaFilt UIType::Generic UICategory::Signal
-               (0  inp   n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
-               (1 freq  n_pit      d_pit r_fq  f_freq  stp_d -1.0, 0.55064, 1000.0)
-               (2  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
-               (3 drive n_driv     d_driv r_driv f_db  stp_v  0.0, 1.0, 1.0)
-               {4 0 ftype setting(0) mode fa_fvafilt_type 0 2}
-               {5 1 smode setting(0) mode fa_fvafilt_svf_mode 0 4}
-               {6 2 lmode setting(0) mode fa_fvafilt_lmode 0 10}
-               [0 sig],
+               (0 in_l  n_id       d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (1 in_r  n_id       d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
+               (2 freq  n_pit      d_pit r_fq  f_freq stp_d -1.0, 0.55064, 1000.0)
+               (3  res   n_id      d_id  r_id   f_def stp_d 0.0, 1.0, 0.5)
+               (4 drive n_driv    d_driv r_driv f_db  stp_v  0.0, 1.0, 1.0)
+               {5 0 ftype setting(0) mode fa_fvafilt_type 0 2}
+               {6 1 smode setting(0) mode fa_fvafilt_svf_mode 0 4}
+               {7 2 lmode setting(0) mode fa_fvafilt_lmode 0 10}
+               [0 sig_l]
+               [1 sig_r],
             biqfilt => BiqFilt UIType::Generic UICategory::Signal
                (0 inp    n_id      d_id  r_id   f_def stp_d -1.0, 1.0, 0.0)
                (1 freq   n_pit     d_pit r_fq  f_freq stp_d -1.0, 0.5647131, 1000.0)
