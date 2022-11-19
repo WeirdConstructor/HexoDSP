@@ -43,16 +43,16 @@ macro_rules! fa_fvafilt_svf_mode {
 macro_rules! fa_fvafilt_lmode {
     ($formatter: expr, $v: expr, $denorm_v: expr) => {{
         let s = match ($v.round() as usize) {
-            0  => "LP 6dB",
-            1  => "LP 12dB",
-            2  => "LP 18dB",
-            3  => "LP 24dB",
-            4  => "HP 6dB",
-            5  => "HP 12dB",
-            6  => "HP 18dB",
-            7  => "HP 24dB",
-            8  => "BP 12dB",
-            9  => "BP 24dB",
+            0 => "LP 6dB",
+            1 => "LP 12dB",
+            2 => "LP 18dB",
+            3 => "LP 24dB",
+            4 => "HP 6dB",
+            5 => "HP 12dB",
+            6 => "HP 18dB",
+            7 => "HP 24dB",
+            8 => "BP 12dB",
+            9 => "BP 24dB",
             10 => "N 12dB",
             _ => "?",
         };
@@ -79,10 +79,7 @@ impl FVaFilt {
             ladder: LadderFilter::new(params.clone()),
             svf: Svf::new(params.clone()),
             sallenkey: SallenKey::new(params.clone()),
-            oversample: (
-                PolyIIRHalfbandFilter::new(8, true),
-                PolyIIRHalfbandFilter::new(8, true),
-            ),
+            oversample: (PolyIIRHalfbandFilter::new(8, true), PolyIIRHalfbandFilter::new(8, true)),
             dc_filter: DCFilterX4::default(),
             params,
             old_params: Box::new((0.0, 0.0, 0.0, 0, 0, -1)),
@@ -145,7 +142,7 @@ macro_rules! on_param_change {
                 denorm::FVaFilt::drive($drive, $frame).max(0.0),
                 $ftype,
                 $lmode,
-                $smode
+                $smode,
             );
 
             if new_params != *$self.old_params {
@@ -243,9 +240,20 @@ impl DspNode for FVaFilt {
                 // SallenKey
                 let sallenkey = &mut self.sallenkey;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, smode, lmode, frame, ladder_mode_changed, {
-                        sallenkey.update();
-                    });
+                    on_param_change!(
+                        self,
+                        freq,
+                        res,
+                        drive,
+                        ftype,
+                        smode,
+                        lmode,
+                        frame,
+                        ladder_mode_changed,
+                        {
+                            sallenkey.update();
+                        }
+                    );
 
                     let sig_l = denorm::FVaFilt::in_l(in_l, frame);
                     let sig_r = denorm::FVaFilt::in_r(in_r, frame);
@@ -271,9 +279,20 @@ impl DspNode for FVaFilt {
                 // SVF
                 let svf = &mut self.svf;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, smode, lmode, frame, ladder_mode_changed, {
-                        svf.update();
-                    });
+                    on_param_change!(
+                        self,
+                        freq,
+                        res,
+                        drive,
+                        ftype,
+                        smode,
+                        lmode,
+                        frame,
+                        ladder_mode_changed,
+                        {
+                            svf.update();
+                        }
+                    );
 
                     let sig_l = denorm::FVaFilt::in_l(in_l, frame);
                     let sig_r = denorm::FVaFilt::in_r(in_r, frame);
@@ -299,11 +318,22 @@ impl DspNode for FVaFilt {
                 // Ladder
                 let ladder = &mut self.ladder;
                 for frame in 0..ctx.nframes() {
-                    on_param_change!(self, freq, res, drive, ftype, smode, lmode, frame, ladder_mode_changed, {
-                        if ladder_mode_changed {
-                            ladder.set_mix(self.params.ladder_mode);
+                    on_param_change!(
+                        self,
+                        freq,
+                        res,
+                        drive,
+                        ftype,
+                        smode,
+                        lmode,
+                        frame,
+                        ladder_mode_changed,
+                        {
+                            if ladder_mode_changed {
+                                ladder.set_mix(self.params.ladder_mode);
+                            }
                         }
-                    });
+                    );
 
                     let sig_l = denorm::FVaFilt::in_l(in_l, frame);
                     let sig_r = denorm::FVaFilt::in_r(in_r, frame);

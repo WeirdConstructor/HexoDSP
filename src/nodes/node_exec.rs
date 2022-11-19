@@ -3,8 +3,8 @@
 // See README.md and COPYING for details.
 
 use super::{
-    DropMsg, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent,
-    NodeProg, MAX_INJ_MIDI_EVENTS, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
+    DropMsg, EventWindowing, GraphEvent, GraphMessage, HxMidiEvent, HxTimedEvent, NodeProg,
+    MAX_INJ_MIDI_EVENTS, MAX_SMOOTHERS, UNUSED_MONITOR_IDX,
 };
 use crate::dsp::{Node, NodeContext, MAX_BLOCK_SIZE};
 use crate::monitor::{MonitorBackend, MON_SIG_CNT};
@@ -171,7 +171,7 @@ impl NodeExecContext {
 
     fn set_sample_rate(&mut self, _srate: f32) {}
 
-    fn clear(&mut self) { }
+    fn clear(&mut self) {}
 }
 
 impl NodeExecutor {

@@ -336,12 +336,7 @@ pub fn vis_fft(table: &[(u16, u32)], max: Option<f32>) -> Vec<String> {
         .iter()
         .map(|(freq, amt)| {
             let amt_ratio = ((*amt as f32).round() / max).clamp(0.0, 1.0);
-            format!(
-                "{:5} {:5} {}",
-                freq,
-                amt,
-                "#".repeat((amt_ratio * 20.0).ceil() as usize)
-            )
+            format!("{:5} {:5} {}", freq, amt, "#".repeat((amt_ratio * 20.0).ceil() as usize))
         })
         .collect::<Vec<String>>()
 }

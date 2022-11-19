@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::dsp::tracker::{PatternData, Tracker, TrackerBackend};
-use crate::dsp::{DynNodeHandle, DynNodeBuffer, DynamicNode1x1};
+use crate::dsp::{DynNodeBuffer, DynNodeHandle, DynamicNode1x1};
 use crate::wblockdsp::*;
 use crate::{ScopeHandle, SharedFeedback, SharedFeedbackReader, SharedFeedbackWriter};
 use std::collections::HashMap;
@@ -239,7 +239,10 @@ impl NodeGlobalData {
     /// That means, after construction of a new Rust1x1, you should update the DynamicNode1x1
     /// using [NodeGlobalData::send_dynamic_node1x1].
     /// This will be very relevant to do after [crate::NodeConfigurator::set_sample_rate].
-    pub(crate) fn get_dynamic_node1x1_buffer(&mut self, id: usize) -> DynNodeBuffer<Box<dyn DynamicNode1x1>> {
+    pub(crate) fn get_dynamic_node1x1_buffer(
+        &mut self,
+        id: usize,
+    ) -> DynNodeBuffer<Box<dyn DynamicNode1x1>> {
         if !self.dyn_nodes1x1.contains_key(&id) {
             self.dyn_nodes1x1.insert(id, DynNodeHandle::new());
         }

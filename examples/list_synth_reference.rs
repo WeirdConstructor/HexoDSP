@@ -61,7 +61,9 @@ fn main() {
     println!("| NtoM | Signal routing, routing N signals to M outputs (mixer, router, ...) |");
     println!("| Signal | Signal filtering and shaping (filters, delays, reverbs, ...) |");
     println!("| Ctrl | Control signal generators and shapers (for instance quantizers) |");
-    println!("| IOUtil | Input, output and utility nodes (audio output, feedback nodes, MIDI CC, ...) |");
+    println!(
+        "| IOUtil | Input, output and utility nodes (audio output, feedback nodes, MIDI CC, ...) |"
+    );
     println!("");
 
     println!("| Node | Category | Description |");

@@ -177,31 +177,31 @@ struct NodeInputAtom {
 /// The execution of the nodes in the audio thread is
 /// controlled by a `NodeProg`, which defines the order
 /// the nodes are executed in.
-/// 
+///
 /// This only showcases the non-realtime generation of audio
 /// samples. For a real time application of this library please
 /// refer to the examples that come with this library.
-/// 
+///
 /// ```rust
 /// use hexodsp::*;
-/// 
+///
 /// let (mut node_conf, mut node_exec) = new_node_engine();
-/// 
+///
 /// node_conf.create_node(NodeId::Sin(0));
 /// node_conf.create_node(NodeId::Amp(0));
-/// 
+///
 /// let mut prog = node_conf.rebuild_node_ports();
-/// 
+///
 /// node_conf.add_prog_node(&mut prog, &NodeId::Sin(0));
 /// node_conf.add_prog_node(&mut prog, &NodeId::Amp(0));
-/// 
+///
 /// node_conf.set_prog_node_exec_connection(
 ///     &mut prog,
 ///     (NodeId::Amp(0), NodeId::Amp(0).inp("inp").unwrap()),
 ///     (NodeId::Sin(0), NodeId::Sin(0).out("sig").unwrap()));
-/// 
+///
 /// node_conf.upload_prog(prog, true);
-/// 
+///
 /// let (out_l, out_r) = node_exec.test_run(0.1, false, &[]);
 /// ```
 pub struct NodeConfigurator {

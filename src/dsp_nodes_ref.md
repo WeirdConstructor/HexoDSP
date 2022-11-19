@@ -2172,31 +2172,47 @@ This is a collection of virtual analog filters that were implemented
 by Fredemus (aka Frederik Halkjær). They behave well when driven hard
 but that comes with the price that they are more expensive.
 
-- [input **inp**](#nodeidfvafilt-input-inp) - Signal input
+- [input **in_l**](#nodeidfvafilt-input-in_l) - Signal left channel input
+- [input **in_r**](#nodeidfvafilt-input-in_r) - Signal right channel input
 - [input **freq**](#nodeidfvafilt-input-freq) - Filter cutoff frequency.
 - [input **res**](#nodeidfvafilt-input-res) - Filter resonance.
 - [input **drive**](#nodeidfvafilt-input-drive) - Filter (over) drive.
 - [setting **ftype**](#nodeidfvafilt-setting-ftype) - The filter type, there are varying types of filters available: - **Ladder** - **SVF** - **Sallen Key** 
 - [setting **smode**](#nodeidfvafilt-setting-smode) - SVF Filter Mode - **LP** - Low pass - **HP** - High pass - **BP1** - Band pass 1 - **BP2** - Band pass 2 - **Notch** - Notch 
-- [setting **lslope**](#nodeidfvafilt-setting-lslope) - Ladder Slope Available slopes: **6dB**, **12dB**, **18dB**, **24dB**
-- output **sig**
-Filtered signal output.
- `fvafilt(0).output().sig()`
+- [setting **lmode**](#nodeidfvafilt-setting-lmode) - Ladder Slope - **LP 6dB** - Low pass 6dB - **LP 12dB** - Low pass 12dB - **LP 18dB** - Low pass 18dB - **LP 24dB** - Low pass 24dB - **HP 6dB** - High pass 6dB - **HP 12dB** - High pass 12dB - **HP 18dB** - High pass 18dB - **HP 24dB** - High pass 24dB - **BP 12dB** - Band pass 12dB - **BP 24dB** - Band pass 24dB - **N 12dB** - Notch 12dB 
+- output **sig_l**
+Filtered signal left channel output.
+ `fvafilt(0).output().sig_l()`
+- output **sig_r**
+Filtered signal right channel output.
+ `fvafilt(0).output().sig_r()`
 #### NodeId::FVaFilt Help
 **Frederik Halkjær Virtual Analog Stereo Filters**
 
-#### NodeId::FVaFilt input inp
-Signal input
+#### NodeId::FVaFilt input in_l
+Signal left channel input
 
 API example for connecting the input:
-`fvafilt(0).input().inp(&amp(1).output().sig())`
+`fvafilt(0).input().in_l(&amp(1).output().sig())`
 
 | | value | denormalized | fmt | build API | [crate::ParamId] |
 |-|-------|--------------|-----|-----------|------------------|
-| **default** |  0.0000 |      0.00 |  0.000 | `fvafilt(0).set().inp(0)` | `NodeId::FVaFilt(0).inp_param("inp")` |
-| **min** | -1.0000 |     -1.00 | -1.000 | `fvafilt(0).set().inp(-1)` | `NodeId::FVaFilt(0).inp_param("inp")` |
-| **mid** |  0.0000 |      0.00 |  0.000 | `fvafilt(0).set().inp(0)` | `NodeId::FVaFilt(0).inp_param("inp")` |
-| **max** |  1.0000 |      1.00 |  1.000 | `fvafilt(0).set().inp(1)` | `NodeId::FVaFilt(0).inp_param("inp")` |
+| **default** |  0.0000 |      0.00 |  0.000 | `fvafilt(0).set().in_l(0)` | `NodeId::FVaFilt(0).inp_param("in_l")` |
+| **min** | -1.0000 |     -1.00 | -1.000 | `fvafilt(0).set().in_l(-1)` | `NodeId::FVaFilt(0).inp_param("in_l")` |
+| **mid** |  0.0000 |      0.00 |  0.000 | `fvafilt(0).set().in_l(0)` | `NodeId::FVaFilt(0).inp_param("in_l")` |
+| **max** |  1.0000 |      1.00 |  1.000 | `fvafilt(0).set().in_l(1)` | `NodeId::FVaFilt(0).inp_param("in_l")` |
+#### NodeId::FVaFilt input in_r
+Signal right channel input
+
+API example for connecting the input:
+`fvafilt(0).input().in_r(&amp(1).output().sig())`
+
+| | value | denormalized | fmt | build API | [crate::ParamId] |
+|-|-------|--------------|-----|-----------|------------------|
+| **default** |  0.0000 |      0.00 |  0.000 | `fvafilt(0).set().in_r(0)` | `NodeId::FVaFilt(0).inp_param("in_r")` |
+| **min** | -1.0000 |     -1.00 | -1.000 | `fvafilt(0).set().in_r(-1)` | `NodeId::FVaFilt(0).inp_param("in_r")` |
+| **mid** |  0.0000 |      0.00 |  0.000 | `fvafilt(0).set().in_r(0)` | `NodeId::FVaFilt(0).inp_param("in_r")` |
+| **max** |  1.0000 |      1.00 |  1.000 | `fvafilt(0).set().in_r(1)` | `NodeId::FVaFilt(0).inp_param("in_r")` |
 #### NodeId::FVaFilt input freq
 Filter cutoff frequency.
 
@@ -2261,16 +2277,34 @@ SVF Filter Mode
 | 2 | BP1 | `fvafilt(0).set().smode(2)` | `NodeId::FVaFilt(0).inp_param("smode")` |
 | 3 | BP2 | `fvafilt(0).set().smode(3)` | `NodeId::FVaFilt(0).inp_param("smode")` |
 | 4 | Notch | `fvafilt(0).set().smode(4)` | `NodeId::FVaFilt(0).inp_param("smode")` |
-#### NodeId::FVaFilt setting lslope
+#### NodeId::FVaFilt setting lmode
 Ladder Slope
-Available slopes: **6dB**, **12dB**, **18dB**, **24dB**
+- **LP 6dB** - Low pass 6dB
+- **LP 12dB** - Low pass 12dB
+- **LP 18dB** - Low pass 18dB
+- **LP 24dB** - Low pass 24dB
+- **HP 6dB** - High pass 6dB
+- **HP 12dB** - High pass 12dB
+- **HP 18dB** - High pass 18dB
+- **HP 24dB** - High pass 24dB
+- **BP 12dB** - Band pass 12dB
+- **BP 24dB** - Band pass 24dB
+- **N 12dB** - Notch 12dB
+
 
 | setting | fmt | build API | [crate::ParamId] |
 |---------|-----|-----------|------------------|
-| 0 | Ladder 6dB | `fvafilt(0).set().lslope(0)` | `NodeId::FVaFilt(0).inp_param("lslope")` |
-| 1 | Ladder 12dB | `fvafilt(0).set().lslope(1)` | `NodeId::FVaFilt(0).inp_param("lslope")` |
-| 2 | Ladder 18dB | `fvafilt(0).set().lslope(2)` | `NodeId::FVaFilt(0).inp_param("lslope")` |
-| 3 | Ladder 24dB | `fvafilt(0).set().lslope(3)` | `NodeId::FVaFilt(0).inp_param("lslope")` |
+| 0 | LP 6dB | `fvafilt(0).set().lmode(0)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 1 | LP 12dB | `fvafilt(0).set().lmode(1)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 2 | LP 18dB | `fvafilt(0).set().lmode(2)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 3 | LP 24dB | `fvafilt(0).set().lmode(3)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 4 | HP 6dB | `fvafilt(0).set().lmode(4)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 5 | HP 12dB | `fvafilt(0).set().lmode(5)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 6 | HP 18dB | `fvafilt(0).set().lmode(6)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 7 | HP 24dB | `fvafilt(0).set().lmode(7)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 8 | BP 12dB | `fvafilt(0).set().lmode(8)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 9 | BP 24dB | `fvafilt(0).set().lmode(9)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
+| 10 | N 12dB | `fvafilt(0).set().lmode(10)` | `NodeId::FVaFilt(0).inp_param("lmode")` |
 ### NodeId::PVerb
 **Plate Reverb**
 

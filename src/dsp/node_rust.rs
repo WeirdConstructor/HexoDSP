@@ -8,8 +8,7 @@ use crate::dsp::{
 use crate::nodes::{NodeAudioContext, NodeExecContext};
 use std::sync::Arc;
 use synfx_dsp::AtomicFloat;
-use triple_buffer::{TripleBuffer, Input, Output};
-
+use triple_buffer::{Input, Output, TripleBuffer};
 
 /// A context structure for supporting the [DynamicNode1x1::process] function.
 ///
@@ -112,7 +111,10 @@ pub struct DynNodeBuffer<T: Send> {
     output: Output<T>,
 }
 
-impl<T> DynNodeBuffer<T> where T: Send {
+impl<T> DynNodeBuffer<T>
+where
+    T: Send,
+{
     #[inline]
     pub fn access(&mut self) -> &mut T {
         self.output.update();
@@ -131,13 +133,13 @@ impl Default for Box<dyn DynamicNode1x1> {
     }
 }
 
-impl<T> DynNodeHandle<T> where T: Send + Default {
+impl<T> DynNodeHandle<T>
+where
+    T: Send + Default,
+{
     pub fn new() -> Self {
         let (input, output) = TripleBuffer::default().split();
-        Self {
-            input,
-            output: Some(output),
-        }
+        Self { input, output: Some(output) }
     }
 
     pub fn write(&mut self, node: T) {
@@ -145,14 +147,13 @@ impl<T> DynNodeHandle<T> where T: Send + Default {
     }
 
     pub fn get_output_buffer(&mut self) -> DynNodeBuffer<T> {
-        let output =
-            if let Some(output) = self.output.take() {
-                output
-            } else {
-                let (input, output) = TripleBuffer::default().split();
-                self.input = input;
-                output
-            };
+        let output = if let Some(output) = self.output.take() {
+            output
+        } else {
+            let (input, output) = TripleBuffer::default().split();
+            self.input = input;
+            output
+        };
         DynNodeBuffer { output }
     }
 }
@@ -170,13 +171,12 @@ pub struct Rust1x1 {
 
 impl Rust1x1 {
     pub fn new(nid: &NodeId, node_global: &NodeGlobalRef) -> Self {
-        let buffer =
-            if let Ok(mut handle) = node_global.lock() {
-                handle.get_dynamic_node1x1_buffer(nid.instance() as usize)
-            } else {
-                let mut handle = DynNodeHandle::<Box<dyn DynamicNode1x1>>::new();
-                handle.get_output_buffer()
-            };
+        let buffer = if let Ok(mut handle) = node_global.lock() {
+            handle.get_dynamic_node1x1_buffer(nid.instance() as usize)
+        } else {
+            let mut handle = DynNodeHandle::<Box<dyn DynamicNode1x1>>::new();
+            handle.get_output_buffer()
+        };
         Self { buffer }
     }
 

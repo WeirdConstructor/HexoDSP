@@ -601,7 +601,7 @@ pub type LedPhaseVals<'a> = &'a [Arc<AtomicFloat>];
 pub use satom::*;
 
 pub use node_rust::new_dummy_dynamic_node1x1;
-pub use node_rust::{DynNode1x1Context, DynamicNode1x1, DynNodeHandle, DynNodeBuffer};
+pub use node_rust::{DynNode1x1Context, DynNodeBuffer, DynNodeHandle, DynamicNode1x1};
 
 use crate::fa_ad_mult;
 use crate::fa_adsr_mult;
