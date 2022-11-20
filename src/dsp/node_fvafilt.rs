@@ -123,6 +123,40 @@ by Fredemus (aka Frederik Halkjær). They behave well when driven hard
 but that comes with the price that they are more expensive.
 "#;
     pub const HELP: &'static str = r#"Frederik Halkjær Virtual Analog Stereo Filters
+
+This node provides multiple virtual analog stereo/2 channel filters. They are
+implemented with non linearities in their filter path, which means you can
+drive the signals in with high amplitude and get a richer sound back.
+
+Please note, that this filter is a lot more expensive than other filters.
+That is mostly due to it's sophisticated numerical methods for solving
+the non linearities in the filter. And also due to it being a
+2 Channel/Stereo filter. The CPU usage is also not constant and depends on
+multiple factors, such as resonance (~~res~~) and the ~~drive~~ of the input signal.
+
+There are three filter models implemented, that can be selected using the ~~ftype~~
+setting:
+
+### **Ladder** - 4-Pole Multimode Lowpass (Moog) Ladder
+
+This is a 4-pole lowpass ladder filter loosely based on the ones found in
+Moog synthesizers. It distorts nicely. The ~~lmode~~ (Ladder Mode) allows you
+to select between Lowpass, Highpass, Bandpass and Notch modes for the ladder
+filter. And also provides different steepness of the filter.
+
+### **SVF** - 2-Pole Multimode Filter (EDP Wasp)
+
+This is a 2-pole multimode filter loosely based on the one found in the edp
+wasp synthesizer. It's a good all-around filter that distorts nicely and
+keeps resonance well at high levels. The ~~smode~~ (SVF Mode) selects
+the Lowpass, Highpass, Notch and Bandpass modes of the SVF filter.
+
+### **SallenKey** - 2-Pole Lowpass Filter (Korg MS20)
+
+This is a 2-pole lowpass filter loosely based on the one found in the
+second revision of the Korg MS20 synthesizer. It distorts really nicely and
+gets especially gnarly when resonance is high.
+
 "#;
 
     pub fn graph_fun() -> Option<GraphFun> {
@@ -191,6 +225,7 @@ impl DspNode for FVaFilt {
             params.set_sample_rate(srate * 2.0);
         }
     }
+
     fn reset(&mut self) {
         self.ladder.reset();
         self.sallenkey.reset();
