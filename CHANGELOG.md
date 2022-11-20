@@ -1,3 +1,8 @@
+0.2.2 (unreleased)
+==================
+
+* Feature: Finished the implementation of the `FVaFilt` virtual analog filter node.
+
 0.2.1 (2022-11-06)
 ==================
 

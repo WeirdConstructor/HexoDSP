@@ -46,6 +46,7 @@ For a comprehensive list checkout the
 | Osc     | FormFM      | Formant oscillator based on FM synthesis |
 | Signal  | Amp         | Amplifier/Attenuator |
 | Signal  | SFilter     | Simple collection of filters, useable for synthesis |
+| Signal  | FVaFilt     | Collection of virtual analog filters (Moog, EDP Wasp, Korg MS20) |
 | Signal  | Delay       | Single tap signal delay |
 | Signal  | PVerb       | Reverb node, based on Dattorros plate reverb algorithm |
 | Signal  | AllP        | All-Pass filter based on internal delay line feedback |
@@ -242,6 +243,8 @@ There exists an automate test suite for the DSP and backend code:
 ### Credits
 
 - Dimas Leenman (aka Skythedragon) contributed the `FormFM` node.
+- Frederik Halkjær (aka Fredemus, aka RocketPhysician) contributed the DSP algorithms
+for the `FVaFilt` virtual analog filter node.
 
 ### Contributions
 
