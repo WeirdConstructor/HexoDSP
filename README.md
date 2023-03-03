@@ -271,12 +271,6 @@ You can reach me via Discord or Mastodon. I'm joined most public Rust Discord
 servers, especially the "Rust Audio" Discord server. I am also sometimes on
 freenode.net, for instance in the `#lad` channel (nick `weirdctr`).
 
-### Support Development
-
-You can support me (and the development of this project) via Liberapay:
-
-<a href="https://liberapay.com/WeirdConstructor/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a>
-
 ### License
 
 This project is licensed under the GNU General Public License Version 3 or
