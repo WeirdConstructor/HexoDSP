@@ -61,7 +61,7 @@ fn main() {
                 "Update freq={}, LFO={:0.3}, 1x1LED={:0.3}",
                 new_pitch,
                 sc.output_feedback(&tslfo, tslfo_sig_idx).unwrap_or(0.0),
-                sc.led_value(&NodeId::Rust1x1(0)),
+                sc.led_value(&NodeId::TsLFO(0)),
             );
             sc.update_params(&bosc(0).set().freq(new_pitch)).unwrap();
 
@@ -79,10 +79,7 @@ pub fn run<T, F: FnMut()>(
     config: &cpal::StreamConfig,
     mut node_exec: NodeExecutor,
     mut frontend_loop: F,
-) -> Result<(), anyhow::Error>
-where
-    T: cpal::Sample,
-{
+) -> Result<(), anyhow::Error> {
     let sample_rate = config.sample_rate.0 as f32;
     let channels = config.channels as usize;
 
@@ -94,7 +91,7 @@ where
     let err_fn = |err| eprintln!("an error occurred on stream: {}", err);
     let stream = device.build_output_stream(
         config,
-        move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
+        move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
             let mut frames_left = data.len() / channels;
 
             let mut out_iter = data.chunks_mut(channels);
@@ -134,8 +131,7 @@ where
                     if let Some(frame) = out_iter.next() {
                         let mut ctx_chan = 0;
                         for sample in frame.iter_mut() {
-                            let value: T = cpal::Sample::from::<f32>(&context.output[ctx_chan][i]);
-                            *sample = value;
+                            *sample = context.output[ctx_chan][i];
 
                             ctx_chan += 1;
                             if ctx_chan > context.output.len() {
@@ -149,6 +145,7 @@ where
             }
         },
         err_fn,
+        None
     )?;
     stream.play()?;
 
@@ -166,8 +163,16 @@ fn start_backend<F: FnMut()>(node_exec: NodeExecutor, frontend_loop: F) {
 
     match config.sample_format() {
         cpal::SampleFormat::F32 => run::<f32, F>(&device, &config.into(), node_exec, frontend_loop),
+        cpal::SampleFormat::F64 => run::<f64, F>(&device, &config.into(), node_exec, frontend_loop),
+        cpal::SampleFormat::I8 => run::<i8, F>(&device, &config.into(), node_exec, frontend_loop),
         cpal::SampleFormat::I16 => run::<i16, F>(&device, &config.into(), node_exec, frontend_loop),
+        cpal::SampleFormat::I32 => run::<i32, F>(&device, &config.into(), node_exec, frontend_loop),
+        cpal::SampleFormat::I64 => run::<i64, F>(&device, &config.into(), node_exec, frontend_loop),
+        cpal::SampleFormat::U8 => run::<u8, F>(&device, &config.into(), node_exec, frontend_loop),
         cpal::SampleFormat::U16 => run::<u16, F>(&device, &config.into(), node_exec, frontend_loop),
+        cpal::SampleFormat::U32 => run::<u32, F>(&device, &config.into(), node_exec, frontend_loop),
+        cpal::SampleFormat::U64 => run::<u64, F>(&device, &config.into(), node_exec, frontend_loop),
+        _ => todo!(),
     }
     .expect("cpal works fine");
 }

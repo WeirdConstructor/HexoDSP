@@ -1,7 +1,9 @@
-0.2.2 (unreleased)
+0.2.2 (2024-01-04)
 ==================
 
 * Feature: Finished the implementation of the `FVaFilt` virtual analog filter node.
+* Bugfix: Fixed non compiling `synfx-dsp` (Adjustment to Rust's unstable SIMD API).
+* Change: Bumped cpal version to 0.15.2 (used for the examples).
 
 0.2.1 (2022-11-06)
 ==================
