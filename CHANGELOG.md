@@ -1,3 +1,8 @@
+0.2.3 (unreleased)
+==================
+
+* Bugfix: `MidiP` and `MidiCC` channels did get up to 16. Limited that to 15 now.
+
 0.2.2 (2024-01-04)
 ==================
 

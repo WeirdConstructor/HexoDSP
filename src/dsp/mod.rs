@@ -1564,14 +1564,14 @@ macro_rules! node_list {
             midip => MidiP UIType::Generic UICategory::IOUtil
                (0 det   n_det      d_det r_det f_det   stp_f -0.2, 0.2, 0.0)
                (1 glen  n_lfot   d_lfot r_lfot f_lfoms stp_f 0.0, 1.0, 250.0)
-               {2 0 chan setting(0) mode fa_midip_chan 0 16}
+               {2 0 chan setting(0) mode fa_midip_chan 0 15}
                {3 1 gmode setting(0) mode fa_midip_gmode 0 2}
                [0 freq]
                [1 gate]
                [2 vel],
             midicc => MidiCC UIType::Generic UICategory::IOUtil
                (0 slew  n_timz   d_timz r_tmz  f_ms  stp_m  0.0, 1.0, 0.0)
-               {1 0 chan setting(0) mode fa_midip_chan 0 16}
+               {1 0 chan setting(0) mode fa_midip_chan 0 15}
                {2 1 cc1  setting(0) mode fa_midicc_cc 0 127}
                {3 2 cc2  setting(0) mode fa_midicc_cc 0 127}
                {4 3 cc3  setting(0) mode fa_midicc_cc 0 127}
